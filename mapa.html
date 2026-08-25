@@ -384,11 +384,19 @@
         .mp-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px; }
         .mp-close:hover { color: var(--text-main); }
         .mp-sub { font-size: 10px; color: var(--text-muted); margin-bottom: 10px; }
-        .mp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
-        .mp-card { background: rgba(255,255,255,.04); border-radius: 6px; padding: 7px 4px; text-align: center; }
-        .mp-card i { font-size: 13px; }
-        .mp-val { font-size: 13px; font-weight: 800; color: var(--text-main); margin: 2px 0; }
-        .mp-lbl { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+        .mp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 8px; }
+        .mp-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .mp-grid-2 { grid-template-columns: 1fr 1fr; }
+        .mp-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .mp-card { background: rgba(255,255,255,.04); border-radius: 6px; padding: 6px 3px; text-align: center; }
+        .mp-card-idh { background: rgba(56,189,248,.08); border: 1px solid rgba(56,189,248,.15); }
+        .mp-card-risco { background: rgba(249,99,28,.08); border: 1px solid rgba(249,99,28,.15); }
+        .mp-card .mp-val { font-size: 12px; font-weight: 800; color: var(--text-main); margin: 1px 0; }
+        .mp-card-idh .mp-val { font-size: 15px; color: var(--blue-glow); }
+        .mp-card .mp-lbl { font-size: 7.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; line-height: 1.2; }
+        .mp-section { font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin: 8px 0 4px; display: flex; align-items: center; gap: 5px; }
+        .mp-section i { color: var(--blue-glow); font-size: 10px; }
+        .mp-contacts { font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,.03); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; line-height: 1.5; }
         .mp-risk-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); margin-bottom: 8px; overflow: hidden; }
         .mp-risk-bar .fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
         .mp-footer { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); }
@@ -587,15 +595,52 @@
             <button class="mp-close" id="mpClose"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="mp-sub" id="mpSub">—</div>
-        <div class="mp-grid">
-            <div class="mp-card"><i class="fa-solid fa-users" style="color:#38bdf8;"></i><div class="mp-val" id="mpPop">—</div><div class="mp-lbl">População</div></div>
-            <div class="mp-card"><i class="fa-solid fa-ruler-combined" style="color:#34d399;"></i><div class="mp-val" id="mpArea">—</div><div class="mp-lbl">Área (km²)</div></div>
-            <div class="mp-card"><i class="fa-solid fa-fire" style="color:#f9631c;"></i><div class="mp-val" id="mpFogos">—</div><div class="mp-lbl">Focos 24h</div></div>
-            <div class="mp-card"><i class="fa-solid fa-temperature-half" style="color:#ef4444;"></i><div class="mp-val" id="mpTemp">—</div><div class="mp-lbl">Temperatura</div></div>
-            <div class="mp-card"><i class="fa-solid fa-droplet" style="color:#38bdf8;"></i><div class="mp-val" id="mpUmidade">—</div><div class="mp-lbl">Umidade</div></div>
-            <div class="mp-card"><i class="fa-solid fa-gauge-high" style="color:#fbbf24;"></i><div class="mp-val" id="mpRisco">—</div><div class="mp-lbl">Nível de Risco</div></div>
+
+        <div class="mp-section"><i class="fa-solid fa-map-location-dot"></i> Território</div>
+        <div class="mp-grid mp-grid-4">
+            <div class="mp-card"><div class="mp-val" id="mpPop">—</div><div class="mp-lbl">População</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpArea">—</div><div class="mp-lbl">Área km²</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpDens">—</div><div class="mp-lbl">Densidade</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpUrb">—</div><div class="mp-lbl">Urbanização</div></div>
+        </div>
+
+        <div class="mp-section"><i class="fa-solid fa-chart-line"></i> IDHM (2010)</div>
+        <div class="mp-grid mp-grid-4">
+            <div class="mp-card mp-card-idh"><div class="mp-val" id="mpIdh">—</div><div class="mp-lbl">IDHM Geral</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpIdhR">—</div><div class="mp-lbl">Renda</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpIdhL">—</div><div class="mp-lbl">Longevidade</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpIdhE">—</div><div class="mp-lbl">Educação</div></div>
+        </div>
+
+        <div class="mp-section"><i class="fa-solid fa-dollar-sign"></i> Economia (2021)</div>
+        <div class="mp-grid mp-grid-2">
+            <div class="mp-card"><div class="mp-val" id="mpPib">—</div><div class="mp-lbl">PIB per capita</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpPibTot">—</div><div class="mp-lbl">PIB total</div></div>
+        </div>
+
+        <div class="mp-section"><i class="fa-solid fa-heart-pulse"></i> Saúde & Educação</div>
+        <div class="mp-grid mp-grid-3">
+            <div class="mp-card"><div class="mp-val" id="mpMort">—</div><div class="mp-lbl">Mortal. Infantil</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpEscol">—</div><div class="mp-lbl">Escolarização</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpIdade">—</div><div class="mp-lbl">Esperança vida</div></div>
+        </div>
+
+        <div class="mp-section"><i class="fa-solid fa-cloud-sun"></i> Clima & Risco (tempo real)</div>
+        <div class="mp-grid mp-grid-3">
+            <div class="mp-card"><div class="mp-val" id="mpTemp">—</div><div class="mp-lbl">Temperatura</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpUmidade">—</div><div class="mp-lbl">Umidade</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpVento">—</div><div class="mp-lbl">Vento</div></div>
+        </div>
+        <div class="mp-grid mp-grid-3">
+            <div class="mp-card"><div class="mp-val" id="mpFogos">—</div><div class="mp-lbl">Focos 24h</div></div>
+            <div class="mp-card"><div class="mp-val" id="mpChuva">—</div><div class="mp-lbl">Chuva hoje</div></div>
+            <div class="mp-card mp-card-risco"><div class="mp-val" id="mpRisco">—</div><div class="mp-lbl">Risco geral</div></div>
         </div>
         <div class="mp-risk-bar" id="mpRiskBar"></div>
+
+        <div class="mp-section"><i class="fa-solid fa-phone-volume"></i> Contatos</div>
+        <div class="mp-contacts" id="mpContatos">Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192</div>
+
         <div class="mp-footer">
             <span id="mpFontes"></span>
             <span id="mpAtualizado"></span>
@@ -865,54 +910,93 @@ window.previsaoMun = function (cod) {
     const c = centroidByCod[cod];
     if (!c) return;
 
-    // Abre painel de detalhes
     const panel = document.getElementById('munPanel');
     panel.classList.add('open');
 
-    // Dados do município via IBGE
-    document.getElementById('mpNome').textContent = 'Carregando...';
-    document.getElementById('mpSub').textContent = '';
-    document.getElementById('mpPop').textContent = '—';
-    document.getElementById('mpArea').textContent = '—';
-    document.getElementById('mpFogos').textContent = '—';
-    document.getElementById('mpTemp').textContent = '—';
-    document.getElementById('mpUmidade').textContent = '—';
-    document.getElementById('mpRisco').textContent = '—';
+    // Reset
+    ['mpNome','mpSub','mpPop','mpArea','mpDens','mpUrb','mpIdh','mpIdhR','mpIdhL','mpIdhE','mpPib','mpPibTot','mpMort','mpEscol','mpIdade','mpFogos','mpTemp','mpUmidade','mpVento','mpChuva','mpRisco'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '…';
+    });
     document.getElementById('mpRiskBar').innerHTML = '';
-    document.getElementById('mpFontes').textContent = '';
     document.getElementById('mpAtualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    document.getElementById('mpContatos').textContent = 'Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192';
 
-    // Busca dados IBGE do município
+    // ===== DADOS IBGE =====
+    // Nome e localização
     fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios/${cod}`)
-        .then(r => { if (!r.ok) throw 0; return r.json(); })
+        .then(r => r.json())
         .then(mun => {
             document.getElementById('mpNome').textContent = mun.nome;
             const meso = mun.microrregiao?.mesorregiao?.nome || '';
             const micro = mun.microrregiao?.nome || '';
-            document.getElementById('mpSub').textContent = `${micro} · ${meso} · MT · IBGE ${mun.id}`;
+            document.getElementById('mpSub').innerHTML = `${micro} · ${meso} · MT<br><span style="font-size:9px;color:#64748b;">Código IBGE: ${mun.id} · Gentílico: ${mun.microrregiao?.mesorregiao?.UF?.nome || 'Mato Grosso'}</span>`;
         })
         .catch(() => { document.getElementById('mpNome').textContent = 'Município ' + cod; });
 
-    // Busca população e área via IBGE (agregados)
+    // População e área
     fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2022/variaveis/9324?localidades=N6[${cod}]`)
-        .then(r => { if (!r.ok) throw 0; return r.json(); })
-        .then(d => {
-            const pop = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
-            if (pop) document.getElementById('mpPop').textContent = parseInt(pop).toLocaleString('pt-BR');
-        })
-        .catch(() => {});
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
+            if (v) document.getElementById('mpPop').textContent = parseInt(v).toLocaleString('pt-BR');
+        }).catch(() => {});
 
     fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/4455?localidades=N6[${cod}]`)
-        .then(r => { if (!r.ok) throw 0; return r.json(); })
-        .then(d => {
-            const area = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
-            if (area) document.getElementById('mpArea').textContent = parseFloat(area).toLocaleString('pt-BR', { maximumFractionDigits:1 });
-        })
-        .catch(() => {});
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
+            if (v) document.getElementById('mpArea').textContent = parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:1 });
+        }).catch(() => {});
 
-    // Conta focos INPE neste município (aproximação por raio de 50km do centróide)
+    // Densidade demográfica
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/3706/periodos/2022/variaveis/93?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
+            if (v) document.getElementById('mpDens').textContent = parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:1 }) + '/km²';
+        }).catch(() => {});
+
+    // IDHM (2010)
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30255/periodos/2010/variaveis/30255?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
+            if (v) document.getElementById('mpIdh').textContent = parseFloat(v).toFixed(3);
+        }).catch(() => {});
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30260/periodos/2010/variaveis/30260?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
+            if (v) document.getElementById('mpIdhL').textContent = parseFloat(v).toFixed(3);
+        }).catch(() => {});
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30266/periodos/2010/variaveis/30266?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
+            if (v) document.getElementById('mpIdhE').textContent = parseFloat(v).toFixed(3);
+        }).catch(() => {});
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30272/periodos/2010/variaveis/30272?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
+            if (v) document.getElementById('mpIdhR').textContent = parseFloat(v).toFixed(3);
+        }).catch(() => {});
+
+    // PIB per capita (2021)
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3706?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2021'];
+            if (v) document.getElementById('mpPib').textContent = 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:2 });
+        }).catch(() => {});
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3713?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2021'];
+            if (v) document.getElementById('mpPibTot').textContent = 'R$ ' + (parseFloat(v) / 1e6).toFixed(1) + ' mi';
+        }).catch(() => {});
+
+    // Mortalidade infantil
+    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4561/periodos/2022/variaveis/20712?localidades=N6[${cod}]`)
+        .then(r => r.json()).then(d => {
+            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
+            if (v) document.getElementById('mpMort').textContent = parseFloat(v).toFixed(1) + '‰';
+        }).catch(() => {});
+
+    // ===== FOCOS INPE =====
     if (focosLoaded && focosLayer) {
-        const R = 0.45; // ~50km em graus
+        const R = 0.45;
         let count = 0;
         focosLayer.eachLayer(l => {
             const ll = l.getLatLng();
@@ -922,22 +1006,26 @@ window.previsaoMun = function (cod) {
         document.getElementById('mpFogos').style.color = count > 10 ? '#ef4444' : count > 3 ? '#f9631c' : '#34d399';
     }
 
-    // Busca clima Open-Meteo para o centróide
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat.toFixed(4)}&longitude=${c.lng.toFixed(4)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=America/Cuiaba`)
-        .then(r => { if (!r.ok) throw 0; return r.json(); })
+    // ===== CLIMA OPEN-METEO =====
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat.toFixed(4)}&longitude=${c.lng.toFixed(4)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`)
+        .then(r => r.json())
         .then(d => {
             const cur = d.current;
             document.getElementById('mpTemp').textContent = Math.round(cur.temperature_2m) + '°C';
             document.getElementById('mpUmidade').textContent = cur.relative_humidity_2m + '%';
+            document.getElementById('mpVento').textContent = Math.round(cur.wind_speed_10m) + ' km/h';
+            const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
+            document.getElementById('mpChuva').textContent = chuva.toFixed(1) + ' mm';
 
-            // Calcula risco baseado em umidade + vento + focos
+            // Cálculo de risco
             const hum = cur.relative_humidity_2m;
             const wind = cur.wind_speed_10m;
             const fogos = parseInt(document.getElementById('mpFogos').textContent) || 0;
             let risco = 0;
-            if (hum < 30) risco += 30; else if (hum < 50) risco += 15;
-            if (wind > 20) risco += 25; else if (wind > 10) risco += 10;
-            risco += Math.min(45, fogos * 3);
+            if (hum < 20) risco += 35; else if (hum < 30) risco += 25; else if (hum < 50) risco += 12;
+            if (wind > 30) risco += 30; else if (wind > 20) risco += 20; else if (wind > 10) risco += 8;
+            risco += Math.min(40, fogos * 3);
+            if (chuva > 5) risco = Math.max(0, risco - 20);
             risco = Math.min(100, risco);
 
             let riscoTxt = 'Baixo', riscoCor = '#34d399';

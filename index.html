@@ -321,6 +321,36 @@
         .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
         .reveal.in { opacity: 1; transform: none; }
 
+        /* Modal Orientações */
+        .orient-modal {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity .25s;
+        }
+        .orient-modal.open { opacity: 1; pointer-events: auto; }
+        .om-box {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 16px; width: 92%; max-width: 680px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.6);
+            animation: omSlide .35s ease;
+        }
+        @keyframes omSlide { from { transform: translateY(24px) scale(.96); } to { transform: none; } }
+        .om-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
+        .om-head h3 { font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0; }
+        .om-head i { color: var(--accent-orange); margin-right: 8px; }
+        .om-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+        .om-close:hover { color: var(--text-main); }
+        .om-video-wrap { margin: 16px 20px 0; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 16/9; }
+        .om-video-wrap video { width: 100%; height: 100%; display: block; }
+        .om-info { padding: 12px 20px 0; }
+        .om-info p { font-size: 12.5px; color: var(--text-muted); margin: 0; line-height: 1.6; }
+        .om-actions { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 16px; }
+        .om-home { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-orange); color: #fff; padding: 9px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 700; text-decoration: none; transition: all .15s; }
+        .om-home:hover { background: #e5560e; transform: translateY(-1px); }
+        .om-close-btn { background: rgba(255,255,255,.06); border: 1px solid var(--border-color); color: var(--text-muted); padding: 9px 18px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all .15s; }
+        .om-close-btn:hover { background: rgba(255,255,255,.1); color: var(--text-main); }
+
         /* Alertas Ativos Sidebar embutida no Hero */
         .alerts-sidebar {
             background-color: var(--bg-card);
@@ -701,7 +731,7 @@
                 <li><a href="mapa.html">Mapa</a></li>
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="mapa.html">Monitoramento</a></li>
-                <li><a href="#">Orientações</a></li>
+                <li><a href="#" onclick="document.getElementById('orientModal').classList.add('open'); return false;">Orientações</a></li>
                 <li><a href="#">Notícias</a></li>
                 <li><a href="#">Sobre</a></li>
                 <li><a href="#">Contato</a></li>
@@ -915,6 +945,29 @@
             </div>
         </div>
     </footer>
+
+    <!-- Modal Orientações com Vídeo -->
+    <div id="orientModal" class="orient-modal">
+        <div class="om-box">
+            <div class="om-head">
+                <h3><i class="fa-solid fa-shield-halved"></i> Orientações de Segurança</h3>
+                <button class="om-close" onclick="document.getElementById('orientModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="om-video-wrap">
+                <video id="orientVideo" controls preload="metadata" poster="imagens/logo.png">
+                    <source src="orienta%C3%A7%C3%A3o/orienta%C3%A7%C3%A3o%20zeca.mp4" type="video/mp4">
+                    Seu navegador não suporta vídeos HTML5.
+                </video>
+            </div>
+            <div class="om-info">
+                <p>Assista ao vídeo de orientações da Defesa Civil de Mato Grosso. Saiba como agir antes, durante e depois de cada tipo de emergência.</p>
+            </div>
+            <div class="om-actions">
+                <a href="index.html" class="om-home"><i class="fa-solid fa-house"></i> Voltar ao Início</a>
+                <button class="om-close-btn" onclick="document.getElementById('orientModal').classList.remove('open')">Fechar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Pequena interação simulando clique nos cards de acesso rápido ou emergência
