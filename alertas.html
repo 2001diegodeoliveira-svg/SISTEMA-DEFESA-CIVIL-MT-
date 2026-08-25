@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alertas Ativos — Defesa Civil Mato Grosso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0b1329;
+            --bg-card: #101c3d;
+            --bg-card-hover: #172652;
+            --accent-orange: #f9631c;
+            --accent-orange-hover: #e05312;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { background-color: var(--bg-dark); color: var(--text-main); overflow-x: hidden; }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex; justify-content: flex-end; align-items: center; gap: 24px;
+            padding: 10px 5%; font-size: 13px; color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .top-bar a { color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color .2s; }
+        .top-bar a:hover { color: var(--text-main); }
+
+        /* Header */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%;
+            background: linear-gradient(180deg, rgba(11,19,41,.95) 0%, rgba(11,19,41,.8) 100%);
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { height: 50px; }
+        .logo-text h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+        .logo-text span { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+        nav ul { display: flex; list-style: none; gap: 30px; }
+        nav ul li a { text-decoration: none; color: var(--text-muted); font-size: 14px; font-weight: 500; transition: color .2s; position: relative; padding-bottom: 5px; }
+        nav ul li a:hover, nav ul li a.active { color: var(--text-main); }
+        nav ul li a.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background-color: var(--accent-orange); }
+        .emergency-btn {
+            background-color: var(--accent-orange); color: white; border: none;
+            padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 13px;
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            transition: background .2s, transform .2s; box-shadow: 0 4px 12px rgba(249,99,28,.3);
+        }
+        .emergency-btn:hover { background-color: var(--accent-orange-hover); transform: translateY(-1px); }
+
+        /* Cabeçalho da página */
+        .page-head { padding: 40px 5% 20px; background: radial-gradient(circle at 15% 0%, rgba(16,28,61,.9) 0%, rgba(11,19,41,1) 65%); }
+        .page-head h2 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+        .page-head p { color: var(--text-muted); font-size: 14px; max-width: 640px; line-height: 1.5; }
+
+        .stats-row { display: flex; gap: 14px; margin-top: 22px; flex-wrap: wrap; }
+        .stat-chip {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 12px 18px;
+        }
+        .stat-chip i { font-size: 16px; }
+        .stat-chip b { font-size: 18px; }
+        .stat-chip span { font-size: 11.5px; color: var(--text-muted); display: block; }
+
+        /* Filtros */
+        .filter-bar {
+            position: sticky; top: 81px; z-index: 900;
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+            padding: 16px 5%;
+            background: rgba(11,19,41,.95); backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .filter-btn {
+            background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted);
+            padding: 9px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 8px;
+        }
+        .filter-btn:hover { color: var(--text-main); border-color: rgba(255,255,255,.25); }
+        .filter-btn.active { background: var(--accent-orange); border-color: var(--accent-orange); color: #fff; }
+        .filter-btn .count {
+            background: rgba(0,0,0,.3); border-radius: 10px; font-size: 11px; padding: 1px 7px; font-weight: 700;
+        }
+        .search-mini { margin-left: auto; position: relative; }
+        .search-mini input {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 9px 14px 9px 36px; color: var(--text-main);
+            font-size: 13px; outline: none; width: 220px; transition: border .15s;
+        }
+        .search-mini input:focus { border-color: var(--accent-orange); }
+        .search-mini i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
+
+        /* Lista de alertas */
+        .alerts-container { padding: 26px 5% 60px; display: grid; gap: 16px; max-width: 1200px; }
+
+        .alert-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-left: 4px solid var(--nivel-cor, var(--accent-orange));
+            border-radius: 12px; overflow: hidden; transition: border-color .2s, transform .2s;
+        }
+        .alert-card:hover { border-color: rgba(255,255,255,.18); border-left-color: var(--nivel-cor); }
+
+        .alert-card .card-top { display: flex; align-items: center; gap: 16px; padding: 18px 20px; cursor: pointer; }
+        .nivel-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: color-mix(in srgb, var(--nivel-cor) 16%, transparent);
+            color: var(--nivel-cor); font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .6px;
+            padding: 5px 11px; border-radius: 5px; flex-shrink: 0;
+        }
+        .tipo-icon {
+            width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+            background: rgba(255,255,255,.05); color: var(--nivel-cor);
+            display: flex; align-items: center; justify-content: center; font-size: 17px;
+        }
+        .alert-summary { flex: 1; min-width: 0; }
+        .alert-summary h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+        .alert-summary .meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 5px; }
+        .alert-summary .meta i { font-size: 10.5px; margin-right: 4px; }
+        .alert-summary p { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+        .expand-icon { color: var(--text-muted); transition: transform .25s; flex-shrink: 0; }
+        .alert-card.open .expand-icon { transform: rotate(180deg); }
+
+        .alert-details { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+        .alert-card.open .alert-details { max-height: 600px; }
+        .details-inner { padding: 0 20px 20px 78px; }
+        .details-inner h4 {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); margin: 14px 0 8px;
+        }
+        .details-inner .desc { font-size: 13.5px; line-height: 1.6; color: #cbd5e1; }
+        .areas-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .area-tag {
+            background: rgba(255,255,255,.05); border: 1px solid var(--border-color);
+            border-radius: 5px; padding: 5px 10px; font-size: 12px; color: #cbd5e1;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .area-tag i { color: var(--nivel-cor); font-size: 10px; }
+        .orient-list { list-style: none; display: grid; gap: 8px; }
+        .orient-list li { font-size: 13px; color: #cbd5e1; display: flex; gap: 10px; line-height: 1.5; }
+        .orient-list li i { color: var(--green-ok, #34d399); margin-top: 3px; font-size: 11px; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 10px; }
+        .validade { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+        .btn-map {
+            background: transparent; border: 1px solid rgba(56,189,248,.4); color: #38bdf8;
+            padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+            cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+            transition: background .15s;
+        }
+        .btn-map:hover { background: rgba(56,189,248,.1); }
+
+        .empty-state { text-align: center; padding: 70px 20px; color: var(--text-muted); grid-column: 1 / -1; }
+        .empty-state i { font-size: 40px; margin-bottom: 16px; opacity: .4; }
+        .empty-state p { font-size: 14px; }
+
+        /* Rodapé */
+        footer {
+            background-color: #070d1d; border-top: 1px solid var(--border-color);
+            padding: 30px 5%; display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 16px;
+        }
+        .footer-social { display: flex; align-items: center; gap: 15px; }
+        .footer-social a {
+            color: white; background-color: rgba(255,255,255,.05); width: 32px; height: 32px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            text-decoration: none; transition: background .2s;
+        }
+        .footer-social a:hover { background-color: var(--accent-orange); }
+
+        @media (max-width: 1024px) {
+            nav ul { display: none; }
+            .details-inner { padding-left: 20px; }
+            .search-mini { margin-left: 0; width: 100%; }
+            .search-mini input { width: 100%; }
+            .filter-bar { top: 76px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a href="#"><i class="fa-solid fa-universal-access"></i> Acessibilidade</a>
+        <a href="#"><i class="fa-solid fa-eye"></i> Transparência</a>
+        <a href="#"><i class="fa-solid fa-search"></i> Pesquisar</a>
+    </div>
+
+    <header>
+        <div class="logo-area">
+            <img src="imagens/logo.png" alt="Defesa Civil MT">
+            <div class="logo-text">
+                <h1>DEFESA CIVIL</h1>
+                <span>ESTADO DE MATO GROSSO</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li><a href="mapa.html">Mapa</a></li>
+                <li><a href="alertas.html" class="active">Alertas</a></li>
+                <li><a href="#">Orientações</a></li>
+                <li><a href="#">Notícias</a></li>
+                <li><a href="#">Sobre</a></li>
+                <li><a href="#">Contato</a></li>
+            </ul>
+        </nav>
+
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div id="userArea"></div>
+            <button class="emergency-btn">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                EMERGÊNCIA LIGUE 199
+            </button>
+        </div>
+    </header>
+
+    <!-- Cabeçalho -->
+    <section class="page-head">
+        <h2>ALERTAS ATIVOS</h2>
+        <p>Acompanhe os alertas e avisos emitidos pela Defesa Civil de Mato Grosso.
+           Clique em um alerta para ver áreas afetadas e orientações à população.</p>
+
+        <div class="stats-row">
+            <div class="stat-chip" style="--chip:#ef4444;">
+                <i class="fa-solid fa-tower-broadcast" style="color:#ef4444;"></i>
+                <div><b id="stEmergencia">0</b><span>Emergências</span></div>
+            </div>
+            <div class="stat-chip">
+                <i class="fa-solid fa-circle-exclamation" style="color:var(--accent-orange);"></i>
+                <div><b id="stAlerta">0</b><span>Alertas</span></div>
+            </div>
+            <div class="stat-chip">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#eab308;"></i>
+                <div><b id="stAtencao">0</b><span>Atenções</span></div>
+            </div>
+            <div class="stat-chip">
+                <i class="fa-solid fa-city" style="color:#38bdf8;"></i>
+                <div><b id="stMunicipios">0</b><span>Municípios afetados</span></div>
+            </div>
+            <div class="stat-chip">
+                <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
+                <div><b id="stUpdate">--:--</b><span>Última atualização</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filtros -->
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="todos">Todos <span class="count" id="cTodos">0</span></button>
+        <button class="filter-btn" data-filter="emergencia"><i class="fa-solid fa-tower-broadcast"></i> Emergência <span class="count" id="cEmergencia">0</span></button>
+        <button class="filter-btn" data-filter="alerta"><i class="fa-solid fa-circle-exclamation"></i> Alerta <span class="count" id="cAlerta">0</span></button>
+        <button class="filter-btn" data-filter="atencao"><i class="fa-solid fa-triangle-exclamation"></i> Atenção <span class="count" id="cAtencao">0</span></button>
+        <div class="search-mini">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="buscaMunicipio" placeholder="Filtrar por município...">
+        </div>
+    </div>
+
+    <!-- Lista -->
+    <div class="alerts-container" id="alertsContainer"></div>
+
+    <footer>
+        <div>
+            <strong>DEFESA CIVIL DO ESTADO DE MATO GROSSO</strong><br>
+            Todos os direitos reservados © 2026
+        </div>
+        <div class="footer-social">
+            <span>Siga nossas redes</span>
+            <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        let filtroAtual = 'todos';
+        const container = document.getElementById('alertsContainer');
+
+        function fmtData(iso) {
+            return new Date(iso).toLocaleString('pt-BR', {
+                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+            }).replace('.', '');
+        }
+
+        function renderStats() {
+            const count = n => ALERTAS_ATIVOS.filter(a => a.nivel === n).length;
+            document.getElementById('stEmergencia').textContent = count('emergencia');
+            document.getElementById('stAlerta').textContent = count('alerta');
+            document.getElementById('stAtencao').textContent = count('atencao');
+            document.getElementById('stMunicipios').textContent =
+                new Set(ALERTAS_ATIVOS.map(a => a.municipio)).size;
+            document.getElementById('stUpdate').textContent =
+                new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            document.getElementById('cTodos').textContent = ALERTAS_ATIVOS.length;
+            ['emergencia', 'alerta', 'atencao'].forEach(n => {
+                document.getElementById('c' + n.charAt(0).toUpperCase() + n.slice(1)).textContent = count(n);
+            });
+        }
+
+        function renderAlerts() {
+            const busca = document.getElementById('buscaMunicipio').value.trim().toLowerCase();
+            container.innerHTML = '';
+
+            const filtrados = [...ALERTAS_ATIVOS]
+                .sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel])
+                .filter(a => filtroAtual === 'todos' || a.nivel === filtroAtual)
+                .filter(a => !busca || a.municipio.toLowerCase().includes(busca));
+
+            if (!filtrados.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-regular fa-bell-slash"></i>
+                        <p>Nenhum alerta encontrado com os filtros atuais.</p>
+                    </div>`;
+                return;
+            }
+
+            filtrados.forEach(al => {
+                const nivel = NIVEIS[al.nivel];
+                const tipo = TIPOS[al.tipo];
+                const card = document.createElement('article');
+                card.className = 'alert-card';
+                card.id = al.id;
+                card.style.setProperty('--nivel-cor', nivel.cor);
+
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="tipo-icon"><i class="fa-solid ${tipo.icone}"></i></div>
+                        <div class="alert-summary">
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
+                                <span class="nivel-badge"><i class="fa-solid ${nivel.icone}"></i>${nivel.label}</span>
+                                <strong style="font-size:13.5px;">${tipo.label}</strong>
+                            </div>
+                            <h3>${al.municipio}</h3>
+                            <div class="meta">
+                                <span><i class="fa-regular fa-clock"></i>Emitido ${fmtData(al.emitidoEm)}</span>
+                                <span><i class="fa-solid fa-map-pin"></i>${al.areasAfetadas.length} área(s) afetada(s)</span>
+                            </div>
+                            <p>${al.resumo}</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-down expand-icon"></i>
+                    </div>
+                    <div class="alert-details">
+                        <div class="details-inner">
+                            <h4>Descrição técnica</h4>
+                            <p class="desc">${al.descricao}</p>
+                            <h4>Áreas afetadas</h4>
+                            <div class="areas-list">
+                                ${al.areasAfetadas.map(ar => `<span class="area-tag"><i class="fa-solid fa-location-dot"></i>${ar}</span>`).join('')}
+                            </div>
+                            <h4>Orientações à população</h4>
+                            <ul class="orient-list">
+                                ${al.orientacoes.map(o => `<li><i class="fa-solid fa-circle-check"></i><span>${o}</span></li>`).join('')}
+                            </ul>
+                            <div class="card-footer">
+                                <span class="validade"><i class="fa-regular fa-calendar-xmark"></i> Vigente até ${fmtData(al.validoAte)}</span>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    ${(TIPO_FONTES[al.tipo] || []).map(f => `
+                                        <a class="btn-map" href="${f.url}" target="_blank" rel="noopener" title="Fonte oficial (proposta, item 6)">
+                                            <i class="fa-solid fa-up-right-from-square"></i> ${f.nome}
+                                        </a>`).join('')}
+                                    <a class="btn-map" href="mapa.html"><i class="fa-solid fa-map-location-dot"></i> Ver no mapa</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                card.querySelector('.card-top').addEventListener('click', () => card.classList.toggle('open'));
+                container.appendChild(card);
+            });
+        }
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                filtroAtual = btn.dataset.filter;
+                renderAlerts();
+            });
+        });
+
+        document.getElementById('buscaMunicipio').addEventListener('input', renderAlerts);
+
+        document.querySelector('.emergency-btn').addEventListener('click', () => {
+            alert('Ligando para a central de emergência da Defesa Civil: 199');
+        });
+
+        renderStats();
+        renderAlerts();
+
+        // Deep link: abre automaticamente o alerta indicado na URL (#AL-2026-XXXX)
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            const target = document.getElementById(hash);
+            if (target) {
+                setTimeout(() => {
+                    target.classList.add('open');
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            }
+        }
+    </script>
+</body>
+</html>

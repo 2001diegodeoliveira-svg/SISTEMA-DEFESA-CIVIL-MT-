@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defesa Civil - Estado de Mato Grosso</title>
+    <!-- Google Fonts & FontAwesome para ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0b1329;
+            --bg-card: #101c3d;
+            --bg-card-hover: #172652;
+            --accent-orange: #f9631c;
+            --accent-orange-hover: #e05312;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --blue-glow: #00d2ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 24px;
+            padding: 10px 5%;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .top-bar a {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .top-bar a:hover {
+            color: var(--text-main);
+        }
+
+        /* Header / Navbar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background: linear-gradient(180deg, rgba(11, 19, 41, 0.95) 0%, rgba(11, 19, 41, 0.8) 100%);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-area img {
+            height: 50px;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+            position: relative;
+            padding-bottom: 5px;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            color: var(--text-main);
+        }
+
+        nav ul li a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent-orange);
+        }
+
+        .emergency-btn {
+            background-color: var(--accent-orange);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            box-shadow: 0 4px 12px rgba(249, 99, 28, 0.3);
+        }
+
+        .emergency-btn:hover {
+            background-color: var(--accent-orange-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 40px 5%;
+            align-items: center;
+            position: relative;
+            min-height: 500px;
+            background: radial-gradient(circle at 70% 40%, rgba(16, 28, 61, 0.8) 0%, rgba(11, 19, 41, 1) 70%);
+        }
+
+        .hero-content h2 {
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .hero-content h2 span {
+            color: var(--accent-orange);
+        }
+
+        .hero-content p {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            max-width: 450px;
+        }
+
+        .hero-action {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .btn-main-alert {
+            background-color: var(--accent-orange);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(249, 99, 28, 0.4);
+            transition: background 0.2s;
+        }
+
+        .btn-main-alert:hover {
+            background-color: var(--accent-orange-hover);
+        }
+
+        .hero-subinfo {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hero-map-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ===== Hero: mapa de MT animado ===== */
+        .map-frame {
+            position: relative;
+            width: 100%; max-width: 480px; height: 440px;
+            border-radius: 16px;
+            background: radial-gradient(circle at 62% 32%, rgba(16,28,61,.9) 0%, #070d1d 72%);
+            border: 1px solid rgba(56,189,248,.18);
+            box-shadow: 0 10px 34px rgba(0,210,255,.12), 0 18px 50px rgba(0,0,0,.55);
+            overflow: hidden;
+        }
+        .float-orb {
+            position: absolute; border-radius: 50%;
+            filter: blur(48px); opacity: .5; pointer-events: none;
+            animation: floaty 11s ease-in-out infinite alternate;
+        }
+        .orb1 { width: 200px; height: 200px; background: rgba(249,99,28,.30); top: -46px; right: -34px; }
+        .orb2 { width: 160px; height: 160px; background: rgba(0,210,255,.22); bottom: -36px; left: -28px; animation-delay: -5s; }
+        @keyframes floaty { from { transform: translateY(-10px); } to { transform: translateY(12px); } }
+
+        #mtMapSvg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+        .mt-path {
+            fill: rgba(56,189,248,.05);
+            fill-opacity: 0;
+            stroke: #38bdf8; stroke-width: 2; stroke-linejoin: round;
+            filter: drop-shadow(0 0 10px rgba(56,189,248,.35));
+            transition: fill-opacity 1s ease .9s;
+        }
+        .mt-path.drawn { fill-opacity: 1; }
+
+        .sweep-rot { animation: sweepRot 9s linear infinite; }
+        @keyframes sweepRot { to { transform: rotate(360deg); } }
+
+        .station-dot { cursor: pointer; animation: popIn .55s cubic-bezier(.2,1.4,.4,1) both; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+        .station-dot .core { transition: r .15s ease; }
+        .station-dot:hover .core { r: 7.5; }
+        .pring {
+            fill: none; stroke-width: 1.6;
+            transform-box: fill-box; transform-origin: center;
+            animation: ping 1.9s cubic-bezier(.2,.6,.4,1) infinite;
+        }
+        @keyframes ping { 0% { transform: scale(.45); opacity: .95; } 100% { transform: scale(2.6); opacity: 0; } }
+
+        .live-chip {
+            position: absolute; top: 14px; left: 14px; z-index: 5;
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(11,19,41,.88); backdrop-filter: blur(6px);
+            border: 1px solid rgba(239,68,68,.5); border-radius: 7px;
+            padding: 7px 12px; font-size: 10.5px; font-weight: 700; letter-spacing: .9px;
+        }
+        .red-dot { animation: blinkDot 1.4s ease-in-out infinite; }
+        @keyframes blinkDot { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+        #mapTip {
+            position: absolute; z-index: 9; pointer-events: none;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 7px; padding: 7px 11px; font-size: 11px;
+            white-space: nowrap; opacity: 0; transition: opacity .12s;
+            box-shadow: 0 8px 20px rgba(0,0,0,.5);
+        }
+        #mapTip.show { opacity: 1; }
+        #mapTip b { display: block; font-size: 11px; margin-bottom: 2px; }
+        #mapTip span { color: var(--text-muted); font-size: 10px; }
+
+        .hm-open {
+            position: absolute; top: 14px; right: 14px; z-index: 5;
+            background: rgba(11,19,41,.9); backdrop-filter: blur(6px);
+            border: 1px solid rgba(249,99,28,.5); color: #fff;
+            font-size: 11.5px; font-weight: 700; padding: 8px 13px; border-radius: 7px;
+            text-decoration: none; display: flex; align-items: center; gap: 7px;
+            box-shadow: 0 6px 18px rgba(0,0,0,.45); transition: all .15s;
+        }
+        .hm-open:hover { background: var(--accent-orange); }
+        .hm-badge {
+            position: absolute; bottom: 12px; left: 12px; z-index: 5;
+            background: rgba(11,19,41,.88); backdrop-filter: blur(6px);
+            border: 1px solid var(--border-color); border-radius: 7px;
+            padding: 7px 11px; font-size: 10.5px; color: var(--text-muted);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .hm-badge b { color: var(--text-main); }
+
+        /* ===== Animações globais da home ===== */
+        .hero-content h2 span {
+            background: linear-gradient(90deg, var(--accent-orange) 20%, #ffb08a 50%, var(--accent-orange) 80%);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 5s linear infinite;
+        }
+        @keyframes shimmer { to { background-position: 200% center; } }
+
+        .hero-stats { display: flex; gap: 28px; margin-top: 28px; flex-wrap: wrap; }
+        .hstat b { font-size: 24px; font-weight: 800; color: var(--text-main); display: block; line-height: 1; }
+        .hstat span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; display: block; margin-top: 5px; }
+        .hstat:nth-child(2) b { color: var(--accent-orange); }
+        .hstat:nth-child(3) b { color: var(--blue-glow); }
+
+        .emergency-btn { animation: glowPulse 2.6s ease-in-out infinite; }
+        @keyframes glowPulse {
+            0%,100% { box-shadow: 0 4px 12px rgba(249,99,28,.3); }
+            50%     { box-shadow: 0 4px 26px rgba(249,99,28,.55); }
+        }
+
+        .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+        .reveal.in { opacity: 1; transform: none; }
+
+        /* Alertas Ativos Sidebar embutida no Hero */
+        .alerts-sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .alerts-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .red-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        .alert-card {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .alert-card:hover {
+            background-color: var(--bg-card-hover);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .alert-info h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            margin-bottom: 3px;
+        }
+
+        .alert-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .alert-card i {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .view-all-alerts {
+            display: block;
+            text-align: right;
+            font-size: 12px;
+            color: #38bdf8;
+            text-decoration: none;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .hero-grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 30px;
+            align-items: center;
+            padding: 0 5% 40px 5%;
+        }
+
+        /* Atalhos Rápidos (Cards Inferiores ao Hero) */
+        .quick-access {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            padding: 0 5%;
+            margin-bottom: 40px;
+        }
+
+        .quick-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .quick-card:hover {
+            background-color: var(--bg-card-hover);
+            transform: translateY(-3px);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .quick-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            font-size: 16px;
+        }
+
+        .quick-content h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 5px;
+        }
+
+        .quick-content p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Seção Inferior: Notícias e Monitoramento */
+        .bottom-sections {
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr;
+            gap: 30px;
+            padding: 0 5% 60px 5%;
+        }
+
+        .section-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border-left: 3px solid var(--accent-orange);
+            padding-left: 10px;
+        }
+
+        .section-title a {
+            color: #38bdf8;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Notícias */
+        .main-news-card {
+            background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%), url('https://images.unsplash.com/photo-1542361345-89e58247f2d5?auto=format&fit=crop&w=600&q=80') center/cover;
+            border-radius: 8px;
+            height: 220px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .badge-destaque {
+            background-color: var(--accent-orange);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            align-self: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .main-news-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .main-news-card p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .news-item-small {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .news-item-small img {
+            width: 90px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .news-info span {
+            font-size: 11px;
+            color: var(--accent-orange);
+            font-weight: 600;
+        }
+
+        .news-info h5 {
+            font-size: 12px;
+            color: var(--text-main);
+            margin: 2px 0;
+            font-weight: 600;
+        }
+
+        .news-info a {
+            font-size: 11px;
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        /* Monitoramento em Tempo Real */
+        .monitoring-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background-color: rgba(11, 19, 41, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+        }
+
+        .metric-card i {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: var(--accent-orange);
+        }
+
+        .metric-card .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .metric-card .label {
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.1;
+        }
+
+        /* Rodapé */
+        footer {
+            background-color: #070d1d;
+            border-top: 1px solid var(--border-color);
+            padding: 30px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer-social {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .footer-social a {
+            color: white;
+            background-color: rgba(255,255,255,0.05);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .footer-social a:hover {
+            background-color: var(--accent-orange);
+        }
+
+        .footer-apps {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .footer-apps img {
+            height: 30px;
+        }
+
+        .footer-gov {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-gov img {
+            height: 35px;
+        }
+
+        /* Responsividade básica */
+        @media (max-width: 1024px) {
+            .hero-grid-layout {
+                grid-template-columns: 1fr;
+            }
+            .map-frame {
+                height: 370px;
+                max-width: none;
+            }
+            .quick-access {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .bottom-sections {
+                grid-template-columns: 1fr;
+            }
+            nav ul {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra Superior -->
+    <div class="top-bar">
+        <a href="#"><i class="fa-solid fa-universal-access"></i> Acessibilidade</a>
+        <a href="#"><i class="fa-solid fa-eye"></i> Transparência</a>
+        <a href="#"><i class="fa-solid fa-search"></i> Pesquisar</a>
+    </div>
+
+    <!-- Cabeçalho Principal -->
+    <header>
+        <div class="logo-area">
+            <img src="imagens/logo.png" alt="Defesa Civil MT" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+            <div class="logo-text">
+                <h1>DEFESA CIVIL</h1>
+                <span>ESTADO DE MATO GROSSO</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="#" class="active">Início</a></li>
+                <li><a href="mapa.html">Mapa</a></li>
+                <li><a href="alertas.html">Alertas</a></li>
+                <li><a href="mapa.html">Monitoramento</a></li>
+                <li><a href="#">Orientações</a></li>
+                <li><a href="#">Notícias</a></li>
+                <li><a href="#">Sobre</a></li>
+                <li><a href="#">Contato</a></li>
+            </ul>
+        </nav>
+
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div id="userArea"></div>
+            <button class="emergency-btn">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                EMERGÊNCIA LIGUE 199
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero / Seção Principal -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>PROTEGER VIDAS,<br><span>PRESERVAR O FUTURO.</span></h2>
+            <p>Painel geoespacial integrado para monitoramento, análise situacional e apoio à decisão da Defesa Civil de Mato Grosso.</p>
+
+            <div class="hero-action">
+                <a href="alertas.html" class="btn-main-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i> Ver Alertas Ativos
+                </a>
+                <span class="hero-subinfo"><i class="fa-regular fa-clock"></i> Monitoramento 24h por dia, 7 dias por semana</span>
+            </div>
+
+            <div class="hero-stats">
+                <div class="hstat"><b data-cup="141">0</b><span>Municípios monitorados</span></div>
+                <div class="hstat"><b id="hsAlertas">0</b><span>Alertas ativos agora</span></div>
+                <div class="hstat"><b id="hsEstacoes">0</b><span>Estações na rede</span></div>
+            </div>
+        </div>
+
+        <div class="hero-map-container" style="justify-self: center;">
+            <div class="map-frame">
+                <div class="float-orb orb1"></div>
+                <div class="float-orb orb2"></div>
+
+                <svg id="mtMapSvg" viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa de Mato Grosso"></svg>
+
+                <div class="live-chip"><span class="red-dot"></span> AO VIVO · MT</div>
+                <a class="hm-open" href="mapa.html">Mapa completo <i class="fa-solid fa-up-right-from-square"></i></a>
+                <div id="mapTip"></div>
+                <div class="hm-badge">
+                    <span class="red-dot"></span> <b id="hmCritical">—</b>&nbsp;estações em estado crítico
+                    · atualizado <span id="hmTime">—</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Alertas Ativos (painel lateral do hero) -->
+    <div class="hero-grid-layout">
+        <div></div>
+        <aside class="alerts-sidebar" id="homeAlertsSidebar">
+            <div class="alerts-header">
+                <span class="red-dot"></span> ALERTAS ATIVOS AGORA
+            </div>
+            <div id="homeAlertsList"></div>
+            <a href="alertas.html" class="view-all-alerts">Ver todos os alertas &rarr;</a>
+        </aside>
+    </div>
+
+    <!-- Cards de Acesso Rápido -->
+    <div class="quick-access">
+        <a href="alertas.html" class="quick-card">
+            <div class="quick-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div class="quick-content">
+                <h3>Alertas e Avisos</h3>
+                <p>Acompanhe os alertas e avisos da sua região</p>
+            </div>
+        </a>
+        <a href="mapa.html" class="quick-card">
+            <div class="quick-icon"><i class="fa-solid fa-cloud-rain"></i></div>
+            <div class="quick-content">
+                <h3>Monitoramento</h3>
+                <p>Acompanhe em tempo real as condições do tempo</p>
+            </div>
+        </a>
+        <a href="#" class="quick-card">
+            <div class="quick-icon"><i class="fa-solid fa-file-shield"></i></div>
+            <div class="quick-content">
+                <h3>Orientações</h3>
+                <p>Saiba como se prevenir e o que fazer em casos de emergência</p>
+            </div>
+        </a>
+        <a href="#" class="quick-card">
+            <div class="quick-icon"><i class="fa-solid fa-phone-volume"></i></div>
+            <div class="quick-content">
+                <h3>Emergência</h3>
+                <p>Em situação de risco, ligue 199 ou envie sua localização</p>
+            </div>
+        </a>
+        <a href="#" class="quick-card">
+            <div class="quick-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="quick-content">
+                <h3>Seja Voluntário</h3>
+                <p>Faça parte da rede de voluntários da Defesa Civil</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- Seção de Notícias e Monitoramento em Tempo Real -->
+    <div class="bottom-sections">
+        
+        <!-- Notícias e Comunicados -->
+        <div class="section-box">
+            <div class="section-title">
+                <span>NOTÍCIAS E COMUNICADOS</span>
+            </div>
+
+            <div class="main-news-card">
+                <span class="badge-destaque">DESTAQUE</span>
+                <h4>Defesa Civil combate incêndios florestais em várias regiões do estado</h4>
+                <p>Ações integradas continuam para proteger o meio ambiente e as comunidades.</p>
+            </div>
+
+            <div class="news-item-small">
+                <img src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=200&q=80" alt="Notícia 1">
+                <div class="news-info">
+                    <span>15 MAI 2024</span>
+                    <h5>Chuvas intensas exigem atenção em todo o estado</h5>
+                    <a href="#">Leia mais &rarr;</a>
+                </div>
+            </div>
+
+            <div class="news-item-small">
+                <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=200&q=80" alt="Notícia 2">
+                <div class="news-info">
+                    <span>14 MAI 2024</span>
+                    <h5>Defesa Civil realiza treinamento em Nova Mutum</h5>
+                    <a href="#">Leia mais &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoramento em Tempo Real -->
+        <div class="section-box">
+            <div class="section-title">
+                <span>MONITORAMENTO EM TEMPO REAL</span>
+                <a href="mapa.html">Ver mapa completo &rarr;</a>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 20px; text-align: center;">
+                <div class="monitoring-metrics">
+                    <div class="metric-card">
+                        <i class="fa-solid fa-fire" style="color: #f9631c;"></i>
+                        <div class="value">125</div>
+                        <div class="label">Focos de Calor últimas 24h</div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fa-solid fa-cloud-rain" style="color: #38bdf8;"></i>
+                        <div class="value">18.6mm</div>
+                        <div class="label">Chuva Acumulada nas últimas 24h</div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fa-solid fa-water" style="color: #34d399;"></i>
+                        <div class="value">6</div>
+                        <div class="label">Rios em Alerta monitoramento</div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fa-solid fa-city" style="color: #fbbf24;"></i>
+                        <div class="value">141</div>
+                        <div class="label">Municípios monitorados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Fontes oficiais de dados (proposta técnica, item 6) -->
+    <section style="padding: 0 5% 40px;">
+        <div class="section-box">
+            <div class="section-title" style="margin-bottom: 16px;">
+                <span>FONTES OFICIAIS DE DADOS</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px; max-width: 760px; line-height: 1.55;">
+                O painel integra dados públicos e oficiais mantendo a atribuição de origem de cada camada.
+                Quando não há serviço web compatível, o acesso é direcionado ao portal oficial.
+            </p>
+            <div id="portaisStrip" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px;"></div>
+        </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer>
+        <div>
+            <strong>DEFESA CIVIL DO ESTADO DE MATO GROSSO</strong><br>
+            Todos os direitos reservados © 2026
+        </div>
+        <div class="footer-social">
+            <span>Siga nossas redes</span>
+            <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+        <div class="footer-apps">
+            <span style="font-size: 11px;">Aplicativo Defesa Civil MT</span>
+            <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="App Store">
+            <img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_svg.svg" alt="Google Play">
+        </div>
+        <div class="footer-gov">
+            <img src="imagens/logo.png" alt="Governo MT">
+            <div>
+                <span style="font-size: 10px; display:block; color: var(--text-muted);">Governo de</span>
+                <strong style="font-size: 13px;">Mato Grosso</strong>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Pequena interação simulando clique nos cards de acesso rápido ou emergência
+        document.querySelector('.emergency-btn').addEventListener('click', () => {
+            alert('Ligando para a central de emergência da Defesa Civil: 199');
+        });
+    </script>
+
+    <!-- Painel de alertas ativos no hero -->
+    <script src="js/data.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        (function renderHomeAlerts() {
+            const list = document.getElementById('homeAlertsList');
+            if (!list) return;
+            const top = [...ALERTAS_ATIVOS]
+                .sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel])
+                .slice(0, 3);
+
+            list.innerHTML = top.map(al => `
+                <a href="alertas.html#${al.id}" class="alert-card" style="text-decoration:none;">
+                    <div class="alert-info">
+                        <h4><i class="fa-solid ${NIVEIS[al.nivel].icone}" style="color:${NIVEIS[al.nivel].cor};"></i>
+                            ${NIVEIS[al.nivel].label.toUpperCase()} — ${al.municipio}</h4>
+                        <p>${TIPOS[al.tipo].label} · ${al.resumo.length > 52 ? al.resumo.slice(0, 52) + '…' : al.resumo}</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>`).join('');
+
+            // Badge dinâmico no botão do hero
+            const total = ALERTAS_ATIVOS.filter(a => a.nivel !== 'atencao').length;
+            const btn = document.querySelector('.btn-main-alert');
+            if (btn && total > 0) {
+                btn.insertAdjacentHTML('beforeend',
+                    `<span style="background:rgba(0,0,0,.25);border-radius:12px;padding:2px 9px;font-size:12px;">${total}</span>`);
+            }
+        })();
+
+        // Faixa de fontes oficiais
+        (function renderPortais() {
+            const strip = document.getElementById('portaisStrip');
+            if (!strip) return;
+            strip.innerHTML = PORTAIS_OFICIAIS.map(p => `
+                <a href="${p.url}" target="_blank" rel="noopener"
+                   style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px;text-decoration:none;transition:all .2s;"
+                   onmouseover="this.style.borderColor='rgba(249,99,28,.5)'"
+                   onmouseout="this.style.borderColor='var(--border-color)'">
+                    <i class="fa-solid fa-up-right-from-square" style="color:#38bdf8;font-size:12px;"></i>
+                    <div>
+                        <div style="font-size:12.5px;font-weight:600;color:var(--text-main);">${p.nome}</div>
+                        <div style="font-size:10.5px;color:var(--text-muted);">${p.uso}</div>
+                    </div>
+                </a>`).join('');
+        })();
+
+        // ===== Mapa de Mato Grosso animado (SVG a partir da malha oficial IBGE) =====
+        function countUpEl(el, to, dec = 0, suffix = '', dur = 1300) {
+            const t0 = performance.now();
+            (function step(t) {
+                const p = Math.min(1, (t - t0) / dur);
+                const v = to * (1 - Math.pow(1 - p, 3));
+                el.textContent = v.toFixed(dec).replace('.', ',') + suffix;
+                if (p < 1) requestAnimationFrame(step);
+            })(t0);
+        }
+
+        (function heroMT() {
+            const svg = document.getElementById('mtMapSvg');
+            const tip = document.getElementById('mapTip');
+            if (!svg) return;
+            const NS = 'http://www.w3.org/2000/svg';
+            const W = 520, H = 480, P = 36;
+
+            fetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima')
+                .then(r => r.json())
+                .then(gj => {
+                    // Anel externo do polígono do estado
+                    const geom = gj.features[0].geometry;
+                    const rings = geom.type === 'Polygon' ? [geom.coordinates[0]] : geom.coordinates.map(p => p[0]);
+                    let minLng = 1e9, maxLng = -1e9, minLat = 1e9, maxLat = -1e9;
+                    rings.forEach(r => r.forEach(([lng, lat]) => {
+                        if (lng < minLng) minLng = lng; if (lng > maxLng) maxLng = lng;
+                        if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+                    }));
+                    const dLng = maxLng - minLng, dLat = maxLat - minLat;
+                    const k = Math.min((W - 2 * P) / dLng, (H - 2 * P) / dLat);
+                    const ox = P + ((W - 2 * P) - dLng * k) / 2;
+                    const oy = P + ((H - 2 * P) - dLat * k) / 2;
+                    const px = lng => ox + (lng - minLng) * k;
+                    const py = lat => oy + (maxLat - lat) * k;
+
+                    // Contorno com animação de desenho
+                    const dPath = rings.map(r =>
+                        'M' + r.map(([lng, lat]) => px(lng).toFixed(1) + ',' + py(lat).toFixed(1)).join('L') + 'Z'
+                    ).join(' ');
+
+                    const clip = document.createElementNS(NS, 'clipPath');
+                    clip.setAttribute('id', 'mtClip');
+                    const cp = document.createElementNS(NS, 'path');
+                    cp.setAttribute('d', dPath);
+                    clip.appendChild(cp);
+                    svg.appendChild(clip);
+
+                    const path = document.createElementNS(NS, 'path');
+                    path.setAttribute('d', dPath);
+                    path.setAttribute('class', 'mt-path');
+                    svg.appendChild(path);
+
+                    const L_ = path.getTotalLength();
+                    path.style.strokeDasharray = L_;
+                    path.style.strokeDashoffset = L_;
+                    requestAnimationFrame(() => {
+                        path.style.transition = 'stroke-dashoffset 1.8s ease-out, fill-opacity 1s ease .9s';
+                        path.style.strokeDashoffset = 0;
+                        setTimeout(() => path.classList.add('drawn'), 700);
+                    });
+
+                    // Varredura de radar recortada dentro do contorno
+                    const cx = ox + ((W - 2 * P) / 2), cy = oy + ((H - 2 * P) / 2);
+                    const R = Math.max(W, H);
+                    const sweepG = document.createElementNS(NS, 'g');
+                    sweepG.setAttribute('clip-path', 'url(#mtClip)');
+                    const rot = document.createElementNS(NS, 'g');
+                    rot.setAttribute('class', 'sweep-rot');
+                    rot.style.transformOrigin = `${cx}px ${cy}px`;
+                    const wedge = document.createElementNS(NS, 'path');
+                    wedge.setAttribute('d',
+                        `M${cx},${cy} L${cx + R},${cy} A${R},${R} 0 0 0 ${cx + R * Math.cos(-Math.PI / 5)},${cy + R * Math.sin(-Math.PI / 5)} Z`);
+                    wedge.setAttribute('fill', 'rgba(56,189,248,.10)');
+                    const edge = document.createElementNS(NS, 'line');
+                    edge.setAttribute('x1', cx); edge.setAttribute('y1', cy);
+                    edge.setAttribute('x2', cx + R); edge.setAttribute('y2', cy);
+                    edge.setAttribute('stroke', 'rgba(56,189,248,.4)');
+                    edge.setAttribute('stroke-width', '1.5');
+                    rot.appendChild(wedge); rot.appendChild(edge);
+                    sweepG.appendChild(rot);
+                    svg.appendChild(sweepG);
+
+                    // Marcadores das estações
+                    const critCor = { alerta: '#f9631c', emergencia: '#ef4444' };
+                    ESTACOES_DC.forEach((s, i) => {
+                        const { x, y } = (() => ({ x: px(s.lng), y: py(s.lat) }))();
+                        const g = document.createElementNS(NS, 'g');
+                        g.setAttribute('class', 'station-dot');
+                        g.style.animationDelay = (1.15 + i * 0.09) + 's';
+
+                        const isEmerg = s.status === 'Emergência';
+                        const isAlerta = s.status === 'Alerta';
+                        if (isEmerg || isAlerta) {
+                            const ring = document.createElementNS(NS, 'circle');
+                            ring.setAttribute('cx', x); ring.setAttribute('cy', y);
+                            ring.setAttribute('r', isEmerg ? 11 : 8);
+                            ring.setAttribute('class', 'pring');
+                            ring.setAttribute('stroke', isEmerg ? '#ef4444' : '#f9631c');
+                            g.appendChild(ring);
+                        }
+                        const core = document.createElementNS(NS, 'circle');
+                        core.setAttribute('cx', x); core.setAttribute('cy', y);
+                        core.setAttribute('r', isEmerg ? 6.2 : 4.6);
+                        core.setAttribute('fill', TIPO_ESTACAO[s.type]?.cor || '#38bdf8');
+                        core.setAttribute('stroke', '#fff');
+                        core.setAttribute('stroke-width', '1.3');
+                        core.setAttribute('class', 'core');
+                        g.appendChild(core);
+
+                        g.addEventListener('mouseenter', () => {
+                            tip.innerHTML = `<b>${s.name}</b><span>${s.city} · ${s.val} — ${s.status}</span>`;
+                            tip.classList.add('show');
+                        });
+                        g.addEventListener('mousemove', e => {
+                            const rect = svg.closest('.map-frame').getBoundingClientRect();
+                            let tx = e.clientX - rect.left + 14, ty = e.clientY - rect.top - 34;
+                            tx = Math.min(tx, rect.width - 210);
+                            tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
+                        });
+                        g.addEventListener('mouseleave', () => tip.classList.remove('show'));
+                        g.addEventListener('click', () => location.href = `mapa.html#${s.lat},${s.lng},10`);
+                        svg.appendChild(g);
+                    });
+
+                    // Badges dinâmicos
+                    const criticas = ESTACOES_DC.filter(s => s.status === 'Alerta' || s.status === 'Emergência').length;
+                    document.getElementById('hmCritical').textContent = criticas;
+                    document.getElementById('hmTime').textContent =
+                        new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                })
+                .catch(() => {
+                    svg.outerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">Mapa indisponível no momento</div>';
+                });
+
+            // Contadores do hero
+            document.getElementById('hsEstacoes').dataset.to = ESTACOES_DC.length;
+            document.getElementById('hsAlertas').dataset.to = ALERTAS_ATIVOS.length;
+            document.querySelectorAll('[data-cup]').forEach(el => el.dataset.to = el.dataset.cup);
+        })();
+
+        // ===== Reveal on scroll + disparo dos contadores =====
+        (function revealInit() {
+            document.querySelectorAll('.quick-card, .section-box, .alerts-sidebar, .hero-stats')
+                .forEach((el, i) => {
+                    el.classList.add('reveal');
+                    el.style.transitionDelay = (i % 5) * 70 + 'ms';
+                });
+
+            const startCounters = root => {
+                root.querySelectorAll('b[data-to], .metric-card .value').forEach(el => {
+                    if (el.dataset.done) return;
+                    el.dataset.done = '1';
+                    const raw = (el.dataset.to ?? el.textContent).toString().trim();
+                    const mNum = raw.match(/^([\d]+(?:[.,]\d+)?)(.*)$/);
+                    if (!mNum) return;
+                    const to = parseFloat(mNum[1].replace(',', '.'));
+                    const suf = mNum[2] || '';
+                    const dec = mNum[1].includes(',') ? (mNum[1].split(',')[1] || '').length : (mNum[1].includes('.') ? mNum[1].split('.')[1].length : 0);
+                    countUpEl(el, to, dec, suf);
+                });
+            };
+
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(en => {
+                    if (!en.isIntersecting) return;
+                    en.target.classList.add('in');
+                    startCounters(en.target);
+                    io.unobserve(en.target);
+                });
+            }, { threshold: .18 });
+
+            document.querySelectorAll('.reveal, .monitoring-metrics').forEach(el => io.observe(el));
+        })();
+    </script>
+</body>
+</html>

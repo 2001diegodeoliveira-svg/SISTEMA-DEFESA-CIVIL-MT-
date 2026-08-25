@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Restrito — Defesa Civil Mato Grosso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0b1329;
+            --bg-card: #101c3d;
+            --bg-card-hover: #172652;
+            --accent-orange: #f9631c;
+            --accent-orange-hover: #e05312;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%;
+            background: linear-gradient(180deg, rgba(11,19,41,.95) 0%, rgba(11,19,41,.8) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: var(--text-main); }
+        .logo-area img { height: 50px; }
+        .logo-text h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+        .logo-text span { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+
+        main {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 50px 5%; position: relative;
+            background: radial-gradient(circle at 80% 20%, rgba(16,28,61,.9) 0%, var(--bg-dark) 60%);
+        }
+
+        .login-box { width: min(640px, 100%); }
+        .login-head { text-align: center; margin-bottom: 30px; }
+        .login-head h2 { font-size: 26px; font-weight: 800; }
+        .login-head p { color: var(--text-muted); font-size: 13px; margin-top: 8px; line-height: 1.5; }
+
+        .profiles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 22px; }
+        .profile-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 18px; cursor: pointer; transition: all .15s;
+            text-align: left;
+        }
+        .profile-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+        .profile-card.selected { border-color: var(--accent-orange); background: rgba(249,99,28,.08); }
+        .profile-card i { font-size: 20px; color: var(--text-muted); margin-bottom: 10px; display: block; }
+        .profile-card.selected i { color: var(--accent-orange); }
+        .profile-card b { font-size: 13.5px; display: block; margin-bottom: 4px; }
+        .profile-card span { font-size: 11px; color: var(--text-muted); line-height: 1.45; display: block; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .field label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); display: block; margin-bottom: 7px; font-weight: 600; }
+        .field input, .field select {
+            width: 100%; background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px 14px; color: var(--text-main);
+            font-size: 13.5px; outline: none; transition: border .15s;
+        }
+        .field select option { background: var(--bg-dark); }
+        .field input:focus, .field select:focus { border-color: var(--accent-orange); }
+
+        .btn-enter {
+            width: 100%; background: var(--accent-orange); border: none; color: #fff;
+            padding: 14px; border-radius: 8px; font-weight: 700; font-size: 14px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: background .2s; margin-top: 6px;
+        }
+        .btn-enter:hover { background: var(--accent-orange-hover); }
+
+        .demo-note {
+            margin-top: 18px; font-size: 10.5px; color: var(--text-muted);
+            border: 1px dashed var(--border-color); border-left: 3px solid var(--accent-orange);
+            border-radius: 8px; padding: 10px 14px; line-height: 1.55;
+        }
+
+        footer {
+            background-color: #070d1d; border-top: 1px solid var(--border-color);
+            padding: 22px 5%; font-size: 12px; color: var(--text-muted); text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            .profiles-grid, .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a class="logo-area" href="index.html">
+            <img src="imagens/logo.png" alt="Defesa Civil MT">
+            <div class="logo-text">
+                <h1>DEFESA CIVIL</h1>
+                <span>ESTADO DE MATO GROSSO</span>
+            </div>
+        </a>
+        <a href="index.html" style="color:var(--text-muted);font-size:12.5px;text-decoration:none;">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao início
+        </a>
+    </header>
+
+    <main>
+        <div class="login-box">
+            <div class="login-head">
+                <h2>ÁREA RESTRITA — PAINEL OPERACIONAL</h2>
+                <p>Selecione seu perfil de acesso conforme a estrutura da proposta técnica (item 9).
+                   Cada perfil define camadas, painéis e ações disponíveis.</p>
+            </div>
+
+            <div class="profiles-grid" id="perfisGrid"></div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label for="nomeInput">Nome do responsável</label>
+                    <input type="text" id="nomeInput" placeholder="Ex.: Maria Souza" autocomplete="off">
+                </div>
+                <div class="field" id="munField" style="display:none;">
+                    <label for="munSelect">Município de atuação</label>
+                    <select id="munSelect"><option value="">Carregando municípios...</option></select>
+                </div>
+            </div>
+
+            <button class="btn-enter" id="entrarBtn">
+                <i class="fa-solid fa-right-to-bracket"></i> ENTRAR NO PAINEL
+            </button>
+
+            <div class="demo-note">
+                <b>Ambiente de demonstração:</b> o controle de credenciais, autenticação segura,
+                auditoria e registro de ações será implementado no backend institucional.
+                Aqui a escolha de perfil apenas personaliza a sessão no navegador.
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <strong>DEFESA CIVIL DO ESTADO DE MATO GROSSO</strong> · Sistema conforme Proposta Técnica — Painel da Defesa Civil MT
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        let perfilSelecionado = null;
+
+        const grid = document.getElementById('perfisGrid');
+        Object.entries(PERFIS).forEach(([key, p]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'profile-card';
+            btn.dataset.perfil = key;
+            btn.innerHTML = `<i class="fa-solid ${p.icone}"></i><b>${p.label}</b><span>${p.desc}</span>`;
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
+                btn.classList.add('selected');
+                perfilSelecionado = key;
+                document.getElementById('munField').style.display = key === 'municipal' ? '' : 'none';
+            });
+            grid.appendChild(btn);
+        });
+
+        // Municípios para o perfil gestor municipal
+        fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios')
+            .then(r => r.json())
+            .then(list => {
+                const sel = document.getElementById('munSelect');
+                sel.innerHTML = '<option value="">Selecione o município...</option>' +
+                    list.map(m => `<option>${m.nome}</option>`).join('');
+            })
+            .catch(() => {
+                const sel = document.getElementById('munSelect');
+                sel.innerHTML = '<option value="">(lista indisponível — digite depois)</option>';
+            });
+
+        document.getElementById('entrarBtn').addEventListener('click', () => {
+            if (!perfilSelecionado) {
+                alert('Selecione um perfil de acesso.');
+                return;
+            }
+            if (perfilSelecionado === 'municipal' && !document.getElementById('munSelect').value) {
+                alert('Gestores municipais devem informar o município de atuação.');
+                return;
+            }
+            const sessao = {
+                perfil: perfilSelecionado,
+                nome: document.getElementById('nomeInput').value.trim(),
+                municipio: document.getElementById('munSelect').value || '',
+                em: new Date().toISOString(),
+            };
+            localStorage.setItem('dcmt_session', JSON.stringify(sessao));
+            location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
