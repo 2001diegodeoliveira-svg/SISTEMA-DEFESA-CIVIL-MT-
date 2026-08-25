@@ -47,7 +47,31 @@
         }
         .leaflet-popup-tip { background: var(--bg-card); }
         .leaflet-container { font-family: 'Inter', sans-serif; }
+
+        /* Municipality labels */
+        .mun-tooltip {
+            background: rgba(15,23,42,.88) !important;
+            border: 1px solid rgba(56,189,248,.25) !important;
+            color: #f1f5f9 !important;
+            font-size: 10px !important;
+            font-weight: 600 !important;
+            font-family: 'Inter', sans-serif !important;
+            padding: 3px 8px !important;
+            border-radius: 5px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,.4) !important;
+            letter-spacing: .3px !important;
+            white-space: nowrap !important;
+            pointer-events: none !important;
+        }
+        .mun-tooltip::before {
+            border-top-color: rgba(15,23,42,.88) !important;
+        }
         .leaflet-container.drawing { cursor: crosshair !important; }
+
+        /* MT state boundary glow */
+        .leaflet-overlay-pane svg path[stroke="#f9731c"] {
+            filter: drop-shadow(0 0 4px rgba(249,115,22,.35));
+        }
 
         /* ===== Barra superior ===== */
         #topbar {
@@ -1245,7 +1269,7 @@
             <div class="grad"></div>
             <div class="grad-lbls"><span>Fraca</span><span>Moderada</span><span>Forte</span></div>
         </div>
-        <div id="legMun" class="leg-row" style="display:none;"><span class="leg-swatch-line"></span> Limites municipais (IBGE)</div>
+        <div id="legMun" class="leg-row" style="display:none;"><span class="leg-swatch-line"></span> Municípios (IBGE)</div>
         <div id="legUc" class="leg-row" style="display:none;"><span class="leg-swatch-green"></span> Unidades de Conservação (CNUC)</div>
         <div id="legBarr" class="leg-row" style="display:none;">
             <span class="leg-swatch" style="background:#eab308;width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;"></span> Barragens SNISB
@@ -1651,18 +1675,34 @@ async function loadTerritorio() {
             '· carregado ' + ibgeLoadedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
         mtLayer = L.geoJSON(malhaMT, {
-            style: { color: '#f9631c', weight: 2.5, fill: false, dashArray: '1' },
+            style: {
+                color: '#f9731c', weight: 3, fill: true,
+                fillColor: '#f9731c', fillOpacity: 0.04,
+                dashArray: '', opacity: 0.9
+            },
             attribution: 'IBGE'
         }).addTo(map);
 
         munLayer = L.geoJSON(malhaMun, {
-            style: { color: '#38bdf8', weight: 1, opacity: .45, fillColor: '#38bdf8', fillOpacity: .03 },
+            style: {
+                color: '#38bdf8', weight: 0.8, opacity: .35,
+                fillColor: '#38bdf8', fillOpacity: .02
+            },
             attribution: 'IBGE',
             onEachFeature: (f, lyr) => {
                 const cod = String(f.properties.codarea);
                 const nome = nomeByCod[cod] || 'Município ' + cod;
-                lyr.on('mouseover', () => lyr.setStyle({ fillOpacity: .16, weight: 2 }));
-                lyr.on('mouseout', () => lyr.setStyle({ fillOpacity: .03, weight: 1 }));
+                lyr.bindTooltip(nome, {
+                    permanent: false, direction: 'center',
+                    className: 'mun-tooltip'
+                });
+                lyr.on('mouseover', () => {
+                    lyr.setStyle({ fillOpacity: .15, weight: 1.8, opacity: .7 });
+                    lyr.bringToFront();
+                });
+                lyr.on('mouseout', () => {
+                    munLayer.resetStyle(lyr);
+                });
                 lyr.on('click', () => {
                     const c = lyr.getBounds().getCenter();
                     centroidByCod[cod] = { lat: c.lat, lng: c.lng };
