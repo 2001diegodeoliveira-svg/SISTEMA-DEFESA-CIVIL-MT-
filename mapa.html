@@ -297,7 +297,7 @@
         .wind-arrow { display: inline-block; transition: transform .3s; }
 
         #ppHourly h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 18px 0 10px; }
-        #hourlyBars { display: flex; gap: 6px; align-items: flex-end; height: 86px; }
+        #hourlyBars { display: flex; flex-wrap: nowrap; gap: 6px; align-items: flex-end; height: 86px; overflow-x: auto; }
         .hbar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
         .hbar-val { font-size: 9px; color: var(--blue-glow); font-weight: 600; }
         .hbar { width: 60%; max-width: 22px; min-height: 2px; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--blue-glow), rgba(56,189,248,.35)); }
@@ -572,7 +572,7 @@
         .pp-detail-card .pdc-icon { font-size: 14px; margin-bottom: 2px; }
         .pp-detail-card .pdc-val { font-size: 13px; font-weight: 800; color: var(--text-main); }
         .pp-detail-card .pdc-lbl { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; }
-        .pp-hourly-row { display: flex; gap: 4px; margin-top: 8px; overflow-x: auto; padding-bottom: 4px; }
+        .pp-hourly-row { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 8px; overflow-x: auto; padding-bottom: 4px; }
         .pp-hourly-row::-webkit-scrollbar { height: 3px; }
         .pp-hourly-row::-webkit-scrollbar-thumb { background: var(--bg-card-hover); border-radius: 2px; }
         .pp-h-item {
