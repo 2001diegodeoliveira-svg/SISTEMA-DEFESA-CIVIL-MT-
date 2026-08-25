@@ -1580,7 +1580,7 @@ function updateWeatherLabel() {
     const lbl = document.getElementById('tlLabel');
     const timeEl = document.getElementById('tlTime');
     if (activeOverlay === 'none') {
-        lbl.textContent = 'Camada meteorológica desativada';
+        lbl.textContent = '';
         lbl.classList.remove('future');
         timeEl.innerHTML = `—<small id="tlDate"></small>`;
         return;
