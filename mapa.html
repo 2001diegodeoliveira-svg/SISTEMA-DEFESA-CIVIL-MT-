@@ -369,7 +369,7 @@
     <!-- Painel de camadas -->
     <aside id="layersPanel">
         <div class="group-title"><i class="fa-solid fa-cloud-bolt"></i> Meteorologia</div>
-        <button class="layer-btn radar active" data-layer="radar">
+        <button class="layer-btn radar" data-layer="radar">
             <i class="fa-solid fa-cloud-showers-heavy"></i>
             <span>Radar de chuva<span class="sub">RainViewer · <b id="mtRadarMeta">últimas 2h</b></span></span>
         </button>
@@ -522,7 +522,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 let weather = null;
 let radarFrames = [], satFrames = [];
 const radarLayers = {}, satLayers = {};
-let activeOverlay = 'radar';
+let activeOverlay = 'none';
 let frameIdx = 0, playing = true, playTimer = null;
 let overlayOpacity = 0.8;
 
