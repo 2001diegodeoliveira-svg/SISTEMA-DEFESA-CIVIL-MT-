@@ -321,6 +321,41 @@
         .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
         .reveal.in { opacity: 1; transform: none; }
 
+        /* Mascote Zeca */
+        .mascote-wrap {
+            display: flex; align-items: flex-end; gap: 12px;
+            margin-top: 22px;
+        }
+        .mascote-img {
+            width: 80px; height: 80px; object-fit: cover; border-radius: 50%;
+            border: 3px solid var(--accent-orange);
+            box-shadow: 0 4px 16px rgba(249,99,28,.35);
+            animation: mascoteBounce 2.8s ease-in-out infinite, mascoteJoinha 3.5s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+        .mascote-speech {
+            background: rgba(249,99,28,.12); border: 1px solid rgba(249,99,28,.3);
+            border-radius: 10px 10px 10px 2px; padding: 8px 14px;
+            font-size: 12.5px; font-weight: 600; color: var(--text-main);
+            white-space: nowrap;
+            animation: speechPop .5s cubic-bezier(.2,1.4,.4,1) both 1s;
+        }
+        @keyframes mascoteBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes mascoteJoinha {
+            0%, 40%, 100% { rotate: 0deg; }
+            48% { rotate: -14deg; }
+            56% { rotate: 10deg; }
+            64% { rotate: -8deg; }
+            72% { rotate: 0deg; }
+        }
+        @keyframes speechPop {
+            from { opacity: 0; transform: scale(.8) translateX(-10px); }
+            to { opacity: 1; transform: none; }
+        }
+
         /* Alertas Ativos Sidebar embutida no Hero */
         .alerts-sidebar {
             background-color: var(--bg-card);
@@ -664,6 +699,8 @@
                 height: 370px;
                 max-width: none;
             }
+            .mascote-img { width: 60px; height: 60px; }
+            .mascote-speech { font-size: 11px; padding: 6px 10px; }
             .quick-access {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -734,6 +771,11 @@
                 <div class="hstat"><b id="hsMunicipios">141</b><span>Municípios monitorados</span></div>
                 <div class="hstat"><b id="hsAlertas">6</b><span>Alertas ativos agora</span></div>
                 <div class="hstat"><b id="hsEstacoes">8</b><span>Estações na rede</span></div>
+            </div>
+
+            <div class="mascote-wrap">
+                <img src="imagens/zeca.jpeg" alt="Zeca - Mascote da Defesa Civil" class="mascote-img">
+                <div class="mascote-speech">Joinha! Estamos monitorando! &#x1F44D;</div>
             </div>
         </div>
 
