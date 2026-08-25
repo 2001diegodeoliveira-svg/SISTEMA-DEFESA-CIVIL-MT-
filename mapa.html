@@ -169,6 +169,19 @@
         .mini-btn:hover { color: #fff; border-color: rgba(255,255,255,.25); }
         .mini-btn.active { background: var(--accent-orange); border-color: var(--accent-orange); color: #fff; }
 
+        /* CPTEC forecast cards */
+        .cptec-card {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.04); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 7px 10px; font-size: 11px;
+        }
+        .cptec-card .dia { font-weight: 700; color: var(--text-main); min-width: 32px; }
+        .cptec-card .icone { font-size: 18px; min-width: 24px; text-align: center; }
+        .cptec-card .temps { display: flex; gap: 6px; margin-left: auto; }
+        .cptec-card .tmax { color: #f97316; font-weight: 700; }
+        .cptec-card .tmin { color: #38bdf8; font-weight: 600; }
+        .cptec-card .desc { color: var(--text-muted); font-size: 9.5px; flex: 1; }
+
         .area-item {
             display: flex; align-items: center; gap: 8px;
             padding: 7px 12px; font-size: 11.5px; color: #cbd5e1;
@@ -487,6 +500,17 @@
             <div class="toggle on"></div>
         </div>
         <div class="meta-line">Rede estadual ilustrativa (dados simulados)</div>
+        <div class="check-row" data-check="inmetStations">
+            <label><span class="swatch" style="background:#22d3ee;border-radius:50%;"></span><i class="fa-solid fa-tower-broadcast"></i>Estações INMET (EAM)</label>
+            <div class="toggle" id="inmetBadge"></div>
+        </div>
+        <div class="meta-line" id="metaInmet">INMET · carregando estações...</div>
+
+        <div class="group-title"><i class="fa-solid fa-calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
+        <div id="cptecPanel" style="padding:0 2px;">
+            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">Fonte: CPTEC/INPE via BrasilAPI</div>
+            <div id="cptecCards" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
 
         <div id="areaActions">
             <button class="mini-btn" id="drawBtn"><i class="fa-solid fa-pen-to-square"></i> Desenhar área</button>
@@ -561,6 +585,9 @@
                 <span style="color:#f97316;">Médio</span> ·
                 <span style="color:#3b82f6;">Baixo</span>
             </span>
+        </div>
+        <div id="legInmet" class="leg-row" style="display:none;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;border:2px solid #fff;display:inline-block;margin-right:5px;"></span> Estações INMET (EAM)
         </div>
     </div>
 
@@ -1067,9 +1094,10 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
+let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
 
 function setCheck(key, val) {
     checkState[key] = val;
@@ -1077,6 +1105,7 @@ function setCheck(key, val) {
     if (row) row.querySelector('.toggle').classList.toggle('on', val);
     if (key === 'focos' && val && !focosLoaded && !focosLoading) loadFocos();
     if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
+    if (key === 'inmetStations' && val && !inmetLoaded && !inmetLoading) loadInmetStations();
     applyChecks();
 }
 function applyChecks() {
@@ -1086,6 +1115,7 @@ function applyChecks() {
     if (focosLayer && focosLoaded) checkState.focos ? focosLayer.addTo(map) : map.removeLayer(focosLayer);
     checkState.stations ? stationsLayer.addTo(map) : map.removeLayer(stationsLayer);
     if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
+    if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
@@ -1100,7 +1130,8 @@ function refreshLegend() {
     document.getElementById('legMun').style.display = checkState.municipios && munLayer ? '' : 'none';
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
     document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs || checkState.barragens;
+    document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
+    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -1262,6 +1293,93 @@ async function loadBarragens() {
     } catch (e) {
         barragensLoading = false;
         meta.textContent = 'Erro ao carregar barragens';
+    }
+}
+
+/* ================= CPTEC/INPE — Previsão 6 dias ================= */
+const CPTEC_CIDADES = [
+    { nome: 'Cuiabá', id: 226 },
+    { nome: 'Rondonópolis', id: 5251 },
+    { nome: 'Sinop', id: 5247 },
+    { nome: 'Sorriso', id: 5251 },
+    { nome: 'Cáceres', id: 218 }
+];
+const CPTEC_ICONE = {
+    'ci': '☀️', 'cv': '🌤️', 'ec': '⛈️', 'eq': '⚡', 'er': '🌧️',
+    'os': '☁️', 'pc': '🌦️', 'pp': '🌧️', 'ps': '🌤️', 'pn': '⛅',
+    'rb': '🌧️', 'rc': '🌧️', 'rr': '🌧️', 'rs': '⛈️', 'sc': '❄️',
+    'ch': '🌧️', 'ct': '☁️', 'np': '☁️', 'lc': '☁️', 'vc': '🌤️',
+    'pm': '🌤️', 'nc': '⛅'
+};
+
+async function loadCptec() {
+    const container = document.getElementById('cptecCards');
+    if (!container) return;
+    container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;padding:6px;">Carregando...</div>';
+    try {
+        const res = await fetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+        const data = await res.json();
+        if (!data.clima || !data.clima.length) { container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Sem dados</div>'; return; }
+        const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        container.innerHTML = data.clima.map(d => {
+            const dt = new Date(d.data + 'T12:00:00');
+            const dia = diaSem[dt.getDay()];
+            const dataStr = `${dt.getDate()}/${dt.getMonth()+1}`;
+            const icone = CPTEC_ICONE[d.condicao] || '🌡️';
+            return `<div class="cptec-card">
+                <span class="dia">${dia}<br><span style="font-weight:400;font-size:9px;color:var(--text-muted);">${dataStr}</span></span>
+                <span class="icone">${icone}</span>
+                <span class="desc">${d.condicao_desc}</span>
+                <span class="temps"><span class="tmax">${d.max}°</span><span class="tmin">${d.min}°</span></span>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Erro ao carregar previsão</div>';
+    }
+}
+loadCptec();
+setInterval(loadCptec, 60 * 60 * 1000);
+
+/* ================= Estações INMET (EAM) — API pública ================= */
+async function loadInmetStations() {
+    inmetLoading = true;
+    const meta = document.getElementById('metaInmet');
+    meta.innerHTML = 'INMET · <b>carregando...</b>';
+    try {
+        const res = await fetch('https://apitempo.inmet.gov.br/estacoes/T');
+        const data = await res.json();
+        const mtStations = data.filter(s => s.SG_ESTADO === 'MT' && s.CD_SITUACAO === 'Operante');
+        inmetLayer = L.layerGroup();
+        mtStations.forEach(s => {
+            const lat = parseFloat(s.VL_LATITUDE);
+            const lon = parseFloat(s.VL_LONGITUDE);
+            if (!lat || !lon) return;
+            const icon = L.divIcon({
+                className: '',
+                html: `<div style="width:10px;height:10px;border-radius:50%;background:#22d3ee;border:2px solid #fff;box-shadow:0 0 6px rgba(34,211,238,.6);"></div>`,
+                iconSize: [14, 14], iconAnchor: [7, 7]
+            });
+            L.marker([lat, lon], { icon }).bindPopup(`
+                <div style="min-width:180px;">
+                    <div style="font-weight:700;font-size:12px;margin-bottom:2px;">
+                        <i class="fa-solid fa-tower-broadcast" style="color:#22d3ee;margin-right:4px;"></i>${s.DC_NOME}
+                    </div>
+                    <div style="color:#94a3b8;font-size:10px;margin-bottom:6px;">Código: ${s.CD_ESTACAO} · ${s.TP_ESTACAO}</div>
+                    <div style="font-size:10.5px;line-height:1.6;">
+                        <div><b>UF:</b> MT</div>
+                        <div><b>Altitude:</b> ${s.VL_ALTITUDE} m</div>
+                        <div><b>Lat:</b> ${lat.toFixed(4)} · <b>Lon:</b> ${lon.toFixed(4)}</div>
+                        <div><b>Operando desde:</b> ${s.DT_INICIO_OPERACAO ? new Date(s.DT_INICIO_OPERACAO).toLocaleDateString('pt-BR') : '—'}</div>
+                    </div>
+                </div>`).addTo(inmetLayer);
+        });
+        inmetLayer.addTo(map);
+        inmetLoaded = true;
+        inmetLoading = false;
+        meta.innerHTML = `INMET · <b>${mtStations.length}</b> EAM operantes em MT`;
+    } catch (e) {
+        inmetLoading = false;
+        meta.textContent = 'INMET · indisponível';
     }
 }
 

@@ -200,6 +200,7 @@ const FONTES_API = [
     { cat: 'Meteorologia', fonte: 'INMET — Avisos Meteorológicos', api: 'alertas2.inmet.gov.br', dado: 'Polígonos de risco: calor extremo, baixa umidade, tempestade', freq: 'Contínua' },
     { cat: 'Meteorologia', fonte: 'Windy Point Forecast API', api: 'api.windy.com', dado: 'Previsão por coordenada (GFS/ECMWF), vento em altitude', freq: 'A cada 6h' },
     { cat: 'Meteorologia', fonte: 'CPTEC/INPE', api: 'tempo.cptec.inpe.br/api', dado: 'Previsão numérica e produtos climáticos regionais', freq: 'Diária' },
+    { cat: 'Meteorologia', fonte: 'CPTEC/INPE (via BrasilAPI)', api: 'brasilapi.com.br/api/cptec', dado: 'Previsão 6 dias para capitais MT, sem autenticação', freq: 'Diária' },
     { cat: 'Queimadas', fonte: 'INPE — Programa Queimadas', api: 'queimadas.dgi.inpe.br', dado: 'Focos de calor por satélite, por estado/município', freq: 'Várias vezes ao dia' },
     { cat: 'Queimadas', fonte: 'NASA FIRMS', api: 'firms.modaps.eosdis.nasa.gov', dado: 'Focos de incêndio globais (fonte redundante)', freq: 'Quase tempo real' },
     { cat: 'Hidrologia', fonte: 'ANA — Hidroweb / Telemetria', api: 'telemetriaws1.ana.gov.br', dado: 'Nível de rios e reservatórios (Pantanal, Araguaia-Tocantins)', freq: 'Horária/Diária' },
