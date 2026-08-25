@@ -585,6 +585,54 @@
         .pp-h-item .phi-wind { font-size: 8px; color: var(--text-muted); }
         .pp-h-item .phi-rain { font-size: 8px; color: var(--blue-glow); font-weight: 600; }
 
+        /* ===== Daily forecast (7 days) ===== */
+        .pp-daily { display: flex; flex-direction: column; gap: 4px; }
+        .pp-day-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 8px; border-radius: 6px;
+            background: rgba(255,255,255,.03); font-size: 10px;
+        }
+        .pp-day-row:hover { background: rgba(255,255,255,.06); }
+        .pp-day-name { width: 32px; font-weight: 700; color: var(--text-main); }
+        .pp-day-icon { width: 22px; text-align: center; font-size: 13px; }
+        .pp-day-desc { flex: 1; color: var(--text-muted); font-size: 9px; }
+        .pp-day-temps { display: flex; gap: 6px; font-variant-numeric: tabular-nums; }
+        .pp-day-tmax { color: #f9731c; font-weight: 700; }
+        .pp-day-tmin { color: #38bdf8; font-weight: 600; }
+        .pp-day-rain { color: #3b82f6; font-weight: 600; width: 40px; text-align: right; }
+        .pp-day-wind { color: var(--text-muted); width: 44px; text-align: right; font-size: 9px; }
+
+        /* ===== Wind rose ===== */
+        .pp-windrose { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; }
+        .wr-compass { position: relative; width: 80px; height: 80px; }
+        .wr-compass svg { width: 100%; height: 100%; }
+        .wr-info { font-size: 10px; color: var(--text-muted); line-height: 1.6; }
+        .wr-info b { color: var(--text-main); }
+
+        /* ===== Risk cards ===== */
+        .pp-risk-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+        .pp-risk-card {
+            background: rgba(255,255,255,.04); border-radius: 6px; padding: 7px 6px; text-align: center;
+            border: 1px solid transparent;
+        }
+        .pp-risk-card.critico { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.06); }
+        .pp-risk-card.alto { border-color: rgba(249,99,28,.3); background: rgba(249,99,28,.06); }
+        .pp-risk-card.moderado { border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.06); }
+        .pp-risk-card.baixo { border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.06); }
+        .pp-risk-card .prc-icon { font-size: 14px; margin-bottom: 2px; }
+        .pp-risk-card .prc-val { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
+        .pp-risk-card .prc-lbl { font-size: 7.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 1px; }
+
+        /* ===== Nearest station ===== */
+        .pp-station {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 8px; border-radius: 6px;
+            background: rgba(255,255,255,.03); font-size: 10px;
+        }
+        .pp-station-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .pp-station-name { flex: 1; font-weight: 600; color: var(--text-main); }
+        .pp-station-val { font-variant-numeric: tabular-nums; font-weight: 700; }
+
         /* ===== Heatmap legend ===== */
         .hm-legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
         .hm-bar { flex: 1; height: 6px; border-radius: 3px; }
@@ -1006,7 +1054,7 @@
                     <div class="pp-cell"><i class="fa-solid fa-cloud-rain"></i>Chuva <b id="ppPrecip">-- mm</b></div>
                 </div>
             </div>
-            <!-- Detalhes extras estilo Windy -->
+            <!-- Detalhes extras -->
             <div class="pp-extra" id="ppExtraSection">
                 <h4><i class="fa-solid fa-chart-bar"></i> Detalhes</h4>
                 <div class="pp-detail-grid">
@@ -1030,12 +1078,42 @@
                         <div class="pdc-val" id="ppCloud">—</div>
                         <div class="pdc-lbl">Nuvens</div>
                     </div>
+                    <div class="pp-detail-card">
+                        <div class="pdc-icon" style="color:#f43f5e;"><i class="fa-solid fa-wind"></i></div>
+                        <div class="pdc-val" id="ppGusts">—</div>
+                        <div class="pdc-lbl">Rajadas</div>
+                    </div>
+                    <div class="pp-detail-card">
+                        <div class="pdc-icon" style="color:#06b6d4;"><i class="fa-solid fa-droplet"></i></div>
+                        <div class="pdc-val" id="ppDew">—</div>
+                        <div class="pdc-lbl">Pto. Orvalho</div>
+                    </div>
                 </div>
             </div>
-            <!-- Previsão hora a hora estilo Windy -->
+            <!-- Rosa dos ventos -->
+            <div class="pp-extra" id="ppWindRoseSection">
+                <h4><i class="fa-solid fa-compass"></i> Rosa dos ventos</h4>
+                <div class="pp-windrose" id="ppWindRose"></div>
+            </div>
+            <!-- Previsão 48h hora a hora -->
             <div class="pp-extra" id="ppHourlySection">
-                <h4><i class="fa-solid fa-clock"></i> Próximas 24h</h4>
+                <h4><i class="fa-solid fa-clock"></i> Próximas 48h</h4>
                 <div class="pp-hourly-row" id="ppHourlyRow"></div>
+            </div>
+            <!-- Previsão 7 dias -->
+            <div class="pp-extra" id="ppDailySection">
+                <h4><i class="fa-solid fa-calendar-week"></i> Previsão 7 dias</h4>
+                <div class="pp-daily" id="ppDailyForecast"></div>
+            </div>
+            <!-- Avaliação de risco -->
+            <div class="pp-extra" id="ppRiskSection">
+                <h4><i class="fa-solid fa-triangle-exclamation"></i> Avaliação de risco</h4>
+                <div class="pp-risk-grid" id="ppRiskGrid"></div>
+            </div>
+            <!-- Estação mais próxima -->
+            <div class="pp-extra" id="ppStationSection">
+                <h4><i class="fa-solid fa-tower-broadcast"></i> Estação mais próxima</h4>
+                <div id="ppNearestStation"></div>
             </div>
             <div id="ppHourly">
                 <h4>Precipitação — próximas 12h</h4>
@@ -2247,47 +2325,74 @@ function wmoDesc(code) {
     return table[code] || ['Condição indisponível', 'fa-cloud'];
 }
 
+const WMO_ICONS = {
+    0: ['\u2600\uFE0F','C\u00E9u limpo','fa-sun'], 1: ['\uD83C\uDF24\uFE0F','Predom\u00EDnio de sol','fa-cloud-sun'], 2: ['\u26C5','Parc. nublado','fa-cloud-sun'],
+    3: ['\u2601\uFE0F','Nublado','fa-cloud'], 45: ['\uD83C\uDF2B\uFE0F','Nevoeiro','fa-smog'], 48: ['\uD83C\uDF2B\uFE0F','Nevoeiro c/ geada','fa-smog'],
+    51: ['\uD83C\uDF26\uFE0F','Garoa fraca','fa-cloud-rain'], 53: ['\uD83C\uDF26\uFE0F','Garoa moderada','fa-cloud-rain'], 55: ['\uD83C\uDF27\uFE0F','Garoa intensa','fa-cloud-rain'],
+    61: ['\uD83C\uDF27\uFE0F','Chuva fraca','fa-cloud-rain'], 63: ['\uD83C\uDF27\uFE0F','Chuva moderada','fa-cloud-showers-heavy'], 65: ['\u26C8\uFE0F','Chuva forte','fa-cloud-showers-heavy'],
+    71: ['\u2744\uFE0F','Neve fraca','fa-snowflake'], 73: ['\u2744\uFE0F','Neve moderada','fa-snowflake'], 75: ['\u2744\uFE0F','Neve forte','fa-snowflake'],
+    80: ['\uD83C\uDF26\uFE0F','Pancadas isoladas','fa-cloud-showers-heavy'], 81: ['\uD83C\uDF27\uFE0F','Pancadas moderadas','fa-cloud-showers-heavy'],
+    82: ['\u26C8\uFE0F','Pancadas violentas','fa-cloud-showers-heavy'],
+    95: ['\u26C8\uFE0F','Tempestade','fa-cloud-bolt'], 96: ['\u26C8\uFE0F','Tempestade c/ granizo','fa-cloud-bolt'], 99: ['\u26C8\uFE0F','Tempestade severa','fa-cloud-bolt'],
+};
+
 async function openPointPanel(lat, lng, fonteExtra = '') {
     pp.panel.classList.add('open');
-    pp.status.textContent = 'Carregando previsão...';
+    pp.status.textContent = 'Carregando previsão detalhada...';
     pp.status.classList.add('show');
     pp.content.style.display = 'none';
 
     document.getElementById('ppCoords').textContent =
-        `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'S' : 'N'} · ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'W' : 'E'}`;
+        `${Math.abs(lat).toFixed(4)}\u00B0 ${lat >= 0 ? 'S' : 'N'} \u00B7 ${Math.abs(lng).toFixed(4)}\u00B0 ${lng >= 0 ? 'W' : 'E'}`;
 
     try {
         const [wx, place] = await Promise.all([
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`
-                + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m`
-                + `&hourly=temperature_2m,precipitation_probability,precipitation`
-                + `&forecast_days=2&timezone=auto`).then(r => r.json()),
+                + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,`
+                + `wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,cloud_cover,uv_index,visibility,dew_point_2m`
+                + `&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,cloud_cover,relative_humidity_2m`
+                + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max`
+                + `&forecast_days=7&timezone=auto`).then(r => r.json()),
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=pt-BR`)
                 .then(r => r.json()).catch(() => null)
         ]);
 
         const c = wx.current;
-        const [desc, icon] = wmoDesc(c.weather_code);
-        document.getElementById('ppName').textContent =
-            place?.address?.city || place?.address?.town || place?.address?.village || place?.address?.county
-            || place?.name || 'Local selecionado';
-        document.getElementById('ppTemp').innerHTML = `${Math.round(c.temperature_2m)}°<sup>C</sup>`;
-        document.getElementById('ppIcon').innerHTML = `<i class="fa-solid ${icon}" style="color:var(--accent-orange);"></i>`;
+        const [desc, iconFA] = WMO_ICONS[c.weather_code] || ['\u2601\uFE0F', 'Indispon\u00EDvel', 'fa-cloud'];
+        const placeName = place?.address?.city || place?.address?.town || place?.address?.village || place?.address?.county || place?.name || 'Local selecionado';
+
+        document.getElementById('ppName').textContent = placeName;
+        document.getElementById('ppTemp').innerHTML = `${Math.round(c.temperature_2m)}\u00B0<sup>C</sup>`;
+        document.getElementById('ppIcon').innerHTML = `<i class="fa-solid ${iconFA}" style="color:var(--accent-orange);"></i>`;
         document.getElementById('ppDesc').textContent = desc;
-        document.getElementById('ppFeels').textContent = `${Math.round(c.apparent_temperature)}°C`;
+        document.getElementById('ppFeels').textContent = `${Math.round(c.apparent_temperature)}\u00B0C`;
         document.getElementById('ppHum').textContent = `${c.relative_humidity_2m}%`;
         document.getElementById('ppWind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
         document.getElementById('ppWindArrow').style.transform = `rotate(${c.wind_direction_10m}deg)`;
         document.getElementById('ppPrecip').textContent = `${c.precipitation ?? 0} mm`;
+
+        document.getElementById('ppPressure').textContent = `${Math.round(c.surface_pressure ?? 0)} hPa`;
+        document.getElementById('ppVisibility').textContent = c.visibility ? `${(c.visibility / 1000).toFixed(1)} km` : '\u2014';
+        document.getElementById('ppUV').textContent = c.uv_index != null ? Math.round(c.uv_index) : '\u2014';
+        document.getElementById('ppCloud').textContent = `${c.cloud_cover ?? 0}%`;
+        document.getElementById('ppGusts').textContent = `${Math.round(c.wind_gusts_10m ?? 0)} km/h`;
+        document.getElementById('ppDew').textContent = c.dew_point_2m != null ? `${Math.round(c.dew_point_2m)}\u00B0C` : '\u2014';
+
         document.getElementById('ppSource').innerHTML =
             (fonteExtra ? fonteExtra + '<br>' : '')
-            + `Modelo Open-Meteo · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+            + `Open-Meteo \u00B7 atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
+        renderWindRose(c.wind_direction_10m, c.wind_speed_10m);
+        renderHourly48h(wx.hourly);
+        renderDaily7(wx.daily);
+        renderRiskCards(c, wx.daily);
+        renderNearestStation(lat, lng, c);
         renderHourly(wx.hourly);
+
         pp.status.classList.remove('show');
         pp.content.style.display = '';
     } catch (e) {
-        pp.status.textContent = 'Não foi possível obter a previsão deste ponto.';
+        pp.status.textContent = 'N\u00E3o foi poss\u00EDvel obter a previs\u00E3o detalhada deste ponto.';
     }
 }
 
@@ -2308,6 +2413,169 @@ function renderHourly(hourly) {
             <div class="hbar-hour">${fmtTime(Date.parse(hourly.time[i]) / 1000)}</div>`;
         barsEl.appendChild(col);
     }
+}
+
+/* ================= Windy-style: 48h Hourly Cards ================= */
+function renderHourly48h(hourly) {
+    const container = document.getElementById('ppHourlyRow');
+    container.innerHTML = '';
+    const now = new Date(); now.setMinutes(0, 0, 0);
+    let startIdx = hourly.time.findIndex(t => new Date(t) >= now);
+    if (startIdx < 0) startIdx = 0;
+    for (let i = startIdx; i < Math.min(startIdx + 48, hourly.time.length); i++) {
+        const dt = new Date(hourly.time[i]);
+        const hr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const temp = hourly.temperature_2m[i];
+        const rain = hourly.precipitation[i] ?? 0;
+        const prob = hourly.precipitation_probability[i] ?? 0;
+        const wind = hourly.wind_speed_10m[i] ?? 0;
+        const gusts = hourly.wind_gusts_10m[i] ?? 0;
+        const wcode = hourly.weather_code?.[i] ?? 0;
+        const [emoji] = WMO_ICONS[wcode] || ['\u2601\uFE0F'];
+        const isToday = dt.getDate() === new Date().getDate();
+        const dayLabel = isToday ? '' : dt.toLocaleDateString('pt-BR', { weekday: 'short' }) + ' ';
+        const item = document.createElement('div');
+        item.className = 'pp-h-item';
+        item.innerHTML = `
+            <span class="phi-time">${dayLabel}${hr}</span>
+            <span class="phi-icon">${emoji}</span>
+            <span class="phi-temp">${temp != null ? Math.round(temp) + '\u00B0' : '\u2014'}</span>
+            <span class="phi-wind"><i class="fa-solid fa-wind" style="font-size:7px;"></i>${Math.round(wind)}<sup style="font-size:6px;color:#ef4444;">${gusts > wind ? ' g' + Math.round(gusts) : ''}</sup></span>
+            <span class="phi-rain">${rain > 0 ? rain.toFixed(1) + 'mm' : (prob > 0 ? prob + '%' : '')}</span>`;
+        container.appendChild(item);
+    }
+}
+
+/* ================= Windy-style: 7-Day Daily Forecast ================= */
+function renderDaily7(daily) {
+    const container = document.getElementById('ppDailyForecast');
+    container.innerHTML = '';
+    if (!daily || !daily.time) return;
+    const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00E1b'];
+    for (let i = 0; i < Math.min(7, daily.time.length); i++) {
+        const dt = new Date(daily.time[i] + 'T12:00:00');
+        const [emoji] = WMO_ICONS[daily.weather_code?.[i]] || ['\u2601\uFE0F'];
+        const tmax = Math.round(daily.temperature_2m_max?.[i] ?? 0);
+        const tmin = Math.round(daily.temperature_2m_min?.[i] ?? 0);
+        const rain = (daily.precipitation_sum?.[i] ?? 0).toFixed(1);
+        const windMax = Math.round(daily.wind_speed_10m_max?.[i] ?? 0);
+        const isToday = dt.toDateString() === new Date().toDateString();
+        const row = document.createElement('div');
+        row.className = 'pp-day-row';
+        row.innerHTML = `
+            <span class="pp-day-name">${isToday ? 'Hoje' : diaSem[dt.getDay()]}</span>
+            <span class="pp-day-icon">${emoji}</span>
+            <span class="pp-day-temps"><span class="pp-day-tmax">${tmax}\u00B0</span><span class="pp-day-tmin">${tmin}\u00B0</span></span>
+            <span class="pp-day-rain"><i class="fa-solid fa-droplet" style="font-size:8px;"></i> ${rain}mm</span>
+            <span class="pp-day-wind"><i class="fa-solid fa-wind" style="font-size:8px;"></i> ${windMax}</span>`;
+        container.appendChild(row);
+    }
+}
+
+/* ================= Windy-style: Wind Rose (SVG) ================= */
+function renderWindRose(dir, speed) {
+    const container = document.getElementById('ppWindRose');
+    if (dir == null) { container.innerHTML = '<span style="font-size:10px;color:var(--text-muted);">Sem dados</span>'; return; }
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const roseAngle = ((dir % 360) + 360) % 360;
+    const speedKmh = Math.round(speed ?? 0);
+    const beaufort = speedKmh < 2 ? 0 : speedKmh < 6 ? 1 : speedKmh < 12 ? 2 : speedKmh < 20 ? 3 : speedKmh < 29 ? 4 : speedKmh < 39 ? 5 : speedKmh < 50 ? 6 : speedKmh < 62 ? 7 : 8;
+    const dirLabel = dirs[Math.round(roseAngle / 45) % 8];
+    const arrowColor = speedKmh > 40 ? '#ef4444' : speedKmh > 25 ? '#f9731c' : speedKmh > 15 ? '#fbbf24' : '#38bdf8';
+
+    container.innerHTML = `
+        <div class="wr-compass">
+            <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="16" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+                <text x="50" y="8" text-anchor="middle" fill="#94a3b8" font-size="7" font-weight="700">N</text>
+                <text x="93" y="53" text-anchor="middle" fill="#94a3b8" font-size="6">E</text>
+                <text x="50" y="98" text-anchor="middle" fill="#94a3b8" font-size="6">S</text>
+                <text x="7" y="53" text-anchor="middle" fill="#94a3b8" font-size="6">W</text>
+                <line x1="50" y1="50" x2="${50 + 36 * Math.sin(roseAngle * Math.PI / 180)}" y2="${50 - 36 * Math.cos(roseAngle * Math.PI / 180)}"
+                    stroke="${arrowColor}" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="${50 + 36 * Math.sin(roseAngle * Math.PI / 180)}" cy="${50 - 36 * Math.cos(roseAngle * Math.PI / 180)}"
+                    r="3" fill="${arrowColor}"/>
+            </svg>
+        </div>
+        <div class="wr-info">
+            <b>Dire\u00E7\u00E3o:</b> ${dirLabel} (${Math.round(roseAngle)}\u00B0)<br>
+            <b>Velocidade:</b> ${speedKmh} km/h<br>
+            <b>Escala Beaufort:</b> ${beaufort}<br>
+            <b>Rajadas:</b> ${Math.round(speed * 1.3)} km/h
+        </div>`;
+}
+
+/* ================= Windy-style: Risk Assessment ================= */
+function renderRiskCards(current, daily) {
+    const container = document.getElementById('ppRiskGrid');
+    const temp = current.temperature_2m;
+    const hum = current.relative_humidity_2m;
+    const wind = current.wind_speed_10m;
+    const uv = current.uv_index ?? 0;
+    const chuvaHoje = daily?.precipitation_sum?.[0] ?? 0;
+
+    let fireRisk = 0;
+    if (hum < 20) fireRisk += 35; else if (hum < 30) fireRisk += 25; else if (hum < 50) fireRisk += 12;
+    if (wind > 30) fireRisk += 30; else if (wind > 20) fireRisk += 20; else if (wind > 10) fireRisk += 8;
+    if (chuvaHoje > 5) fireRisk = Math.max(0, fireRisk - 20);
+    fireRisk = Math.min(100, fireRisk);
+    const fireSev = fireRisk >= 70 ? 'critico' : fireRisk >= 50 ? 'alto' : fireRisk >= 30 ? 'moderado' : 'baixo';
+    const fireLabel = fireSev === 'critico' ? 'Cr\u00EDtico' : fireSev === 'alto' ? 'Alto' : fireSev === 'moderado' ? 'Moderado' : 'Baixo';
+    const fireColor = fireSev === 'critico' ? '#ef4444' : fireSev === 'alto' ? '#f9731c' : fireSev === 'moderado' ? '#fbbf24' : '#22c55e';
+
+    const stormRisk = current.weather_code >= 95 ? 90 : current.weather_code >= 80 ? 60 : current.weather_code >= 61 ? 40 : 10;
+    const stormSev = stormRisk >= 80 ? 'critico' : stormRisk >= 50 ? 'alto' : stormRisk >= 30 ? 'moderado' : 'baixo';
+    const stormLabel = stormSev === 'critico' ? 'Cr\u00EDtico' : stormSev === 'alto' ? 'Alto' : stormSev === 'moderado' ? 'Moderado' : 'Baixo';
+    const stormColor = stormSev === 'critico' ? '#ef4444' : stormSev === 'alto' ? '#f9731c' : stormSev === 'moderado' ? '#fbbf24' : '#22c55e';
+
+    const heatSev = temp >= 40 ? 'critico' : temp >= 35 ? 'alto' : temp >= 32 ? 'moderado' : 'baixo';
+    const heatLabel = heatSev === 'critico' ? 'Cr\u00EDtico' : heatSev === 'alto' ? 'Alto' : heatSev === 'moderado' ? 'Moderado' : 'Baixo';
+    const heatColor = heatSev === 'critico' ? '#ef4444' : heatSev === 'alto' ? '#f9731c' : heatSev === 'moderado' ? '#fbbf24' : '#22c55e';
+
+    container.innerHTML = `
+        <div class="pp-risk-card ${fireSev}">
+            <div class="prc-icon" style="color:${fireColor};"><i class="fa-solid fa-fire"></i></div>
+            <div class="prc-val" style="color:${fireColor};">${fireRisk}%</div>
+            <div class="prc-lbl">Risco Fogo</div>
+        </div>
+        <div class="pp-risk-card ${stormSev}">
+            <div class="prc-icon" style="color:${stormColor};"><i class="fa-solid fa-cloud-bolt"></i></div>
+            <div class="prc-val" style="color:${stormColor};">${stormLabel}</div>
+            <div class="prc-lbl">Tempestade</div>
+        </div>
+        <div class="pp-risk-card ${heatSev}">
+            <div class="prc-icon" style="color:${heatColor};"><i class="fa-solid fa-temperature-high"></i></div>
+            <div class="prc-val" style="color:${heatColor};">${heatLabel}</div>
+            <div class="prc-lbl">Calor Extremo</div>
+        </div>`;
+}
+
+/* ================= Windy-style: Nearest INMET Station ================= */
+function renderNearestStation(lat, lng, currentWeather) {
+    const container = document.getElementById('ppNearestStation');
+    if (!inmetLoaded || !inmetLayer) {
+        container.innerHTML = '<div style="font-size:10px;color:var(--text-muted);">Ative a camada INMET para ver estações</div>';
+        return;
+    }
+    let nearest = null, minDist = Infinity;
+    inmetLayer.eachLayer(l => {
+        const ll = l.getLatLng();
+        const d = Math.abs(ll.lat - lat) + Math.abs(ll.lng - lng);
+        if (d < minDist) { minDist = d; nearest = l; }
+    });
+    if (!nearest) { container.innerHTML = '<div style="font-size:10px;color:var(--text-muted);">Nenhuma estação encontrada</div>'; return; }
+    const popup = nearest.getPopup()?.getContent() || '';
+    const nameMatch = popup.match(/<div style="font-weight:700[^"]*">[^<]*<i[^>]*><\/i>([^<]+)<\/div>/);
+    const name = nameMatch ? nameMatch[1].trim() : 'Estação INMET';
+    const distKm = (minDist * 111).toFixed(0);
+    container.innerHTML = `
+        <div class="pp-station">
+            <div class="pp-station-dot" style="background:#22d3ee;"></div>
+            <span class="pp-station-name">${name}</span>
+            <span class="pp-station-val" style="color:#22d3ee;font-size:9px;">${distKm} km</span>
+        </div>`;
 }
 
 /* ================= Modal de fontes ================= */
@@ -2925,105 +3193,6 @@ function fireRiskColor(risco) {
     if (risco >= 30) return '#f9731c';
     if (risco >= 15) return '#fbbf24';
     return '#22c55e';
-}
-
-/* ================= Enhanced Point Panel (Windy-style 24h) ================= */
-const WMO_ICONS = {
-    0: ['☀️','Céu limpo','fa-sun'], 1: ['🌤️','Predomínio de sol','fa-cloud-sun'], 2: ['⛅','Parc. nublado','fa-cloud-sun'],
-    3: ['☁️','Nublado','fa-cloud'], 45: ['🌫️','Nevoeiro','fa-smog'], 48: ['🌫️','Nevoeiro c/ geada','fa-smog'],
-    51: ['🌦️','Garoa fraca','fa-cloud-rain'], 53: ['🌦️','Garoa moderada','fa-cloud-rain'], 55: ['🌧️','Garoa intensa','fa-cloud-rain'],
-    61: ['🌧️','Chuva fraca','fa-cloud-rain'], 63: ['🌧️','Chuva moderada','fa-cloud-showers-heavy'], 65: ['⛈️','Chuva forte','fa-cloud-showers-heavy'],
-    71: ['❄️','Neve fraca','fa-snowflake'], 73: ['❄️','Neve moderada','fa-snowflake'], 75: ['❄️','Neve forte','fa-snowflake'],
-    80: ['🌦️','Pancadas isoladas','fa-cloud-showers-heavy'], 81: ['🌧️','Pancadas moderadas','fa-cloud-showers-heavy'],
-    82: ['⛈️','Pancadas violentas','fa-cloud-showers-heavy'],
-    95: ['⛈️','Tempestade','fa-cloud-bolt'], 96: ['⛈️','Tempestade c/ granizo','fa-cloud-bolt'], 99: ['⛈️','Tempestade severa','fa-cloud-bolt'],
-};
-
-// Override the existing openPointPanel to add enhanced data
-const _origOpenPointPanel = openPointPanel;
-window.openPointPanel = async function(lat, lng, fonteExtra) {
-    pp.panel.classList.add('open');
-    pp.status.textContent = 'Carregando previsão...';
-    pp.status.classList.add('show');
-    pp.content.style.display = 'none';
-
-    document.getElementById('ppCoords').textContent =
-        `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'S' : 'N'} · ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'W' : 'E'}`;
-
-    try {
-        const [wx, place] = await Promise.all([
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`
-                + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,`
-                + `wind_speed_10m,wind_direction_10m,surface_pressure,cloud_cover,uv_index,visibility`
-                + `&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,weather_code,cloud_cover`
-                + `&forecast_days=2&timezone=auto`).then(r => r.json()),
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=pt-BR`)
-                .then(r => r.json()).catch(() => null)
-        ]);
-
-        const c = wx.current;
-        const [desc, iconFA] = WMO_ICONS[c.weather_code] || ['☁️', 'Indisponível', 'fa-cloud'];
-        document.getElementById('ppName').textContent =
-            place?.address?.city || place?.address?.town || place?.address?.village || place?.address?.county
-            || place?.name || 'Local selecionado';
-        document.getElementById('ppTemp').innerHTML = `${Math.round(c.temperature_2m)}°<sup>C</sup>`;
-        document.getElementById('ppIcon').innerHTML = `<i class="fa-solid ${iconFA}" style="color:var(--accent-orange);"></i>`;
-        document.getElementById('ppDesc').textContent = desc;
-        document.getElementById('ppFeels').textContent = `${Math.round(c.apparent_temperature)}°C`;
-        document.getElementById('ppHum').textContent = `${c.relative_humidity_2m}%`;
-        document.getElementById('ppWind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
-        document.getElementById('ppWindArrow').style.transform = `rotate(${c.wind_direction_10m}deg)`;
-        document.getElementById('ppPrecip').textContent = `${c.precipitation ?? 0} mm`;
-
-        // Enhanced data
-        document.getElementById('ppPressure').textContent = `${Math.round(c.surface_pressure ?? 0)} hPa`;
-        document.getElementById('ppVisibility').textContent = c.visibility ? `${(c.visibility / 1000).toFixed(1)} km` : '—';
-        document.getElementById('ppUV').textContent = c.uv_index != null ? Math.round(c.uv_index) : '—';
-        document.getElementById('ppCloud').textContent = `${c.cloud_cover ?? 0}%`;
-
-        document.getElementById('ppSource').innerHTML =
-            (fonteExtra ? fonteExtra + '<br>' : '')
-            + `Modelo Open-Meteo · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-
-        // Render 24h forecast cards
-        renderHourly24h(wx.hourly);
-        renderHourly(wx.hourly);
-
-        pp.status.classList.remove('show');
-        pp.content.style.display = '';
-    } catch (e) {
-        pp.status.textContent = 'Não foi possível obter a previsão deste ponto.';
-    }
-};
-
-function renderHourly24h(hourly) {
-    const container = document.getElementById('ppHourlyRow');
-    container.innerHTML = '';
-    const now = new Date(); now.setMinutes(0, 0, 0);
-    let startIdx = hourly.time.findIndex(t => new Date(t) >= now);
-    if (startIdx < 0) startIdx = 0;
-
-    for (let i = startIdx; i < Math.min(startIdx + 24, hourly.time.length); i++) {
-        const dt = new Date(hourly.time[i]);
-        const hr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const temp = hourly.temperature_2m[i];
-        const rain = hourly.precipitation[i] ?? 0;
-        const prob = hourly.precipitation_probability[i] ?? 0;
-        const wind = hourly.wind_speed_10m[i] ?? 0;
-        const wcode = hourly.weather_code?.[i] ?? 0;
-        const [emoji] = WMO_ICONS[wcode] || ['☁️'];
-
-        const item = document.createElement('div');
-        item.className = 'pp-h-item';
-        item.innerHTML = `
-            <span class="phi-time">${hr}</span>
-            <span class="phi-icon">${emoji}</span>
-            <span class="phi-temp">${temp != null ? Math.round(temp) + '°' : '—'}</span>
-            <span class="phi-wind"><i class="fa-solid fa-wind" style="font-size:7px;"></i>${Math.round(wind)}</span>
-            <span class="phi-rain">${rain > 0 ? rain.toFixed(1) + 'mm' : (prob > 0 ? prob + '%' : '')}</span>
-        `;
-        container.appendChild(item);
-    }
 }
 
 /* ================= MONITORAMENTO EM TEMPO REAL ================= */
