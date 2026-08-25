@@ -505,6 +505,11 @@
             <div class="toggle" id="inmetBadge"></div>
         </div>
         <div class="meta-line" id="metaInmet">INMET · carregando estações...</div>
+        <div class="check-row" data-check="sipam">
+            <label><span class="swatch" style="background:#dc2626;border-radius:50%;"></span><i class="fa-solid fa-fire-flame-curved"></i>Painel do Fogo (SIPAM)</label>
+            <div class="toggle" id="sipamBadge"></div>
+        </div>
+        <div class="meta-line" id="metaSipam">CENSIPAM · carregando eventos...</div>
 
         <div class="group-title"><i class="fa-solid fa-calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
         <div id="cptecPanel" style="padding:0 2px;">
@@ -588,6 +593,13 @@
         </div>
         <div id="legInmet" class="leg-row" style="display:none;">
             <span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;border:2px solid #fff;display:inline-block;margin-right:5px;"></span> Estações INMET (EAM)
+        </div>
+        <div id="legSipam" class="leg-row" style="display:none;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#dc2626;display:inline-block;margin-right:5px;"></span> SIPAM Painel do Fogo
+            <span style="font-size:9px;color:#94a3b8;margin-left:6px;">
+                <span style="color:#dc2626;">Ativo</span> ·
+                <span style="color:#f97316;">Observação</span>
+            </span>
         </div>
     </div>
 
@@ -1094,10 +1106,11 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
+let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
 
 function setCheck(key, val) {
     checkState[key] = val;
@@ -1106,6 +1119,7 @@ function setCheck(key, val) {
     if (key === 'focos' && val && !focosLoaded && !focosLoading) loadFocos();
     if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
     if (key === 'inmetStations' && val && !inmetLoaded && !inmetLoading) loadInmetStations();
+    if (key === 'sipam' && val && !sipamLoaded && !sipamLoading) loadSIPAM();
     applyChecks();
 }
 function applyChecks() {
@@ -1116,6 +1130,7 @@ function applyChecks() {
     checkState.stations ? stationsLayer.addTo(map) : map.removeLayer(stationsLayer);
     if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
     if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
+    if (sipamLayer) checkState.sipam ? sipamLayer.addTo(map) : map.removeLayer(sipamLayer);
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
@@ -1131,7 +1146,8 @@ function refreshLegend() {
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
     document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations;
+    document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
+    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -1380,6 +1396,88 @@ async function loadInmetStations() {
     } catch (e) {
         inmetLoading = false;
         meta.textContent = 'INMET · indisponível';
+    }
+}
+
+/* ================= SIPAM Painel do Fogo — Eventos ativos em MT ================= */
+const SIPAM_STATUS_COR = { 'Em observação': '#f97316', 'Ativo': '#dc2626' };
+
+function sipamRaio(area) {
+    if (!area || area <= 0) return 4;
+    return Math.min(14, 4 + Math.sqrt(area) / 1.2);
+}
+
+function sipamFmtData(iso) {
+    if (!iso) return '—';
+    try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+               d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch { return iso; }
+}
+
+async function loadSIPAM() {
+    sipamLoading = true;
+    const meta = document.getElementById('metaSipam');
+    meta.innerHTML = 'CENSIPAM · <b>carregando eventos...</b>';
+    try {
+        const res = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const eventos = await res.json();
+        if (!Array.isArray(eventos) || !eventos.length) {
+            meta.textContent = 'CENSIPAM · nenhum evento ativo em MT';
+            sipamLoading = false;
+            sipamLoaded = true;
+            return;
+        }
+        sipamLayer = L.layerGroup();
+        eventos.forEach(ev => {
+            const lat = ev.latitude, lng = ev.longitude;
+            if (!isFinite(lat) || !isFinite(lng)) return;
+            const cor = SIPAM_STATUS_COR[ev.status_evento] || '#f97316';
+            const raio = sipamRaio(ev.area_total_evento);
+            const dominios = ev.dominio ? ev.dominio.split(',').map(d => d.trim()).filter(Boolean) : [];
+            const dominioLabel = dominios.length ? dominios.join(', ') : '—';
+            const territorios = [ev.terra_indigena, ev.unidade_conservacao, ev.quilombola, ev.projeto_assentamento]
+                .filter(Boolean).map(t => t.trim()).join(', ');
+            const persistencia = ev.persistencia_dias != null ? ev.persistencia_dias + ' dia(s)' : '—';
+            L.circleMarker([lat, lng], {
+                radius: raio, color: '#fff', weight: 0.8,
+                fillColor: cor, fillOpacity: 0.85
+            }).bindPopup(`
+                <div style="min-width:230px;">
+                    <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">
+                        <i class="fa-solid fa-fire-flame-curved" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}
+                    </div>
+                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">
+                        Status: <b style="color:${cor};">${ev.status_evento}</b> · ${ev.municipio || '—'}
+                    </div>
+                    <div style="font-size:11px;line-height:1.7;">
+                        <div><b>Área total:</b> ${ev.area_total_evento ? ev.area_total_evento.toFixed(2) + ' ha' : '—'}</div>
+                        <div><b>Persistência:</b> ${persistencia}</div>
+                        <div><b>Detectado em:</b> ${sipamFmtData(ev.dt_minima)}</div>
+                        <div><b>Última visão:</b> ${sipamFmtData(ev.dt_ultima_visao)}</div>
+                        <div><b>Domínio:</b> ${dominioLabel}</div>
+                        ${territorios ? '<div><b>Área especial:</b> ' + territorios + '</div>' : ''}
+                        <div><b>Coords:</b> ${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+                    </div>
+                    <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:#94a3b8;line-height:1.5;">
+                        Fonte: CENSIPAM — Painel do Fogo<br>
+                        Evento ativo ou em observação · dados em tempo real<br>
+                        <a href="https://panorama.sipam.gov.br/painel-do-fogo/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
+                    </div>
+                </div>`).addTo(sipamLayer);
+        });
+        sipamLayer.addTo(map);
+        sipamLoaded = true;
+        sipamLoading = false;
+        const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        meta.innerHTML = `CENSIPAM · <b>${eventos.length.toLocaleString('pt-BR')} evento(s)</b> em MT · atualizado ${hora}`;
+        refreshLegend();
+        setTimeout(loadSIPAM, 10 * 60 * 1000);
+    } catch (e) {
+        sipamLoading = false;
+        meta.textContent = 'CENSIPAM · indisponível';
     }
 }
 

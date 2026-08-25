@@ -205,6 +205,7 @@ const FONTES_API = [
     { cat: 'Queimadas', fonte: 'NASA FIRMS', api: 'firms.modaps.eosdis.nasa.gov', dado: 'Focos de incêndio globais (fonte redundante)', freq: 'Quase tempo real' },
     { cat: 'Hidrologia', fonte: 'ANA — Hidroweb / Telemetria', api: 'telemetriaws1.ana.gov.br', dado: 'Nível de rios e reservatórios (Pantanal, Araguaia-Tocantins)', freq: 'Horária/Diária' },
     { cat: 'Qualidade do ar', fonte: 'Sensores estaduais ou estimativa', api: 'focos + vento', dado: 'Índice de qualidade do ar / risco de fumaça', freq: 'Horária' },
+    { cat: 'Fogo / Incêndios', fonte: 'CENSIPAM — Painel do Fogo', api: 'panorama.sipam.gov.br/painel-do-fogo/api', dado: 'Eventos ativos/em observação, prioridade de acionamento, evolução e geometria', freq: 'Tempo real (~10 min)' },
 ];
 
 /* Camadas da arquitetura (seção 3) */
