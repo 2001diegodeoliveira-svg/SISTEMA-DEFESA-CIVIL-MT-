@@ -157,7 +157,8 @@ const ordemNivel = { emergencia: 0, alerta: 1, atencao: 2 };
 const PORTAIS_OFICIAIS = [
     { nome: 'IBGE — Malhas Territoriais', url: 'https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html', uso: 'Limites estaduais e municipais' },
     { nome: 'INPE — BDQueimadas', url: 'https://data.inpe.br/queimadas/bdqueimadas/', uso: 'Focos de calor oficiais' },
-    { nome: 'NASA FIRMS', url: 'https://firms.modaps.eosdis.nasa.gov/map/', uso: 'Detecções MODIS/VIIRS' },
+    { nome: 'NASA FIRMS', url: 'https://firms.modaps.eosdis.nasa.gov/map/', uso: 'Detecções MODIS/VIIRS em tempo real' },
+    { nome: 'FIRMS — API de Dados', url: 'https://firms.modaps.eosdis.nasa.gov/api/area/', uso: 'API de área (requer MAP_KEY gratuito)' },
     { nome: 'CENSIPAM — Painel do Fogo', url: 'https://panorama.sipam.gov.br/painel-do-fogo', uso: 'Eventos de fogo' },
     { nome: 'INMET', url: 'https://portal.inmet.gov.br/', uso: 'Estações, previsão e avisos' },
     { nome: 'CEMADEN', url: 'https://mapainterativo.cemaden.gov.br/', uso: 'Chuva e monitoramento' },
