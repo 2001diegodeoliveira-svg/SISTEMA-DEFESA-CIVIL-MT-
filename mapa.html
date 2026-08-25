@@ -589,6 +589,160 @@
         .hm-legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
         .hm-bar { flex: 1; height: 6px; border-radius: 3px; }
         .hm-labels { display: flex; justify-content: space-between; width: 100%; font-size: 8px; color: var(--text-muted); }
+
+        /* ===== Monitoramento em Tempo Real — Painel de Alertas ===== */
+        #monitorPanel {
+            position: absolute; top: 72px; right: 16px; z-index: 1200;
+            width: 340px; max-height: calc(100vh - 140px);
+            background: rgba(10,18,42,.95); backdrop-filter: blur(14px);
+            border: 1px solid rgba(249,99,28,.3); border-radius: 12px;
+            display: none; flex-direction: column; overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,.6);
+            animation: mpSlide .3s ease;
+        }
+        #monitorPanel.show { display: flex; }
+        .mon-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border-bottom: 1px solid var(--border-color);
+        }
+        .mon-header-left { display: flex; align-items: center; gap: 8px; }
+        .mon-header-left i { color: var(--accent-orange); font-size: 14px; }
+        .mon-header-left span { font-size: 12px; font-weight: 700; color: var(--text-main); }
+        .mon-live-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
+            animation: livePulse 1.5s infinite;
+        }
+        @keyframes livePulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,.6); } 50% { opacity: .7; box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
+        .mon-header-right { display: flex; align-items: center; gap: 8px; }
+        .mon-count {
+            background: rgba(249,99,28,.15); border: 1px solid rgba(249,99,28,.3);
+            border-radius: 12px; padding: 2px 8px; font-size: 10px; font-weight: 700; color: var(--accent-orange);
+        }
+        .mon-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 4px; }
+        .mon-close:hover { color: var(--text-main); }
+
+        .mon-body { flex: 1; overflow-y: auto; padding: 8px; }
+        .mon-body::-webkit-scrollbar { width: 4px; }
+        .mon-body::-webkit-scrollbar-thumb { background: var(--bg-card-hover); border-radius: 2px; }
+
+        .mon-empty { text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 11px; }
+        .mon-empty i { font-size: 28px; color: var(--accent-orange); margin-bottom: 8px; display: block; opacity: .5; }
+
+        .mon-alert {
+            display: flex; gap: 10px; align-items: flex-start;
+            background: rgba(255,255,255,.03); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+            transition: background .15s, border-color .15s;
+            animation: alertSlideIn .3s ease;
+        }
+        @keyframes alertSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+        .mon-alert:hover { background: rgba(255,255,255,.06); }
+        .mon-alert.flash { border-color: rgba(249,99,28,.6); background: rgba(249,99,28,.08); }
+        .mon-alert.flash.critico { border-color: rgba(239,68,68,.6); background: rgba(239,68,68,.08); }
+
+        .mon-icon {
+            width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .mon-icon.temp { background: rgba(249,99,28,.15); color: #f9731c; }
+        .mon-icon.wind { background: rgba(56,189,248,.15); color: #38bdf8; }
+        .mon-icon.rain { background: rgba(59,130,246,.15); color: #3b82f6; }
+        .mon-icon.hum { background: rgba(34,211,238,.15); color: #22d3ee; }
+        .mon-icon.fire { background: rgba(239,68,68,.15); color: #ef4444; }
+        .mon-icon.event { background: rgba(220,38,38,.15); color: #dc2626; }
+        .mon-icon.uv { background: rgba(251,191,36,.15); color: #fbbf24; }
+        .mon-icon.pressure { background: rgba(167,139,250,.15); color: #a78bfa; }
+
+        .mon-content { flex: 1; min-width: 0; }
+        .mon-title { font-size: 11px; font-weight: 700; color: var(--text-main); line-height: 1.3; }
+        .mon-desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+        .mon-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 9px; color: var(--text-muted); }
+        .mon-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 1px 6px; border-radius: 4px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+        }
+        .mon-badge.critico { background: rgba(239,68,68,.2); color: #ef4444; }
+        .mon-badge.alto { background: rgba(249,99,28,.2); color: #f9731c; }
+        .mon-badge.medio { background: rgba(251,191,36,.2); color: #fbbf24; }
+        .mon-badge.baixo { background: rgba(34,197,94,.2); color: #22c55e; }
+        .mon-badge.info { background: rgba(56,189,248,.2); color: #38bdf8; }
+
+        .mon-delta { font-weight: 700; font-variant-numeric: tabular-nums; }
+        .mon-delta.up { color: #ef4444; }
+        .mon-delta.down { color: #38bdf8; }
+        .mon-delta.new { color: #f9731c; }
+
+        .mon-stations { padding: 8px; border-top: 1px solid var(--border-color); }
+        .mon-stations-title { font-size: 9px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; }
+        .mon-station-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 8px; border-radius: 6px; font-size: 10px; color: var(--text-muted);
+        }
+        .mon-station-row:hover { background: rgba(255,255,255,.03); }
+        .mon-station-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .mon-station-name { flex: 1; font-weight: 600; color: var(--text-main); }
+        .mon-station-val { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+        .mon-footer {
+            padding: 8px 12px; border-top: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .mon-footer span { font-size: 9px; color: var(--text-muted); }
+        .mon-footer button {
+            background: rgba(249,99,28,.1); border: 1px solid rgba(249,99,28,.3);
+            color: var(--accent-orange); font-size: 9px; font-weight: 700;
+            padding: 4px 10px; border-radius: 5px; cursor: pointer; transition: background .15s;
+        }
+        .mon-footer button:hover { background: rgba(249,99,28,.2); }
+
+        /* Flash popup notification */
+        #flashPopup {
+            position: absolute; top: 120px; right: 16px; z-index: 1400;
+            width: 320px;
+            background: rgba(10,18,42,.96); backdrop-filter: blur(14px);
+            border-radius: 10px; padding: 12px 14px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.6);
+            transform: translateX(calc(100% + 40px)); transition: transform .35s cubic-bezier(.22,1,.36,1);
+            pointer-events: none;
+        }
+        #flashPopup.show { transform: translateX(0); pointer-events: auto; }
+        #flashPopup .fp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        #flashPopup .fp-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+        #flashPopup .fp-title { font-size: 11px; font-weight: 700; color: var(--text-main); flex: 1; }
+        #flashPopup .fp-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; }
+        #flashPopup .fp-body { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+        #flashPopup .fp-body b { color: var(--text-main); }
+        #flashPopup .fp-time { font-size: 9px; color: var(--text-muted); margin-top: 4px; opacity: .7; }
+        #flashPopup.border-critico { border: 1px solid rgba(239,68,68,.5); }
+        #flashPopup.border-alto { border: 1px solid rgba(249,99,28,.5); }
+        #flashPopup.border-medio { border: 1px solid rgba(251,191,36,.5); }
+        #flashPopup.border-baixo { border: 1px solid rgba(34,197,94,.5); }
+
+        /* Monitor toggle button */
+        #monitorToggle {
+            position: absolute; top: 72px; right: 16px; z-index: 1190;
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(10,18,42,.92); backdrop-filter: blur(10px);
+            border: 1px solid rgba(249,99,28,.3);
+            color: var(--accent-orange); font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .2s; box-shadow: 0 4px 16px rgba(0,0,0,.4);
+        }
+        #monitorToggle:hover { background: rgba(249,99,28,.15); transform: scale(1.05); }
+        #monitorToggle.has-alerts { border-color: #ef4444; }
+        #monitorToggle .badge {
+            position: absolute; top: -4px; right: -4px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #ef4444; color: #fff; font-size: 9px; font-weight: 700;
+            display: none; align-items: center; justify-content: center;
+        }
+        #monitorToggle.has-alerts .badge { display: flex; }
+
+        @media (max-width: 900px) {
+            #monitorPanel { width: calc(100vw - 24px); right: 8px; top: auto; bottom: 80px; max-height: 50vh; }
+            #monitorToggle { bottom: 140px; top: auto; right: 8px; }
+            #flashPopup { right: 8px; width: calc(100vw - 16px); top: 80px; }
+        }
     </style>
 </head>
 <body>
@@ -1059,6 +1213,48 @@
             <div id="portalsList"></div>
             <button class="modal-close" id="closeSources">Fechar</button>
         </div>
+    </div>
+
+    <!-- Monitor Toggle Button -->
+    <button id="monitorToggle" title="Monitoramento em tempo real">
+        <i class="fa-solid fa-satellite-dish"></i>
+        <span class="badge" id="monitorBadge">0</span>
+    </button>
+
+    <!-- Monitoramento em Tempo Real — Painel -->
+    <div id="monitorPanel">
+        <div class="mon-header">
+            <div class="mon-header-left">
+                <div class="mon-live-dot"></div>
+                <span>Monitoramento ao Vivo</span>
+            </div>
+            <div class="mon-header-right">
+                <span class="mon-count" id="monAlertCount">0 alertas</span>
+                <button class="mon-close" id="monClose"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="mon-body" id="monBody">
+            <div class="mon-empty">
+                <i class="fa-solid fa-satellite-dish"></i>
+                Iniciando monitoramento...<br>
+                <span style="font-size:9px;">Coletando dados climáticos das principais cidades de MT</span>
+            </div>
+        </div>
+        <div class="mon-footer">
+            <span id="monLastCheck">—</span>
+            <button id="monForceCheck"><i class="fa-solid fa-arrows-rotate"></i> Verificar agora</button>
+        </div>
+    </div>
+
+    <!-- Flash Popup Notification -->
+    <div id="flashPopup">
+        <div class="fp-head">
+            <div class="fp-icon" id="fpIcon"><i class="fa-solid fa-bell"></i></div>
+            <div class="fp-title" id="fpTitle">Alerta</div>
+            <button class="fp-close" id="fpClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="fp-body" id="fpBody"></div>
+        <div class="fp-time" id="fpTime"></div>
     </div>
 </div>
 
@@ -2812,6 +3008,370 @@ function renderHourly24h(hourly) {
         container.appendChild(item);
     }
 }
+
+/* ================= MONITORAMENTO EM TEMPO REAL ================= */
+const MON_CITIES = [
+    { nome: 'Cuiabá', lat: -15.588, lon: -56.097, cod: 5103403 },
+    { nome: 'Sinop', lat: -11.860, lon: -55.510, cod: 5107900 },
+    { nome: 'Rondonópolis', lat: -16.471, lon: -54.637, cod: 5107603 },
+    { nome: 'Sorriso', lat: -12.545, lon: -55.727, cod: 5107801 },
+    { nome: 'Cáceres', lat: -16.076, lon: -57.681, cod: 5102500 },
+    { nome: 'Tangará da Serra', lat: -14.620, lon: -57.426, cod: 5108106 },
+    { nome: 'Primavera do Leste', lat: -15.527, lon: -54.284, cod: 5107009 },
+    { nome: 'Barra do Garças', lat: -15.891, lon: -52.262, cod: 5101601 },
+];
+
+const MON_THRESHOLDS = {
+    temp: { critico: 40, alto: 35, medio: 32, varCritico: 6, varAlto: 4, varMedio: 2.5 },
+    wind: { critico: 60, alto: 45, medio: 30, varCritico: 25, varAlto: 15, varMedio: 8 },
+    humidity: { critico: 15, alto: 25, medio: 35, dropAlto: 20, dropMedio: 12 },
+    uv: { critico: 11, alto: 8, medio: 6 },
+    pressure: { dropCritico: 8, dropAlto: 5, dropMedio: 3 },
+};
+
+let monState = {};
+let monAlerts = [];
+let monPanelOpen = false;
+let monTimer = null;
+let monFocoSnapshot = [];
+let monSipamSnapshot = [];
+
+// Initialize monitoring state for each city
+MON_CITIES.forEach(c => {
+    monState[c.cod] = { nome: c.nome, lat: c.lat, lon: c.lon, prev: null, current: null };
+});
+
+// UI bindings
+const monPanel = document.getElementById('monitorPanel');
+const monToggle = document.getElementById('monitorToggle');
+const monBadge = document.getElementById('monitorBadge');
+const flashPopup = document.getElementById('flashPopup');
+let flashTimer = null;
+
+monToggle.addEventListener('click', () => {
+    monPanelOpen = !monPanelOpen;
+    monPanel.classList.toggle('show', monPanelOpen);
+});
+document.getElementById('monClose').addEventListener('click', () => {
+    monPanelOpen = false;
+    monPanel.classList.remove('show');
+});
+document.getElementById('fpClose').addEventListener('click', () => flashPopup.classList.remove('show'));
+document.getElementById('monForceCheck').addEventListener('click', () => runMonitorCycle());
+
+// Severity helpers
+function sevClass(sev) {
+    if (sev === 'critico') return 'critico';
+    if (sev === 'alto') return 'alto';
+    if (sev === 'medio') return 'medio';
+    return 'baixo';
+}
+function sevIcon(type) {
+    const map = {
+        temp: 'fa-temperature-half', wind: 'fa-wind', rain: 'fa-cloud-showers-heavy',
+        humidity: 'fa-droplet', fire: 'fa-fire-flame-curved', event: 'fa-triangle-exclamation',
+        uv: 'fa-sun', pressure: 'fa-gauge-high',
+    };
+    return map[type] || 'fa-bell';
+}
+function sevIconClass(type) {
+    const map = {
+        temp: 'temp', wind: 'wind', rain: 'rain',
+        humidity: 'hum', fire: 'fire', event: 'event',
+        uv: 'uv', pressure: 'pressure',
+    };
+    return map[type] || 'temp';
+}
+
+// Add alert to panel
+function addAlert(alert) {
+    monAlerts.unshift(alert);
+    if (monAlerts.length > 100) monAlerts = monAlerts.slice(0, 100);
+    renderAlerts();
+    showFlashPopup(alert);
+    updateBadge();
+}
+
+// Render alerts list
+function renderAlerts() {
+    const body = document.getElementById('monBody');
+    const countEl = document.getElementById('monAlertCount');
+    countEl.textContent = monAlerts.length + ' alerta' + (monAlerts.length !== 1 ? 's' : '');
+
+    if (!monAlerts.length) {
+        body.innerHTML = `<div class="mon-empty"><i class="fa-solid fa-satellite-dish"></i>Nenhum alerta detectado ainda.<br><span style="font-size:9px;">O monitoramento está ativo — aguarde a próxima verificação.</span></div>`;
+        return;
+    }
+
+    body.innerHTML = monAlerts.map(a => {
+        const now = new Date(a.ts);
+        const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const sev = sevClass(a.severity);
+        return `
+        <div class="mon-alert flash ${sev}" data-ts="${a.ts}">
+            <div class="mon-icon ${sevIconClass(a.type)}"><i class="fa-solid ${sevIcon(a.type)}"></i></div>
+            <div class="mon-content">
+                <div class="mon-title">${a.title}</div>
+                <div class="mon-desc">${a.desc}</div>
+                <div class="mon-meta">
+                    <span class="mon-badge ${sev}">${a.severity}</span>
+                    <span>${a.city}</span>
+                    <span>${time}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Flash popup notification
+function showFlashPopup(alert) {
+    const sev = sevClass(alert.severity);
+    flashPopup.className = 'border-' + sev;
+    document.getElementById('fpIcon').className = 'fp-icon mon-icon ' + sevIconClass(alert.type);
+    document.getElementById('fpIcon').innerHTML = `<i class="fa-solid ${sevIcon(alert.type)}"></i>`;
+    document.getElementById('fpTitle').textContent = alert.title;
+    document.getElementById('fpBody').innerHTML = alert.desc + '<br><b>' + alert.city + '</b>';
+    document.getElementById('fpTime').textContent = new Date(alert.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    flashPopup.classList.add('show');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => flashPopup.classList.remove('show'), 6000);
+}
+
+// Update badge count
+function updateBadge() {
+    const recent = monAlerts.filter(a => Date.now() - a.ts < 3600000).length;
+    monBadge.textContent = recent;
+    monToggle.classList.toggle('has-alerts', recent > 0);
+}
+
+// ================= FETCH WEATHER FOR ALL CITIES =================
+async function fetchCityWeather(city) {
+    try {
+        const r = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}`
+            + `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,`
+            + `surface_pressure,cloud_cover,uv_index,wind_gusts_10m`
+            + `&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`
+        );
+        if (!r.ok) return null;
+        const d = await r.json();
+        const c = d.current;
+        const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
+        return {
+            temp: c.temperature_2m,
+            humidity: c.relative_humidity_2m,
+            wind: c.wind_speed_10m,
+            gusts: c.wind_gusts_10m ?? 0,
+            rain: c.precipitation ?? 0,
+            rainDaily: chuva,
+            pressure: c.surface_pressure,
+            clouds: c.cloud_cover,
+            uv: c.uv_index,
+            weatherCode: c.weather_code,
+            ts: Date.now(),
+        };
+    } catch { return null; }
+}
+
+// ================= DETECT CHANGES =================
+function detectChanges(cityCod, prev, curr) {
+    if (!prev || !curr) return [];
+    const alerts = [];
+    const city = monState[cityCod].nome;
+    const T = MON_THRESHOLDS;
+
+    // Temperature change
+    const tempDiff = curr.temp - prev.temp;
+    if (Math.abs(tempDiff) >= T.temp.varCritico) {
+        alerts.push({ type: 'temp', severity: 'critico', title: `Temperatura ${tempDiff > 0 ? 'subiu' : 'caiu'} ${Math.abs(tempDiff).toFixed(1)}°C`, desc: `De ${Math.round(prev.temp)}°C para ${Math.round(curr.temp)}°C`, city, ts: Date.now() });
+    } else if (Math.abs(tempDiff) >= T.temp.varAlto) {
+        alerts.push({ type: 'temp', severity: 'alto', title: `Temperatura ${tempDiff > 0 ? 'subiu' : 'caiu'} ${Math.abs(tempDiff).toFixed(1)}°C`, desc: `De ${Math.round(prev.temp)}°C para ${Math.round(curr.temp)}°C`, city, ts: Date.now() });
+    } else if (Math.abs(tempDiff) >= T.temp.varMedio) {
+        alerts.push({ type: 'temp', severity: 'medio', title: `Temperatura variou ${Math.abs(tempDiff).toFixed(1)}°C`, desc: `De ${Math.round(prev.temp)}°C para ${Math.round(curr.temp)}°C`, city, ts: Date.now() });
+    }
+
+    // Absolute temperature thresholds
+    if (curr.temp >= T.temp.critico) {
+        alerts.push({ type: 'temp', severity: 'critico', title: `Temperatura extrema: ${Math.round(curr.temp)}°C`, desc: `Acima de ${T.temp.critico}°C — risco à saúde`, city, ts: Date.now() });
+    } else if (curr.temp >= T.temp.alto) {
+        alerts.push({ type: 'temp', severity: 'alto', title: `Temperatura alta: ${Math.round(curr.temp)}°C`, desc: `Acima de ${T.temp.alto}°C`, city, ts: Date.now() });
+    }
+
+    // Wind change
+    const windDiff = curr.wind - prev.wind;
+    if (Math.abs(windDiff) >= T.wind.varCritico) {
+        alerts.push({ type: 'wind', severity: 'critico', title: `Vento ${windDiff > 0 ? 'aumentou' : 'diminuiu'} ${Math.abs(windDiff).toFixed(0)} km/h`, desc: `De ${Math.round(prev.wind)} para ${Math.round(curr.wind)} km/h`, city, ts: Date.now() });
+    } else if (Math.abs(windDiff) >= T.wind.varAlto) {
+        alerts.push({ type: 'wind', severity: 'alto', title: `Vento variou ${Math.abs(windDiff).toFixed(0)} km/h`, desc: `De ${Math.round(prev.wind)} para ${Math.round(curr.wind)} km/h`, city, ts: Date.now() });
+    }
+
+    if (curr.wind >= T.wind.critico || curr.gusts >= T.wind.critico + 15) {
+        alerts.push({ type: 'wind', severity: 'critico', title: `Rajadas extremas: ${Math.round(curr.gusts || curr.wind)} km/h`, desc: 'Perigo para estruturas e transporte', city, ts: Date.now() });
+    } else if (curr.wind >= T.wind.alto) {
+        alerts.push({ type: 'wind', severity: 'alto', title: `Vento forte: ${Math.round(curr.wind)} km/h`, desc: 'Possíveis danos leves', city, ts: Date.now() });
+    }
+
+    // Humidity drop
+    const humDiff = curr.humidity - prev.humidity;
+    if (humDiff <= -T.humidity.dropAlto) {
+        alerts.push({ type: 'humidity', severity: 'alto', title: `Umidade caiu ${Math.abs(humDiff)}%`, desc: `De ${prev.humidity}% para ${curr.humidity}%`, city, ts: Date.now() });
+    } else if (humDiff <= -T.humidity.dropMedio) {
+        alerts.push({ type: 'humidity', severity: 'medio', title: `Umidade reduziu ${Math.abs(humDiff)}%`, desc: `De ${prev.humidity}% para ${curr.humidity}%`, city, ts: Date.now() });
+    }
+    if (curr.humidity <= T.humidity.critico) {
+        alerts.push({ type: 'humidity', severity: 'critico', title: `Umidade crítica: ${curr.humidity}%`, desc: 'Seca extrema — risco de incêndio', city, ts: Date.now() });
+    }
+
+    // Rain started
+    if (curr.rain > 0 && prev.rain === 0) {
+        alerts.push({ type: 'rain', severity: 'info', title: 'Precipitação iniciada', desc: `${curr.rain} mm detectado`, city, ts: Date.now() });
+    }
+    if (curr.rainDaily > 5 && prev.rainDaily <= 5) {
+        alerts.push({ type: 'rain', severity: 'medio', title: `Chuva acumulada: ${curr.rainDaily.toFixed(1)} mm`, desc: 'Possível alagamento em áreas baixas', city, ts: Date.now() });
+    }
+    if (curr.rainDaily > 20 && prev.rainDaily <= 20) {
+        alerts.push({ type: 'rain', severity: 'alto', title: `Chuva forte acumulada: ${curr.rainDaily.toFixed(1)} mm`, desc: 'Risco de inundação e deslizamento', city, ts: Date.now() });
+    }
+
+    // UV
+    if (curr.uv >= T.uv.critico && (prev.uv == null || prev.uv < T.uv.critico)) {
+        alerts.push({ type: 'uv', severity: 'alto', title: `UV extremo: ${curr.uv}`, desc: 'Evite exposição solar', city, ts: Date.now() });
+    }
+
+    // Pressure drop (storm indicator)
+    if (prev.pressure && curr.pressure) {
+        const pDrop = prev.pressure - curr.pressure;
+        if (pDrop >= T.pressure.dropCritico) {
+            alerts.push({ type: 'pressure', severity: 'critico', title: `Pressão caiu ${pDrop.toFixed(1)} hPa`, desc: `De ${Math.round(prev.pressure)} para ${Math.round(curr.pressure)} hPa — tempestade possível`, city, ts: Date.now() });
+        } else if (pDrop >= T.pressure.dropAlto) {
+            alerts.push({ type: 'pressure', severity: 'alto', title: `Pressão reduziu ${pDrop.toFixed(1)} hPa`, desc: `De ${Math.round(prev.pressure)} para ${Math.round(curr.pressure)} hPa`, city, ts: Date.now() });
+        }
+    }
+
+    return alerts;
+}
+
+// ================= DETECT NEW FIRE SPOTS =================
+async function detectNewFocos() {
+    try {
+        const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+        const res = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+        if (!res.ok) return;
+        const txt = await res.text();
+        const lines = txt.split('\n');
+        const header = lines[0].split(',').map(h => h.trim());
+        const iLat = header.indexOf('lat'), iLon = header.indexOf('lon'), iMun = header.indexOf('municipio'),
+              iSat = header.indexOf('satelite'), iFrn = header.indexOf('frp'), iRisco = header.indexOf('risco_fogo');
+        const current = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length < header.length - 2) continue;
+            if ((cols[header.indexOf('estado')] || '').trim().toUpperCase() !== 'MATO GROSSO') continue;
+            const lat = parseFloat(cols[iLat]), lon = parseFloat(cols[iLon]);
+            if (!isFinite(lat) || !isFinite(lon)) continue;
+            const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+            current.push(key);
+        }
+
+        if (monFocoSnapshot.length > 0) {
+            const newSet = new Set(current.filter(k => !monFocoSnapshot.includes(k)));
+            if (newSet.size > 0) {
+                addAlert({
+                    type: 'fire', severity: newSet.size > 5 ? 'critico' : newSet.size > 2 ? 'alto' : 'medio',
+                    title: `${newSet.size} novo(s) foco(s) detectado(s)`,
+                    desc: `INPE identificou novos pontos de calor em MT`,
+                    city: 'Estado de MT', ts: Date.now(),
+                });
+            }
+        }
+        monFocoSnapshot = current;
+    } catch {}
+}
+
+// ================= DETECT NEW SIPAM EVENTS =================
+async function detectNewSipam() {
+    try {
+        const res = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        if (!res.ok) return;
+        const eventos = await res.json();
+        if (!Array.isArray(eventos)) return;
+
+        const currentIds = eventos.map(e => e.id_evento);
+
+        if (monSipamSnapshot.length > 0) {
+            const newEvents = eventos.filter(e => !monSipamSnapshot.includes(e.id_evento));
+            newEvents.forEach(ev => {
+                addAlert({
+                    type: 'event', severity: ev.status_evento === 'Ativo' ? 'alto' : 'medio',
+                    title: `Novo evento SIPAM #${ev.id_evento}`,
+                    desc: `${ev.status_evento} — ${ev.municipio || 'MT'} — Área: ${ev.area_total_evento ? ev.area_total_evento.toFixed(1) + ' ha' : '—'}`,
+                    city: ev.municipio || 'MT', ts: Date.now(),
+                });
+            });
+        }
+        monSipamSnapshot = currentIds;
+    } catch {}
+}
+
+// ================= UPDATE STATION READINGS DISPLAY =================
+function renderStationReadings() {
+    const body = document.getElementById('monBody');
+    const existing = body.querySelectorAll('.mon-alert');
+    if (monAlerts.length) return; // Don't overwrite alerts
+
+    let html = '<div class="mon-stations"><div class="mon-stations-title">Leituras atuais</div>';
+    MON_CITIES.forEach(c => {
+        const s = monState[c.cod];
+        if (!s.current) return;
+        const curr = s.current;
+        const tempColor = curr.temp >= 35 ? '#ef4444' : curr.temp >= 30 ? '#f9731c' : curr.temp >= 20 ? '#fbbf24' : '#38bdf8';
+        const windColor = curr.wind >= 40 ? '#ef4444' : curr.wind >= 25 ? '#f9731c' : '#38bdf8';
+        html += `
+        <div class="mon-station-row">
+            <div class="mon-station-dot" style="background:${tempColor};"></div>
+            <span class="mon-station-name">${c.nome}</span>
+            <span class="mon-station-val" style="color:${tempColor};">${Math.round(curr.temp)}°C</span>
+            <span class="mon-station-val" style="color:${windColor};font-size:9px;margin-left:4px;">${Math.round(curr.wind)} km/h</span>
+            <span class="mon-station-val" style="color:#38bdf8;font-size:9px;margin-left:4px;">${curr.humidity}%</span>
+        </div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+}
+
+// ================= MAIN MONITOR CYCLE =================
+async function runMonitorCycle() {
+    document.getElementById('monLastCheck').textContent = 'Verificando... ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // Fetch weather for all cities in parallel
+    const results = await Promise.all(MON_CITIES.map(c => fetchCityWeather(c)));
+
+    let totalNewAlerts = 0;
+    MON_CITIES.forEach((city, i) => {
+        const curr = results[i];
+        if (!curr) return;
+        const state = monState[city.cod];
+        state.prev = state.current;
+        state.current = curr;
+
+        const alerts = detectChanges(city.cod, state.prev, state.current);
+        alerts.forEach(a => { addAlert(a); totalNewAlerts++; });
+    });
+
+    // Detect new fire spots and SIPAM events
+    await Promise.all([detectNewFocos(), detectNewSipam()]);
+
+    // Update display
+    if (!monAlerts.length) renderStationReadings();
+    document.getElementById('monLastCheck').textContent = 'Última: ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // Schedule next cycle (5 min)
+    clearTimeout(monTimer);
+    monTimer = setTimeout(runMonitorCycle, 5 * 60 * 1000);
+}
+
+// ================= START MONITORING =================
+setTimeout(runMonitorCycle, 3000); // Start after 3s to let other layers load first
 </script>
 </body>
 </html>
