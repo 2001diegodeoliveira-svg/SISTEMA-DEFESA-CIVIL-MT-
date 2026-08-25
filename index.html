@@ -590,45 +590,87 @@
             text-decoration: none;
         }
 
-        /* Monitoramento em Tempo Real */
-        .monitoring-metrics {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-top: 20px;
+        /* ===== Painel Dashboard em Tempo Real ===== */
+        .pd-loading { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; }
+        .pd-loading i { margin-right: 6px; color: var(--accent-orange); }
+        .pd-section { padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .pd-section:last-child { border-bottom: none; }
+        .pd-section-title {
+            font-size: 9px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted);
+            font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
         }
+        .pd-section-title i { font-size: 10px; }
+        .pd-section-title i.fire { color: #ef4444; }
+        .pd-section-title i.climate { color: #f9731c; }
+        .pd-section-title i.wind { color: #38bdf8; }
+        .pd-section-title i.radar { color: #22c55e; }
+        .pd-section-title i.forecast { color: #fbbf24; }
+        .pd-section-title i.sources { color: #94a3b8; }
 
-        .metric-card {
-            background-color: rgba(11, 19, 41, 0.6);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            aspect-ratio: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 10px;
-            position: relative;
+        .pd-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .pd-summary-card {
+            background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+            border: 1px solid rgba(255,255,255,.06); border-radius: 8px;
+            padding: 10px 6px; text-align: center;
+            transition: transform .15s, border-color .15s;
         }
+        .pd-summary-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.12); }
+        .pd-summary-card .pdc-i { font-size: 16px; margin-bottom: 4px; }
+        .pd-summary-card .pdc-v { font-size: 20px; font-weight: 800; line-height: 1.1; }
+        .pd-summary-card .pdc-l { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 3px; }
+        .pd-summary-card.fire .pdc-v { color: #ef4444; }
+        .pd-summary-card.alert .pdc-v { color: #f9731c; }
+        .pd-summary-card.rain .pdc-v { color: #38bdf8; }
+        .pd-summary-card.ok .pdc-v { color: #22c55e; }
 
-        .metric-card i {
-            font-size: 18px;
-            margin-bottom: 5px;
-            color: var(--accent-orange);
+        .pd-city-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .pd-city-card {
+            background: linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,.015));
+            border: 1px solid rgba(255,255,255,.04); border-radius: 8px;
+            padding: 8px 6px; text-align: center; transition: background .15s, border-color .15s;
         }
+        .pd-city-card:hover { background: linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); border-color: rgba(255,255,255,.1); }
+        .pd-city-name { font-size: 9px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pd-city-temp { font-size: 16px; font-weight: 800; line-height: 1.3; }
+        .pd-city-meta { display: flex; justify-content: center; gap: 8px; font-size: 8px; color: var(--text-muted); margin-top: 2px; }
+        .pd-city-meta i { font-size: 7px; }
 
-        .metric-card .value {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-main);
+        .pd-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .pd-fire-row {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 0; font-size: 10px; color: var(--text-muted);
         }
+        .pd-fire-row .pd-fr-icon { width: 20px; text-align: center; font-size: 11px; }
+        .pd-fire-row .pd-fr-val { font-weight: 700; color: var(--text-main); min-width: 28px; }
+        .pd-fire-row .pd-fr-label { flex: 1; }
 
-        .metric-card .label {
-            font-size: 10px;
-            color: var(--text-muted);
-            line-height: 1.1;
+        .pd-cptec-row {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 0; font-size: 10px; border-bottom: 1px solid rgba(255,255,255,.03);
         }
+        .pd-cptec-row:last-child { border-bottom: none; }
+        .pd-cptec-day { font-weight: 700; color: var(--text-main); min-width: 28px; }
+        .pd-cptec-icon { font-size: 12px; min-width: 18px; text-align: center; }
+        .pd-cptec-desc { flex: 1; color: var(--text-muted); }
+        .pd-cptec-temp { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .pd-source-row {
+            display: flex; align-items: center; gap: 6px;
+            padding: 3px 0; font-size: 9px; color: var(--text-muted);
+        }
+        .pd-source-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+        .pd-source-dot.ok { background: #22c55e; }
+        .pd-source-dot.err { background: #ef4444; }
+        .pd-source-name { flex: 1; }
+        .pd-source-status { font-weight: 600; font-size: 8px; }
+
+        .pd-refresh-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.3);
+            color: var(--accent-orange); font-size: 10px; font-weight: 700;
+            padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: background .15s;
+        }
+        .pd-refresh-btn:hover { background: rgba(249,115,22,.2); }
 
         /* Rodapé */
         footer {
@@ -870,36 +912,18 @@
             </div>
         </div>
 
-        <!-- Monitoramento em Tempo Real -->
+        <!-- Painel em Tempo Real -->
         <div class="section-box">
             <div class="section-title">
-                <span>MONITORAMENTO EM TEMPO REAL</span>
-                <a href="mapa.html">Ver mapa completo &rarr;</a>
+                <span><i class="fa-solid fa-satellite-dish" style="color:#f9731c;margin-right:6px;"></i> PAINEL EM TEMPO REAL</span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span id="painelLastUpdate" style="font-size:10px;color:var(--text-muted);">—</span>
+                    <a href="mapa.html">Ver mapa completo &rarr;</a>
+                </div>
             </div>
 
-            <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 20px; text-align: center;">
-                <div class="monitoring-metrics">
-                    <div class="metric-card">
-                        <i class="fa-solid fa-fire" style="color: #f9631c;"></i>
-                        <div class="value">125</div>
-                        <div class="label">Focos de Calor últimas 24h</div>
-                    </div>
-                    <div class="metric-card">
-                        <i class="fa-solid fa-cloud-rain" style="color: #38bdf8;"></i>
-                        <div class="value">18.6mm</div>
-                        <div class="label">Chuva Acumulada nas últimas 24h</div>
-                    </div>
-                    <div class="metric-card">
-                        <i class="fa-solid fa-water" style="color: #34d399;"></i>
-                        <div class="value">6</div>
-                        <div class="label">Rios em Alerta monitoramento</div>
-                    </div>
-                    <div class="metric-card">
-                        <i class="fa-solid fa-city" style="color: #fbbf24;"></i>
-                        <div class="value">141</div>
-                        <div class="label">Municípios monitorados</div>
-                    </div>
-                </div>
+            <div id="painelDashboard">
+                <div class="pd-loading"><i class="fa-solid fa-spinner fa-spin"></i> Coletando dados...</div>
             </div>
         </div>
 
@@ -1035,49 +1059,186 @@
         }
 
         // Atualiza métricas do painel em tempo real
-        (function updateMetrics() {
-            // Contadores já com valores de fallback do HTML
-            document.getElementById('hsMunicipios').textContent = '141';
-            document.getElementById('hsAlertas').textContent = ALERTAS_ATIVOS.length;
-            document.getElementById('hsEstacoes').textContent = ESTACOES_DC.length;
+        // ===================== PAINEL EM TEMPO REAL =====================
+        const MON_CITIES = [
+            { nome: 'Cuiabá', lat: -15.588, lon: -56.097 },
+            { nome: 'Sinop', lat: -12.472, lon: -55.722 },
+            { nome: 'Rondonópolis', lat: -16.471, lon: -54.645 },
+            { nome: 'Sorriso', lat: -12.546, lon: -55.727 },
+            { nome: 'Cáceres', lat: -16.077, lon: -57.682 },
+            { nome: 'Tangará', lat: -14.656, lon: -57.486 },
+            { nome: 'Primavera', lat: -15.556, lon: -53.949 },
+            { nome: 'Barra do Garças', lat: -15.891, lon: -52.258 },
+        ];
 
-            // Busca focos INPE em tempo real
-            const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
-            fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`)
-                .then(r => { if (!r.ok) throw 0; return r.text(); })
-                .then(csv => {
-                    const lines = csv.split('\n');
-                    const header = lines[0].split(',').map(h => h.trim());
-                    const iUF = header.indexOf('estado');
-                    const mtCount = lines.slice(1).filter(l => {
-                        const c = l.split(',');
-                        return (c[iUF] || '').trim().toUpperCase() === 'MATO GROSSO';
-                    }).length;
-                    if (mtCount > 0) {
-                        const el = document.querySelector('.metric-card .value');
-                        if (el) countUpEl(el, mtCount, 0, '', 1600);
-                    }
-                })
-                .catch(() => {});
+        async function fetchCity(city) {
+            try {
+                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,uv_index,wind_gusts_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`);
+                if (!r.ok) return null;
+                const d = await r.json();
+                const c = d.current;
+                const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
+                return { temp: c.temperature_2m, humidity: c.relative_humidity_2m, wind: c.wind_speed_10m, uv: c.uv_index, rain: chuva };
+            } catch { return null; }
+        }
 
-            // Busca dados Open-Meteo (Cuiabá) para chuva acumulada
-            fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.588&longitude=-56.097&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1')
-                .then(r => { if (!r.ok) throw 0; return r.json(); })
-                .then(d => {
-                    const rain = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0];
-                    if (isFinite(rain)) {
-                        const el = document.querySelectorAll('.metric-card .value')[1];
-                        if (el) el.textContent = rain.toFixed(1).replace('.', ',') + 'mm';
-                    }
-                })
-                .catch(() => {});
+        async function fetchFocos() {
+            try {
+                const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+                const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+                if (!r.ok) return { today: 0, sats: [] };
+                const txt = await r.text();
+                const lines = txt.split('\n');
+                const header = lines[0].split(',').map(h => h.trim());
+                const iUF = header.indexOf('estado'), iSat = header.indexOf('satelite');
+                const mtLines = lines.slice(1).filter(l => { const c = l.split(','); return (c[iUF] || '').trim().toUpperCase() === 'MATO GROSSO'; });
+                const sats = [...new Set(mtLines.map(l => l.split(',')[iSat]?.trim()).filter(Boolean))];
+                return { today: mtLines.length, sats };
+            } catch { return { today: 0, sats: [] }; }
+        }
 
-            // Anima contadores do hero
-            document.querySelectorAll('.hero-stats b').forEach(el => {
-                const to = parseInt(el.textContent) || 0;
-                if (to > 0) countUpEl(el, to, 0, '', 1200);
+        async function fetchSipam() {
+            try {
+                const r = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+                if (!r.ok) return [];
+                const d = await r.json();
+                return Array.isArray(d) ? d : [];
+            } catch { return []; }
+        }
+
+        async function fetchCptec() {
+            try {
+                const r = await fetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+                if (!r.ok) return [];
+                const d = await r.json();
+                if (!d.clima?.length) return [];
+                const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                const ICONE = { 'Chuva': '🌧️', 'Chuvoso': '🌧️', 'Ensolarado': '☀️', 'Parcialmente nublado': '⛅', 'Nublado': '☁️', 'Sol com nuvens': '🌤️', 'Tempestades': '⛈️', 'Nevoeiro': '🌫️', 'Neve': '❄️' };
+                return d.clima.map(c => {
+                    const dt = new Date(c.data + 'T12:00:00');
+                    return { dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth()+1}`, icone: ICONE[c.condicao] || '🌡️', desc: c.condicao_desc, tmax: c.max, tmin: c.min };
+                });
+            } catch { return []; }
+        }
+
+        async function renderPainel() {
+            const el = document.getElementById('painelDashboard');
+            const updEl = document.getElementById('painelLastUpdate');
+
+            // Fetch all data in parallel
+            const [cityResults, focos, sipam, cptec] = await Promise.all([
+                Promise.all(MON_CITIES.map(c => fetchCity(c))),
+                fetchFocos(),
+                fetchSipam(),
+                fetchCptec()
+            ]);
+
+            // Summary
+            const focosCount = focos.today;
+            const sipamCount = sipam.length;
+            const citiesOk = cityResults.filter(Boolean).length;
+
+            let html = '';
+
+            // --- Summary cards ---
+            html += `<div class="pd-section">
+                <div class="pd-section-title"><i class="fa-solid fa-chart-pie climate"></i> Resumo Geral</div>
+                <div class="pd-summary-grid">
+                    <div class="pd-summary-card fire">
+                        <div class="pdc-i">🔥</div>
+                        <div class="pdc-v">${focosCount}</div>
+                        <div class="pdc-l">Focos Hoje</div>
+                    </div>
+                    <div class="pd-summary-card alert">
+                        <div class="pdc-i">⚠️</div>
+                        <div class="pdc-v">${sipamCount}</div>
+                        <div class="pdc-l">Eventos SIPAM</div>
+                    </div>
+                    <div class="pd-summary-card rain">
+                        <div class="pdc-i">📡</div>
+                        <div class="pdc-v">${citiesOk}/8</div>
+                        <div class="pdc-l">Cidades Ativas</div>
+                    </div>
+                    <div class="pd-summary-card ok">
+                        <div class="pdc-i">🛰️</div>
+                        <div class="pdc-v">${focos.sats.length}</div>
+                        <div class="pdc-l">Satélites INPE</div>
+                    </div>
+                </div>
+            </div>`;
+
+            // --- Cities monitored ---
+            html += `<div class="pd-section">
+                <div class="pd-section-title"><i class="fa-solid fa-city climate"></i> Clima das Cidades</div>
+                <div class="pd-city-grid">`;
+            MON_CITIES.forEach((c, i) => {
+                const curr = cityResults[i];
+                if (!curr) {
+                    html += `<div class="pd-city-card"><div class="pd-city-name">${c.nome}</div><div class="pd-city-temp" style="color:var(--text-muted);">—°C</div></div>`;
+                    return;
+                }
+                const tc = curr.temp >= 38 ? '#ef4444' : curr.temp >= 32 ? '#f9731c' : curr.temp >= 22 ? '#fbbf24' : '#38bdf8';
+                html += `<div class="pd-city-card">
+                    <div class="pd-city-name">${c.nome}</div>
+                    <div class="pd-city-temp" style="color:${tc};">${Math.round(curr.temp)}°C</div>
+                    <div class="pd-city-meta">
+                        <span><i class="fa-solid fa-droplet"></i> ${curr.humidity}%</span>
+                        <span><i class="fa-solid fa-wind"></i> ${Math.round(curr.wind)} km/h</span>
+                    </div>
+                </div>`;
             });
-        })();
+            html += `</div></div>`;
+
+            // --- Two column: Fire + CPTEC ---
+            html += `<div class="pd-section"><div class="pd-two-col">`;
+
+            // Fire INPE
+            html += `<div>
+                <div class="pd-section-title"><i class="fa-solid fa-fire-flame-curved fire"></i> Focos INPE</div>
+                <div class="pd-fire-row"><div class="pd-fr-icon">🔥</div><div class="pd-fr-val" style="color:#ef4444;">${focosCount}</div><div class="pd-fr-label">focos hoje em MT</div></div>
+                <div class="pd-fire-row"><div class="pd-fr-icon">🛰️</div><div class="pd-fr-val">${focos.sats.length}</div><div class="pd-fr-label">satélites: ${focos.sats.join(', ') || '—'}</div></div>
+                ${sipam.slice(0, 3).map(ev => `<div class="pd-fire-row"><div class="pd-fr-icon" style="color:${ev.status_evento === 'Ativo' ? '#ef4444' : '#22c55e'};">●</div><div class="pd-fr-val" style="font-size:9px;">#${ev.id_evento}</div><div class="pd-fr-label">${ev.municipio || 'MT'} — ${ev.status_evento || '—'}</div></div>`).join('')}
+            </div>`;
+
+            // CPTEC
+            html += `<div>
+                <div class="pd-section-title"><i class="fa-solid fa-calendar-days forecast"></i> CPTEC Previsão</div>`;
+            if (cptec.length) {
+                cptec.slice(0, 5).forEach(c => {
+                    html += `<div class="pd-cptec-row">
+                        <div class="pd-cptec-day">${c.dia}</div>
+                        <div class="pd-cptec-icon">${c.icone}</div>
+                        <div class="pd-cptec-desc">${c.desc}</div>
+                        <div class="pd-cptec-temp"><span style="color:#f9731c;">${c.tmax}°</span> <span style="color:#38bdf8;font-weight:400;">${c.tmin}°</span></div>
+                    </div>`;
+                });
+            } else {
+                html += `<div style="color:var(--text-muted);font-size:10px;">Carregando...</div>`;
+            }
+            html += `</div></div></div>`;
+
+            // --- Data sources ---
+            html += `<div class="pd-section">
+                <div class="pd-section-title"><i class="fa-solid fa-database sources"></i> Fontes de Dados</div>
+                <div class="pd-source-row"><div class="pd-source-dot ok"></div><div class="pd-source-name">Open-Meteo</div><div class="pd-source-status" style="color:#22c55e;">ONLINE</div></div>
+                <div class="pd-source-row"><div class="pd-source-dot ${focosCount > 0 ? 'ok' : 'err'}"></div><div class="pd-source-name">INPE BDQueimadas</div><div class="pd-source-status" style="color:${focosCount > 0 ? '#22c55e' : '#ef4444'};">${focosCount > 0 ? 'ONLINE' : 'OFFLINE'}</div></div>
+                <div class="pd-source-row"><div class="pd-source-dot ${sipamCount > 0 ? 'ok' : 'err'}"></div><div class="pd-source-name">SIPAM Painel do Fogo</div><div class="pd-source-status" style="color:${sipamCount > 0 ? '#22c55e' : '#ef4444'};">${sipamCount > 0 ? 'ONLINE' : 'OFFLINE'}</div></div>
+                <div class="pd-source-row"><div class="pd-source-dot ${cptec.length ? 'ok' : 'err'}"></div><div class="pd-source-name">CPTEC/INPE</div><div class="pd-source-status" style="color:${cptec.length ? '#22c55e' : '#ef4444'};">${cptec.length ? 'ONLINE' : 'OFFLINE'}</div></div>
+            </div>`;
+
+            // Refresh button
+            html += `<div style="text-align:center;padding-top:8px;">
+                <button class="pd-refresh-btn" onclick="renderPainel()"><i class="fa-solid fa-arrows-rotate"></i> Atualizar agora</button>
+            </div>`;
+
+            el.innerHTML = html;
+            const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            updEl.textContent = 'Atualizado às ' + now;
+        }
+
+        // Auto-refresh every 10 minutes + initial load
+        renderPainel();
+        setInterval(renderPainel, 10 * 60 * 1000);
 
         (function heroMT() {
             const svg = document.getElementById('mtMapSvg');
