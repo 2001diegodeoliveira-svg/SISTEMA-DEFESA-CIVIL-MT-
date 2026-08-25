@@ -404,7 +404,7 @@
             <label><span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i class="fa-solid fa-fire"></i>Focos de calor 24h</label>
             <div class="toggle" id="focosToggleBadge"></div>
         </div>
-        <div class="meta-line" id="metaFocos">INPE BDQueimadas · carrega ao ativar</div>
+        <div class="meta-line" id="metaFocos">INPE BDQueimadas · carregando...</div>
         <a class="ext-row" href="https://www.gov.br/funai/pt-br/assuntos/terras-indigenas" target="_blank" rel="noopener">
             <i class="fa-solid fa-up-right-from-square"></i> Terras Indígenas — portal FUNAI
         </a>
@@ -550,6 +550,11 @@ function fmtDate(unix) {
 /* ================= RainViewer ================= */
 async function loadWeather() {
     try {
+        Object.values(radarLayers).forEach(l => { try { map.removeLayer(l); } catch {} });
+        Object.values(satLayers).forEach(l => { try { map.removeLayer(l); } catch {} });
+        for (const k in radarLayers) delete radarLayers[k];
+        for (const k in satLayers) delete satLayers[k];
+
         const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         weather = await res.json();
@@ -561,6 +566,7 @@ async function loadWeather() {
         updateTimeline();
         showFrame(radarFrames.length - 1);
         startPlaying();
+        setTimeout(loadWeather, 5 * 60 * 1000);
     } catch (e) {
         toast('Não foi possível carregar o radar meteorológico.');
         document.getElementById('playBtn').disabled = true;
@@ -816,6 +822,9 @@ async function loadFocos() {
     const meta = document.getElementById('metaFocos');
     meta.innerHTML = 'INPE BDQueimadas · <b>carregando...</b>';
 
+    if (focosLayer) { try { map.removeLayer(focosLayer); } catch {} }
+    focosLayer = null;
+
     // Tenta o CSV do dia; se ainda não publicado, volta até 3 dias
     let csvText = null, usadoData = null;
     for (let i = 0; i < 4 && !csvText; i++) {
@@ -883,15 +892,16 @@ async function loadFocos() {
     focosLoading = false;
 
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    meta.innerHTML = `INPE BDQueimadas · <b>${n.toLocaleString('pt-BR')} focos em MT</b> · carregado ${horaCsv}`;
+    meta.innerHTML = `INPE BDQueimadas · <b>${n.toLocaleString('pt-BR')} focos em MT</b> · atualizado ${horaCsv}`;
     document.querySelector('.check-row[data-check="focos"] label').innerHTML =
-        `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i class="fa-solid fa-fire"></i>Focos de calor 24h <b style="color:#ff7a45;">(${n.toLocaleString('pt-BR')})</b>`;
+        `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i class="fa-solid fa-fire"></i>Focos de calor 24h <b style="color:#ff7a45;">(${n.toLocaleString('pt-BR')})</b> <span style="font-size:9px;color:#94a3b8;font-weight:400;">· ${horaCsv}</span>`;
     document.getElementById('legUc').insertAdjacentHTML('beforebegin',
         `<div id="legFocos" class="leg-row" style="display:none;"><span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;"></span> Focos de calor 24h (INPE)</div>`);
     refreshLegend();
 
     if (checkState.focos) focosLayer.addTo(map);
     if (checkState.stations) { /* mantém estações visíveis acima */ }
+    setTimeout(loadFocos, 10 * 60 * 1000);
 }
 
 // Atualiza legenda de focos junto com as demais
@@ -1183,6 +1193,7 @@ document.getElementById('sourcesModal').addEventListener('click', e => {
 loadUCs();
 loadTerritorio();
 loadWeather();
+loadFocos();
 renderAreas();
 applyChecks();
 
