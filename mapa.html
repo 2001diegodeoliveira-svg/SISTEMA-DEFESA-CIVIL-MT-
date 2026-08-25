@@ -472,6 +472,11 @@
             <div class="toggle" id="focosToggleBadge"></div>
         </div>
         <div class="meta-line" id="metaFocos">INPE BDQueimadas · carregando...</div>
+        <div class="check-row" data-check="barragens">
+            <label><span class="swatch" style="background:#eab308;"></span><i class="fa-solid fa-droplet"></i>Barragens (SNISB)</label>
+            <div class="toggle" id="barragensBadge"></div>
+        </div>
+        <div class="meta-line" id="metaBarragens">ANA/SNISB · 1.274 em MT</div>
         <a class="ext-row" href="https://www.gov.br/funai/pt-br/assuntos/terras-indigenas" target="_blank" rel="noopener">
             <i class="fa-solid fa-up-right-from-square"></i> Terras Indígenas — portal FUNAI
         </a>
@@ -549,6 +554,14 @@
         </div>
         <div id="legMun" class="leg-row" style="display:none;"><span class="leg-swatch-line"></span> Limites municipais (IBGE)</div>
         <div id="legUc" class="leg-row" style="display:none;"><span class="leg-swatch-green"></span> Unidades de Conservação (CNUC)</div>
+        <div id="legBarr" class="leg-row" style="display:none;">
+            <span class="leg-swatch" style="background:#eab308;width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;"></span> Barragens SNISB
+            <span style="font-size:9px;color:#94a3b8;margin-left:6px;">
+                <span style="color:#ef4444;">Alto</span> ·
+                <span style="color:#f97316;">Médio</span> ·
+                <span style="color:#3b82f6;">Baixo</span>
+            </span>
+        </div>
     </div>
 
     <!-- Painel Climático em Tempo Real -->
@@ -1054,14 +1067,16 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false };
+let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 
 function setCheck(key, val) {
     checkState[key] = val;
     const row = document.querySelector(`.check-row[data-check="${key}"]`);
     if (row) row.querySelector('.toggle').classList.toggle('on', val);
     if (key === 'focos' && val && !focosLoaded && !focosLoading) loadFocos();
+    if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
     applyChecks();
 }
 function applyChecks() {
@@ -1070,6 +1085,7 @@ function applyChecks() {
     if (ucWms) checkState.ucs ? ucWms.addTo(map) : map.removeLayer(ucWms);
     if (focosLayer && focosLoaded) checkState.focos ? focosLayer.addTo(map) : map.removeLayer(focosLayer);
     checkState.stations ? stationsLayer.addTo(map) : map.removeLayer(stationsLayer);
+    if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
@@ -1083,7 +1099,8 @@ function refreshLegend() {
     document.getElementById('legRadar').style.display = activeOverlay === 'radar' ? '' : 'none';
     document.getElementById('legMun').style.display = checkState.municipios && munLayer ? '' : 'none';
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs;
+    document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
+    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs || checkState.barragens;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -1204,6 +1221,49 @@ refreshLegend = function () {
     const lf = document.getElementById('legFocos');
     if (lf) lf.style.display = checkState.focos && focosLoaded ? '' : 'none';
 };
+
+/* ================= Barragens SNISB (ANA) ================= */
+const RISCO_COR = { 'Alto': '#ef4444', 'Médio': '#f97316', 'M\u00e9dio': '#f97316', 'Baixo': '#3b82f6', 'Não Classificado': '#6b7280', 'Não se Aplica': '#6b7280' };
+const RISCO_RAIO = { 'Alto': 7, 'Médio': 5.5, 'M\u00e9dio': 5.5, 'Baixo': 4.5 };
+
+async function loadBarragens() {
+    barragensLoading = true;
+    const meta = document.getElementById('metaBarragens');
+    meta.innerHTML = 'ANA/SNISB · <b>carregando...</b>';
+    try {
+        const res = await fetch('js/barragens_mt.json');
+        const data = await res.json();
+        barragensLayer = L.layerGroup();
+        data.forEach(b => {
+            const cor = RISCO_COR[b.risco] || '#6b7280';
+            const raio = RISCO_RAIO[b.risco] || 4;
+            L.circleMarker([b.lat, b.lon], {
+                radius: raio, color: '#fff', weight: 0.8,
+                fillColor: cor, fillOpacity: 0.85
+            }).bindPopup(`
+                <div style="min-width:200px;">
+                    <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">${b.nome}</div>
+                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${b.mun} · MT · ID ${b.id}</div>
+                    <div style="font-size:11px;line-height:1.7;">
+                        <div><b>Risco:</b> <span style="color:${cor};">${b.risco}</span></div>
+                        <div><b>Dano potencial:</b> ${b.dano}</div>
+                        <div><b>Uso:</b> ${b.uso}</div>
+                        <div><b>Altura:</b> ${b.ht} m</div>
+                        <div><b>Capacidade:</b> ${b.cap} hm³</div>
+                        <div><b>Fase:</b> ${b.fase || '—'}</div>
+                    </div>
+                </div>`).addTo(barragensLayer);
+        });
+        barragensLayer.addTo(map);
+        barragensLoaded = true;
+        barragensLoading = false;
+        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em MT`;
+        refreshLegend();
+    } catch (e) {
+        barragensLoading = false;
+        meta.textContent = 'Erro ao carregar barragens';
+    }
+}
 
 /* ================= Áreas de interesse ================= */
 let areas = JSON.parse(localStorage.getItem('dcmt_areas') || '[]');
