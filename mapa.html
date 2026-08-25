@@ -333,7 +333,38 @@
             #legendBox { display: none !important; }
             #techNotice { display: none; }
             .brand .txt { display: none; }
+            #climatePanel { bottom: 92px; right: 8px; width: 200px; }
         }
+
+        #climatePanel {
+            position: absolute; bottom: 68px; right: 12px; z-index: 800;
+            width: 240px;
+            background: rgba(10,18,42,.92); backdrop-filter: blur(10px);
+            border: 1px solid rgba(56,189,248,.2); border-radius: 10px;
+            padding: 10px; font-size: 11px;
+            box-shadow: 0 8px 28px rgba(0,0,0,.5);
+        }
+        .cp-header {
+            font-size: 10.5px; font-weight: 700; color: var(--text-main);
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .cp-header i { color: var(--blue-glow); font-size: 12px; }
+        .cp-header span { margin-left: auto; font-weight: 400; color: var(--text-muted); font-size: 9px; }
+        .cp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .cp-card {
+            background: rgba(255,255,255,.04); border-radius: 6px;
+            padding: 6px 4px; text-align: center;
+        }
+        .cp-card i { font-size: 13px; }
+        .cp-val { font-size: 14px; font-weight: 800; color: var(--text-main); margin: 2px 0; }
+        .cp-lbl { font-size: 8.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+        @keyframes cpFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+        .cp-card { animation: cpFadeIn .4s ease both; }
+        .cp-card:nth-child(2) { animation-delay:.05s; }
+        .cp-card:nth-child(3) { animation-delay:.1s; }
+        .cp-card:nth-child(4) { animation-delay:.15s; }
+        .cp-card:nth-child(5) { animation-delay:.2s; }
+        .cp-card:nth-child(6) { animation-delay:.25s; }
     </style>
 </head>
 <body>
@@ -482,6 +513,43 @@
         </div>
         <div id="legMun" class="leg-row" style="display:none;"><span class="leg-swatch-line"></span> Limites municipais (IBGE)</div>
         <div id="legUc" class="leg-row" style="display:none;"><span class="leg-swatch-green"></span> Unidades de Conservação (CNUC)</div>
+    </div>
+
+    <!-- Painel Climático em Tempo Real -->
+    <div id="climatePanel">
+        <div class="cp-header"><i class="fa-solid fa-satellite-dish"></i> Clima em Tempo Real <span id="cpTime"></span></div>
+        <div class="cp-grid">
+            <div class="cp-card">
+                <i class="fa-solid fa-temperature-half" style="color:#ef4444;"></i>
+                <div class="cp-val" id="cpTemp">—</div>
+                <div class="cp-lbl">Temperatura</div>
+            </div>
+            <div class="cp-card">
+                <i class="fa-solid fa-droplet" style="color:#38bdf8;"></i>
+                <div class="cp-val" id="cpHum">—</div>
+                <div class="cp-lbl">Umidade</div>
+            </div>
+            <div class="cp-card">
+                <i class="fa-solid fa-wind" style="color:#94a3b8;"></i>
+                <div class="cp-val" id="cpWind">—</div>
+                <div class="cp-lbl">Vento</div>
+            </div>
+            <div class="cp-card">
+                <i class="fa-solid fa-fire" style="color:#f9631c;"></i>
+                <div class="cp-val" id="cpFogos">—</div>
+                <div class="cp-lbl">Focos 24h</div>
+            </div>
+            <div class="cp-card">
+                <i class="fa-solid fa-cloud-showers-heavy" style="color:#38bdf8;"></i>
+                <div class="cp-val" id="cpChuva">—</div>
+                <div class="cp-lbl">Chuva hoje</div>
+            </div>
+            <div class="cp-card">
+                <i class="fa-solid fa-sun" style="color:#fbbf24;"></i>
+                <div class="cp-val" id="cpUV">—</div>
+                <div class="cp-lbl">UV Index</div>
+            </div>
+        </div>
     </div>
 
     <!-- Aviso técnico obrigatório (proposta, item 10) -->
@@ -1206,6 +1274,61 @@ applyChecks();
 })();
 
 setTimeout(() => map.invalidateSize(), 300);
+
+/* ================= Painel Climático em Tempo Real ================= */
+(function climatePanel() {
+    const el = {
+        time: document.getElementById('cpTime'),
+        temp: document.getElementById('cpTemp'),
+        hum: document.getElementById('cpHum'),
+        wind: document.getElementById('cpWind'),
+        fogos: document.getElementById('cpFogos'),
+        chuva: document.getElementById('cpChuva'),
+        uv: document.getElementById('cpUV'),
+    };
+    if (!el.temp) return;
+
+    function fmt() { return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+
+    // Open-Meteo: Cuiabá (capital) — temperatura, umidade, vento, chuva, UV
+    async function loadOpenMeteo() {
+        try {
+            const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.588&longitude=-56.097&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,uv_index&timezone=America/Cuiaba');
+            if (!r.ok) throw 0;
+            const d = await r.json();
+            const c = d.current;
+            el.temp.textContent = Math.round(c.temperature_2m) + '°C';
+            el.hum.textContent = c.relative_humidity_2m + '%';
+            el.wind.textContent = Math.round(c.wind_speed_10m) + ' km/h';
+            el.chuva.textContent = (c.precipitation ?? 0) + ' mm';
+            el.uv.textContent = Math.round(c.uv_index ?? 0);
+        } catch { el.temp.textContent = '—'; }
+    }
+
+    // INPE: contagem de focos em MT
+    async function loadFogos() {
+        try {
+            const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+            const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+            if (!r.ok) throw 0;
+            const txt = await r.text();
+            const lines = txt.split('\n');
+            const h = lines[0].split(',').map(x => x.trim());
+            const iUF = h.indexOf('estado');
+            const n = lines.slice(1).filter(l => { const c = l.split(','); return (c[iUF]||'').trim().toUpperCase() === 'MATO GROSSO'; }).length;
+            el.fogos.textContent = n.toLocaleString('pt-BR');
+        } catch { el.fogos.textContent = '—'; }
+    }
+
+    function refresh() {
+        loadOpenMeteo();
+        loadFogos();
+        el.time.textContent = fmt();
+    }
+
+    refresh();
+    setInterval(refresh, 10 * 60 * 1000);
+})();
 </script>
 </body>
 </html>

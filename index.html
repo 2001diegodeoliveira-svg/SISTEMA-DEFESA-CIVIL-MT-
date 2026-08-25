@@ -731,9 +731,9 @@
             </div>
 
             <div class="hero-stats">
-                <div class="hstat"><b data-cup="141">0</b><span>Municípios monitorados</span></div>
-                <div class="hstat"><b id="hsAlertas">0</b><span>Alertas ativos agora</span></div>
-                <div class="hstat"><b id="hsEstacoes">0</b><span>Estações na rede</span></div>
+                <div class="hstat"><b id="hsMunicipios">141</b><span>Municípios monitorados</span></div>
+                <div class="hstat"><b id="hsAlertas">6</b><span>Alertas ativos agora</span></div>
+                <div class="hstat"><b id="hsEstacoes">8</b><span>Estações na rede</span></div>
             </div>
         </div>
 
@@ -981,6 +981,51 @@
             })(t0);
         }
 
+        // Atualiza métricas do painel em tempo real
+        (function updateMetrics() {
+            // Contadores já com valores de fallback do HTML
+            document.getElementById('hsMunicipios').textContent = '141';
+            document.getElementById('hsAlertas').textContent = ALERTAS_ATIVOS.length;
+            document.getElementById('hsEstacoes').textContent = ESTACOES_DC.length;
+
+            // Busca focos INPE em tempo real
+            const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+            fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`)
+                .then(r => { if (!r.ok) throw 0; return r.text(); })
+                .then(csv => {
+                    const lines = csv.split('\n');
+                    const header = lines[0].split(',').map(h => h.trim());
+                    const iUF = header.indexOf('estado');
+                    const mtCount = lines.slice(1).filter(l => {
+                        const c = l.split(',');
+                        return (c[iUF] || '').trim().toUpperCase() === 'MATO GROSSO';
+                    }).length;
+                    if (mtCount > 0) {
+                        const el = document.querySelector('.metric-card .value');
+                        if (el) countUpEl(el, mtCount, 0, '', 1600);
+                    }
+                })
+                .catch(() => {});
+
+            // Busca dados Open-Meteo (Cuiabá) para chuva acumulada
+            fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.588&longitude=-56.097&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1')
+                .then(r => { if (!r.ok) throw 0; return r.json(); })
+                .then(d => {
+                    const rain = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0];
+                    if (isFinite(rain)) {
+                        const el = document.querySelectorAll('.metric-card .value')[1];
+                        if (el) el.textContent = rain.toFixed(1).replace('.', ',') + 'mm';
+                    }
+                })
+                .catch(() => {});
+
+            // Anima contadores do hero
+            document.querySelectorAll('.hero-stats b').forEach(el => {
+                const to = parseInt(el.textContent) || 0;
+                if (to > 0) countUpEl(el, to, 0, '', 1200);
+            });
+        })();
+
         (function heroMT() {
             const svg = document.getElementById('mtMapSvg');
             const tip = document.getElementById('mapTip');
@@ -1104,11 +1149,6 @@
                 .catch(() => {
                     svg.outerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">Mapa indisponível no momento</div>';
                 });
-
-            // Contadores do hero
-            document.getElementById('hsEstacoes').dataset.to = ESTACOES_DC.length;
-            document.getElementById('hsAlertas').dataset.to = ALERTAS_ATIVOS.length;
-            document.querySelectorAll('[data-cup]').forEach(el => el.dataset.to = el.dataset.cup);
         })();
 
         // ===== Reveal on scroll + disparo dos contadores =====
@@ -1120,10 +1160,10 @@
                 });
 
             const startCounters = root => {
-                root.querySelectorAll('b[data-to], .metric-card .value').forEach(el => {
+                root.querySelectorAll('.metric-card .value').forEach(el => {
                     if (el.dataset.done) return;
                     el.dataset.done = '1';
-                    const raw = (el.dataset.to ?? el.textContent).toString().trim();
+                    const raw = el.textContent.trim();
                     const mNum = raw.match(/^([\d]+(?:[.,]\d+)?)(.*)$/);
                     if (!mNum) return;
                     const to = parseFloat(mNum[1].replace(',', '.'));
