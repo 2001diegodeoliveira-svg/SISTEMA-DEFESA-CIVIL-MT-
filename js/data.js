@@ -206,6 +206,8 @@ const FONTES_API = [
     { cat: 'Hidrologia', fonte: 'ANA — Hidroweb / Telemetria', api: 'telemetriaws1.ana.gov.br', dado: 'Nível de rios e reservatórios (Pantanal, Araguaia-Tocantins)', freq: 'Horária/Diária' },
     { cat: 'Qualidade do ar', fonte: 'Sensores estaduais ou estimativa', api: 'focos + vento', dado: 'Índice de qualidade do ar / risco de fumaça', freq: 'Horária' },
     { cat: 'Fogo / Incêndios', fonte: 'CENSIPAM — Painel do Fogo', api: 'panorama.sipam.gov.br/painel-do-fogo/api', dado: 'Eventos ativos/em observação, prioridade de acionamento, evolução e geometria', freq: 'Tempo real (~10 min)' },
+    { cat: 'Fogo / Incêndios', fonte: 'INPE — TerraBrasilis WMS', api: 'terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/wms', dado: 'Camada raster de focos de calor (48h, todos satélites)', freq: 'Tempo real' },
+    { cat: 'Fogo / Incêndios', fonte: 'INPE — BDQueimadas CSV', api: 'dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario', dado: 'Focos diários com risco de fogo, FRP, bioma, satélite, precipitação', freq: 'Diária (várias atualizações/dia)' },
 ];
 
 /* Camadas da arquitetura (seção 3) */
