@@ -505,7 +505,24 @@
             border: 1px solid rgba(56,189,248,.18); border-radius: 12px;
             padding: 10px; font-size: 11px;
             box-shadow: 0 8px 32px rgba(0,0,0,.35);
+            transition: margin-right .28s cubic-bezier(.4,0,.2,1), opacity .28s ease, transform .28s ease;
         }
+        #climatePanel.collapsed {
+            margin-right: -258px; opacity: 0; pointer-events: none;
+        }
+        .climate-toggle {
+            position: absolute; bottom: 76px; right: 12px; z-index: 801;
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--glass-bg); backdrop-filter: blur(14px);
+            border: 1px solid rgba(56,189,248,.18); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,.3);
+            transition: right .28s cubic-bezier(.4,0,.2,1), background .15s;
+        }
+        .climate-toggle:hover { background: rgba(255,255,255,.1); }
+        .climate-toggle i { color: var(--blue-glow); font-size: 14px; transition: transform .25s ease; }
+        #climatePanel.collapsed ~ .climate-toggle { right: 12px; }
+        #climatePanel:not(.collapsed) ~ .climate-toggle { right: 252px; }
         .cp-header {
             font-size: 10.5px; font-weight: 700; color: var(--text-main);
             margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
@@ -1212,6 +1229,7 @@
             </div>
         </div>
     </div>
+    <button class="climate-toggle" id="climateToggle" title="Mostrar/ocultar painel climático"><i class="fa-solid fa-angles-right"></i></button>
 
     <!-- Painel de Detalhes do Município -->
     <div id="munPanel" class="mun-panel">
@@ -3183,6 +3201,15 @@ function fireRiskColor(risco) {
 document.getElementById('layersToggle').addEventListener('click', () => {
     const panel = document.getElementById('layersPanel');
     const icon = document.querySelector('#layersToggle i');
+    panel.classList.toggle('collapsed');
+    icon.classList.toggle('fa-angles-left');
+    icon.classList.toggle('fa-angles-right');
+});
+
+// Toggle climate panel visibility
+document.getElementById('climateToggle').addEventListener('click', () => {
+    const panel = document.getElementById('climatePanel');
+    const icon = document.querySelector('#climateToggle i');
     panel.classList.toggle('collapsed');
     icon.classList.toggle('fa-angles-left');
     icon.classList.toggle('fa-angles-right');
