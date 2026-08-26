@@ -3015,25 +3015,30 @@ async function fetchWindData() {
     for (let lon = lonMin; lon <= lonMax; lon += lonStep) lons.push(lon.toFixed(2));
 
     const windPoints = [];
-    for (const lat of lats) {
-        for (const lon of lons) {
-            try {
-                const r = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-                    + `&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto`
-                );
-                if (!r.ok) continue;
-                const d = await r.json();
-                if (d.current) {
-                    windPoints.push({
-                        lat: parseFloat(lat), lon: parseFloat(lon),
-                        speed: d.current.wind_speed_10m || 0,
-                        dir: d.current.wind_direction_10m || 0,
-                        gust: d.current.wind_gusts_10m || 0,
-                    });
-                }
-            } catch {}
+    const batchSize = 30;
+    for (let i = 0; i < lats.length * lons.length; i += batchSize) {
+        const batch = [];
+        let idx = 0;
+        for (const lat of lats) {
+            for (const lon of lons) {
+                if (idx >= i && idx < i + batchSize) batch.push({ lat, lon });
+                idx++;
+            }
         }
+        const results = await Promise.all(batch.map(p =>
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto`)
+                .then(r => r.json()).catch(() => null)
+        ));
+        results.forEach((d, j) => {
+            if (d?.current) {
+                windPoints.push({
+                    lat: parseFloat(batch[j].lat), lon: parseFloat(batch[j].lon),
+                    speed: d.current.wind_speed_10m || 0,
+                    dir: d.current.wind_direction_10m || 0,
+                    gust: d.current.wind_gusts_10m || 0,
+                });
+            }
+        });
     }
     if (windPoints.length > 0) windData = windPoints;
 }
@@ -3134,9 +3139,8 @@ map.on('moveend', () => {
 
 /* ================= Temperature Overlay ================= */
 let tempOverlay = null;
-function showTempOverlay() {
+async function showTempOverlay() {
     if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
-    // Use a grid of colored markers for temperature heatmap
     tempOverlay = L.layerGroup();
     const bounds = map.getBounds();
     const latMin = Math.max(-16, bounds.getSouth() - 1);
@@ -3145,24 +3149,31 @@ function showTempOverlay() {
     const lonMax = Math.min(-50.5, bounds.getEast() + 1);
     const step = 0.8;
 
-    for (let lat = latMin; lat <= latMax; lat += step) {
-        for (let lon = lonMin; lon <= lonMax; lon += step) {
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(2)}&longitude=${lon.toFixed(2)}&current=temperature_2m&timezone=auto`)
-                .then(r => r.json())
-                .then(d => {
-                    const temp = d.current?.temperature_2m;
-                    if (temp == null) return;
-                    const color = tempColor(temp);
-                    L.circleMarker([lat, lon], {
-                        radius: 18, color: 'transparent', weight: 0,
-                        fillColor: color, fillOpacity: 0.35
-                    }).bindPopup(`
-                        <div style="min-width:140px;text-align:center;">
-                            <div style="font-size:22px;font-weight:800;color:${color};">${Math.round(temp)}°C</div>
-                            <div style="font-size:10px;color:#94a3b8;">Temperatura atual</div>
-                        </div>`).addTo(tempOverlay);
-                }).catch(() => {});
-        }
+    const pts = [];
+    for (let lat = latMin; lat <= latMax; lat += step)
+        for (let lon = lonMin; lon <= lonMax; lon += step)
+            pts.push({ lat: +lat.toFixed(2), lon: +lon.toFixed(2) });
+
+    const batchSize = 20;
+    for (let i = 0; i < pts.length; i += batchSize) {
+        const batch = pts.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map(p =>
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m&timezone=auto`)
+                .then(r => r.json()).catch(() => null)
+        ));
+        results.forEach((d, j) => {
+            const temp = d?.current?.temperature_2m;
+            if (temp == null) return;
+            const color = tempColor(temp);
+            L.circleMarker([batch[j].lat, batch[j].lon], {
+                radius: 18, color: 'transparent', weight: 0,
+                fillColor: color, fillOpacity: 0.35
+            }).bindPopup(`
+                <div style="min-width:140px;text-align:center;">
+                    <div style="font-size:22px;font-weight:800;color:${color};">${Math.round(temp)}°C</div>
+                    <div style="font-size:10px;color:#94a3b8;">Temperatura atual</div>
+                </div>`).addTo(tempOverlay);
+        });
     }
     tempOverlay.addTo(map);
 }
@@ -3179,7 +3190,7 @@ function tempColor(t) {
 
 /* ================= Fire Risk Overlay ================= */
 let fireOverlay = null;
-function showFireOverlay() {
+async function showFireOverlay() {
     if (fireOverlay) { map.removeLayer(fireOverlay); fireOverlay = null; }
     fireOverlay = L.layerGroup();
     const bounds = map.getBounds();
@@ -3189,32 +3200,39 @@ function showFireOverlay() {
     const lonMax = Math.min(-50.5, bounds.getEast() + 1);
     const step = 1.0;
 
-    for (let lat = latMin; lat <= latMax; lat += step) {
-        for (let lon = lonMin; lon <= lonMax; lon += step) {
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(2)}&longitude=${lon.toFixed(2)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=precipitation_sum&timezone=auto&past_days=1&forecast_days=0`)
-                .then(r => r.json())
-                .then(d => {
-                    const c = d.current;
-                    if (!c) return;
-                    const hum = c.relative_humidity_2m ?? 50;
-                    const wind = c.wind_speed_10m ?? 0;
-                    const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
-                    let risco = 0;
-                    if (hum < 20) risco += 35; else if (hum < 30) risco += 25; else if (hum < 50) risco += 12;
-                    if (wind > 30) risco += 30; else if (wind > 20) risco += 20; else if (wind > 10) risco += 8;
-                    if (chuva > 5) risco = Math.max(0, risco - 20);
-                    risco = Math.min(100, risco);
-                    const color = fireRiskColor(risco);
-                    L.circleMarker([lat, lon], {
-                        radius: 20, color: 'transparent', weight: 0,
-                        fillColor: color, fillOpacity: 0.3
-                    }).bindPopup(`
-                        <div style="min-width:140px;text-align:center;">
-                            <div style="font-size:20px;font-weight:800;color:${color};">${risco}%</div>
-                            <div style="font-size:10px;color:#94a3b8;">Risco estimado</div>
-                        </div>`).addTo(fireOverlay);
-                }).catch(() => {});
-        }
+    const pts = [];
+    for (let lat = latMin; lat <= latMax; lat += step)
+        for (let lon = lonMin; lon <= lonMax; lon += step)
+            pts.push({ lat: +lat.toFixed(2), lon: +lon.toFixed(2) });
+
+    const batchSize = 20;
+    for (let i = 0; i < pts.length; i += batchSize) {
+        const batch = pts.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map(p =>
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=precipitation_sum&timezone=auto&past_days=1&forecast_days=0`)
+                .then(r => r.json()).catch(() => null)
+        ));
+        results.forEach((d, j) => {
+            const c = d?.current;
+            if (!c) return;
+            const hum = c.relative_humidity_2m ?? 50;
+            const wind = c.wind_speed_10m ?? 0;
+            const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
+            let risco = 0;
+            if (hum < 20) risco += 35; else if (hum < 30) risco += 25; else if (hum < 50) risco += 12;
+            if (wind > 30) risco += 30; else if (wind > 20) risco += 20; else if (wind > 10) risco += 8;
+            if (chuva > 5) risco = Math.max(0, risco - 20);
+            risco = Math.min(100, risco);
+            const color = fireRiskColor(risco);
+            L.circleMarker([batch[j].lat, batch[j].lon], {
+                radius: 20, color: 'transparent', weight: 0,
+                fillColor: color, fillOpacity: 0.3
+            }).bindPopup(`
+                <div style="min-width:140px;text-align:center;">
+                    <div style="font-size:20px;font-weight:800;color:${color};">${risco}%</div>
+                    <div style="font-size:10px;color:#94a3b8;">Risco estimado</div>
+                </div>`).addTo(fireOverlay);
+        });
     }
     fireOverlay.addTo(map);
 }
