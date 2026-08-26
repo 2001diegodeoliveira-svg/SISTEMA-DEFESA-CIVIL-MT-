@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waze - Monitoramento em Tempo Real — Defesa Civil MT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #293548;
+            --accent-orange: #f9731c;
+            --accent-orange-hover: #ea580c;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.12);
+            --blue-glow: #00d2ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 24px;
+            padding: 10px 5%;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .top-bar a {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .top-bar a:hover {
+            color: var(--text-main);
+        }
+
+        /* Header / Navbar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background: linear-gradient(180deg, rgba(11, 19, 41, 0.95) 0%, rgba(11, 19, 41, 0.8) 100%);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-area img {
+            height: 50px;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+            position: relative;
+            padding-bottom: 5px;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            color: var(--text-main);
+        }
+
+        nav ul li a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent-orange);
+        }
+
+        .emergency-btn {
+            background-color: var(--accent-orange);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            box-shadow: 0 4px 12px rgba(249, 99, 28, 0.3);
+        }
+
+        .emergency-btn:hover {
+            background-color: var(--accent-orange-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Main Container */
+        .waze-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 120px);
+        }
+
+        /* Mapa */
+        #wazeMap {
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            background: linear-gradient(135deg, #1a2a4a 0%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #wazeMap svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-marker {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .map-marker:hover {
+            transform: scale(1.2);
+        }
+
+        .map-marker circle {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Painel Direito */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .right-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .right-panel::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 10px;
+        }
+
+        .right-panel::-webkit-scrollbar-thumb {
+            background: var(--accent-orange);
+            border-radius: 10px;
+        }
+
+        /* Card de Relatório */
+        .report-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .report-card.urgent {
+            border-left: 4px solid #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .report-card.warning {
+            border-left: 4px solid var(--accent-orange);
+            background: rgba(249, 115, 28, 0.1);
+        }
+
+        .report-card.info {
+            border-left: 4px solid var(--blue-glow);
+            background: rgba(0, 210, 255, 0.1);
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .report-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .report-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .report-location {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .report-description {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Filters */
+        .filter-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .filter-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .filter-option:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .filter-option input {
+            cursor: pointer;
+            accent-color: var(--accent-orange);
+        }
+
+        /* Button para Reportar */
+        .report-btn {
+            background-color: var(--accent-orange);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .report-btn:hover {
+            background-color: var(--accent-orange-hover);
+        }
+
+        /* Modal de Reporte */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 16px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--text-main);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 8px rgba(249, 115, 28, 0.3);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Live Indicator */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        .live-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-count {
+            font-weight: 700;
+            color: var(--accent-orange);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .waze-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .right-panel {
+                max-height: 300px;
+            }
+        }
+
+        .Leaflet-popup-content-wrapper {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .leaflet-popup-tip {
+            background: var(--bg-card);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <a href="#"><i class="fa-solid fa-user"></i> Usuário</a>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <img src="imagens/logo.png" alt="Logo" onerror="this.style.display='none'">
+            <div class="logo-text">
+                <h1>DEFESA CIVIL <span>MT</span></h1>
+                <span>ESTADO DE MATO GROSSO</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li><a href="mapa.html">Mapa</a></li>
+                <li><a href="alertas.html">Alertas</a></li>
+                <li><a href="painel.html">Painel</a></li>
+                <li><a href="#">Orientações</a></li>
+                <li><a href="waze.html" class="active">Waze</a></li>
+            </ul>
+        </nav>
+
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div class="live-badge"><span class="dot"></span> AO VIVO</div>
+            <button class="emergency-btn">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                EMERGÊNCIA LIGUE 199
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="waze-container">
+        <div id="wazeMap"></div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Stats -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i>
+                    <span>Urgentes: <span class="stat-count" id="urgentCount">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fa-solid fa-circle-exclamation" style="color:var(--accent-orange);"></i>
+                    <span>Avisos: <span class="stat-count" id="warningCount">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fa-solid fa-info"></i>
+                    <span>Informações: <span class="stat-count" id="infoCount">0</span></span>
+                </div>
+            </div>
+
+            <!-- Report Button -->
+            <button class="report-btn" onclick="document.getElementById('reportModal').classList.add('open')">
+                <i class="fa-solid fa-plus"></i> Reportar Evento
+            </button>
+
+            <!-- Filters -->
+            <div class="filter-section">
+                <div class="filter-title">Filtrar por Tipo</div>
+                <div class="filter-options">
+                    <label class="filter-option">
+                        <input type="checkbox" id="filter-acidente" checked onchange="filterReports()">
+                        <i class="fa-solid fa-car-crash"></i> Acidente
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="filter-engarrafamento" checked onchange="filterReports()">
+                        <i class="fa-solid fa-traffic-light"></i> Engarrafamento
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="filter-evento" checked onchange="filterReports()">
+                        <i class="fa-solid fa-calendar"></i> Evento
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="filter-clima" checked onchange="filterReports()">
+                        <i class="fa-solid fa-cloud"></i> Clima
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" id="filter-fogo" checked onchange="filterReports()">
+                        <i class="fa-solid fa-fire"></i> Fogo
+                    </label>
+                </div>
+            </div>
+
+            <!-- Reports List -->
+            <div id="reportsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-plus-circle"></i> Reportar Evento</h2>
+                <button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('open')">&times;</button>
+            </div>
+
+            <form id="reportForm" onsubmit="submitReport(event)">
+                <div class="form-group">
+                    <label for="eventType">Tipo de Evento *</label>
+                    <select id="eventType" required>
+                        <option value="">Selecione um tipo...</option>
+                        <option value="acidente">Acidente de Trânsito</option>
+                        <option value="engarrafamento">Engarrafamento</option>
+                        <option value="evento">Evento / Bloqueio</option>
+                        <option value="clima">Evento Climático</option>
+                        <option value="fogo">Fogo / Incêndio</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventSeverity">Nível de Severidade *</label>
+                    <select id="eventSeverity" required>
+                        <option value="info">Informação</option>
+                        <option value="warning">Aviso</option>
+                        <option value="urgent">Urgente</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventLocation">Local / Endereço *</label>
+                    <input type="text" id="eventLocation" placeholder="Digite o local do evento" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDescription">Descrição *</label>
+                    <textarea id="eventDescription" placeholder="Descreva o evento em detalhes..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventName">Seu Nome / Identificação</label>
+                    <input type="text" id="eventName" placeholder="Opcional">
+                </div>
+
+                <button type="submit" class="report-btn" style="background: var(--blue-glow); border: none; cursor: pointer;">
+                    <i class="fa-solid fa-send"></i> Enviar Reporte
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/session.js"></script>
+    <script>
+        // Inicializar mapa SVG
+        const mapContainer = document.getElementById('wazeMap');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 1000 800');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        mapContainer.appendChild(svg);
+
+        // Adicionar mapa base
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', 'mapGradient');
+        gradient.innerHTML = '<stop offset="0%" style="stop-color:#1a2a4a"/><stop offset="100%" style="stop-color:#0f172a"/>';
+        defs.appendChild(gradient);
+        svg.appendChild(defs);
+
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('width', '1000');
+        bg.setAttribute('height', '800');
+        bg.setAttribute('fill', 'url(#mapGradient)');
+        svg.appendChild(bg);
+
+        // Sistema de eventos locais
+        let events = loadEventsFromStorage();
+        let filteredEvents = [...events];
+
+        const eventIcons = {
+            acidente: '🚗',
+            engarrafamento: '🚦',
+            evento: '📅',
+            clima: '☁️',
+            fogo: '🔥'
+        };
+
+        const severityMap = {
+            urgent: { color: '#ef4444', label: 'Urgente' },
+            warning: { color: 'var(--accent-orange)', label: 'Aviso' },
+            info: { color: 'var(--blue-glow)', label: 'Informação' }
+        };
+
+        function loadEventsFromStorage() {
+            const stored = localStorage.getItem('wazeEvents');
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch {
+                    return [];
+                }
+            }
+            return [
+                {
+                    id: 1,
+                    type: 'acidente',
+                    severity: 'urgent',
+                    location: 'Av. Getúlio Vargas, Cuiabá',
+                    description: 'Acidente com 2 veículos - pista bloqueada',
+                    reporter: 'Anônimo',
+                    lat: -15.5941,
+                    lng: -56.0990,
+                    timestamp: new Date().getTime() - 300000
+                },
+                {
+                    id: 2,
+                    type: 'clima',
+                    severity: 'warning',
+                    location: 'Rondonópolis',
+                    description: 'Chuva intensa com ventania - risco de queda de árvores',
+                    reporter: 'Sistema',
+                    lat: -16.4833,
+                    lng: -54.6333,
+                    timestamp: new Date().getTime() - 600000
+                },
+                {
+                    id: 3,
+                    type: 'fogo',
+                    severity: 'urgent',
+                    location: 'Região de Sinop',
+                    description: 'Queimada em larga escala - vento auxiliando propagação',
+                    reporter: 'INPE',
+                    lat: -11.8697,
+                    lng: -55.4846,
+                    timestamp: new Date().getTime() - 900000
+                },
+                {
+                    id: 4,
+                    type: 'engarrafamento',
+                    severity: 'info',
+                    location: 'BR-364, entrada de Cuiabá',
+                    description: 'Congestionamento intenso - 5km de fila',
+                    reporter: 'Waze Community',
+                    lat: -15.5000,
+                    lng: -56.1000,
+                    timestamp: new Date().getTime() - 1200000
+                }
+            ];
+        }
+
+        function saveEventsToStorage() {
+            localStorage.setItem('wazeEvents', JSON.stringify(events));
+        }
+
+        function getTimeAgo(timestamp) {
+            const diff = new Date().getTime() - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+
+            if (minutes < 1) return 'Agora';
+            if (minutes < 60) return `${minutes}m atrás`;
+            if (hours < 24) return `${hours}h atrás`;
+            return `${Math.floor(hours / 24)}d atrás`;
+        }
+
+        function renderReports() {
+            const reportsList = document.getElementById('reportsList');
+            reportsList.innerHTML = '';
+
+            if (filteredEvents.length === 0) {
+                reportsList.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:12px;">Nenhum evento encontrado</p>';
+                return;
+            }
+
+            filteredEvents.forEach(event => {
+                const card = document.createElement('div');
+                card.className = `report-card ${event.severity}`;
+                card.innerHTML = `
+                    <div class="report-header">
+                        <div class="report-type">
+                            <i class="fa-solid ${eventIcons[event.type]}"></i>
+                            ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                        </div>
+                        <div class="report-time">${getTimeAgo(event.timestamp)}</div>
+                    </div>
+                    <div class="report-location">
+                        <i class="fa-solid fa-map-pin"></i> ${event.location}
+                    </div>
+                    <div class="report-description">${event.description}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">Por: ${event.reporter}</div>
+                `;
+                reportsList.appendChild(card);
+            });
+
+            updateStats();
+        }
+
+        function renderMarkers() {
+            // Remover marcadores anteriores
+            const oldMarkers = svg.querySelectorAll('g.map-marker');
+            oldMarkers.forEach(m => m.remove());
+
+            filteredEvents.forEach(event => {
+                // Normalizar coordenadas para o SVG (0-1000, 0-800)
+                const x = (event.lng + 60) * 10 + 200;
+                const y = (event.lat + 25) * 20 + 100;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'map-marker');
+                g.style.cursor = 'pointer';
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', '16');
+                circle.setAttribute('fill', severityMap[event.severity].color);
+                circle.setAttribute('stroke', 'white');
+                circle.setAttribute('stroke-width', '2');
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y + 5);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '16');
+                text.setAttribute('fill', 'white');
+                text.setAttribute('pointer-events', 'none');
+                text.textContent = eventIcons[event.type];
+
+                g.appendChild(circle);
+                g.appendChild(text);
+
+                g.addEventListener('click', () => {
+                    alert(`📍 ${event.location}\n\n${event.description}\n\nReportado por: ${event.reporter}\n${getTimeAgo(event.timestamp)}`);
+                });
+
+                g.addEventListener('mouseenter', () => {
+                    circle.setAttribute('r', '20');
+                });
+
+                g.addEventListener('mouseleave', () => {
+                    circle.setAttribute('r', '16');
+                });
+
+                svg.appendChild(g);
+            });
+        }
+
+        function updateStats() {
+            const urgent = filteredEvents.filter(e => e.severity === 'urgent').length;
+            const warning = filteredEvents.filter(e => e.severity === 'warning').length;
+            const info = filteredEvents.filter(e => e.severity === 'info').length;
+
+            document.getElementById('urgentCount').textContent = urgent;
+            document.getElementById('warningCount').textContent = warning;
+            document.getElementById('infoCount').textContent = info;
+        }
+
+        function filterReports() {
+            const filters = {
+                acidente: document.getElementById('filter-acidente').checked,
+                engarrafamento: document.getElementById('filter-engarrafamento').checked,
+                evento: document.getElementById('filter-evento').checked,
+                clima: document.getElementById('filter-clima').checked,
+                fogo: document.getElementById('filter-fogo').checked
+            };
+
+            filteredEvents = events.filter(e => filters[e.type]);
+            renderReports();
+            renderMarkers();
+        }
+
+        function submitReport(event) {
+            event.preventDefault();
+
+            // Gerar coordenadas aleatórias dentro de Mato Grosso
+            const baseLat = -14.5;
+            const baseLng = -56.5;
+
+            const newEvent = {
+                id: events.length + 1,
+                type: document.getElementById('eventType').value,
+                severity: document.getElementById('eventSeverity').value,
+                location: document.getElementById('eventLocation').value,
+                description: document.getElementById('eventDescription').value,
+                reporter: document.getElementById('eventName').value || 'Usuário Anônimo',
+                lat: baseLat + (Math.random() - 0.5) * 3,
+                lng: baseLng + (Math.random() - 0.5) * 3,
+                timestamp: new Date().getTime()
+            };
+
+            events.push(newEvent);
+            saveEventsToStorage();
+            filteredEvents = [...events];
+
+            renderReports();
+            renderMarkers();
+
+            document.getElementById('reportForm').reset();
+            document.getElementById('reportModal').classList.remove('open');
+
+            alert('✅ Evento reportado com sucesso! A Defesa Civil foi notificada.');
+        }
+
+        // Inicializar
+        renderReports();
+        renderMarkers();
+
+        // Atualizar a cada 30 segundos
+        setInterval(() => {
+            events = loadEventsFromStorage();
+            filteredEvents = [...events];
+            renderReports();
+            renderMarkers();
+        }, 30000);
+    </script>
+</body>
+</html>
