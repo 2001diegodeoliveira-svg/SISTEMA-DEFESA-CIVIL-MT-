@@ -133,9 +133,27 @@
             border: 1px solid var(--glass-border); border-radius: 12px;
             padding: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.35), 0 0 0 1px rgba(148,163,184,.05);
             max-height: calc(100vh - 200px); overflow-y: auto;
+            transition: margin-left .28s cubic-bezier(.4,0,.2,1), opacity .28s ease, transform .28s ease;
+        }
+        #layersPanel.collapsed {
+            margin-left: -262px; opacity: 0; pointer-events: none;
         }
         #layersPanel::-webkit-scrollbar { width: 6px; }
         #layersPanel::-webkit-scrollbar-thumb { background: var(--bg-card-hover); border-radius: 3px; }
+
+        .layers-toggle {
+            position: absolute; top: 80px; left: 16px; z-index: 1101;
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--glass-bg); backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,.3);
+            transition: left .28s cubic-bezier(.4,0,.2,1), background .15s;
+        }
+        .layers-toggle:hover { background: rgba(255,255,255,.1); }
+        .layers-toggle i { color: var(--accent-orange); font-size: 14px; transition: transform .25s ease; }
+        #layersPanel.collapsed ~ .layers-toggle { left: 16px; }
+        #layersPanel:not(.collapsed) ~ .layers-toggle { left: 252px; }
 
         .group-title {
             font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.2px;
@@ -1012,6 +1030,7 @@
         </div>
         <div id="areasList"></div>
     </aside>
+    <button class="layers-toggle" id="layersToggle" title="Mostrar/ocultar filtros"><i class="fa-solid fa-angles-left"></i></button>
 
     <!-- Barra de desenho -->
     <div id="drawBar">
@@ -3159,6 +3178,15 @@ function fireRiskColor(risco) {
     if (risco >= 15) return '#fbbf24';
     return '#22c55e';
 }
+
+// Toggle layers panel visibility
+document.getElementById('layersToggle').addEventListener('click', () => {
+    const panel = document.getElementById('layersPanel');
+    const icon = document.querySelector('#layersToggle i');
+    panel.classList.toggle('collapsed');
+    icon.classList.toggle('fa-angles-left');
+    icon.classList.toggle('fa-angles-right');
+});
 </script>
 </body>
 </html>
