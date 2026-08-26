@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Operações - Defesa Civil MT</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        defesa: '#ff6600',
+                        defesaDark: '#cc5200',
+                        panelBg: '#111827', // Tom escuro estilo sala de controle
+                        cardBg: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-950 text-gray-100 h-screen flex flex-col overflow-hidden font-sans select-none">
+
+    <!-- Topo / Cabeçalho do Painel -->
+    <header class="bg-panelBg border-b border-gray-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
+        <div class="flex items-center gap-4">
+            <div class="bg-defesa text-white p-2 rounded-lg flex items-center justify-center font-black tracking-wider text-sm shadow-md">
+                <i class="fa-solid fa-shield-halved text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-wide uppercase text-white flex items-center gap-2">
+                    Defesa Civil <span class="text-defesa">Mato Grosso</span>
+                </h1>
+                <p class="text-xs text-gray-400 tracking-wider">CECOE — Centro de Comando e Operações de Emergência</p>
+            </div>
+        </div>
+
+        <!-- Indicadores de status rápidos no topo -->
+        <div class="hidden md:flex items-center gap-6">
+            <div class="flex items-center gap-2 bg-red-950/60 border border-red-800/60 px-3 py-1.5 rounded-md text-red-400 text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span>Alerta Crítico: Risco de Queimadas e Chuvas Intensas</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p id="relogio" class="text-sm font-mono font-bold text-gray-200">--:--:--</p>
+                <p id="data-atual" class="text-[10px] text-gray-400 uppercase tracking-widest">Carregando...</p>
+            </div>
+            <div class="h-8 w-px bg-gray-700"></div>
+            <button class="bg-gray-800 hover:bg-gray-700 p-2 rounded-lg text-gray-300 transition" title="Configurações">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Layout Principal Dividido em 3 Colunas (Dashboard de Sala de Controle) -->
+    <div class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4 p-4 overflow-hidden">
+
+        <!-- COLUNA 1: Indicadores Críticos & Gráficos (3 Colunas no Grid) -->
+        <div class="xl:col-span-3 flex flex-col gap-4 overflow-y-auto pr-1">
+            
+            <div class="bg-panelBg border border-gray-800 rounded-xl p-4 shadow-md">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-defesa"></i> Indicadores Críticos
+                </h2>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Card 1 -->
+                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-red-500/10 text-4xl"><i class="fa-solid fa-bell"></i></div>
+                        <span class="text-[11px] font-medium text-gray-400 uppercase">Alertas Vigentes</span>
+                        <p class="text-2xl font-extrabold text-red-400 mt-1">18</p>
+                        <span class="text-[10px] text-red-400 font-semibold bg-red-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">↑ 4 novos hoje</span>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-orange-500/10 text-4xl"><i class="fa-solid fa-fire"></i></div>
+                        <span class="text-[11px] font-medium text-gray-400 uppercase">Focos Calor (24h)</span>
+                        <p class="text-2xl font-extrabold text-orange-400 mt-1">274</p>
+                        <span class="text-[10px] text-orange-400 font-semibold bg-orange-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">Região Pantanal</span>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-yellow-500/10 text-4xl"><i class="fa-solid fa-city"></i></div>
+                        <span class="text-[11px] font-medium text-gray-400 uppercase">Mun. Emergência</span>
+                        <p class="text-2xl font-extrabold text-yellow-400 mt-1">03</p>
+                        <span class="text-[10px] text-yellow-400 font-semibold bg-yellow-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">Monitorados</span>
+                    </div>
+                    <!-- Card 4 -->
+                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
+                        <div class="absolute -right-2 -bottom-2 text-green-500/10 text-4xl"><i class="fa-solid fa-users"></i></div>
+                        <span class="text-[11px] font-medium text-gray-400 uppercase">Equipes em Campo</span>
+                        <p class="text-2xl font-extrabold text-green-400 mt-1">45</p>
+                        <span class="text-[10px] text-green-400 font-semibold bg-green-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">Ativas AG</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloco de Gráfico Secundário (Incidentes por Região) -->
+            <div class="bg-panelBg border border-gray-800 rounded-xl p-4 shadow-md flex-1 flex flex-col">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-chart-column text-defesa mr-1.5"></i> Incidentes por Região</span>
+                    <span class="text-[10px] text-gray-500 font-normal">Últimos 7 dias</span>
+                </h2>
+                
+                <!-- Barras simuladas -->
+                <div class="space-y-3 my-auto py-2">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1 text-gray-300">
+                            <span>Norte (Sinop / Alta Floresta)</span>
+                            <span class="font-bold text-orange-400">112</span>
+                        </div>
+                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-orange-500 h-full rounded-full" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1 text-gray-300">
+                            <span>Pantanal (Poconé / Cáceres)</span>
+                            <span class="font-bold text-defesa">84</span>
+                        </div>
+                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-defesa h-full rounded-full" style="width: 65%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1 text-gray-300">
+                            <span>Sul / Rondonópolis</span>
+                            <span class="font-bold text-blue-400">42</span>
+                        </div>
+                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full rounded-full" style="width: 35%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1 text-gray-300">
+                            <span>Baixada Cuiabana</span>
+                            <span class="font-bold text-emerald-400">28</span>
+                        </div>
+                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full rounded-full" style="width: 22%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mini gráfico de linha SVG -->
+                <div class="mt-4 pt-3 border-t border-gray-800">
+                    <p class="text-[11px] text-gray-400 mb-2">Evolução Temporal de Focos de Calor</p>
+                    <div class="h-20 w-full flex items-end">
+                        <svg class="w-full h-full overflow-visible" viewBox="0 0 100 30" preserveAspectRatio="none">
+                            <path d="M0,25 Q15,10 30,18 T60,8 T90,20 L100,5" fill="none" stroke="#ff6600" stroke-width="2.5" />
+                            <path d="M0,25 Q15,10 30,18 T60,8 T90,20 L100,5 L100,30 L0,30 Z" fill="rgba(255,102,0,0.1)" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COLUNA 2: O Seu Mapa Interativo em Destaque (6 Colunas no Grid) -->
+        <div class="xl:col-span-6 bg-panelBg border border-gray-800 rounded-xl overflow-hidden shadow-xl flex flex-col">
+            <div class="bg-panelBg/90 border-b border-gray-800 px-4 py-3 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-white">Monitoramento Espacial — Mato Grosso</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="mapa.html" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-expand text-[10px]"></i> Tela Cheia
+                    </a>
+                </div>
+            </div>
+            <!-- Incorporação do seu mapa.html -->
+            <div class="flex-1 w-full bg-gray-950 relative">
+                <iframe src="mapa.html" class="w-full h-full border-0 filter contrast-125" title="Mapa Defesa Civil MT"></iframe>
+            </div>
+        </div>
+
+        <!-- COLUNA 3: Feed de Ocorrências em Tempo Real (3 Colunas no Grid) -->
+        <div class="xl:col-span-3 bg-panelBg border border-gray-800 rounded-xl p-4 shadow-md flex flex-col overflow-hidden">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between shrink-0">
+                <span><i class="fa-solid fa-list-ul text-defesa mr-1.5"></i> Ocorrências Recentes</span>
+                <span class="bg-defesa/20 text-defesa text-[10px] px-2 py-0.5 rounded-full font-bold">Ao Vivo</span>
+            </h2>
+
+            <!-- Lista com scroll interno -->
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+                
+                <!-- Ocorrência 1 -->
+                <div class="bg-cardBg border-l-4 border-red-500 p-3 rounded-r-lg shadow-sm">
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                        <span class="text-red-400 font-bold bg-red-950 px-1.5 py-0.5 rounded">Incêndio Florestal</span>
+                        <span>Há 12 min</span>
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-200">Foco de Calor Nível Crítico</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Poconé - MT (Pantanal)
+                    </p>
+                </div>
+
+                <!-- Ocorrência 2 -->
+                <div class="bg-cardBg border-l-4 border-orange-500 p-3 rounded-r-lg shadow-sm">
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                        <span class="text-orange-400 font-bold bg-orange-950 px-1.5 py-0.5 rounded">Alagamento Urbano</span>
+                        <span>Há 35 min</span>
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-200">Elevação Rápida de Córrego</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Cuiabá - MT (Região Central)
+                    </p>
+                </div>
+
+                <!-- Ocorrência 3 -->
+                <div class="bg-cardBg border-l-4 border-yellow-500 p-3 rounded-r-lg shadow-sm">
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                        <span class="text-yellow-400 font-bold bg-yellow-950 px-1.5 py-0.5 rounded">Ventos Fortes</span>
+                        <span>Há 1 hora</span>
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-200">Queda de Árvores e Fiação</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Sinop - MT
+                    </p>
+                </div>
+
+                <!-- Ocorrência 4 -->
+                <div class="bg-cardBg border-l-4 border-blue-500 p-3 rounded-r-lg shadow-sm">
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                        <span class="text-blue-400 font-bold bg-blue-950 px-1.5 py-0.5 rounded">Hidrologia</span>
+                        <span>Há 2 horas</span>
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-200">Alerta de Cota de Atenção</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Cáceres - MT (Rio Paraguai)
+                    </p>
+                </div>
+
+            </div>
+
+            <button class="mt-3 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 rounded-lg font-semibold transition border border-gray-700 shrink-0">
+                Ver Histórico Completo
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Script de Relógio Dinâmico -->
+    <script>
+        function atualizarRelogio() {
+            const agora = new Date();
+            document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-BR');
+            
+            const opcoes = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('data-atual').innerText = agora.toLocaleDateString('pt-BR', opcoes);
+        }
+        setInterval(atualizarRelogio, 1000);
+        atualizarRelogio();
+    </script>
+</body>
+</html>
