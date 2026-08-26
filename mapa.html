@@ -386,24 +386,6 @@
         #toast.info { background: rgba(56,189,248,.92); color: #06202b; }
 
         /* ===== Barra de estatísticas INPE ===== */
-        #statsBar {
-            position: absolute; top: 62px; left: 50%; transform: translateX(-50%); z-index: 1100;
-            display: none; gap: 0;
-            background: var(--glass-bg); backdrop-filter: blur(14px);
-            border: 1px solid var(--glass-border); border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0,0,0,.35); overflow: hidden;
-        }
-        #statsBar.show { display: flex; }
-        .stat-cell {
-            padding: 8px 16px; text-align: center; min-width: 100px;
-            border-right: 1px solid var(--glass-border);
-        }
-        .stat-cell:last-child { border-right: none; }
-        .stat-cell .sv { font-size: 18px; font-weight: 800; color: var(--text-main); line-height: 1; }
-        .stat-cell .sl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 3px; }
-        .stat-cell.fire .sv { color: #ef4444; }
-        .stat-cell.risk .sv { color: #f9731c; }
-        .stat-cell.rain .sv { color: #38bdf8; }
 
         /* ===== Filtros INPE ===== */
         .filter-group { padding: 4px 0; }
@@ -493,7 +475,6 @@
             #techNotice { display: none; }
             .brand .txt { display: none; }
             #climatePanel { bottom: 92px; right: 8px; width: 200px; }
-            #statsBar { display: none !important; }
             #dataTablePanel { left: 8px; right: 8px; bottom: 80px; }
             #toggleTableBtn { left: 8px; }
         }
@@ -892,16 +873,6 @@
         <div class="wl-title">Velocidade do vento</div>
         <div class="wl-bar" id="wlBar"></div>
         <div class="wl-labels"><span>0</span><span>15</span><span>30</span><span>50</span><span>70+ km/h</span></div>
-    </div>
-
-    <!-- Barra de estatísticas INPE -->
-    <div id="statsBar">
-        <div class="stat-cell fire"><div class="sv" id="statFocos">—</div><div class="sl">Focos hoje</div></div>
-        <div class="stat-cell fire"><div class="sv" id="statFocos7">—</div><div class="sl">Focos 7 dias</div></div>
-        <div class="stat-cell risk"><div class="sv" id="statRisco">—</div><div class="sl">Risco alto</div></div>
-        <div class="stat-cell rain"><div class="sv" id="statChuva">—</div><div class="sl">Chuva mm</div></div>
-        <div class="stat-cell"><div class="sv" id="statArea">—</div><div class="sl">Área queimada</div></div>
-        <div class="stat-cell"><div class="sv" id="statSat">—</div><div class="sl">Satélites</div></div>
     </div>
 
     <!-- Painel de camadas -->
@@ -1889,7 +1860,6 @@ async function loadFocos() {
     // Armazena dados brutos para filtros e tabela
     focosRawData = parseFocosCSV(csvText);
     focosFilteredData = [...focosRawData];
-    updateStatsBar();
 
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     meta.innerHTML = `INPE BDQueimadas · <b>${n.toLocaleString('pt-BR')} focos em MT</b> · atualizado ${horaCsv}`;
@@ -2742,7 +2712,6 @@ function applyFocosFilters() {
         return true;
     });
     renderFocosFiltered();
-    updateStatsBar();
     renderDataTable();
 }
 
@@ -2777,26 +2746,6 @@ function renderFocosFiltered() {
             </div>`).addTo(focosFilteredLayer);
     });
     if (checkState.focos) focosFilteredLayer.addTo(map);
-}
-
-/* ================= INPE — Barra de estatísticas ================= */
-function updateStatsBar() {
-    const bar = document.getElementById('statsBar');
-    const d = focosFilteredData.length ? focosFilteredData : focosRawData;
-    if (!d.length) { bar.classList.remove('show'); return; }
-    bar.classList.add('show');
-    const hoje = new Date().toISOString().slice(0, 10);
-    const seteDias = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-    const hojeCount = d.filter(f => f.data.startsWith(hoje)).length;
-    const seteCount = d.filter(f => f.data >= seteDias).length;
-    const altoRisco = d.filter(f => f.risco_fogo >= 0.6).length;
-    const satelites = new Set(d.map(f => f.satelite)).size;
-    document.getElementById('statFocos').textContent = hojeCount.toLocaleString('pt-BR');
-    document.getElementById('statFocos7').textContent = seteCount.toLocaleString('pt-BR');
-    document.getElementById('statRisco').textContent = altoRisco.toLocaleString('pt-BR');
-    document.getElementById('statSat').textContent = satelites;
-    document.getElementById('statChuva').textContent = '—';
-    document.getElementById('statArea').textContent = '—';
 }
 
 /* ================= INPE — Tabela de dados ================= */
