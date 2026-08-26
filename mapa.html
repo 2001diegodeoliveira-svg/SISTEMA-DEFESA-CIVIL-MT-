@@ -870,28 +870,35 @@
 
         .pd-empty { text-align: center; padding: 12px; color: var(--text-muted); font-size: 9px; opacity: .7; }
 
-        /* Flash popup notification */
+        /* Flash popup notification — alerta climático em tempo real */
         #flashPopup {
-            position: absolute; top: 120px; right: 16px; z-index: 1400;
-            width: 320px;
-            background: var(--glass-bg); backdrop-filter: blur(14px);
-            border-radius: 10px; padding: 12px 14px;
-            box-shadow: 0 12px 40px rgba(0,0,0,.6);
-            transform: translateX(calc(100% + 40px)); transition: transform .35s cubic-bezier(.22,1,.36,1);
-            pointer-events: none;
+            position: absolute; top: 62px; left: 50%; transform: translateX(-50%) translateY(-120px); z-index: 1500;
+            width: min(400px, 90vw);
+            background: rgba(15,23,42,.95); backdrop-filter: blur(16px);
+            border-radius: 12px; padding: 14px 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.7), 0 0 20px rgba(249,115,22,.15);
+            transition: transform .4s cubic-bezier(.22,1,.36,1), opacity .4s;
+            pointer-events: none; opacity: 0;
         }
-        #flashPopup.show { transform: translateX(0); pointer-events: auto; }
+        #flashPopup.show { transform: translateX(-50%) translateY(0); pointer-events: auto; opacity: 1; }
         #flashPopup .fp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        #flashPopup .fp-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
-        #flashPopup .fp-title { font-size: 11px; font-weight: 700; color: var(--text-main); flex: 1; }
-        #flashPopup .fp-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; }
-        #flashPopup .fp-body { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+        #flashPopup .fp-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        #flashPopup .fp-title { font-size: 12px; font-weight: 700; color: var(--text-main); flex: 1; }
+        #flashPopup .fp-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 2px; }
+        #flashPopup .fp-close:hover { color: var(--text-main); }
+        #flashPopup .fp-body { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
         #flashPopup .fp-body b { color: var(--text-main); }
         #flashPopup .fp-time { font-size: 9px; color: var(--text-muted); margin-top: 4px; opacity: .7; }
-        #flashPopup.border-critico { border: 1px solid rgba(239,68,68,.5); }
-        #flashPopup.border-alto { border: 1px solid rgba(249,99,28,.5); }
-        #flashPopup.border-medio { border: 1px solid rgba(251,191,36,.5); }
-        #flashPopup.border-baixo { border: 1px solid rgba(34,197,94,.5); }
+        #flashPopup.border-critico { border: 2px solid rgba(239,68,68,.7); box-shadow: 0 8px 40px rgba(0,0,0,.7), 0 0 30px rgba(239,68,68,.2); }
+        #flashPopup.border-critico .fp-icon { background: rgba(239,68,68,.2); color: #ef4444; }
+        #flashPopup.border-alto { border: 2px solid rgba(249,115,22,.7); box-shadow: 0 8px 40px rgba(0,0,0,.7), 0 0 30px rgba(249,115,22,.2); }
+        #flashPopup.border-alto .fp-icon { background: rgba(249,115,22,.2); color: #f9731c; }
+        #flashPopup.border-medio { border: 2px solid rgba(251,191,36,.7); box-shadow: 0 8px 40px rgba(0,0,0,.7), 0 0 30px rgba(251,191,36,.2); }
+        #flashPopup.border-medio .fp-icon { background: rgba(251,191,36,.2); color: #fbbf24; }
+        #flashPopup.border-baixo { border: 2px solid rgba(34,197,94,.7); box-shadow: 0 8px 40px rgba(0,0,0,.7), 0 0 30px rgba(34,197,94,.2); }
+        #flashPopup.border-baixo .fp-icon { background: rgba(34,197,94,.2); color: #22c55e; }
+        @keyframes fpPulse { 0%,100%{box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 20px rgba(249,115,22,.15)} 50%{box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 40px rgba(249,115,22,.35)} }
+        #flashPopup.show { animation: fpPulse 2s ease-in-out infinite; }
 
         /* ===== Zeca Mascote ===== */
         #zecaMascot {
@@ -930,7 +937,7 @@
         @media (max-width: 900px) {
             #monitorPanel { width: calc(100vw - 24px); right: 8px; top: auto; bottom: 80px; max-height: 50vh; }
             #monitorToggle { bottom: 140px; top: auto; right: 8px; }
-            #flashPopup { right: 8px; width: calc(100vw - 16px); top: 80px; }
+            #flashPopup { width: calc(100vw - 16px); top: 60px; }
         }
     </style>
 </head>
@@ -3591,15 +3598,14 @@ function renderDashboard() {
 // Flash popup notification
 function showFlashPopup(alert) {
     const sev = sevClass(alert.severity);
-    flashPopup.className = 'border-' + sev;
+    flashPopup.className = 'border-' + sev + ' show';
     document.getElementById('fpIcon').className = 'fp-icon mon-icon ' + sevIconClass(alert.type);
     document.getElementById('fpIcon').innerHTML = `<i class="fa-solid ${sevIcon(alert.type)}"></i>`;
     document.getElementById('fpTitle').textContent = alert.title;
     document.getElementById('fpBody').innerHTML = alert.desc + '<br><b>' + alert.city + '</b>';
     document.getElementById('fpTime').textContent = new Date(alert.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    flashPopup.classList.add('show');
     clearTimeout(flashTimer);
-    flashTimer = setTimeout(() => flashPopup.classList.remove('show'), 6000);
+    flashTimer = setTimeout(() => flashPopup.classList.remove('show'), 8000);
 }
 
 // Update badge count
@@ -3834,9 +3840,17 @@ async function runMonitorCycle() {
             }
         });
 
-        // Force flash popup for first alert
+        // Always show flash popup on first load
+        const okCities = MON_CITIES.filter(c => monState[c.cod]?.current).length;
         if (monAlerts.length > 0) {
             showFlashPopup(monAlerts[0]);
+        } else {
+            showFlashPopup({
+                type:'event', severity:'baixo',
+                title:'Monitoramento Ativo',
+                desc:`${okCities} de ${MON_CITIES.length} cidades conectadas · Ciclo a cada 5 min`,
+                city:'Defesa Civil MT', ts:Date.now()
+            });
         }
     }
 
