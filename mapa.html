@@ -658,6 +658,58 @@
             border: 1px solid var(--glass-border); z-index: 451;
         }
 
+        /* ===== Temperature Heatmap Canvas ===== */
+        #tempCanvas {
+            position: absolute; inset: 0; z-index: 440;
+            pointer-events: none; display: none;
+            mix-blend-mode: screen;
+        }
+        #tempCanvas.show { display: block; }
+
+        /* ===== Temperature City Badges ===== */
+        .temp-badge {
+            background: rgba(15,23,42,.88); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+            padding: 8px 12px; min-width: 90px; text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05);
+            transition: transform .2s, box-shadow .2s;
+            cursor: default;
+            position: relative;
+        }
+        .temp-badge:hover {
+            transform: scale(1.08); box-shadow: 0 6px 28px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+        }
+        .temp-badge .tb-city {
+            font-size: 8px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: rgba(255,255,255,.55); margin-bottom: 4px;
+            white-space: nowrap;
+        }
+        .temp-badge .tb-row {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .temp-badge .tb-val {
+            font-size: 22px; font-weight: 900; line-height: 1;
+            letter-spacing: -0.5px;
+        }
+        .temp-badge .tb-unit { font-size: 11px; font-weight: 600; opacity: .6; }
+        .temp-badge .tb-icon { font-size: 16px; }
+        .temp-badge .tb-feels {
+            font-size: 8px; color: rgba(255,255,255,.45); margin-top: 3px;
+        }
+        .temp-badge .tb-extra {
+            display: flex; gap: 8px; justify-content: center; margin-top: 5px;
+            padding-top: 5px; border-top: 1px solid rgba(255,255,255,.06);
+        }
+        .temp-badge .tb-stat {
+            font-size: 8px; color: rgba(255,255,255,.4); display: flex; align-items: center; gap: 2px;
+        }
+        .temp-badge .tb-stat b { color: rgba(255,255,255,.7); font-weight: 700; }
+        .temp-badge .tb-glow {
+            position: absolute; inset: -2px; border-radius: 16px;
+            pointer-events: none; opacity: .3;
+            filter: blur(8px); z-index: -1;
+        }
+
         /* ===== Wind Legend (Windy-style color scale) ===== */
         #windLegend, #tempLegend, #fireLegend {
             position: absolute; right: 16px; bottom: 140px; z-index: 1090;
@@ -915,6 +967,11 @@
             #windLegend, #tempLegend, #fireLegend { right: 8px; bottom: 120px; padding: 8px 10px; min-width: 130px; }
             .lg-bar, .wl-bar { width: 110px; }
             .lg-labels, .wl-labels { font-size: 7px; }
+            .temp-badge { padding: 5px 8px; min-width: 72px; border-radius: 10px; }
+            .temp-badge .tb-val { font-size: 16px; }
+            .temp-badge .tb-city { font-size: 7px; }
+            .temp-badge .tb-extra { display: none; }
+            .temp-badge .tb-feels { font-size: 7px; }
         }
     </style>
 </head>
@@ -972,6 +1029,9 @@
 
     <!-- Wind particle canvas -->
     <canvas id="windCanvas"></canvas>
+
+    <!-- Temperature heatmap canvas -->
+    <canvas id="tempCanvas"></canvas>
 
     <!-- Wind legend -->
     <div id="windLegend">
@@ -3009,7 +3069,7 @@ function hideAllOverlays() {
     Object.values(radarLayers).forEach(l => { try { l.setOpacity(0); } catch {} });
     Object.values(satLayers).forEach(l => { try { l.setOpacity(0); } catch {} });
     activeOverlay = 'none';
-    if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
+    clearTempOverlay();
     if (fireOverlay) { map.removeLayer(fireOverlay); fireOverlay = null; }
     document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
 }
@@ -3090,7 +3150,8 @@ function resizeWindCanvas() {
     windCanvas.height = rect.height;
 }
 resizeWindCanvas();
-map.on('resize', resizeWindCanvas);
+resizeTempCanvas();
+map.on('resize', () => { resizeWindCanvas(); resizeTempCanvas(); });
 
 async function fetchWindData() {
     const now = Date.now();
@@ -3267,34 +3328,138 @@ map.on('moveend', () => {
     }
 });
 
-/* ================= Temperature Overlay ================= */
+/* ================= Temperature Overlay (Canvas Heatmap + City Badges) ================= */
 let tempOverlay = null;
+let tempBadgeLayer = null;
+const tempCanvas = document.getElementById('tempCanvas');
+const tempCtx = tempCanvas.getContext('2d');
+
+const MT_CIDADES = [
+    { nome: 'Cuiabá', lat: -15.601, lon: -56.097, pop: 'grande' },
+    { nome: 'Sinop', lat: -11.860, lon: -55.502, pop: 'media' },
+    { nome: 'Rondonópolis', lat: -16.470, lon: -54.635, pop: 'media' },
+    { nome: 'Sorriso', lat: -12.545, lon: -55.728, pop: 'media' },
+    { nome: 'Cáceres', lat: -16.076, lon: -57.681, pop: 'pequena' },
+    { nome: 'Barra do Garças', lat: -15.890, lon: -52.257, pop: 'pequena' },
+    { nome: 'Primavera do Leste', lat: -15.360, lon: -54.280, pop: 'pequena' },
+    { nome: 'Tangará da Serra', lat: -14.620, lon: -57.430, pop: 'pequena' },
+    { nome: 'Lucas do Rio Verde', lat: -13.058, lon: -55.927, pop: 'pequena' },
+    { nome: 'Várzea Grande', lat: -15.647, lon: -56.133, pop: 'grande' },
+];
+
+function tempColor(t) {
+    if (t < 10) return '#3b82f6';
+    if (t < 15) return '#38bdf8';
+    if (t < 20) return '#22d3ee';
+    if (t < 24) return '#34d399';
+    if (t < 28) return '#fbbf24';
+    if (t < 32) return '#f9731c';
+    if (t < 36) return '#ef4444';
+    return '#dc2626';
+}
+
+function tempColorRGB(t) {
+    const hex = tempColor(t);
+    return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16),
+    };
+}
+
+function tempWeatherIcon(code) {
+    if (code == null) return '\u2600\uFE0F';
+    if (code === 0) return '\u2600\uFE0F';
+    if (code <= 2) return '\uD83C\uDF24\uFE0F';
+    if (code === 3) return '\u2601\uFE0F';
+    if (code >= 51 && code <= 55) return '\uD83C\uDF26\uFE0F';
+    if (code >= 61 && code <= 65) return '\uD83C\uDF27\uFE0F';
+    if (code >= 80 && code <= 82) return '\uD83C\uDF26\uFE0F';
+    if (code >= 95) return '\u26C8\uFE0F';
+    return '\u26C5';
+}
+
+function tempWeatherFA(code) {
+    if (code == null) return 'fa-sun';
+    if (code === 0) return 'fa-sun';
+    if (code <= 2) return 'fa-cloud-sun';
+    if (code === 3) return 'fa-cloud';
+    if (code >= 51 && code <= 55) return 'fa-cloud-rain';
+    if (code >= 61 && code <= 65) return 'fa-cloud-showers-heavy';
+    if (code >= 80 && code <= 82) return 'fa-cloud-showers-heavy';
+    if (code >= 95) return 'fa-cloud-bolt';
+    return 'fa-cloud-sun';
+}
+
+function tempBadgeHTML(city, data) {
+    const t = Math.round(data.temp);
+    const color = tempColor(data.temp);
+    const icon = tempWeatherIcon(data.wcode);
+    const feelsLike = data.feels != null ? Math.round(data.feels) : '--';
+    const hum = data.hum != null ? data.hum : '--';
+    const wind = data.wind != null ? Math.round(data.wind) : '--';
+    const windDir = data.windDir != null ? windDirArrow(data.windDir) : '';
+    return `
+        <div class="temp-badge" style="border-color:${color}33;">
+            <div class="tb-glow" style="background:${color};"></div>
+            <div class="tb-city">${city.nome}</div>
+            <div class="tb-row">
+                <span class="tb-icon">${icon}</span>
+                <span class="tb-val" style="color:${color};">${t}<span class="tb-unit">°C</span></span>
+            </div>
+            <div class="tb-feels">Sensação ${feelsLike}°C</div>
+            <div class="tb-extra">
+                <span class="tb-stat"><i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> <b>${hum}%</b></span>
+                <span class="tb-stat"><i class="fa-solid fa-wind" style="color:#22d3ee;"></i> <b>${wind}</b> ${windDir}</span>
+            </div>
+        </div>`;
+}
+
+function windDirArrow(deg) {
+    const arrows = ['\u2193','\u2199','\u2190','\u2196','\u2191','\u2197','\u2192','\u2198'];
+    return arrows[Math.round(deg / 45) % 8];
+}
+
+function resizeTempCanvas() {
+    const rect = map.getContainer().getBoundingClientRect();
+    tempCanvas.width = rect.width;
+    tempCanvas.height = rect.height;
+}
+
 async function showTempOverlay() {
     if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
+    if (tempBadgeLayer) { map.removeLayer(tempBadgeLayer); tempBadgeLayer = null; }
     tempOverlay = L.layerGroup();
+    tempBadgeLayer = L.layerGroup();
+
+    tempCanvas.classList.add('show');
+    resizeTempCanvas();
+    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
 
     const loadEl = document.getElementById('ovLoading');
     const loadMsg = document.getElementById('ovLoadMsg');
-    loadMsg.textContent = 'Carregando temperatura...';
+    loadMsg.textContent = 'Carregando mapa de temperatura...';
     loadEl.classList.add('show');
 
     const bounds = map.getBounds();
-    const latMin = Math.max(-16, bounds.getSouth() - 1);
-    const latMax = Math.min(-7.5, bounds.getNorth() + 1);
-    const lonMin = Math.max(-63, bounds.getWest() - 1);
-    const lonMax = Math.min(-50.5, bounds.getEast() + 1);
-    const step = 0.8;
+    const latMin = Math.max(-17, bounds.getSouth() - 1.5);
+    const latMax = Math.min(-7, bounds.getNorth() + 1.5);
+    const lonMin = Math.max(-64, bounds.getWest() - 1.5);
+    const lonMax = Math.min(-50, bounds.getEast() + 1.5);
+    const step = 0.6;
 
     const pts = [];
     for (let lat = latMin; lat <= latMax; lat += step)
         for (let lon = lonMin; lon <= lonMax; lon += step)
             pts.push({ lat: +lat.toFixed(2), lon: +lon.toFixed(2) });
 
-    const batchSize = 20;
+    const allPoints = [];
+
+    const batchSize = 25;
     for (let i = 0; i < pts.length; i += batchSize) {
         const batch = pts.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(p =>
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature&timezone=auto`)
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code&timezone=auto`)
                 .then(r => r.json()).catch(() => null)
         ));
         results.forEach((d, j) => {
@@ -3302,35 +3467,86 @@ async function showTempOverlay() {
             if (!c) return;
             const temp = c.temperature_2m;
             if (temp == null) return;
-            const color = tempColor(temp);
-            const feelsLike = c.apparent_temperature != null ? Math.round(c.apparent_temperature) : '--';
-            const hum = c.relative_humidity_2m != null ? c.relative_humidity_2m : '--';
-            L.circleMarker([batch[j].lat, batch[j].lon], {
-                radius: 20, weight: 0,
-                fillColor: color, fillOpacity: 0.35,
-                className: 'ov-temp-marker'
-            }).bindPopup(`
-                <div class="ov-popup ov-popup-temp">
-                    <div class="ov-val" style="color:${color};">${Math.round(temp)}°C</div>
-                    <div class="ov-lbl">Temperatura atual</div>
-                    <div class="ov-detail">
-                        Sensação: <b>${feelsLike}°C</b> · Umidade: <b>${hum}%</b>
-                    </div>
-                </div>`, { className: 'ov-custom-popup' }).addTo(tempOverlay);
+            allPoints.push({
+                lat: batch[j].lat, lon: batch[j].lon,
+                temp, hum: c.relative_humidity_2m,
+                feels: c.apparent_temperature, wind: c.wind_speed_10m,
+                windDir: c.wind_direction_10m, wcode: c.weather_code,
+            });
         });
     }
+
+    drawTempHeatmap(allPoints);
+
+    const cidadeData = {};
+    for (const p of allPoints) {
+        for (const cid of MT_CIDADES) {
+            const dlat = Math.abs(p.lat - cid.lat);
+            const dlon = Math.abs(p.lon - cid.lon);
+            if (dlat < 0.5 && dlon < 0.5) {
+                if (!cidadeData[cid.nome] || (dlat + dlon) < cidadeData[cid.nome]._dist) {
+                    cidadeData[cid.nome] = { ...p, _dist: dlat + dlon };
+                }
+            }
+        }
+    }
+
+    for (const cid of MT_CIDADES) {
+        const data = cidadeData[cid.nome];
+        if (!data) continue;
+        const icon = L.divIcon({
+            className: 'temp-badge-wrap',
+            html: tempBadgeHTML(cid, data),
+            iconSize: [110, 80],
+            iconAnchor: [55, 40],
+        });
+        L.marker([cid.lat, cid.lon], { icon, interactive: true }).bindPopup(`
+            <div class="ov-popup ov-popup-temp">
+                <div class="ov-val" style="color:${tempColor(data.temp)};">${Math.round(data.temp)}°C</div>
+                <div class="ov-lbl">${cid.nome} — MT</div>
+                <div class="ov-detail">
+                    Sensação: <b>${data.feels != null ? Math.round(data.feels) : '--'}°C</b><br>
+                    Umidade: <b>${data.hum ?? '--'}%</b> · Vento: <b>${data.wind != null ? Math.round(data.wind) : '--'} km/h</b>
+                </div>
+            </div>`, { className: 'ov-custom-popup' }).addTo(tempBadgeLayer);
+    }
+
     tempOverlay.addTo(map);
+    tempBadgeLayer.addTo(map);
     loadEl.classList.remove('show');
     toast('Mapa de temperatura carregado.', true);
 }
-function tempColor(t) {
-    if (t < 10) return '#3b82f6';
-    if (t < 18) return '#38bdf8';
-    if (t < 24) return '#22d3ee';
-    if (t < 28) return '#fbbf24';
-    if (t < 32) return '#f9731c';
-    if (t < 36) return '#ef4444';
-    return '#dc2626';
+
+function drawTempHeatmap(points) {
+    if (!points.length) return;
+    const w = tempCanvas.width;
+    const h = tempCanvas.height;
+    tempCtx.clearRect(0, 0, w, h);
+    tempCtx.globalCompositeOperation = 'source-over';
+
+    for (const p of points) {
+        const pos = map.latLngToContainerPoint([p.lat, p.lon]);
+        const radius = 120;
+        const rgb = tempColorRGB(p.temp);
+
+        const grad = tempCtx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, radius);
+        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`);
+        grad.addColorStop(0.3, `rgba(${rgb.r},${rgb.g},${rgb.b},0.25)`);
+        grad.addColorStop(0.6, `rgba(${rgb.r},${rgb.g},${rgb.b},0.10)`);
+        grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+
+        tempCtx.fillStyle = grad;
+        tempCtx.fillRect(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+    }
+
+    tempCtx.globalCompositeOperation = 'source-over';
+}
+
+function clearTempOverlay() {
+    if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
+    if (tempBadgeLayer) { map.removeLayer(tempBadgeLayer); tempBadgeLayer = null; }
+    tempCanvas.classList.remove('show');
+    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
 }
 
 /* ================= Fire Risk Overlay ================= */
