@@ -759,6 +759,18 @@
         .ov-loading .ov-msg { color: var(--text-muted); font-size: 10px; font-weight: 600; background: var(--glass-bg); padding: 4px 12px; border-radius: 6px; white-space: nowrap; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .waze-nav-popup .leaflet-popup-content-wrapper {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            box-shadow: 0 4px 24px rgba(0,0,0,.5);
+            color: var(--text-main);
+            padding: 0;
+        }
+        .waze-nav-popup .leaflet-popup-content { margin: 10px 14px; }
+        .waze-nav-popup .leaflet-popup-tip { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+
         /* ===== Enhanced Point Panel (Windy-style) ===== */
         #pointPanel .pp-extra { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.06); }
         #pointPanel .pp-extra h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
@@ -999,6 +1011,7 @@
 
         <div class="top-actions">
             <button class="icon-btn" id="btnSources" title="Fontes de dados"><i class="fa-solid fa-database"></i> <span class="lbl">Fontes</span></button>
+            <a class="icon-btn" href="painel.html"><i class="fa-solid fa-chart-column"></i> <span class="lbl">Painel</span></a>
             <a class="icon-btn" href="alertas.html"><i class="fa-solid fa-bell"></i> <span class="lbl">Alertas</span></a>
             <div id="userArea"></div>
             <a class="icon-btn" href="index.html"><i class="fa-solid fa-house"></i> <span class="lbl">Início</span></a>
@@ -2049,6 +2062,9 @@ async function loadFocos() {
                     Foco pontual não confirma incêndio — exige validação operacional.
                     <a href="https://data.inpe.br/queimadas/bdqueimadas/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
                 </div>
+                <a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                    <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                </a>
             </div>`).addTo(focosLayer);
         n++;
     }
@@ -2282,6 +2298,9 @@ async function loadSIPAM() {
                         Evento ativo ou em observação · dados em tempo real<br>
                         <a href="https://panorama.sipam.gov.br/painel-do-fogo/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
                     </div>
+                    <a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                    </a>
                 </div>`).addTo(sipamLayer);
         });
         sipamLayer.addTo(map);
@@ -2322,11 +2341,37 @@ function startDrawing() {
 document.getElementById('drawDone').addEventListener('click', finishDrawing);
 document.getElementById('drawCancel').addEventListener('click', cancelDrawing);
 
+let wazePopup = null;
 map.on('click', e => {
-    if (!drawing) return;
-    drawPts.push([e.latlng.lat, e.latlng.lng]);
-    document.getElementById('drawCount').textContent = drawPts.length;
-    redrawPreview();
+    if (drawing) {
+        drawPts.push([e.latlng.lat, e.latlng.lng]);
+        document.getElementById('drawCount').textContent = drawPts.length;
+        redrawPreview();
+        return;
+    }
+    const { lat, lng } = e.latlng;
+    setTimeout(() => {
+        const activePopup = map._popup;
+        if (activePopup && activePopup.isOpen() && activePopup !== wazePopup) {
+            if (wazePopup) { map.closePopup(wazePopup); wazePopup = null; }
+            return;
+        }
+        if (wazePopup) { map.closePopup(wazePopup); wazePopup = null; }
+        const url = `https://www.waze.com/ul?ll=${lat.toFixed(6)},${lng.toFixed(6)}&navigate=yes&zoom=17`;
+        wazePopup = L.popup({ maxWidth: 240, className: 'waze-nav-popup' })
+            .setLatLng(e.latlng)
+            .setContent(`
+                <div style="text-align:center;padding:2px 0;">
+                    <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">
+                        <i class="fa-solid fa-location-dot" style="color:#ef4444;"></i> ${lat.toFixed(4)}, ${lng.toFixed(4)}
+                    </div>
+                    <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:12px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 20px rgba(0,153,255,.5)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                    </a>
+                </div>
+            `)
+            .openOn(map);
+    }, 60);
 });
 map.on('dblclick', () => { if (drawing) finishDrawing(); });
 
@@ -3551,6 +3596,9 @@ async function showTempOverlay() {
                     Sensação: <b>${data.feels != null ? Math.round(data.feels) : '--'}°C</b><br>
                     Umidade: <b>${data.hum ?? '--'}%</b> · Vento: <b>${data.wind != null ? Math.round(data.wind) : '--'} km/h</b>
                 </div>
+                <a href="https://www.waze.com/ul?ll=${cid.lat},${cid.lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                    <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                </a>
             </div>`, { className: 'ov-custom-popup' }).addTo(tempBadgeLayer);
     }
 
@@ -3674,6 +3722,9 @@ async function showFireOverlay() {
                         <span><i class="fa-solid fa-cloud-rain" style="color:#a78bfa;"></i> Chuva: ${chuva.toFixed(1)} mm</span>
                         <span><i class="fa-solid fa-temperature-half" style="color:#f9731c;"></i> Temp: ${Math.round(temp)}°C</span>
                     </div>
+                    <a href="https://www.waze.com/ul?ll=${batch[j].lat},${batch[j].lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                    </a>
                 </div>`, { className: 'ov-custom-popup' });
             markers.push(marker);
         });
