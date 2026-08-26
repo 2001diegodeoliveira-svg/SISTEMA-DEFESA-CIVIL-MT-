@@ -3,261 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Operações - Defesa Civil MT</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Ícones -->
+    <meta name="theme-color" content="#0f172a">
+    <title>Painel de Operações — Defesa Civil MT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        defesa: '#ff6600',
-                        defesaDark: '#cc5200',
-                        panelBg: '#111827', // Tom escuro estilo sala de controle
-                        cardBg: '#1f2937'
-                    }
-                }
-            }
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --card2: #172032;
+            --accent: #f9731c; --accent-hover: #ea580c;
+            --text: #f1f5f9; --muted: #94a3b8;
+            --border: rgba(148,163,184,.12);
+            --red: #ef4444; --green: #22c55e; --blue: #38bdf8; --amber: #fbbf24; --purple: #a78bfa;
         }
-    </script>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+        body { background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+        /* HEADER */
+        .hdr { display:flex; align-items:center; justify-content:space-between; padding:10px 24px; background:rgba(15,23,42,.95); border-bottom:1px solid var(--border); flex-shrink:0; backdrop-filter:blur(10px); z-index:50; }
+        .hdr-left { display:flex; align-items:center; gap:14px; }
+        .hdr-left img { height:42px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+        .hdr-left h1 { font-size:15px; font-weight:800; letter-spacing:.4px; }
+        .hdr-left h1 span { color:var(--accent); }
+        .hdr-left p { font-size:10px; color:var(--muted); letter-spacing:.8px; margin-top:1px; }
+        .hdr-center { display:flex; align-items:center; gap:20px; }
+        .live-badge { display:flex; align-items:center; gap:7px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); padding:5px 14px; border-radius:8px; font-size:11px; font-weight:700; color:#ef4444; letter-spacing:.6px; }
+        .live-badge .dot { width:7px; height:7px; border-radius:50%; background:#ef4444; animation:blink 1.4s infinite; }
+        @keyframes blink { 0%,100%{opacity:1}50%{opacity:.25} }
+        .hdr-right { display:flex; align-items:center; gap:14px; }
+        .clock { font-family:'Inter',monospace; font-size:15px; font-weight:700; color:var(--text); }
+        .date-str { font-size:10px; color:var(--muted); text-align:right; }
+        .hdr-btn { display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:7px; font-size:11px; font-weight:700; border:none; cursor:pointer; transition:all .15s; text-decoration:none; }
+        .btn-home { background:rgba(249,115,22,.12); border:1px solid rgba(249,115,22,.3); color:var(--accent); }
+        .btn-home:hover { background:rgba(249,115,22,.25); }
+        .btn-emergency { background:var(--accent); color:#fff; box-shadow:0 2px 10px rgba(249,115,22,.3); }
+        .btn-emergency:hover { background:var(--accent-hover); }
+        .sep { width:1px; height:28px; background:rgba(148,163,184,.15); }
+
+        /* MAIN GRID */
+        .main { flex:1; display:grid; grid-template-columns:320px 1fr 340px; gap:12px; padding:12px; overflow:hidden; }
+
+        /* PANELS */
+        .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; overflow:hidden; }
+        .panel-hdr { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+        .panel-hdr h2 { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; display:flex; align-items:center; gap:7px; }
+        .panel-hdr h2 i { font-size:12px; }
+        .panel-body { flex:1; overflow-y:auto; padding:12px 16px; }
+        .panel-body::-webkit-scrollbar { width:4px; }
+        .panel-body::-webkit-scrollbar-track { background:transparent; }
+        .panel-body::-webkit-scrollbar-thumb { background:rgba(148,163,184,.2); border-radius:4px; }
+
+        /* STAT CARDS */
+        .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .stat-card { background:var(--card2); border:1px solid rgba(255,255,255,.04); border-radius:10px; padding:12px 10px; text-align:center; position:relative; overflow:hidden; transition:transform .15s,border-color .15s; }
+        .stat-card:hover { transform:translateY(-2px); border-color:rgba(255,255,255,.1); }
+        .stat-card .ico { font-size:18px; margin-bottom:4px; }
+        .stat-card .val { font-size:24px; font-weight:900; line-height:1.1; }
+        .stat-card .lbl { font-size:8px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-top:3px; }
+        .stat-card .badge { font-size:8px; font-weight:700; padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block; }
+        .stat-card.fire .val { color:var(--red); }
+        .stat-card.fire .badge { color:var(--red); background:rgba(239,68,68,.12); }
+        .stat-card.alert .val { color:var(--amber); }
+        .stat-card.alert .badge { color:var(--amber); background:rgba(251,191,36,.12); }
+        .stat-card.city .val { color:var(--blue); }
+        .stat-card.city .badge { color:var(--blue); background:rgba(56,189,248,.12); }
+        .stat-card.ok .val { color:var(--green); }
+        .stat-card.ok .badge { color:var(--green); background:rgba(34,197,94,.12); }
+
+        /* SECTION TITLE */
+        .sec-title { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin:14px 0 8px; display:flex; align-items:center; gap:6px; }
+        .sec-title i { font-size:10px; }
+
+        /* CITY CARDS */
+        .city-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .city-card { background:var(--card2); border:1px solid rgba(255,255,255,.03); border-radius:8px; padding:10px 8px; text-align:center; transition:all .15s; }
+        .city-card:hover { background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.08); }
+        .city-card .cn { font-size:9px; font-weight:700; color:var(--text); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .city-card .ct { font-size:20px; font-weight:900; line-height:1.2; }
+        .city-card .cm { display:flex; justify-content:center; gap:8px; font-size:8px; color:var(--muted); margin-top:3px; }
+        .city-card .cm i { font-size:7px; }
+
+        /* ROW ITEMS */
+        .row-item { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:10px; color:var(--muted); border-bottom:1px solid rgba(255,255,255,.03); }
+        .row-item:last-child { border-bottom:none; }
+        .row-item .ri-icon { width:22px; text-align:center; font-size:11px; }
+        .row-item .ri-val { font-weight:700; color:var(--text); min-width:30px; }
+        .row-item .ri-label { flex:1; }
+
+        /* CPTEC */
+        .cptec-row { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:10px; border-bottom:1px solid rgba(255,255,255,.03); }
+        .cptec-row:last-child { border-bottom:none; }
+        .cptec-day { font-weight:700; color:var(--text); min-width:30px; }
+        .cptec-ico { font-size:13px; min-width:18px; text-align:center; }
+        .cptec-desc { flex:1; color:var(--muted); }
+        .cptec-temp { font-weight:700; font-variant-numeric:tabular-nums; }
+
+        /* SOURCE DOT */
+        .src-row { display:flex; align-items:center; gap:6px; padding:3px 0; font-size:9px; color:var(--muted); }
+        .src-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+        .src-dot.ok { background:var(--green); }
+        .src-dot.err { background:var(--red); }
+        .src-name { flex:1; }
+        .src-status { font-weight:700; font-size:8px; }
+
+        /* MAP IFRAME */
+        .map-wrap { flex:1; background:#070d1d; border-radius:0 0 12px 12px; overflow:hidden; position:relative; }
+        .map-wrap iframe { width:100%; height:100%; border:0; }
+
+        /* FEED */
+        .feed-item { background:var(--card2); border-left:3px solid var(--red); border-radius:0 8px 8px 0; padding:10px 12px; margin-bottom:8px; transition:background .15s; }
+        .feed-item:hover { background:rgba(255,255,255,.04); }
+        .feed-item.orange { border-left-color:var(--accent); }
+        .feed-item.yellow { border-left-color:var(--amber); }
+        .feed-item.blue { border-left-color:var(--blue); }
+        .feed-item.green { border-left-color:var(--green); }
+        .feed-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+        .feed-tag { font-size:8px; font-weight:700; padding:2px 6px; border-radius:4px; }
+        .feed-time { font-size:8px; color:var(--muted); }
+        .feed-title { font-size:10px; font-weight:700; color:var(--text); margin-bottom:2px; }
+        .feed-loc { font-size:9px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+        .feed-loc i { font-size:8px; color:var(--accent); }
+
+        /* FOOTER */
+        .ftr { display:flex; align-items:center; justify-content:space-between; padding:6px 24px; background:rgba(15,23,42,.95); border-top:1px solid var(--border); flex-shrink:0; font-size:10px; color:var(--muted); }
+        .ftr a { color:var(--accent); text-decoration:none; }
+
+        /* LOADING */
+        .loading { text-align:center; padding:30px; color:var(--muted); font-size:11px; }
+        .loading i { margin-right:6px; color:var(--accent); }
+
+        @media(max-width:1200px) { .main { grid-template-columns:1fr; grid-template-rows:auto 400px auto; overflow-y:auto; } }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 h-screen flex flex-col overflow-hidden font-sans select-none">
+<body>
 
-    <!-- Topo / Cabeçalho do Painel -->
-    <header class="bg-panelBg border-b border-gray-800 px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
-        <div class="flex items-center gap-4">
-            <img src="imagens/logo.png" alt="Logo Defesa Civil" class="h-10 w-auto rounded-lg shadow-md">
-            <div>
-                <h1 class="text-lg font-bold tracking-wide uppercase text-white flex items-center gap-2">
-                    Defesa Civil <span class="text-defesa">Mato Grosso</span>
-                </h1>
-                <p class="text-xs text-gray-400 tracking-wider">CECOE — Centro de Comando e Operações de Emergência</p>
-            </div>
+<!-- HEADER -->
+<div class="hdr">
+    <div class="hdr-left">
+        <img src="imagens/logo.png" alt="Logo" onerror="this.style.display='none'">
+        <div>
+            <h1>DEFESA CIVIL <span>MT</span></h1>
+            <p>CECOE — Painel de Operações</p>
         </div>
-
-        <!-- Indicadores de status rápidos no topo -->
-        <div class="hidden md:flex items-center gap-6">
-            <div class="flex items-center gap-2 bg-red-950/60 border border-red-800/60 px-3 py-1.5 rounded-md text-red-400 text-xs font-semibold">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                <span>Alerta Crítico: Risco de Queimadas e Chuvas Intensas</span>
-            </div>
+    </div>
+    <div class="hdr-center">
+        <div class="live-badge"><span class="dot"></span> AO VIVO</div>
+    </div>
+    <div class="hdr-right">
+        <div>
+            <div class="clock" id="clock">--:--:--</div>
+            <div class="date-str" id="dateStr">—</div>
         </div>
+        <div class="sep"></div>
+        <a href="index.html" class="hdr-btn btn-home"><i class="fa-solid fa-house"></i> Início</a>
+        <a href="mapa.html" class="hdr-btn btn-home"><i class="fa-solid fa-map"></i> Mapa</a>
+        <a href="alertas.html" class="hdr-btn btn-home"><i class="fa-solid fa-triangle-exclamation"></i> Alertas</a>
+        <button class="hdr-btn btn-emergency" onclick="alert('Ligando para 199 — Defesa Civil MT')"><i class="fa-solid fa-phone"></i> 199</button>
+    </div>
+</div>
 
-        <div class="flex items-center gap-4">
-            <div class="text-right">
-                <p id="relogio" class="text-sm font-mono font-bold text-gray-200">--:--:--</p>
-                <p id="data-atual" class="text-[10px] text-gray-400 uppercase tracking-widest">Carregando...</p>
-            </div>
-            <div class="h-8 w-px bg-gray-700"></div>
-            <button class="bg-gray-800 hover:bg-gray-700 p-2 rounded-lg text-gray-300 transition" title="Configurações">
-                <i class="fa-solid fa-gear"></i>
-            </button>
+<!-- MAIN 3-COL LAYOUT -->
+<div class="main">
+
+    <!-- COL 1: STATS + CITIES -->
+    <div class="panel">
+        <div class="panel-hdr">
+            <h2><i class="fa-solid fa-chart-pie" style="color:var(--accent);"></i> Indicadores</h2>
+            <span id="updStats" style="font-size:9px;color:var(--muted);">—</span>
         </div>
-    </header>
-
-    <!-- Layout Principal Dividido em 3 Colunas (Dashboard de Sala de Controle) -->
-    <div class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4 p-4 overflow-hidden">
-
-        <!-- COLUNA 1: Indicadores Críticos & Gráficos (3 Colunas no Grid) -->
-        <div class="xl:col-span-3 flex flex-col gap-4 overflow-y-auto pr-1">
-            
-            <div class="bg-panelBg border border-gray-800 rounded-xl p-4 shadow-md">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-defesa"></i> Indicadores Críticos
-                </h2>
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <!-- Card 1 -->
-                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
-                        <div class="absolute -right-2 -bottom-2 text-red-500/10 text-4xl"><i class="fa-solid fa-bell"></i></div>
-                        <span class="text-[11px] font-medium text-gray-400 uppercase">Alertas Vigentes</span>
-                        <p class="text-2xl font-extrabold text-red-400 mt-1">18</p>
-                        <span class="text-[10px] text-red-400 font-semibold bg-red-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">↑ 4 novos hoje</span>
-                    </div>
-                    <!-- Card 2 -->
-                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
-                        <div class="absolute -right-2 -bottom-2 text-orange-500/10 text-4xl"><i class="fa-solid fa-fire"></i></div>
-                        <span class="text-[11px] font-medium text-gray-400 uppercase">Focos Calor (24h)</span>
-                        <p class="text-2xl font-extrabold text-orange-400 mt-1">274</p>
-                        <span class="text-[10px] text-orange-400 font-semibold bg-orange-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">Região Pantanal</span>
-                    </div>
-                    <!-- Card 3 -->
-                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
-                        <div class="absolute -right-2 -bottom-2 text-yellow-500/10 text-4xl"><i class="fa-solid fa-city"></i></div>
-                        <span class="text-[11px] font-medium text-gray-400 uppercase">Mun. Emergência</span>
-                        <p class="text-2xl font-extrabold text-yellow-400 mt-1">03</p>
-                        <span class="text-[10px] text-yellow-400 font-semibold bg-yellow-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">Monitorados</span>
-                    </div>
-                    <!-- Card 4 -->
-                    <div class="bg-cardBg border border-gray-700/50 p-3 rounded-lg relative overflow-hidden">
-                        <div class="absolute -right-2 -bottom-2 text-green-500/10 text-4xl"><i class="fa-solid fa-users"></i></div>
-                        <span class="text-[11px] font-medium text-gray-400 uppercase">Equipes em Campo</span>
-                        <p class="text-2xl font-extrabold text-green-400 mt-1">45</p>
-                        <span class="text-[10px] text-green-400 font-semibold bg-green-950/80 px-1.5 py-0.5 rounded mt-1 inline-block">Ativas AG</span>
-                    </div>
-                </div>
+        <div class="panel-body">
+            <div class="stat-grid" id="statGrid">
+                <div class="stat-card fire"><div class="ico">🔥</div><div class="val" id="sFocos">—</div><div class="lbl">Focos Hoje</div><div class="badge" id="sFocosBadge">—</div></div>
+                <div class="stat-card alert"><div class="ico">⚠️</div><div class="val" id="sSipam">—</div><div class="lbl">Eventos SIPAM</div><div class="badge" id="sSipamBadge">—</div></div>
+                <div class="stat-card city"><div class="ico">📡</div><div class="val" id="sCidades">—</div><div class="lbl">Cidades Ativas</div><div class="badge">de 8</div></div>
+                <div class="stat-card ok"><div class="ico">🛰️</div><div class="val" id="sSats">—</div><div class="lbl">Satélites</div><div class="badge" id="sSatsBadge">INPE</div></div>
             </div>
 
-            <!-- Bloco de Gráfico Secundário (Incidentes por Região) -->
-            <div class="bg-panelBg border border-gray-800 rounded-xl p-4 shadow-md flex-1 flex flex-col">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 flex items-center justify-between">
-                    <span><i class="fa-solid fa-chart-column text-defesa mr-1.5"></i> Incidentes por Região</span>
-                    <span class="text-[10px] text-gray-500 font-normal">Últimos 7 dias</span>
-                </h2>
-                
-                <!-- Barras simuladas -->
-                <div class="space-y-3 my-auto py-2">
-                    <div>
-                        <div class="flex justify-between text-xs mb-1 text-gray-300">
-                            <span>Norte (Sinop / Alta Floresta)</span>
-                            <span class="font-bold text-orange-400">112</span>
-                        </div>
-                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                            <div class="bg-orange-500 h-full rounded-full" style="width: 85%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-1 text-gray-300">
-                            <span>Pantanal (Poconé / Cáceres)</span>
-                            <span class="font-bold text-defesa">84</span>
-                        </div>
-                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                            <div class="bg-defesa h-full rounded-full" style="width: 65%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-1 text-gray-300">
-                            <span>Sul / Rondonópolis</span>
-                            <span class="font-bold text-blue-400">42</span>
-                        </div>
-                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                            <div class="bg-blue-500 h-full rounded-full" style="width: 35%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-1 text-gray-300">
-                            <span>Baixada Cuiabana</span>
-                            <span class="font-bold text-emerald-400">28</span>
-                        </div>
-                        <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                            <div class="bg-emerald-500 h-full rounded-full" style="width: 22%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mini gráfico de linha SVG -->
-                <div class="mt-4 pt-3 border-t border-gray-800">
-                    <p class="text-[11px] text-gray-400 mb-2">Evolução Temporal de Focos de Calor</p>
-                    <div class="h-20 w-full flex items-end">
-                        <svg class="w-full h-full overflow-visible" viewBox="0 0 100 30" preserveAspectRatio="none">
-                            <path d="M0,25 Q15,10 30,18 T60,8 T90,20 L100,5" fill="none" stroke="#ff6600" stroke-width="2.5" />
-                            <path d="M0,25 Q15,10 30,18 T60,8 T90,20 L100,5 L100,30 L0,30 Z" fill="rgba(255,102,0,0.1)" />
-                        </svg>
-                    </div>
-                </div>
+            <div class="sec-title"><i class="fa-solid fa-city" style="color:var(--blue);"></i> Clima das 8 Cidades</div>
+            <div class="city-grid" id="cityGrid">
+                <div class="loading" style="grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
             </div>
 
+            <div class="sec-title"><i class="fa-solid fa-database" style="color:var(--muted);"></i> Fontes de Dados</div>
+            <div id="srcList"></div>
         </div>
-
-        <!-- COLUNA 2: O Seu Mapa Interativo em Destaque (6 Colunas no Grid) -->
-        <div class="xl:col-span-6 bg-panelBg border border-gray-800 rounded-xl overflow-hidden shadow-xl flex flex-col">
-            <div class="bg-panelBg/90 border-b border-gray-800 px-4 py-3 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-white">Monitoramento Espacial — Mato Grosso</h2>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="mapa.html" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-expand text-[10px]"></i> Tela Cheia
-                    </a>
-                </div>
-            </div>
-            <!-- Incorporação do seu mapa.html -->
-            <div class="flex-1 w-full bg-gray-950 relative">
-                <iframe src="mapa.html" class="w-full h-full border-0 filter contrast-125" title="Mapa Defesa Civil MT"></iframe>
-            </div>
-        </div>
-
-        <!-- COLUNA 3: Feed de Ocorrências em Tempo Real (3 Colunas no Grid) -->
-        <div class="xl:col-span-3 bg-panelBg border border-gray-800 rounded-xl p-4 shadow-md flex flex-col overflow-hidden">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between shrink-0">
-                <span><i class="fa-solid fa-list-ul text-defesa mr-1.5"></i> Ocorrências Recentes</span>
-                <span class="bg-defesa/20 text-defesa text-[10px] px-2 py-0.5 rounded-full font-bold">Ao Vivo</span>
-            </h2>
-
-            <!-- Lista com scroll interno -->
-            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
-                
-                <!-- Ocorrência 1 -->
-                <div class="bg-cardBg border-l-4 border-red-500 p-3 rounded-r-lg shadow-sm">
-                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                        <span class="text-red-400 font-bold bg-red-950 px-1.5 py-0.5 rounded">Incêndio Florestal</span>
-                        <span>Há 12 min</span>
-                    </div>
-                    <h3 class="text-xs font-bold text-gray-200">Foco de Calor Nível Crítico</h3>
-                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Poconé - MT (Pantanal)
-                    </p>
-                </div>
-
-                <!-- Ocorrência 2 -->
-                <div class="bg-cardBg border-l-4 border-orange-500 p-3 rounded-r-lg shadow-sm">
-                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                        <span class="text-orange-400 font-bold bg-orange-950 px-1.5 py-0.5 rounded">Alagamento Urbano</span>
-                        <span>Há 35 min</span>
-                    </div>
-                    <h3 class="text-xs font-bold text-gray-200">Elevação Rápida de Córrego</h3>
-                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Cuiabá - MT (Região Central)
-                    </p>
-                </div>
-
-                <!-- Ocorrência 3 -->
-                <div class="bg-cardBg border-l-4 border-yellow-500 p-3 rounded-r-lg shadow-sm">
-                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                        <span class="text-yellow-400 font-bold bg-yellow-950 px-1.5 py-0.5 rounded">Ventos Fortes</span>
-                        <span>Há 1 hora</span>
-                    </div>
-                    <h3 class="text-xs font-bold text-gray-200">Queda de Árvores e Fiação</h3>
-                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Sinop - MT
-                    </p>
-                </div>
-
-                <!-- Ocorrência 4 -->
-                <div class="bg-cardBg border-l-4 border-blue-500 p-3 rounded-r-lg shadow-sm">
-                    <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                        <span class="text-blue-400 font-bold bg-blue-950 px-1.5 py-0.5 rounded">Hidrologia</span>
-                        <span>Há 2 horas</span>
-                    </div>
-                    <h3 class="text-xs font-bold text-gray-200">Alerta de Cota de Atenção</h3>
-                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                        <i class="fa-solid fa-location-dot text-defesa text-[10px]"></i> Cáceres - MT (Rio Paraguai)
-                    </p>
-                </div>
-
-            </div>
-
-            <button class="mt-3 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 rounded-lg font-semibold transition border border-gray-700 shrink-0">
-                Ver Histórico Completo
-            </button>
-        </div>
-
     </div>
 
-    <!-- Script de Relógio Dinâmico -->
-    <script>
-        function atualizarRelogio() {
-            const agora = new Date();
-            document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-BR');
-            
-            const opcoes = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-            document.getElementById('data-atual').innerText = agora.toLocaleDateString('pt-BR', opcoes);
-        }
-        setInterval(atualizarRelogio, 1000);
-        atualizarRelogio();
-    </script>
+    <!-- COL 2: MAP -->
+    <div class="panel">
+        <div class="panel-hdr">
+            <h2><i class="fa-solid fa-earth-americas" style="color:var(--green);"></i> Mapa em Tempo Real</h2>
+            <a href="mapa.html" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none;font-weight:600;">Tela Cheia ↗</a>
+        </div>
+        <div class="map-wrap">
+            <iframe src="mapa.html" title="Mapa"></iframe>
+        </div>
+    </div>
+
+    <!-- COL 3: FIRE + CPTEC + FEED -->
+    <div style="display:flex;flex-direction:column;gap:12px;overflow:hidden;">
+
+        <!-- FIRE & SIPAM -->
+        <div class="panel" style="flex:0 0 auto;">
+            <div class="panel-hdr">
+                <h2><i class="fa-solid fa-fire-flame-curved" style="color:var(--red);"></i> Focos INPE & SIPAM</h2>
+            </div>
+            <div class="panel-body" style="max-height:160px;" id="firePanel">
+                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+            </div>
+        </div>
+
+        <!-- CPTEC -->
+        <div class="panel" style="flex:0 0 auto;">
+            <div class="panel-hdr">
+                <h2><i class="fa-solid fa-cloud-sun" style="color:var(--amber);"></i> CPTEC Previsão — Cuiabá</h2>
+            </div>
+            <div class="panel-body" style="max-height:170px;" id="cptecPanel">
+                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+            </div>
+        </div>
+
+        <!-- FEED -->
+        <div class="panel" style="flex:1;min-height:0;">
+            <div class="panel-hdr">
+                <h2><i class="fa-solid fa-list-ul" style="color:var(--accent);"></i> Eventos em Tempo Real</h2>
+                <span style="font-size:8px;font-weight:700;color:var(--red);background:rgba(239,68,68,.12);padding:2px 8px;border-radius:4px;">AO VIVO</span>
+            </div>
+            <div class="panel-body" id="feedPanel">
+                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="ftr">
+    <span>&copy; 2026 Defesa Civil de Mato Grosso — <a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a></span>
+    <span>Atualização automática a cada 5 min</span>
+</div>
+
+<script>
+// ===== CLOCK =====
+function tickClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR');
+    document.getElementById('dateStr').textContent = now.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ===== CITY DATA =====
+const CITIES = [
+    { nome:'Cuiabá', lat:-15.588, lon:-56.097 },
+    { nome:'Sinop', lat:-12.472, lon:-55.722 },
+    { nome:'Rondonópolis', lat:-16.471, lon:-54.645 },
+    { nome:'Sorriso', lat:-12.546, lon:-55.727 },
+    { nome:'Cáceres', lat:-16.077, lon:-57.682 },
+    { nome:'Tangará da Serra', lat:-14.656, lon:-57.486 },
+    { nome:'Primavera do Leste', lat:-15.556, lon:-53.949 },
+    { nome:'Barra do Garças', lat:-15.891, lon:-52.258 },
+];
+
+const ICONE_CPTEC = { 'Chuva':'🌧️','Chuvoso':'🌧️','Ensolarado':'☀️','Parcialmente nublado':'⛅','Nublado':'☁️','Sol com nuvens':'🌤️','Tempestades':'⛈️','Nevoeiro':'🌫️','Neve':'❄️' };
+
+// ===== API FETCHERS =====
+async function fetchCity(c) {
+    try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,uv_index,wind_gusts_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`);
+        if (!r.ok) return null;
+        const d = await r.json();
+        const curr = d.current;
+        const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
+        return { temp:curr.temperature_2m, hum:curr.relative_humidity_2m, wind:curr.wind_speed_10m, uv:curr.uv_index, rain:chuva, gusts:curr.wind_gusts_10m??0 };
+    } catch { return null; }
+}
+
+async function fetchFocos() {
+    try {
+        const iso = new Date().toISOString().slice(0,10).replaceAll('-','');
+        const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+        if (!r.ok) return { today:0, high:0, sats:[] };
+        const txt = await r.text();
+        const lines = txt.split('\n');
+        const hdr = lines[0].split(',').map(h=>h.trim());
+        const iUF = hdr.indexOf('estado'), iSat = hdr.indexOf('satelite'), iRisco = hdr.indexOf('risco_fogo');
+        const iMun = hdr.indexOf('municipio'), iBioma = hdr.indexOf('bioma');
+        const mt = lines.slice(1).filter(l => { const c=l.split(','); return (c[iUF]||'').trim().toUpperCase()==='MATO GROSSO'; });
+        const sats = [...new Set(mt.map(l=>l.split(',')[iSat]?.trim()).filter(Boolean))];
+        const high = mt.filter(l => parseFloat(l.split(',')[iRisco]) >= 0.6).length;
+        const byBioma = {};
+        mt.forEach(l => { const b = l.split(',')[iBioma]?.trim()||'Outro'; byBioma[b]=(byBioma[b]||0)+1; });
+        const topBioma = Object.entries(byBioma).sort((a,b)=>b[1]-a[1]).slice(0,3);
+        const byMun = {};
+        mt.forEach(l => { const m = l.split(',')[iMun]?.trim()||'?'; byMun[m]=(byMun[m]||0)+1; });
+        const topMun = Object.entries(byMun).sort((a,b)=>b[1]-a[1]).slice(0,5);
+        return { today:mt.length, high, sats, topBioma, topMun };
+    } catch { return { today:0, high:0, sats:[], topBioma:[], topMun:[] }; }
+}
+
+async function fetchSipam() {
+    try {
+        const r = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        if (!r.ok) return [];
+        const d = await r.json();
+        return Array.isArray(d) ? d : [];
+    } catch { return []; }
+}
+
+async function fetchCptec() {
+    try {
+        const r = await fetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+        if (!r.ok) return [];
+        const d = await r.json();
+        if (!d.clima?.length) return [];
+        const ds = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        return d.clima.map(c => {
+            const dt = new Date(c.data+'T12:00:00');
+            return { dia:ds[dt.getDay()], data:`${dt.getDate()}/${dt.getMonth()+1}`, ico:ICONE_CPTEC[c.condicao]||'🌡️', desc:c.condicao_desc, tmax:c.max, tmin:c.min };
+        });
+    } catch { return []; }
+}
+
+// ===== RENDER =====
+async function renderPainel() {
+    const [cityRes, focos, sipam, cptec] = await Promise.all([
+        Promise.all(CITIES.map(c=>fetchCity(c))),
+        fetchFocos(), fetchSipam(), fetchCptec()
+    ]);
+
+    // --- Stats ---
+    document.getElementById('sFocos').textContent = focos.today;
+    document.getElementById('sFocosBadge').textContent = focos.high > 0 ? `${focos.high} risco alto` : 'sem risco alto';
+    document.getElementById('sSipam').textContent = sipam.length;
+    const ativos = sipam.filter(e=>e.status_evento==='Ativo').length;
+    document.getElementById('sSipamBadge').textContent = ativos > 0 ? `${ativos} ativos` : 'todos controlados';
+    const okCities = cityRes.filter(Boolean).length;
+    document.getElementById('sCidades').textContent = okCities;
+    document.getElementById('sSats').textContent = focos.sats.length;
+    document.getElementById('sSatsBadge').textContent = focos.sats.join(', ') || '—';
+
+    // --- Cities ---
+    const cg = document.getElementById('cityGrid');
+    cg.innerHTML = CITIES.map((c,i) => {
+        const d = cityRes[i];
+        if (!d) return `<div class="city-card"><div class="cn">${c.nome}</div><div class="ct" style="color:var(--muted);">—°C</div></div>`;
+        const tc = d.temp>=38?'var(--red)':d.temp>=32?'var(--accent)':d.temp>=22?'var(--amber)':'var(--blue)';
+        return `<div class="city-card">
+            <div class="cn">${c.nome}</div>
+            <div class="ct" style="color:${tc};">${Math.round(d.temp)}°C</div>
+            <div class="cm"><span><i class="fa-solid fa-droplet"></i> ${d.hum}%</span><span><i class="fa-solid fa-wind"></i> ${Math.round(d.wind)} km/h</span></div>
+        </div>`;
+    }).join('');
+
+    // --- Fire Panel ---
+    const fp = document.getElementById('firePanel');
+    let fireHtml = '';
+    fireHtml += `<div class="row-item"><div class="ri-icon">🔥</div><div class="ri-val" style="color:var(--red);">${focos.today}</div><div class="ri-label">focos hoje em MT</div></div>`;
+    fireHtml += `<div class="row-item"><div class="ri-icon">⚠️</div><div class="ri-val" style="color:var(--amber);">${focos.high}</div><div class="ri-label">risco alto (≥0.6)</div></div>`;
+    fireHtml += `<div class="row-item"><div class="ri-icon">🛰️</div><div class="ri-val">${focos.sats.length}</div><div class="ri-label">${focos.sats.join(', ')||'—'}</div></div>`;
+    if (focos.topBioma.length) {
+        fireHtml += `<div style="margin-top:6px;">`;
+        focos.topBioma.forEach(([b,n]) => { fireHtml += `<div class="row-item"><div class="ri-icon" style="color:var(--accent);">●</div><div class="ri-val">${n}</div><div class="ri-label">${b}</div></div>`; });
+        fireHtml += `</div>`;
+    }
+    if (sipam.length) {
+        fireHtml += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);"><div class="sec-title" style="margin:0 0 4px;">SIPAM — Top Eventos</div>`;
+        sipam.slice(0,4).forEach(ev => {
+            const cor = ev.status_evento==='Ativo'?'var(--red)':ev.status_evento==='Controlado'?'var(--green)':'var(--amber)';
+            fireHtml += `<div class="row-item"><div class="ri-icon" style="color:${cor};">●</div><div class="ri-val" style="font-size:9px;">#${ev.id_evento}</div><div class="ri-label">${ev.municipio||'MT'} — ${ev.status_evento||'—'} — ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'—'}</div></div>`;
+        });
+        fireHtml += `</div>`;
+    }
+    fp.innerHTML = fireHtml;
+
+    // --- CPTEC ---
+    const cp = document.getElementById('cptecPanel');
+    if (cptec.length) {
+        cp.innerHTML = cptec.map(c => `<div class="cptec-row">
+            <div class="cptec-day">${c.dia}<br><span style="font-weight:400;font-size:8px;color:var(--muted);">${c.data}</span></div>
+            <div class="cptec-ico">${c.ico}</div>
+            <div class="cptec-desc">${c.desc}</div>
+            <div class="cptec-temp"><span style="color:var(--accent);">${c.tmax}°</span> <span style="color:var(--blue);font-weight:400;">${c.tmin}°</span></div>
+        </div>`).join('');
+    } else {
+        cp.innerHTML = '<div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>';
+    }
+
+    // --- Feed (SIPAM events + top fire muns) ---
+    const feed = document.getElementById('feedPanel');
+    let feedHtml = '';
+    sipam.slice(0,6).forEach(ev => {
+        const cor = ev.status_evento==='Ativo'?'':' orange';
+        const tagCor = ev.status_evento==='Ativo'?'var(--red);background:rgba(239,68,68,.12)':'var(--green);background:rgba(34,197,94,.12)';
+        feedHtml += `<div class="feed-item${cor}">
+            <div class="feed-head"><span class="feed-tag" style="color:${tagCor}">${ev.status_evento||'—'}</span><span class="feed-time">#${ev.id_evento}</span></div>
+            <div class="feed-title">Evento — ${ev.municipio||'MT'}</div>
+            <div class="feed-loc"><i class="fa-solid fa-location-dot"></i> ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':''} ${ev.tipo_evento||''}</div>
+        </div>`;
+    });
+    if (focos.topMun.length) {
+        feedHtml += `<div class="sec-title" style="margin:8px 0 6px;"><i class="fa-solid fa-fire" style="color:var(--red);"></i> Top Municípios — Focos</div>`;
+        focos.topMun.forEach(([m,n]) => {
+            feedHtml += `<div class="feed-item yellow">
+                <div class="feed-head"><span class="feed-tag" style="color:var(--amber);background:rgba(251,191,36,.12);">INPE</span><span class="feed-time">${n} focos</span></div>
+                <div class="feed-title">${m}</div>
+                <div class="feed-loc"><i class="fa-solid fa-location-dot"></i> Mato Grosso</div>
+            </div>`;
+        });
+    }
+    if (!feedHtml) feedHtml = '<div class="loading">Nenhum evento no momento</div>';
+    feed.innerHTML = feedHtml;
+
+    // --- Sources ---
+    const sl = document.getElementById('srcList');
+    const srcs = [
+        { name:'Open-Meteo (clima)', ok:true },
+        { name:'INPE BDQueimadas', ok:focos.today>0 },
+        { name:'SIPAM Painel do Fogo', ok:sipam.length>0 },
+        { name:'CPTEC/INPE (previsão)', ok:cptec.length>0 },
+        { name:'IBGE (malhas)', ok:true },
+    ];
+    sl.innerHTML = srcs.map(s => `<div class="src-row"><div class="src-dot ${s.ok?'ok':'err'}"></div><div class="src-name">${s.name}</div><div class="src-status" style="color:${s.ok?'var(--green)':'var(--red)'};">${s.ok?'ONLINE':'OFFLINE'}</div></div>`).join('');
+
+    // Update timestamp
+    document.getElementById('updStats').textContent = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+renderPainel();
+setInterval(renderPainel, 5*60*1000);
+</script>
 </body>
 </html>
