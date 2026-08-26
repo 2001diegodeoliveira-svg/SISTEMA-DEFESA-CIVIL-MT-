@@ -3149,6 +3149,15 @@ function resizeWindCanvas() {
     windCanvas.width = rect.width;
     windCanvas.height = rect.height;
 }
+
+const tempCanvas = document.getElementById('tempCanvas');
+const tempCtx = tempCanvas.getContext('2d');
+function resizeTempCanvas() {
+    const rect = map.getContainer().getBoundingClientRect();
+    tempCanvas.width = rect.width;
+    tempCanvas.height = rect.height;
+}
+
 resizeWindCanvas();
 resizeTempCanvas();
 map.on('resize', () => { resizeWindCanvas(); resizeTempCanvas(); });
@@ -3331,8 +3340,6 @@ map.on('moveend', () => {
 /* ================= Temperature Overlay (Canvas Heatmap + City Badges) ================= */
 let tempOverlay = null;
 let tempBadgeLayer = null;
-const tempCanvas = document.getElementById('tempCanvas');
-const tempCtx = tempCanvas.getContext('2d');
 
 const MT_CIDADES = [
     { nome: 'Cuiabá', lat: -15.601, lon: -56.097, pop: 'grande' },
@@ -3418,12 +3425,6 @@ function tempBadgeHTML(city, data) {
 function windDirArrow(deg) {
     const arrows = ['\u2193','\u2199','\u2190','\u2196','\u2191','\u2197','\u2192','\u2198'];
     return arrows[Math.round(deg / 45) % 8];
-}
-
-function resizeTempCanvas() {
-    const rect = map.getContainer().getBoundingClientRect();
-    tempCanvas.width = rect.width;
-    tempCanvas.height = rect.height;
 }
 
 async function showTempOverlay() {
