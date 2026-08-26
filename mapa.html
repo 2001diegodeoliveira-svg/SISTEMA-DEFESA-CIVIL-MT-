@@ -3784,6 +3784,8 @@ function renderStationReadings() {
 }
 
 // ================= MAIN MONITOR CYCLE =================
+let monFirstRun = true;
+
 async function runMonitorCycle() {
     document.getElementById('monLastCheck').textContent = 'Verificando... ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
@@ -3804,6 +3806,39 @@ async function runMonitorCycle() {
 
     // Detect new fire spots and SIPAM events
     await Promise.all([detectNewFocos(), detectNewSipam()]);
+
+    // First run: generate initial alerts for critical conditions
+    if (monFirstRun) {
+        monFirstRun = false;
+        MON_CITIES.forEach(city => {
+            const state = monState[city.cod];
+            const curr = state.current;
+            if (!curr) return;
+
+            if (curr.temp >= 38) {
+                addAlert({ type:'temp', severity:'critico', title:`Temperatura extrema: ${Math.round(curr.temp)}°C`, desc:'Acima de 38°C — risco à saúde', city:city.nome, ts:Date.now() });
+            } else if (curr.temp >= 35) {
+                addAlert({ type:'temp', severity:'alto', title:`Temperatura alta: ${Math.round(curr.temp)}°C`, desc:'Acima de 35°C', city:city.nome, ts:Date.now() });
+            }
+            if (curr.wind >= 45) {
+                addAlert({ type:'wind', severity:'alto', title:`Vento forte: ${Math.round(curr.wind)} km/h`, desc:'Possíveis danos leves', city:city.nome, ts:Date.now() });
+            }
+            if (curr.humidity <= 20) {
+                addAlert({ type:'humidity', severity:'critico', title:`Umidade crítica: ${curr.humidity}%`, desc:'Seca extrema — risco de incêndio', city:city.nome, ts:Date.now() });
+            }
+            if (curr.uv >= 8) {
+                addAlert({ type:'uv', severity:'alto', title:`UV extremo: ${curr.uv.toFixed(1)}`, desc:'Evite exposição solar', city:city.nome, ts:Date.now() });
+            }
+            if (curr.rainDaily > 5) {
+                addAlert({ type:'rain', severity:'medio', title:`Chuva acumulada: ${curr.rainDaily.toFixed(1)} mm`, desc:'Possível alagamento em áreas baixas', city:city.nome, ts:Date.now() });
+            }
+        });
+
+        // Force flash popup for first alert
+        if (monAlerts.length > 0) {
+            showFlashPopup(monAlerts[0]);
+        }
+    }
 
     // Update display
     renderDashboard();
