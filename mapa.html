@@ -659,19 +659,52 @@
         }
 
         /* ===== Wind Legend (Windy-style color scale) ===== */
-        #windLegend {
+        #windLegend, #tempLegend, #fireLegend {
             position: absolute; right: 16px; bottom: 140px; z-index: 1090;
             background: var(--glass-bg); backdrop-filter: blur(14px);
             border: 1px solid rgba(56,189,248,.18);
             border-radius: 10px; padding: 10px 12px; font-size: 9px;
             box-shadow: 0 6px 24px rgba(0,0,0,.35); display: none;
             transition: opacity .3s ease, transform .3s ease;
+            min-width: 160px;
         }
-        #windLegend.show { display: block; animation: fadeInUp .3s ease; }
+        #windLegend.show, #tempLegend.show, #fireLegend.show { display: block; animation: fadeInUp .3s ease; }
         @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-        .wl-title { font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-size: 9.5px; }
-        .wl-bar { width: 140px; height: 10px; border-radius: 5px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,.05); }
-        .wl-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 8px; }
+        .lg-title, .wl-title { font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-size: 9.5px; display: flex; align-items: center; gap: 5px; }
+        .lg-title i { font-size: 11px; }
+        .lg-bar, .wl-bar { width: 140px; height: 10px; border-radius: 5px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,.05); }
+        .lg-bar-temp { background: linear-gradient(90deg, #3b82f6, #38bdf8, #22d3ee, #fbbf24, #f9731c, #ef4444, #dc2626); }
+        .lg-bar-fire { background: linear-gradient(90deg, #22c55e, #84cc16, #fbbf24, #f9731c, #ef4444, #dc2626); }
+        .lg-labels, .wl-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 8px; }
+
+        /* ===== Overlay Popups (Temp / Fire) ===== */
+        .leaflet-popup-content-wrapper { background: var(--glass-bg); backdrop-filter: blur(14px); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.45); color: var(--text-main); }
+        .leaflet-popup-tip { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+        .leaflet-popup-content { margin: 10px 14px; font-family: 'Inter', sans-serif; }
+        .ov-popup { text-align: center; min-width: 130px; }
+        .ov-popup-temp .ov-val { font-size: 26px; font-weight: 900; line-height: 1.1; }
+        .ov-popup-temp .ov-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+        .ov-popup-temp .ov-detail { font-size: 9px; color: var(--text-muted); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.06); }
+        .ov-popup-fire .ov-val { font-size: 28px; font-weight: 900; line-height: 1.1; }
+        .ov-popup-fire .ov-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+        .ov-popup-fire .ov-bar { width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); margin-top: 8px; overflow: hidden; }
+        .ov-popup-fire .ov-bar-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+        .ov-popup-fire .ov-factors { font-size: 8px; color: var(--text-muted); margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; text-align: left; }
+        .ov-popup-fire .ov-factors span { display: flex; align-items: center; gap: 3px; }
+
+        /* ===== Overlay loading spinner ===== */
+        .ov-loading {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            z-index: 1095; display: none; text-align: center;
+        }
+        .ov-loading.show { display: block; }
+        .ov-loading .ov-spinner {
+            width: 36px; height: 36px; border: 3px solid rgba(255,255,255,.1);
+            border-top-color: var(--accent-orange); border-radius: 50%;
+            animation: spin .8s linear infinite; margin: 0 auto 8px;
+        }
+        .ov-loading .ov-msg { color: var(--text-muted); font-size: 10px; font-weight: 600; background: var(--glass-bg); padding: 4px 12px; border-radius: 6px; white-space: nowrap; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ===== Enhanced Point Panel (Windy-style) ===== */
         #pointPanel .pp-extra { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.06); }
@@ -878,8 +911,9 @@
             .ov-btn { padding: 5px 8px; min-width: 42px; font-size: 8px; gap: 1px; }
             .ov-btn i { font-size: 14px; }
             .ov-btn .ov-key { display: none; }
-            #windLegend { right: 8px; bottom: 120px; padding: 8px 10px; }
-            .wl-bar { width: 110px; }
+            #windLegend, #tempLegend, #fireLegend { right: 8px; bottom: 120px; padding: 8px 10px; min-width: 130px; }
+            .lg-bar, .wl-bar { width: 110px; }
+            .lg-labels, .wl-labels { font-size: 7px; }
         }
     </style>
 </head>
@@ -943,6 +977,26 @@
         <div class="wl-title">Velocidade do vento</div>
         <div class="wl-bar" id="wlBar"></div>
         <div class="wl-labels"><span>0</span><span>15</span><span>30</span><span>50</span><span>70+ km/h</span></div>
+    </div>
+
+    <!-- Temperature legend -->
+    <div id="tempLegend">
+        <div class="lg-title"><i class="fa-solid fa-temperature-half"></i> Temperatura</div>
+        <div class="lg-bar lg-bar-temp"></div>
+        <div class="lg-labels"><span>&lt;10°C</span><span>18°</span><span>24°</span><span>28°</span><span>32°</span><span>36°+</span></div>
+    </div>
+
+    <!-- Fire risk legend -->
+    <div id="fireLegend">
+        <div class="lg-title"><i class="fa-solid fa-fire"></i> Risco de Fogo</div>
+        <div class="lg-bar lg-bar-fire"></div>
+        <div class="lg-labels"><span>Mínimo</span><span>Baixo</span><span>Médio</span><span>Alto</span><span>Crítico</span></div>
+    </div>
+
+    <!-- Overlay loading spinner -->
+    <div class="ov-loading" id="ovLoading">
+        <div class="ov-spinner"></div>
+        <div class="ov-msg" id="ovLoadMsg">Carregando...</div>
     </div>
 
     <!-- Painel de camadas -->
@@ -1840,7 +1894,7 @@ function refreshLegend() {
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
     document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
     document.getElementById('legFocosWms').style.display = checkState.wmsFocos48h && wmsFocos48hLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h;
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -2945,43 +2999,51 @@ document.addEventListener('keydown', e => {
     }
 });
 
-function handleOverlaySwitch() {
-    // Map overlay bar keys to the layer-btn system
-    const layerBtnMap = { rain: 'radar', clouds: 'clouds' };
+function hideAllOverlays() {
+    windCanvas.classList.remove('show');
+    windLegendEl.classList.remove('show');
+    stopWindAnimation();
+    stopPlaying();
+    Object.values(radarLayers).forEach(l => { try { l.setOpacity(0); } catch {} });
+    Object.values(satLayers).forEach(l => { try { l.setOpacity(0); } catch {} });
+    activeOverlay = 'none';
+    if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
+    if (fireOverlay) { map.removeLayer(fireOverlay); fireOverlay = null; }
     document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+}
+
+function handleOverlaySwitch() {
+    hideAllOverlays();
+
+    const tempLegendEl = document.getElementById('tempLegend');
+    const fireLegendEl = document.getElementById('fireLegend');
+    if (tempLegendEl) tempLegendEl.classList.remove('show');
+    if (fireLegendEl) fireLegendEl.classList.remove('show');
 
     if (activeOverlayWindy === 'wind') {
         windCanvas.classList.add('show');
         windLegendEl.classList.add('show');
         startWindAnimation();
-    } else {
-        windCanvas.classList.remove('show');
-        windLegendEl.classList.remove('show');
-        stopWindAnimation();
-    }
-    if (activeOverlayWindy === 'rain') {
+    } else if (activeOverlayWindy === 'rain') {
         activeOverlay = 'radar';
         document.querySelector('.layer-btn.radar')?.classList.add('active');
-        if (!playing) startPlaying();
-        showFrame(frameIdx);
+        startPlaying();
+        showFrame(radarFrames.length - 1);
     } else if (activeOverlayWindy === 'clouds') {
         activeOverlay = 'clouds';
         document.querySelector('.layer-btn.clouds')?.classList.add('active');
         ensureSatLayers();
-        if (!playing) startPlaying();
-        showFrame(frameIdx);
+        startPlaying();
+        showFrame(satFrames.length - 1);
     } else if (activeOverlayWindy === 'temp') {
         showTempOverlay();
+        if (tempLegendEl) tempLegendEl.classList.add('show');
     } else if (activeOverlayWindy === 'fire') {
         showFireOverlay();
-    } else if (activeOverlayWindy === 'none') {
-        activeOverlay = 'none';
-        Object.values(radarLayers).forEach(l => l.setOpacity(0));
-        Object.values(satLayers).forEach(l => l.setOpacity(0));
-        if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
-        if (fireOverlay) { map.removeLayer(fireOverlay); fireOverlay = null; }
+        if (fireLegendEl) fireLegendEl.classList.add('show');
     }
-    document.getElementById('opacityRow').classList.toggle('open', activeOverlay !== 'none');
+    document.getElementById('opacityRow').classList.toggle('open',
+        activeOverlayWindy === 'rain' || activeOverlayWindy === 'clouds');
     refreshLegend();
 }
 
@@ -3156,6 +3218,10 @@ map.on('moveend', () => {
     if (activeOverlayWindy === 'wind') {
         windLastFetch = 0;
         fetchWindData().then(() => initWindParticles());
+    } else if (activeOverlayWindy === 'temp') {
+        showTempOverlay();
+    } else if (activeOverlayWindy === 'fire') {
+        showFireOverlay();
     }
 });
 
@@ -3164,6 +3230,12 @@ let tempOverlay = null;
 async function showTempOverlay() {
     if (tempOverlay) { map.removeLayer(tempOverlay); tempOverlay = null; }
     tempOverlay = L.layerGroup();
+
+    const loadEl = document.getElementById('ovLoading');
+    const loadMsg = document.getElementById('ovLoadMsg');
+    loadMsg.textContent = 'Carregando temperatura...';
+    loadEl.classList.add('show');
+
     const bounds = map.getBounds();
     const latMin = Math.max(-16, bounds.getSouth() - 1);
     const latMax = Math.min(-7.5, bounds.getNorth() + 1);
@@ -3180,24 +3252,33 @@ async function showTempOverlay() {
     for (let i = 0; i < pts.length; i += batchSize) {
         const batch = pts.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(p =>
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m&timezone=auto`)
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature&timezone=auto`)
                 .then(r => r.json()).catch(() => null)
         ));
         results.forEach((d, j) => {
-            const temp = d?.current?.temperature_2m;
+            const c = d?.current;
+            if (!c) return;
+            const temp = c.temperature_2m;
             if (temp == null) return;
             const color = tempColor(temp);
+            const feelsLike = c.apparent_temperature != null ? Math.round(c.apparent_temperature) : '--';
+            const hum = c.relative_humidity_2m != null ? c.relative_humidity_2m : '--';
             L.circleMarker([batch[j].lat, batch[j].lon], {
-                radius: 18, color: 'transparent', weight: 0,
-                fillColor: color, fillOpacity: 0.35
+                radius: 20, weight: 0,
+                fillColor: color, fillOpacity: 0.35,
+                className: 'ov-temp-marker'
             }).bindPopup(`
-                <div style="min-width:140px;text-align:center;">
-                    <div style="font-size:22px;font-weight:800;color:${color};">${Math.round(temp)}°C</div>
-                    <div style="font-size:10px;color:#94a3b8;">Temperatura atual</div>
-                </div>`).addTo(tempOverlay);
+                <div class="ov-popup ov-popup-temp">
+                    <div class="ov-val" style="color:${color};">${Math.round(temp)}°C</div>
+                    <div class="ov-lbl">Temperatura atual</div>
+                    <div class="ov-detail">
+                        Sensação: <b>${feelsLike}°C</b> · Umidade: <b>${hum}%</b>
+                    </div>
+                </div>`, { className: 'ov-custom-popup' }).addTo(tempOverlay);
         });
     }
     tempOverlay.addTo(map);
+    loadEl.classList.remove('show');
     toast('Mapa de temperatura carregado.', true);
 }
 function tempColor(t) {
@@ -3215,6 +3296,12 @@ let fireOverlay = null;
 async function showFireOverlay() {
     if (fireOverlay) { map.removeLayer(fireOverlay); fireOverlay = null; }
     fireOverlay = L.layerGroup();
+
+    const loadEl = document.getElementById('ovLoading');
+    const loadMsg = document.getElementById('ovLoadMsg');
+    loadMsg.textContent = 'Carregando risco de fogo...';
+    loadEl.classList.add('show');
+
     const bounds = map.getBounds();
     const latMin = Math.max(-16, bounds.getSouth() - 1);
     const latMax = Math.min(-7.5, bounds.getNorth() + 1);
@@ -3240,23 +3327,35 @@ async function showFireOverlay() {
             const hum = c.relative_humidity_2m ?? 50;
             const wind = c.wind_speed_10m ?? 0;
             const chuva = d.daily?.precipitation_sum?.[1] ?? d.daily?.precipitation_sum?.[0] ?? 0;
+            const temp = c.temperature_2m ?? 25;
             let risco = 0;
+            if (temp > 35) risco += 10; else if (temp > 30) risco += 5;
             if (hum < 20) risco += 35; else if (hum < 30) risco += 25; else if (hum < 50) risco += 12;
             if (wind > 30) risco += 30; else if (wind > 20) risco += 20; else if (wind > 10) risco += 8;
             if (chuva > 5) risco = Math.max(0, risco - 20);
-            risco = Math.min(100, risco);
+            risco = Math.min(100, Math.max(0, risco));
             const color = fireRiskColor(risco);
+            const riskLabel = risco >= 70 ? 'Crítico' : risco >= 50 ? 'Alto' : risco >= 30 ? 'Médio' : risco >= 15 ? 'Baixo' : 'Mínimo';
             L.circleMarker([batch[j].lat, batch[j].lon], {
-                radius: 20, color: 'transparent', weight: 0,
-                fillColor: color, fillOpacity: 0.3
+                radius: 22, weight: 0,
+                fillColor: color, fillOpacity: 0.3,
+                className: 'ov-fire-marker'
             }).bindPopup(`
-                <div style="min-width:140px;text-align:center;">
-                    <div style="font-size:20px;font-weight:800;color:${color};">${risco}%</div>
-                    <div style="font-size:10px;color:#94a3b8;">Risco estimado</div>
-                </div>`).addTo(fireOverlay);
+                <div class="ov-popup ov-popup-fire">
+                    <div class="ov-val" style="color:${color};">${risco}%</div>
+                    <div class="ov-lbl">Risco ${riskLabel}</div>
+                    <div class="ov-bar"><div class="ov-bar-fill" style="width:${risco}%;background:${color};"></div></div>
+                    <div class="ov-factors">
+                        <span><i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> Umidade: ${hum}%</span>
+                        <span><i class="fa-solid fa-wind" style="color:#22d3ee;"></i> Vento: ${Math.round(wind)} km/h</span>
+                        <span><i class="fa-solid fa-cloud-rain" style="color:#a78bfa;"></i> Chuva: ${chuva.toFixed(1)} mm</span>
+                        <span><i class="fa-solid fa-temperature-half" style="color:#f9731c;"></i> Temp: ${Math.round(temp)}°C</span>
+                    </div>
+                </div>`, { className: 'ov-custom-popup' }).addTo(fireOverlay);
         });
     }
     fireOverlay.addTo(map);
+    loadEl.classList.remove('show');
     toast('Mapa de risco de fogo carregado.', true);
 }
 
