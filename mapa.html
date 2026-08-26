@@ -588,7 +588,18 @@
             color: var(--accent-orange);
         }
         .ov-btn.active i { color: var(--accent-orange); }
-        .ov-btn .ov-key { font-size: 8px; color: var(--text-muted); opacity: .7; }
+        .ov-btn .ov-key {
+            font-size: 8px; color: var(--text-muted); opacity: .7;
+            background: rgba(255,255,255,.06); border-radius: 3px;
+            padding: 1px 4px; line-height: 1; margin-top: 1px;
+        }
+        .ov-btn.active .ov-key { background: rgba(249,99,28,.2); color: var(--accent-orange); }
+        .ov-btn.off-btn { color: var(--text-muted); }
+        .ov-btn.off-btn:hover { color: #ef4444; background: rgba(239,68,68,.08); }
+        .ov-btn.off-btn.active { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: #ef4444; }
+        .ov-btn.off-btn.active i { color: #ef4444; }
+        @keyframes ovPulse { 0%,100%{box-shadow:0 0 0 0 rgba(249,99,28,.3)} 50%{box-shadow:0 0 0 4px rgba(249,99,28,0)} }
+        .ov-btn.active { animation: ovPulse 2s ease-in-out infinite; }
 
         /* ===== Wind Canvas ===== */
         #windCanvas {
@@ -845,22 +856,22 @@
 
     <!-- Windy-style Overlay Selector Bar -->
     <div id="overlayBar">
-        <button class="ov-btn" data-ov="wind" title="Vento — partículas animadas">
+        <button class="ov-btn" data-ov="wind" title="Vento — partículas animadas (W)">
             <i class="fa-solid fa-wind"></i>Vento<span class="ov-key">W</span>
         </button>
-        <button class="ov-btn" data-ov="rain" title="Precipitação — radar">
+        <button class="ov-btn" data-ov="rain" title="Precipitação — radar (R)">
             <i class="fa-solid fa-cloud-showers-heavy"></i>Chuva<span class="ov-key">R</span>
         </button>
-        <button class="ov-btn" data-ov="clouds" title="Nuvens — satélite IR">
+        <button class="ov-btn" data-ov="clouds" title="Nuvens — satélite IR (C)">
             <i class="fa-solid fa-cloud"></i>Nuvens<span class="ov-key">C</span>
         </button>
-        <button class="ov-btn" data-ov="temp" title="Temperatura — calor">
+        <button class="ov-btn" data-ov="temp" title="Temperatura — calor (T)">
             <i class="fa-solid fa-temperature-half"></i>Temp<span class="ov-key">T</span>
         </button>
-        <button class="ov-btn" data-ov="fire" title="Risco de fogo — INPE">
+        <button class="ov-btn" data-ov="fire" title="Risco de fogo — INPE (F)">
             <i class="fa-solid fa-fire"></i>Fogo<span class="ov-key">F</span>
         </button>
-        <button class="ov-btn" data-ov="none" title="Desativar camada meteorológica">
+        <button class="ov-btn off-btn" data-ov="none" title="Desativar camada (ESC)">
             <i class="fa-solid fa-eye-slash"></i>Off<span class="ov-key">ESC</span>
         </button>
     </div>
@@ -2842,6 +2853,23 @@ document.querySelectorAll('.ov-btn').forEach(btn => {
         }
         handleOverlaySwitch();
     });
+});
+
+// Keyboard shortcuts for overlay bar
+const ovKeyMap = { w: 'wind', r: 'rain', c: 'clouds', t: 'temp', f: 'fire' };
+document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    const k = e.key.toLowerCase();
+    if (k === 'escape') {
+        document.querySelectorAll('.ov-btn').forEach(b => b.classList.remove('active'));
+        activeOverlayWindy = 'none';
+        handleOverlaySwitch();
+        return;
+    }
+    if (ovKeyMap[k]) {
+        const btn = document.querySelector(`.ov-btn[data-ov="${ovKeyMap[k]}"]`);
+        if (btn) btn.click();
+    }
 });
 
 function handleOverlaySwitch() {
