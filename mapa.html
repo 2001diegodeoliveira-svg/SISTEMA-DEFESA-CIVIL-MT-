@@ -793,20 +793,6 @@
 
         .pd-empty { text-align: center; padding: 12px; color: var(--text-muted); font-size: 9px; opacity: .7; }
 
-        /* ===== Zeca Mascote ===== */
-        #zecaMascot {
-            position: absolute; bottom: 80px; left: 280px; z-index: 800;
-            width: 90px; height: auto;
-            pointer-events: none;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,.5));
-            animation: zecaFloat 3s ease-in-out infinite;
-            mix-blend-mode: multiply;
-        }
-        @keyframes zecaFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-
         @media (max-width: 900px) {
         }
     </style>
@@ -1170,9 +1156,6 @@
             <span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;margin-right:5px;opacity:.7;"></span> Focos 48h (WMS INPE)
         </div>
     </div>
-
-    <!-- Zeca Mascote -->
-    <img id="zecaMascot" src="zeca/zeca.jpeg" alt="Zeca — Mascote da Defesa Civil">
 
     <!-- Painel Climático em Tempo Real -->
     <div id="climatePanel">
