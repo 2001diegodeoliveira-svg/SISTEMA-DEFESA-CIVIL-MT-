@@ -884,29 +884,7 @@
                 <span>NOTÍCIAS E COMUNICADOS</span>
             </div>
 
-            <div class="main-news-card">
-                <span class="badge-destaque">DESTAQUE</span>
-                <h4>Defesa Civil combate incêndios florestais em várias regiões do estado</h4>
-                <p>Ações integradas continuam para proteger o meio ambiente e as comunidades.</p>
-            </div>
-
-            <div class="news-item-small">
-                <img src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=200&q=80" alt="Notícia 1">
-                <div class="news-info">
-                    <span>15 MAI 2024</span>
-                    <h5>Chuvas intensas exigem atenção em todo o estado</h5>
-                    <a href="#">Leia mais &rarr;</a>
-                </div>
-            </div>
-
-            <div class="news-item-small">
-                <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=200&q=80" alt="Notícia 2">
-                <div class="news-info">
-                    <span>14 MAI 2024</span>
-                    <h5>Defesa Civil realiza treinamento em Nova Mutum</h5>
-                    <a href="#">Leia mais &rarr;</a>
-                </div>
-            </div>
+            <div id="mtClimateNews"></div>
         </div>
 
         <!-- Painel em Tempo Real -->
@@ -991,10 +969,90 @@
     </div>
 
     <script>
+        const NOTICIAS_CLIMATICAS_MT = [
+            {
+                data: '15 MAI 2026',
+                tag: 'CHUVA INTENSA',
+                titulo: 'Alerta de chuva forte em vários municípios de Mato Grosso exige atenção da população',
+                resumo: 'Defesa Civil acompanha áreas com risco de alagamento, queda de árvores e trânsito prejudicado em trechos críticos do estado.',
+                imagem: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=800&q=80',
+                local: 'Mato Grosso'
+            },
+            {
+                data: '12 MAI 2026',
+                tag: 'ONDA DE CALOR',
+                titulo: 'Temperaturas elevadas aumentam risco de incêndio em regiões do norte e leste do Estado',
+                resumo: 'Baixa umidade e ventos secos elevam o perigo para queimadas e incêndios florestais durante a tarde.',
+                imagem: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
+                local: 'Norte e Leste de MT'
+            },
+            {
+                data: '09 MAI 2026',
+                tag: 'VENTO FORTE',
+                titulo: 'Defesa Civil monitora rajadas de vento em cidades do centro-oeste mato-grossense',
+                resumo: 'Ventos fortes podem afetar estrutura de telhados, postes e redes elétricas em municípios com maior risco.',
+                imagem: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80',
+                local: 'Centro-Oeste de MT'
+            },
+            {
+                data: '06 MAI 2026',
+                tag: 'GRANIZO',
+                titulo: 'Possíveis tempestades com granizo são monitoradas por equipes de Defesa Civil em Mato Grosso',
+                resumo: 'Condições de instabilidade favorecem formação de nuvens de desenvolvimento vertical e precipitação intensa.',
+                imagem: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
+                local: 'Mato Grosso'
+            }
+        ];
+
+        function renderClimateNewsMT() {
+            const container = document.getElementById('mtClimateNews');
+            if (!container) return;
+
+            const filtradas = NOTICIAS_CLIMATICAS_MT.filter(noticia => {
+                const texto = `${noticia.titulo} ${noticia.resumo} ${noticia.local}`.toLowerCase();
+                const palavrasChave = ['chuva', 'ventos', 'vento', 'calor', 'temperatura', 'granizo', 'tempestade', 'incêndio', 'seca', 'alagamento', 'risco climático', 'alerta'];
+                return palavrasChave.some(palavra => texto.includes(palavra)) && texto.includes('mato grosso');
+            });
+
+            if (!filtradas.length) {
+                container.innerHTML = `
+                    <div class="main-news-card" style="opacity:0.8;">
+                        <span class="badge-destaque">SEM NOTÍCIAS</span>
+                        <h4>Nenhuma notícia climática de Mato Grosso no momento.</h4>
+                        <p>Os alertas e comunicados do sistema serão exibidos aqui quando houver eventos meteorológicos relevantes.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const [destaque, ...outras] = filtradas;
+            const itens = outras.map((noticia) => `
+                <div class="news-item-small">
+                    <img src="${noticia.imagem}" alt="${noticia.titulo}">
+                    <div class="news-info">
+                        <span>${noticia.data}</span>
+                        <h5>${noticia.titulo}</h5>
+                        <a href="#">Leia mais &rarr;</a>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="main-news-card">
+                    <span class="badge-destaque">${destaque.tag}</span>
+                    <h4>${destaque.titulo}</h4>
+                    <p>${destaque.resumo}</p>
+                </div>
+                ${itens}
+            `;
+        }
+
         // Pequena interação simulando clique nos cards de acesso rápido ou emergência
         document.querySelector('.emergency-btn').addEventListener('click', () => {
             alert('Ligando para a central de emergência da Defesa Civil: 199');
         });
+
+        renderClimateNewsMT();
     </script>
 
     <!-- Painel de alertas ativos no hero -->
