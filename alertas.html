@@ -175,6 +175,55 @@
         }
         .footer-social a:hover { background-color: var(--accent-orange); }
 
+        /* Seção INMET em tempo real */
+        .inmet-section { padding: 26px 5% 0; max-width: 1200px; }
+        .inmet-head {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
+        }
+        .inmet-title { display: flex; align-items: center; gap: 12px; }
+        .inmet-title h3 { font-size: 18px; font-weight: 700; }
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(22,163,74,.14); color: #4ade80; font-size: 11px; font-weight: 700;
+            padding: 3px 10px; border-radius: 12px; letter-spacing: .4px;
+        }
+        .live-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: blink 1.6s infinite; }
+        .inmet-meta { font-size: 11.5px; color: var(--text-muted); }
+        .inmet-meta .src { color: #38bdf8; }
+        .inmet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+        .inmet-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-top: 3px solid var(--sev-cor, var(--accent-orange));
+            border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 9px;
+        }
+        .inmet-card .ic-tipo {
+            width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+            background: rgba(255,255,255,.05); color: var(--sev-cor);
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .inmet-card .top { display: flex; gap: 12px; align-items: flex-start; }
+        .inmet-card h4 { font-size: 14px; font-weight: 700; line-height: 1.25; }
+        .sev-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; padding: 3px 9px; border-radius: 4px; }
+        .sev-0 { background: #ef444422; color: #ef4444; }
+        .sev-1 { background: #f9731622; color: #f97316; }
+        .sev-2 { background: #eab30822; color: #eab308; }
+        .inmet-card .vig { font-size: 11px; color: var(--text-muted); display: flex; gap: 14px; flex-wrap: wrap; }
+        .inmet-card .vig i { font-size: 10px; margin-right: 4px; }
+        .inmet-card .desc { font-size: 12.5px; color: #cbd5e1; line-height: 1.5; }
+        .inmet-card .areas { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+        .inmet-card .links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+        .inmet-card .lnk {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
+            padding: 7px 11px; border-radius: 6px; text-decoration: none; transition: background .15s;
+        }
+        .inmet-card .lnk.official { background: rgba(56,189,248,.12); color: #38bdf8; }
+        .inmet-card .lnk.waze { background: linear-gradient(135deg,#33ccff,#0099ff); color: #fff; }
+        .inmet-empty { color: var(--text-muted); font-size: 13px; padding: 26px; text-align: center; border: 1px dashed var(--border-color); border-radius: 12px; }
+        .section-divider { margin: 34px 5% 6px; max-width: 1200px; display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 12px; letter-spacing: .4px; }
+        .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+        .section-divider b { color: var(--text-main); }
+
         @media (max-width: 1024px) {
             nav ul { display: none; }
             .details-inner { padding-left: 20px; }
@@ -245,6 +294,10 @@
                 <div><b id="stMunicipios">0</b><span>Municípios afetados</span></div>
             </div>
             <div class="stat-chip">
+                <i class="fa-solid fa-cloud-sun-rain" style="color:#4ade80;"></i>
+                <div><b id="stInmet">0</b><span>Avisos INMET (tempo real)</span></div>
+            </div>
+            <div class="stat-chip">
                 <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
                 <div><b id="stUpdate">--:--</b><span>Última atualização</span></div>
             </div>
@@ -262,6 +315,20 @@
             <input type="text" id="buscaMunicipio" placeholder="Filtrar por município...">
         </div>
     </div>
+
+    <!-- Avisos INMET em tempo real -->
+    <section class="inmet-section" id="inmetSection">
+        <div class="inmet-head">
+            <div class="inmet-title">
+                <h3><i class="fa-solid fa-cloud-sun-rain" style="color:#4ade80;margin-right:6px;"></i>Avisos Meteorológicos INMET</h3>
+                <span class="live-badge"><span class="dot"></span>TEMPO REAL</span>
+            </div>
+            <div class="inmet-meta" id="inmetMeta">Carregando avisos do INMET...</div>
+        </div>
+        <div class="inmet-grid" id="inmetGrid"></div>
+    </section>
+
+    <div class="section-divider"><span>Alertas emitidos pela <b>Defesa Civil MT</b> — conteúdo operacional curado</span></div>
 
     <!-- Lista -->
     <div class="alerts-container" id="alertsContainer"></div>
@@ -396,8 +463,143 @@
             alert('Ligando para a central de emergência da Defesa Civil: 199');
         });
 
+        // ================= Avisos INMET em tempo real =================
+        // Fonte oficial: https://apiprevmet3.inmet.gov.br/avisos/rss
+        const INMET_RSS = 'https://apiprevmet3.inmet.gov.br/avisos/rss';
+        let inmetCount = 0;
+
+        // Evento INMET -> tipo do sistema (para ícone) e nível pela severidade
+        const INMET_TIPO_ICONE = {
+            'chuvas intensas': 'fa-cloud-showers-heavy',
+            'tempestade': 'fa-cloud-bolt',
+            'baixa umidade': 'fa-droplet-slash',
+            'vendaval': 'fa-wind',
+            'onda de calor': 'fa-temperature-arrow-up',
+            'granizo': 'fa-cloud-hail',
+            'acumulado de chuva': 'fa-cloud-rain',
+            'nevoeiro': 'fa-smog',
+        };
+        const INMET_SEV = { 'Perigo Potencial': 2, 'Perigo': 1, 'Grande Perigo': 0 };
+        const INMET_SEV_COR = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
+        // Regiões de MT (mesorregiões IBGE). Evita "Sul Mato-grossense"/"Mato Grosso do Sul" (não é MT).
+        const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
+
+        function hidratar(e, re) {
+            const m = e.match(re);
+            return m ? m[1].replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '';
+        }
+        function campoTabela(html, rotulo) {
+            const re = new RegExp('<th[^>]*>' + rotulo + '</th>[\\s\\S]*?<td>([\\s\\S]*?)</td>', 'i');
+            const m = html.match(re);
+            return m ? m[1].replace(/<[^>]+>/g, '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/\s+/g, ' ').trim() : '';
+        }
+
+        async function fetchInmetAvisos() {
+            try {
+                const r = await fetch(INMET_RSS);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const xml = await r.text();
+                const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+
+                const avisos = [];
+                for (const item of items) {
+                    const descMat = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/);
+                    if (!descMat) continue;
+                    const html = descMat[1];
+                    const area = campoTabela(html, 'Área');
+                    // Mantém apenas avisos cujas áreas cobrem Mato Grosso
+                    if (!REGIOES_MT.test(area)) continue;
+
+                    const inicio = campoTabela(html, 'Início');
+                    const fim = campoTabela(html, 'Fim');
+                    // Mantém apenas avisos ainda vigentes (fim no futuro)
+                    const fimDate = new Date(String(fim).replace(' ', 'T'));
+                    if (isNaN(fimDate) || fimDate.getTime() < Date.now()) continue;
+
+                    const evento = campoTabela(html, 'Evento') || '';
+                    const severidade = campoTabela(html, 'Severidade') || '';
+                    const descricao = campoTabela(html, 'Descrição');
+                    const link = (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '';
+                    const id = (link.match(/rss\/(\d+)/) || [])[1] || '';
+
+                    avisos.push({
+                        id, evento, severidade,
+                        inicio, fim, descricao, area, link,
+                        sev: INMET_SEV[severidade] !== undefined ? INMET_SEV[severidade] : 2,
+                    });
+                }
+                avisos.sort((a, b) => a.sev - b.sev || new Date(b.inicio.replace(' ', 'T')) - new Date(a.inicio.replace(' ', 'T')));
+                return { avisos, xml };
+            } catch (e) {
+                return { avisos: [], error: e.message };
+            }
+        }
+
+        function fmtDh(str) {
+            const d = new Date(String(str).replace(' ', 'T'));
+            if (isNaN(d)) return '—';
+            return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).replace('.', '');
+        }
+
+        function renderInmet(g) {
+            const grid = document.getElementById('inmetGrid');
+            const meta = document.getElementById('inmetMeta');
+            inmetCount = g.avisos.length;
+            const st = document.getElementById('stInmet');
+            if (st) st.textContent = inmetCount;
+            document.getElementById('stUpdate').textContent =
+                new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            meta.innerHTML = inmetCount
+                ? `<i class="fa-solid fa-satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) cobrindo MT · fonte <span class="src">INMET (apiprevmet3.inmet.gov.br)</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                : 'Nenhum aviso INMET cobrindo Mato Grosso no momento.';
+
+            if (g.error) {
+                grid.innerHTML = `<div class="inmet-empty"><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;color:#f97316;"></i>Não foi possível carregar os avisos do INMET agora.</div>`;
+                return;
+            }
+            if (!g.avisos.length) {
+                grid.innerHTML = `<div class="inmet-empty"><i class="fa-regular fa-circle-check" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para Mato Grosso neste momento.</div>`;
+                return;
+            }
+
+            grid.innerHTML = g.avisos.map(a => {
+                const icon = INMET_TIPO_ICONE[(a.evento || '').toLowerCase()] || 'fa-cloud';
+                const cor = INMET_SEV_COR[a.sev] || '#f97316';
+                const sevLabel = a.severidade || '—';
+                const areas = a.area.replace(/^Aviso para as Áreas:\s*/i, '').split(/\s*,\s*/).filter(Boolean);
+                return `
+                    <div class="inmet-card" style="--sev-cor:${cor};">
+                        <div class="top">
+                            <div class="ic-tipo"><i class="fa-solid ${icon}"></i></div>
+                            <div style="flex:1;min-width:0;">
+                                <span class="sev-tag sev-${a.sev}">${sevLabel}</span>
+                                <h4 style="margin-top:4px;">Aviso de ${a.evento}</h4>
+                                <div class="vig">
+                                    <span><i class="fa-regular fa-clock"></i>De ${fmtDh(a.inicio)}</span>
+                                    <span><i class="fa-regular fa-calendar-xmark"></i>Até ${fmtDh(a.fim)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="desc">${a.descricao}</p>
+                        <div class="areas"><i class="fa-solid fa-map-pin" style="margin-right:5px;color:${cor};"></i><b>Regiões:</b> ${areas.join(', ')}</div>
+                        <div class="links">
+                            <a class="lnk official" href="${a.link}" target="_blank" rel="noopener"><i class="fa-solid fa-up-right-from-square"></i> Detalhe INMET</a>
+                            <a class="lnk official" href="https://avisos.inmet.gov.br/${a.id}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Mapa do aviso</a>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        async function loadInmet() {
+            const g = await fetchInmetAvisos();
+            renderInmet(g);
+        }
+
         renderStats();
         renderAlerts();
+        loadInmet();                      // carrega avisos INMET agora
+        setInterval(loadInmet, 10 * 60 * 1000); // e atualiza a cada 10 min
 
         // Deep link: abre automaticamente o alerta indicado na URL (#AL-2026-XXXX)
         const hash = window.location.hash.replace('#', '');
