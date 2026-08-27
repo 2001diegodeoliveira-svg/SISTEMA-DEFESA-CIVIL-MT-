@@ -1301,9 +1301,26 @@
             updEl.textContent = 'Atualizado às ' + now;
         }
 
-        // Auto-refresh every 10 minutes + initial load
+        // Auto-refresh a cada 2 minutos + atualização manual
         renderPainel();
-        setInterval(renderPainel, 10 * 60 * 1000);
+        setInterval(renderPainel, 2 * 60 * 1000);
+
+        // Mostrar o timestamp da última atualização e a próxima
+        (function autoUpdIndicator() {
+            let upIn = 2 * 60;
+            setInterval(() => {
+                upIn--;
+                const el = document.getElementById('painelLastUpdate');
+                if (!el) return;
+                if (upIn <= 0) {
+                    el.textContent = 'Atualizando...';
+                    upIn = 2 * 60;
+                } else {
+                    const m = Math.floor(upIn / 60), s = upIn % 60;
+                    el.textContent = 'Próxima atualização em ' + m + 'm' + String(s).padStart(2, '0');
+                }
+            }, 1000);
+        })();
 
         (function heroMT() {
             const svg = document.getElementById('mtMapSvg');
