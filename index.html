@@ -1140,10 +1140,19 @@
 
         async function fetchFocos() {
             try {
-                const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
-                const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
-                if (!r.ok) return { today: 0, sats: [] };
-                const txt = await r.text();
+                // Tenta o CSV do dia atual; se ainda não publicado, volta até 3 dias
+                let txt = null, iso = null;
+                for (let i = 0; i < 4 && !txt; i++) {
+                    const d = new Date(Date.now() - i * 86400000);
+                    iso = d.toISOString().slice(0, 10).replaceAll('-', '');
+                    try {
+                        const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+                        if (!r.ok) continue;
+                        const t = await r.text();
+                        if (t.length > 100) txt = t;
+                    } catch { }
+                }
+                if (!txt) return { today: 0, sats: [] };
                 const lines = txt.split('\n');
                 const header = lines[0].split(',').map(h => h.trim());
                 const iUF = header.indexOf('estado'), iSat = header.indexOf('satelite');
