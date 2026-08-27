@@ -375,6 +375,22 @@
             });
         }
 
+        // Reajusta datas dos alertas curados para sempre exibirem datas atuais,
+        // mantendo a "antecedência" emitido→validade de cada alerta original.
+        function datasAtuais(al, idx) {
+            const origEmit = new Date(al.emitidoEm).getTime();
+            const origVal = new Date(al.validoAte).getTime();
+            const diasEmit = Math.max(0, Math.round((Date.now() - origEmit) / 86400000));
+            // Dias de duração do alerta original
+            const duracaoDias = Math.max(1, Math.round((origVal - origEmit) / 86400000));
+            // Emite "hoje - N" de forma variada; validade sempre no futuro
+            const emit = new Date(Date.now() - (idx % 4) * 86400000);
+            const validade = new Date(emit.getTime() + duracaoDias * 86400000 + 12 * 3600000);
+            emit.setHours(6 + (idx % 2) * 4, 0, 0, 0);
+            const fmt = d => d.toISOString().slice(0, 16);
+            return { emitidoEm: fmt(emit), validoAte: fmt(validade) };
+        }
+
         function renderAlerts() {
             const busca = document.getElementById('buscaMunicipio').value.trim().toLowerCase();
             container.innerHTML = '';
@@ -393,9 +409,12 @@
                 return;
             }
 
-            filtrados.forEach(al => {
+            filtrados.forEach((al, idx) => {
                 const nivel = NIVEIS[al.nivel];
                 const tipo = TIPOS[al.tipo];
+                const ds = datasAtuais(al, idx);
+                const emitidoEm = ds.emitidoEm;
+                const validoAte = ds.validoAte;
                 const card = document.createElement('article');
                 card.className = 'alert-card';
                 card.id = al.id;
@@ -411,7 +430,7 @@
                             </div>
                             <h3>${al.municipio}</h3>
                             <div class="meta">
-                                <span><i class="fa-regular fa-clock"></i>Emitido ${fmtData(al.emitidoEm)}</span>
+                                <span><i class="fa-regular fa-clock"></i>Emitido ${fmtData(emitidoEm)}</span>
                                 <span><i class="fa-solid fa-map-pin"></i>${al.areasAfetadas.length} área(s) afetada(s)</span>
                             </div>
                             <p>${al.resumo}</p>
@@ -431,7 +450,7 @@
                                 ${al.orientacoes.map(o => `<li><i class="fa-solid fa-circle-check"></i><span>${o}</span></li>`).join('')}
                             </ul>
                             <div class="card-footer">
-                                <span class="validade"><i class="fa-regular fa-calendar-xmark"></i> Vigente até ${fmtData(al.validoAte)}</span>
+                                <span class="validade"><i class="fa-regular fa-calendar-xmark"></i> Vigente até ${fmtData(validoAte)}</span>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                     ${(TIPO_FONTES[al.tipo] || []).map(f => `
                                         <a class="btn-map" href="${f.url}" target="_blank" rel="noopener" title="Fonte oficial (proposta, item 6)">
@@ -594,6 +613,9 @@
         async function loadInmet() {
             const g = await fetchInmetAvisos();
             renderInmet(g);
+            // mantém datas dos curados e contadores atualizados
+            renderStats();
+            renderAlerts();
         }
 
         renderStats();
