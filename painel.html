@@ -315,14 +315,23 @@ async function fetchCity(c) {
 
 async function fetchFocos() {
     try {
-        const iso = new Date().toISOString().slice(0,10).replaceAll('-','');
-        const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
-        if (!r.ok) return { today:0, high:0, sats:[], topBioma:[], topMun:[], all:[] };
-        const txt = await r.text();
+        // Tenta o CSV do dia atual; se ainda não publicado, volta até 3 dias
+        let txt = null;
+        for (let i = 0; i < 4 && !txt; i++) {
+            const d = new Date(Date.now() - i * 86400000);
+            const iso = d.toISOString().slice(0,10).replaceAll('-','');
+            try {
+                const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+                if (!r.ok) continue;
+                const t = await r.text();
+                if (t.length > 100) txt = t;
+            } catch { }
+        }
+        if (!txt) return { today:0, high:0, sats:[], topBioma:[], topMun:[], all:[] };
         const lines = txt.split('\n');
         const hdr = lines[0].split(',').map(h=>h.trim());
         const iUF = hdr.indexOf('estado'), iSat = hdr.indexOf('satelite'), iRisco = hdr.indexOf('risco_fogo');
-        const iMun = hdr.indexOf('municipio'), iBioma = hdr.indexOf('bioma'), iLat = hdr.indexOf('latitude'), iLon = hdr.indexOf('longitude');
+        const iMun = hdr.indexOf('municipio'), iBioma = hdr.indexOf('bioma'), iLat = hdr.indexOf('lat'), iLon = hdr.indexOf('lon');
         const mt = lines.slice(1).filter(l => { const c=l.split(','); return (c[iUF]||'').trim().toUpperCase()==='MATO GROSSO'; });
         const sats = [...new Set(mt.map(l=>l.split(',')[iSat]?.trim()).filter(Boolean))];
         const high = mt.filter(l => parseFloat(l.split(',')[iRisco]) >= 0.6).length;
