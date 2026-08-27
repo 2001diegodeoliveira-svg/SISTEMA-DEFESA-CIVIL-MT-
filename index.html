@@ -1063,12 +1063,81 @@
         (function renderHomeAlerts() {
             const list = document.getElementById('homeAlertsList');
             if (!list) return;
-            const top = [...ALERTAS_ATIVOS]
-                .sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel])
-                .slice(0, 3);
 
-            list.innerHTML = top.map(al => `
-                <a href="alertas.html#${al.id}" class="alert-card" style="text-decoration:none;">
+            // Avisos INMET em tempo real (fonte oficial)
+            const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
+            function campoTabela(html, rotulo) {
+                const re = new RegExp('<th[^>]*>' + rotulo + '</th>[\\s\\S]*?<td>([\\s\\S]*?)</td>', 'i');
+                const m = html.match(re);
+                return m ? m[1].replace(/<[^>]+>/g, '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/\s+/g, ' ').trim() : '';
+            }
+
+            async function renderInmet() {
+                try {
+                    const r = await fetch('https://apiprevmet3.inmet.gov.br/avisos/rss');
+                    if (!r.ok) return;
+                    const xml = await r.text();
+                    const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+                    const avisos = [];
+                    for (const item of items) {
+                        const dm = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/);
+                        if (!dm) continue;
+                        const html = dm[1];
+                        const area = campoTabela(html, 'Área');
+                        if (!REGIOES_MT.test(area)) continue;
+                        const fim = campoTabela(html, 'Fim');
+                        const fimD = new Date(String(fim).replace(' ', 'T'));
+                        if (isNaN(fimD) || fimD.getTime() < Date.now()) continue;
+                        avisos.push({
+                            evento: campoTabela(html, 'Evento'),
+                            severidade: campoTabela(html, 'Severidade'),
+                            descricao: campoTabela(html, 'Descrição'),
+                            inicio: campoTabela(html, 'Início'),
+                            fim, link: (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '',
+                        });
+                    }
+                    const sev = { 'Perigo Potencial': 2, 'Perigo': 1, 'Grande Perigo': 0 };
+                    const cor = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
+                    const icon = { 'chuvas intensas': 'fa-cloud-showers-heavy', 'tempestade': 'fa-cloud-bolt', 'baixa umidade': 'fa-droplet-slash', 'vendaval': 'fa-wind', 'onda de calor': 'fa-temperature-arrow-up', 'granizo': 'fa-cloud-hail' };
+                    avisos.sort((a, b) => (sev[a.severidade] ?? 2) - (sev[b.severidade] ?? 2));
+                    const top = avisos.slice(0, 3);
+
+                    const bloco = top.map(a => {
+                        const c = cor[sev[a.severidade]] ?? '#f97316';
+                        return `
+                        <a href="alertas.html" class="alert-card inmet" style="text-decoration:none;border-left:3px solid ${c};">
+                            <div class="alert-info">
+                                <h4 style="display:flex;align-items:center;gap:6px;">
+                                    <i class="fa-solid ${icon[(a.evento||'').toLowerCase()] || 'fa-cloud'}" style="color:${c};"></i>
+                                    INMET · ${a.evento}
+                                    <span style="font-size:8.5px;background:${c}22;color:${c};padding:2px 6px;border-radius:8px;font-weight:800;letter-spacing:.4px;">${a.severidade.toUpperCase()}</span>
+                                </h4>
+                                <p>Vigente ${(a.descricao || '').slice(0, 44)}…</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>`;
+                    }).join('');
+
+                    const htmlBloco = `
+                        <div style="padding:8px 6px;margin-bottom:6px;border-bottom:1px solid var(--border-color);">
+                            <div style="display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#4ade80;margin-bottom:8px;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blinkDot 1.4s infinite;"></span>
+                                AVISOS INMET · TEMPO REAL
+                            </div>
+                            ${bloco}
+                        </div>`;
+                    list.innerHTML = htmlBloco + (list.dataset.curados || '');
+                    list.dataset.inmetDone = '1';
+                } catch (e) {
+                    // se falhar, mantém só os curados
+                    if (list.dataset.curados) list.innerHTML = list.dataset.curados;
+                }
+            }
+
+            // Inicial: mostra curados imediatamente, depois carrega INMET por cima
+            const base = [...ALERTAS_ATIVOS].sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel]).slice(0, 3);
+            const inicial = base.map(al => `
+                <a href="alertas.html#${al.id}" class="alert-card curado" style="text-decoration:none;">
                     <div class="alert-info">
                         <h4><i class="fa-solid ${NIVEIS[al.nivel].icone}" style="color:${NIVEIS[al.nivel].cor};"></i>
                             ${NIVEIS[al.nivel].label.toUpperCase()} — ${al.municipio}</h4>
@@ -1076,14 +1145,19 @@
                     </div>
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>`).join('');
+            list.innerHTML = inicial;
+            list.dataset.curados = inicial;
 
             // Badge dinâmico no botão do hero
             const total = ALERTAS_ATIVOS.filter(a => a.nivel !== 'atencao').length;
             const btn = document.querySelector('.btn-main-alert');
-            if (btn && total > 0) {
+            if (btn && total > 0 && !btn.querySelector('span')) {
                 btn.insertAdjacentHTML('beforeend',
                     `<span style="background:rgba(0,0,0,.25);border-radius:12px;padding:2px 9px;font-size:12px;">${total}</span>`);
             }
+
+            renderInmet();
+            setInterval(renderInmet, 10 * 60 * 1000);
         })();
 
         // Faixa de fontes oficiais
