@@ -468,12 +468,6 @@ async function renderPainel() {
     if (typeof updateMap === 'function') updateMap(focos, sipam, cityRes);
 }
 
-renderPainel();
-setInterval(renderPainel, 5*60*1000);
-</script>
-
-<script>
-// ===== LEAFLET MAP =====
 const MT_CENTER = [-14.0, -55.5];
 const MT_ZOOM = 6;
 
@@ -552,22 +546,7 @@ const MT_BOUNDARY = [
     [-10.12,-59.93],[-10.35,-59.78],[-10.50,-59.53],[-10.57,-59.32],[-10.78,-58.95],[-10.93,-58.68],
     [-11.12,-58.30],[-11.27,-58.00],[-11.47,-57.70],[-11.63,-57.42],[-11.78,-57.20],[-11.92,-56.98],
     [-12.15,-56.73],[-12.35,-56.43],[-12.58,-56.10],[-12.73,-55.83],[-12.95,-55.57],[-13.13,-55.35],
-    [-13.35,-55.10],[-13.55,-54.88],[-13.73,-54.67],[-13.92,-54.45],[-14.12,-54.22],[-14.33,-54.00],
-    [-14.52,-53.78],[-14.73,-53.55],[-14.92,-53.33],[-15.12,-53.10],[-15.33,-52.88],[-15.52,-52.67],
-    [-15.73,-52.45],[-15.92,-52.22],[-16.12,-52.00],[-16.33,-51.78],[-16.52,-51.55],[-16.73,-51.33],
-    [-16.92,-51.10],[-17.12,-50.88],[-17.33,-50.67],[-17.52,-50.45],[-17.73,-50.22],[-17.92,-50.00],
-    [-18.12,-49.78],[-18.32,-49.55],[-18.47,-49.33],[-18.32,-49.10],[-18.17,-48.88],[-18.02,-48.67],
-    [-17.87,-48.45],[-17.72,-48.22],[-17.57,-48.00],[-17.42,-47.78],[-17.27,-47.55],[-17.12,-47.33],
-    [-16.92,-47.10],[-16.73,-46.88],[-16.52,-46.67],[-16.32,-46.45],[-16.12,-46.22],[-15.92,-46.00],
-    [-15.72,-45.78],[-15.52,-45.55],[-15.32,-45.33],[-15.12,-45.10],[-14.92,-44.88],[-14.72,-44.67],
-    [-14.52,-44.45],[-14.32,-44.22],[-14.12,-44.00],[-13.92,-43.78],[-13.72,-43.55],[-13.52,-43.33],
-    [-13.32,-43.10],[-13.12,-42.88],[-12.92,-42.67],[-12.72,-42.45],[-12.52,-42.22],[-12.32,-42.00],
-    [-12.12,-41.78],[-11.92,-41.55],[-11.72,-41.33],[-11.52,-41.10],[-11.32,-40.88],[-11.12,-40.67],
-    [-10.92,-40.45],[-10.72,-40.22],[-10.52,-40.00],[-10.32,-39.78],[-10.12,-39.55],[-9.92,-39.33],
-    [-9.72,-39.10],[-9.52,-38.88],[-9.32,-38.67],[-9.12,-38.45],[-8.92,-38.22],[-8.72,-38.00],
-    [-8.52,-37.78],[-8.32,-37.55],[-8.12,-37.33],[-7.92,-37.10],[-7.72,-36.88],[-7.52,-36.67],
-    [-7.32,-36.45],[-7.12,-36.22],[-6.92,-36.00],[-6.72,-35.78],[-6.52,-35.55],[-6.32,-35.33],
-    [-6.12,-35.10],[-5.92,-34.88],[-5.72,-34.67],[-5.52,-34.45],[-5.32,-34.22],[-5.12,-34.00]
+    [-13.35,-55.10],[-13.55,-54.88],[-13.73,-54.67],    [-13.92,-54.45],[-14.12,-54.22],[-14.33,-54.00]
 ];
 
 // Draw MT boundary
@@ -615,7 +594,8 @@ function updateMap(focosData, sipamData, cityResults) {
             `<span>Município: ${f.municipio||'—'}</span><br>` +
             `<span>Risco: <b style="color:${risco>=0.6?'#ef4444':'#fbbf24'}">${risco.toFixed(2)}</b></span><br>` +
             `<span>Satélite: ${f.satelite||'—'}</span><br>` +
-            `<span>Bióma: ${f.bioma||'—'}</span>`
+            `<span>Bióma: ${f.bioma||'—'}</span><br>` +
+            `<a href="https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>`
         ).addTo(layerFocos);
 
         totalCount++;
@@ -632,6 +612,7 @@ function updateMap(focosData, sipamData, cityResults) {
         }
         const status = ev.status_evento||'—';
         const col = status==='Ativo'?'#ef4444':status==='Controlado'?'#22c55e':'#fbbf24';
+        const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17`;
 
         L.circleMarker([lat, lon], {
             radius: 8, fillColor: col, color:'#fff', weight:2, fillOpacity:.9
@@ -640,7 +621,8 @@ function updateMap(focosData, sipamData, cityResults) {
             `<span>Município: ${ev.municipio||'—'}</span><br>` +
             `<span>Status: <b style="color:${col}">${status}</b></span><br>` +
             `<span>Área: ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'—'}</span><br>` +
-            `<span>Tipo: ${ev.tipo_evento||'—'}</span>`
+            `<span>Tipo: ${ev.tipo_evento||'—'}</span><br>` +
+            `<a href="${wazeUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>`
         ).addTo(layerSipam);
     });
 
@@ -661,13 +643,23 @@ function updateMap(focosData, sipamData, cityResults) {
             `<span>Temperatura: <b>${Math.round(temp)}°C</b></span><br>` +
             `<span>Umidade: ${d.hum}%</span><br>` +
             `<span>Vento: ${Math.round(d.wind)} km/h</span>` +
-            (d.uv != null ? `<br><span>UV: ${d.uv.toFixed(1)}</span>` : '')
+            (d.uv != null ? `<br><span>UV: ${d.uv.toFixed(1)}</span>` : '') +
+            `<br><a href="https://www.waze.com/ul?ll=${c.lat},${c.lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>`
         ).addTo(layerCidades);
     });
 
     // Update map count
     document.getElementById('mapCount').textContent = `${totalCount} focos · ${sipamData.length} eventos`;
 }
+
+// Garantir que o mapa seja desenhado após o container ter dimensões
+window.addEventListener('load', () => {
+    pMap.invalidateSize();
+});
+
+// Bootstrap: agora que updateMap está definido, iniciar o painel
+renderPainel();
+setInterval(renderPainel, 5*60*1000);
 </script>
 </body>
 </html>
