@@ -212,19 +212,19 @@ const FONTES_API = [
 
 /* Camadas da arquitetura (seção 3) */
 const ARQUITETURA_CAMADAS = [
-    { n: 1, nome: 'Ingestão de dados', icon: 'fa-cloud-arrow-down', desc: 'Workers agendados consultam cada API externa (INMET, INPE, ANA, Windy) em intervalos de 15 a 60 min e normalizam os dados.' },
-    { n: 2, nome: 'Armazenamento', icon: 'fa-database', desc: 'PostgreSQL + PostGIS com séries temporais (temperatura, umidade, focos) e geometrias (limites municipais, polígonos de risco).' },
-    { n: 3, nome: 'Motor de regras e alertas', icon: 'fa-diagram-project', desc: 'Cruza limiares operacionais e gera alertas classificados por município e nível de severidade.' },
-    { n: 4, nome: 'Visualização e notificação', icon: 'fa-map-location-dot', desc: 'Mapa interativo estilo Windy para equipes técnicas; SMS, WhatsApp e push para a população em risco.' },
+    { n: 1, nome: 'Ingestão de dados', icon: 'cloud-download', desc: 'Workers agendados consultam cada API externa (INMET, INPE, ANA, Windy) em intervalos de 15 a 60 min e normalizam os dados.' },
+    { n: 2, nome: 'Armazenamento', icon: 'database', desc: 'PostgreSQL + PostGIS com séries temporais (temperatura, umidade, focos) e geometrias (limites municipais, polígonos de risco).' },
+    { n: 3, nome: 'Motor de regras e alertas', icon: 'workflow', desc: 'Cruza limiares operacionais e gera alertas classificados por município e nível de severidade.' },
+    { n: 4, nome: 'Visualização e notificação', icon: 'map', desc: 'Mapa interativo estilo Windy para equipes técnicas; SMS, WhatsApp e push para a população em risco.' },
 ];
 
 /* Limiares operacionais para MT (seção 5) */
 const LIMIARES_ALERTA = [
-    { cond: 'Umidade relativa do ar', limiar: 'Abaixo de 20% no período da tarde', acao: 'Alerta de saúde pública e risco de incêndio', icon: 'fa-droplet-slash', cor: '#f9631c' },
-    { cond: 'Temperatura máxima', limiar: 'Acima de 40 °C', acao: 'Alerta de onda de calor', icon: 'fa-temperature-arrow-up', cor: '#ef4444' },
-    { cond: 'Densidade de focos de calor', limiar: 'Acima da média histórica da região', acao: 'Alerta de fumaça e qualidade do ar', icon: 'fa-fire', cor: '#f97316' },
-    { cond: 'Nível de rio (dados ANA)', limiar: 'Acima da cota de atenção', acao: 'Alerta de cheia (período chuvoso)', icon: 'fa-house-flood-water', cor: '#38bdf8' },
-    { cond: 'Vento forte + baixa umidade', limiar: 'Combinação simultânea', acao: 'Alerta de propagação rápida de incêndio', icon: 'fa-wind', cor: '#facc15' },
+    { cond: 'Umidade relativa do ar', limiar: 'Abaixo de 20% no período da tarde', acao: 'Alerta de saúde pública e risco de incêndio', icon: 'droplets', cor: '#f9631c' },
+    { cond: 'Temperatura máxima', limiar: 'Acima de 40 °C', acao: 'Alerta de onda de calor', icon: 'thermometer-sun', cor: '#ef4444' },
+    { cond: 'Densidade de focos de calor', limiar: 'Acima da média histórica da região', acao: 'Alerta de fumaça e qualidade do ar', icon: 'flame', cor: '#f97316' },
+    { cond: 'Nível de rio (dados ANA)', limiar: 'Acima da cota de atenção', acao: 'Alerta de cheia (período chuvoso)', icon: 'home', cor: '#38bdf8' },
+    { cond: 'Vento forte + baixa umidade', limiar: 'Combinação simultânea', acao: 'Alerta de propagação rápida de incêndio', icon: 'wind', cor: '#facc15' },
 ];
 
 /* Roadmap de implementação (seção 6) */

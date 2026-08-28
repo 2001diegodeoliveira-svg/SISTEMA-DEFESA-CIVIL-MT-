@@ -48,8 +48,9 @@ function dcRenderUserArea() {
             <a href="login.html" style="display:flex;align-items:center;gap:7px;color:var(--text-muted);text-decoration:none;font-size:12.5px;font-weight:600;padding:8px 14px;border:1px solid var(--border-color);border-radius:6px;transition:all .2s;"
                onmouseover="this.style.color='#fff';this.style.borderColor='rgba(249,99,28,.5)'"
                onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
-                <i class="fa-solid fa-right-to-bracket"></i> Área restrita
+                <i data-lucide="log-in" style="width:14px;height:14px;"></i> Área restrita
             </a>`;
+        if (window.lucide) lucide.createIcons();
         return;
     }
     const perfilLabel = (typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].label : (s.perfil || 'Usuário');
