@@ -1198,10 +1198,15 @@
 
         <div class="group-title"><i data-lucide="radio-tower"></i> Painel DC</div>
         <div class="check-row" data-check="stations">
-            <label><span class="swatch" style="background:#f9631c;border-radius:50%;"></span><i data-lucide="radio-tower"></i>Estações e ocorrências</label>
+            <label><span class="swatch" style="background:#f9631c;border-radius:50%;"></span><i data-lucide="radio-tower"></i>Estações</label>
             <div class="toggle on"></div>
         </div>
         <div class="meta-line">Rede estadual ilustrativa (dados simulados)</div>
+        <div class="check-row" data-check="reports">
+            <label><span class="swatch" style="background:#00d2ff;border-radius:50%;"></span><i data-lucide="circle-alert"></i>Ocorrências (acontecimentos)</label>
+            <div class="toggle" id="reportsBadge"></div>
+        </div>
+        <div class="meta-line" id="metaReports">Ocorrências · carregando...</div>
         <div class="check-row" data-check="inmetStations">
             <label><span class="swatch" style="background:#22d3ee;border-radius:50%;"></span><i data-lucide="satellite-dish"></i>Estações INMET (EAM)</label>
             <div class="toggle" id="inmetBadge"></div>
@@ -1528,6 +1533,7 @@
 
 <script src="js/data.js"></script>
 <script src="js/proxy.js"></script>
+<script src="js/api.js"></script>
 <script src="js/session.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
@@ -1934,13 +1940,14 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
         let sipamData = [];
 let wmsFocos48hLayer = null;
+let reportsLayer = null, reportsLoaded = false, reportsLoading = false;
 
 function setCheck(key, val) {
     checkState[key] = val;
@@ -1950,6 +1957,7 @@ function setCheck(key, val) {
     if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
     if (key === 'inmetStations' && val && !inmetLoaded && !inmetLoading) loadInmetStations();
     if (key === 'sipam' && val && !sipamLoaded && !sipamLoading) loadSIPAM();
+    if (key === 'reports' && val && !reportsLoaded && !reportsLoading) loadReports();
     applyChecks();
 }
 function applyChecks() {
@@ -1962,6 +1970,7 @@ function applyChecks() {
     if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
     if (sipamLayer) checkState.sipam ? sipamLayer.addTo(map) : map.removeLayer(sipamLayer);
     if (wmsFocos48hLayer) checkState.wmsFocos48h ? wmsFocos48hLayer.addTo(map) : map.removeLayer(wmsFocos48hLayer);
+    if (reportsLayer) checkState.reports ? reportsLayer.addTo(map) : map.removeLayer(reportsLayer);
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
@@ -1979,7 +1988,7 @@ function refreshLegend() {
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
     document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
     document.getElementById('legFocosWms').style.display = checkState.wmsFocos48h && wmsFocos48hLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h;
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h || checkState.reports;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -2324,6 +2333,84 @@ async function loadSIPAM() {
     } catch (e) {
         sipamLoading = false;
         meta.textContent = 'CENSIPAM · indisponível';
+    }
+}
+
+/* ================= Ocorrências / Acontecimentos (reports da API) ================= */
+const REPORT_ICONS = {
+    acidente: 'car', engarrafamento: 'traffic-cone', evento: 'calendar', clima: 'cloud',
+    chuva: 'cloud-rain', vento: 'wind', fogo: 'flame', alagamento: 'waves',
+    arvore: 'tree-deciduous', deslizamento: 'triangle-alert', rachadura: 'triangle-alert'
+};
+const REPORT_SEV_COLOR = { urgent: '#ef4444', warning: '#f97316', alto: '#ef4444', medio: '#f97316', info: '#00d2ff' };
+
+function reportIcon(type) {
+    const t = String(type || '').toLowerCase();
+    if (REPORT_ICONS[t]) return REPORT_ICONS[t];
+    if (t.includes('alag') || t.includes('chuva') || t.includes('inund')) return 'cloud-rain';
+    if (t.includes('vent')) return 'wind';
+    if (t.includes('fogo') || t.includes('queim')) return 'flame';
+    if (t.includes('arvor') || t.includes('queda')) return 'tree-deciduous';
+    if (t.includes('acident')) return 'car';
+    if (t.includes('trânsito') || t.includes('transito') || t.includes('engarraf')) return 'traffic-cone';
+    return 'circle-alert';
+}
+function reportSevColor(sev) { return REPORT_SEV_COLOR[String(sev || 'info').toLowerCase()] || '#00d2ff'; }
+
+function reportMarkerBtn(lat, lng) {
+    return `<a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';"><i data-lucide="navigation"></i> Navegar com Waze</a>`;
+}
+
+async function loadReports() {
+    reportsLoading = true;
+    const meta = document.getElementById('metaReports');
+    if (meta) meta.innerHTML = 'Ocorrências · <b>carregando...</b>';
+    try {
+        let reports = [];
+        if (window.dcApi && window.dcApi.reports) {
+            const r = await window.dcApi.reports();
+            reports = (r && r.data && r.data.reports) || [];
+        }
+        if (reportsLayer) { try { map.removeLayer(reportsLayer); } catch {} }
+        reportsLayer = L.layerGroup();
+        reports.forEach(rep => {
+            const lat = Number(rep.lat), lng = Number(rep.lng);
+            if (!isFinite(lat) || !isFinite(lng)) return;
+            const icon = reportIcon(rep.type);
+            const color = reportSevColor(rep.severity);
+            const titulo = String(rep.type || 'acontecimento').charAt(0).toUpperCase() + String(rep.type || 'acontecimento').slice(1);
+            const iconeHTML = `<i data-lucide="${icon}" style="color:#fff;width:15px;height:15px;"></i>`;
+            const markerIcon = L.divIcon({
+                className: '',
+                html: `<div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}55;border:2px solid #fff;">${iconeHTML}</div>`,
+                iconSize: [30, 30], iconAnchor: [15, 15]
+            });
+            L.marker([lat, lng], { icon: markerIcon }).bindPopup(`
+                <div style="min-width:200px;">
+                    <div style="font-weight:700;font-size:12.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+                        <i data-lucide="${icon}" style="color:${color};"></i>${titulo}
+                    </div>
+                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${String(rep.location || 'Local não informado')}</div>
+                    <div style="font-size:11px;line-height:1.7;">
+                        ${rep.description ? '<div>'+rep.description+'</div>' : ''}
+                        <div style="margin-top:4px;"><b>Severidade:</b> <span style="color:${color};">${String(rep.severity || 'info')}</span></div>
+                        <div><b>Reportado por:</b> ${String(rep.reporter || 'Anônimo')}</div>
+                        <div><b>Hora:</b> ${rep.ts ? new Date(rep.ts).toLocaleString('pt-BR') : '—'}</div>
+                    </div>
+                    ${reportMarkerBtn(lat, lng)}
+                </div>`).addTo(reportsLayer);
+        });
+        reportsLoaded = true;
+        reportsLoading = false;
+        const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        if (meta) meta.innerHTML = `Ocorrências · <b>${reports.length.toLocaleString('pt-BR')}</b> acontecimento(s) · atualizado ${hora}`;
+        applyChecks();
+        if (window.lucide) lucide.createIcons();
+        map.once('popupopen', () => { if (window.lucide) lucide.createIcons(); });
+        setTimeout(loadReports, 10 * 60 * 1000);
+    } catch (e) {
+        reportsLoading = false;
+        if (meta) meta.textContent = 'Ocorrências · API indisponível';
     }
 }
 
@@ -2834,6 +2921,7 @@ loadUCs();
 loadTerritorio();
 loadWeather();
 loadFocos();
+loadReports();
 renderAreas();
 applyChecks();
 
