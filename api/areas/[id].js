@@ -2,8 +2,9 @@
 const { jsonResponse, bearerToken, reqUrl } = require('../_lib/http');
 const { verifyToken } = require('../_lib/auth');
 const { readCollection, writeCollection } = require('../_lib/store');
+const { serve } = require('../_lib/serverless');
 
-module.exports = async function handler(req) {
+module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
 
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
@@ -30,4 +31,4 @@ module.exports = async function handler(req) {
   areas = areas.filter(a => String(a.id) !== String(id));
   await writeCollection('areas', areas);
   return jsonResponse(200, { ok: true }, origin);
-};
+});

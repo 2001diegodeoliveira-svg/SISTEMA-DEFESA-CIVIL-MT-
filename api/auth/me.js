@@ -1,8 +1,9 @@
 /* GET /api/auth/me → { user } (valida token) */
 const { jsonResponse, bearerToken } = require('../_lib/http');
 const { verifyToken, ensureSeededUsers, publicUser } = require('../_lib/auth');
+const { serve } = require('../_lib/serverless');
 
-module.exports = async function handler(req) {
+module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
 
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
@@ -19,4 +20,4 @@ module.exports = async function handler(req) {
   const user = users.find(x => x.id === payload.sub);
   if (!user) return jsonResponse(401, { erro: 'Usuário não encontrado.' }, origin);
   return jsonResponse(200, { user: publicUser(user) }, origin);
-};
+});

@@ -8,6 +8,7 @@
    Uso no frontend:  dcProxyFetch('https://api.externa.com/...')
    ============================================================ */
 const { corsHeaders, reqUrl } = require('./_lib/http');
+const { serve } = require('./_lib/serverless');
 
 const ALLOWED_HOSTS = (process.env.PROXY_HOSTS || '')
     .split(',')
@@ -24,7 +25,7 @@ function rewriteUrl(url) {
     return url;
 }
 
-module.exports = async function handler(req) {
+module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
   const headers = corsHeaders(origin);
 
@@ -74,4 +75,4 @@ module.exports = async function handler(req) {
   } catch (e) {
     return new Response(JSON.stringify({ erro: 'Falha ao buscar a origem: ' + e.message }), { status: 502, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
-};
+});

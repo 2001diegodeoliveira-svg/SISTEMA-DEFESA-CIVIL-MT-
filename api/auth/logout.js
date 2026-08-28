@@ -1,7 +1,8 @@
 /* POST /api/auth/logout → { ok } (cliente descarta o token) */
 const { jsonResponse } = require('../_lib/http');
+const { serve } = require('../_lib/serverless');
 
-module.exports = async function handler(req) {
+module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
 
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
@@ -9,4 +10,4 @@ module.exports = async function handler(req) {
     return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
   }
   return jsonResponse(200, { ok: true }, origin);
-};
+});

@@ -2,6 +2,7 @@
 const { jsonResponse, reqUrl } = require('./_lib/http');
 const { readCollection, writeCollection } = require('./_lib/store');
 const { ALERTAS_SEED } = require('./_lib/seed');
+const { serve } = require('./_lib/serverless');
 
 const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
 
@@ -67,7 +68,7 @@ async function fetchInmetAvisos() {
   }
 }
 
-module.exports = async function handler(req) {
+module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
 
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
@@ -92,4 +93,4 @@ module.exports = async function handler(req) {
     inmet,
     atualizadoEm: new Date().toISOString(),
   }, origin);
-};
+});
