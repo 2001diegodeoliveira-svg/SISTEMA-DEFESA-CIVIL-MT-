@@ -365,8 +365,24 @@
             border-radius: 12px;
             padding: 20px;
             width: 100%;
-            max-width: 360px;
+            max-width: 820px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #homeAlertsList {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            align-items: start;
+        }
+        #homeAlertsList > div {
+            display: contents;
+        }
+        #homeAlertsList > div > div:first-child {
+            grid-column: 1 / -1;
+        }
+        #homeAlertsList .alert-card {
+            margin-bottom: 0;
         }
 
         .alerts-header {
@@ -774,6 +790,9 @@
                 order: 3;
             }
             .hero-grid-layout {
+                grid-template-columns: 1fr;
+            }
+            #homeAlertsList {
                 grid-template-columns: 1fr;
             }
             .map-frame {
