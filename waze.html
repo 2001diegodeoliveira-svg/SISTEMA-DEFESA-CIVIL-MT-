@@ -237,6 +237,7 @@
 </div>
 
 <script src="js/session.js"></script>
+<script src="js/api.js"></script>
 <script>
 (function() {
     const map = L.map('wazeMap', { zoomControl:false }).setView([-13.5, -55.5], 5);
@@ -263,6 +264,29 @@
             { id:3, type:'fogo', severity:'urgent', location:'Regiao de Sinop', description:'Queimada em larga escala - vento auxiliando propagacao', reporter:'INPE', lat:-11.8697, lng:-55.4846, ts:Date.now()-900000 },
             { id:4, type:'engarrafamento', severity:'info', location:'BR-364, entrada de Cuiaba', description:'Congestionamento intenso - 5km de fila', reporter:'Waze Community', lat:-15.5000, lng:-56.1000, ts:Date.now()-1200000 }
         ];
+        localStorage.setItem('wazeEvents', JSON.stringify(userReports));
+    }
+
+    // Carrega ocorrências persistidas no backend; se indisponível, mantém a local
+    function loadReports() {
+        if (!window.dcApi) return renderUserReports();
+        dcApi.reports().then(function (r) {
+            if (r.ok && Array.isArray(r.data.reports)) {
+                const api = r.data.reports.map(x => ({
+                    id: x.id, type: x.type, severity: x.severity || 'info',
+                    location: x.location, description: x.description,
+                    reporter: x.reporter, lat: x.lat, lng: x.lng, ts: x.ts
+                }));
+                // mescla com os reportes locais de demonstração (primeiros 4)
+                if (userReports.length > 4) {
+                    userReports = userReports.slice(0, 4).concat(api.filter(a => !userReports.some(u => String(u.id) === String(a.id))));
+                } else {
+                    userReports = userReports.concat(api.filter(a => !userReports.some(u => String(u.id) === String(a.id))));
+                }
+                renderUserReports();
+                renderReportCards();
+            }
+        }).catch(function () {});
     }
 
     let sipamEvents = [];
@@ -501,6 +525,14 @@
         };
         userReports.unshift(newEv);
         localStorage.setItem('wazeEvents', JSON.stringify(userReports));
+        // persiste no backend quando possível
+        if (window.dcApi) {
+            dcApi.createReport({
+                type: newEv.type, severity: newEv.severity,
+                location: newEv.location, description: newEv.description,
+                reporter: newEv.reporter, lat: newEv.lat, lng: newEv.lng
+            }).catch(function () {});
+        }
         reportLatLng = null;
         this.reset();
         document.getElementById('eventCoords').value = '';
@@ -510,6 +542,7 @@
     });
 
     applyFilters();
+    loadReports();
     loadSIPAM();
     loadINPE();
 
