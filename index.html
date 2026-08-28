@@ -440,6 +440,19 @@
             padding: 0 5% 40px 5%;
         }
 
+        /* Figura de apoio (Bombeiro/Defesa Civil) ao lado dos Alertas Ativos */
+        .hero-zeca {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hero-zeca img {
+            width: 100%;
+            max-width: 340px;
+            height: auto;
+            filter: drop-shadow(0 0 22px rgba(249, 99, 28, 0.28)) drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+        }
+
         /* Atalhos Rápidos (Cards Inferiores ao Hero) */
         .quick-access {
             display: grid;
@@ -833,7 +846,9 @@
 
     <!-- Alertas Ativos (painel lateral do hero) -->
     <div class="hero-grid-layout">
-        <div></div>
+        <div class="hero-zeca">
+            <img src="zeca/zeca-transparent.png" alt="Equipe de Defesa Civil de Mato Grosso">
+        </div>
         <aside class="alerts-sidebar" id="homeAlertsSidebar">
             <div class="alerts-header">
                 <span class="red-dot"></span> ALERTAS ATIVOS AGORA
