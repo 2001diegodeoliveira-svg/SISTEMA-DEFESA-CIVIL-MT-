@@ -7,7 +7,7 @@
    - raw=1 devolve o corpo como está (CSV/XML/imagem).
    Uso no frontend:  dcProxyFetch('https://api.externa.com/...')
    ============================================================ */
-const { corsHeaders } = require('./_lib/http');
+const { corsHeaders, reqUrl } = require('./_lib/http');
 
 const ALLOWED_HOSTS = (process.env.PROXY_HOSTS || '')
     .split(',')
@@ -35,9 +35,9 @@ module.exports = async function handler(req) {
     return new Response(JSON.stringify({ erro: 'Método não permitido.' }), { status: 405, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
 
-  const url = new URL(req.url);
-  const target = url.searchParams.get('url');
-  const raw = url.searchParams.get('raw') === '1';
+  const url = reqUrl(req);
+  const target = url && url.searchParams.get('url');
+  const raw = url && url.searchParams.get('raw') === '1';
 
   if (!target) {
     return new Response(JSON.stringify({ erro: 'Informe o parâmetro ?url=' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });

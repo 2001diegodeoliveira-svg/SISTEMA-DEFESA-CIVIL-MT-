@@ -1,18 +1,14 @@
 /* Áreas de interesse desenhadas no mapa:
    GET    /api/areas        → lista
    POST   /api/areas        → cria (autenticado)
-   DELETE /api/areas/:id    → remove (autenticado, dono ou admin)
+   DELETE /api/areas/:id    → ver api/areas/[id].js
 */
 const { jsonResponse, readJson, bearerToken } = require('./_lib/http');
 const { verifyToken } = require('./_lib/auth');
-const { readCollection, push, writeCollection } = require('./_lib/store');
+const { readCollection, push } = require('./_lib/store');
 
 module.exports = async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
-  const url = new URL(req.url);
-  const parts = url.pathname.replace(/\/+$/, '').split('/');
-  const id = parts[parts.length - 1];
-  const isCollection = id === 'areas';
 
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
 
@@ -21,7 +17,7 @@ module.exports = async function handler(req) {
     return jsonResponse(200, { areas }, origin);
   }
 
-  if (req.method === 'POST' && isCollection) {
+  if (req.method === 'POST') {
     const token = bearerToken(req);
     const payload = token && verifyToken(token);
     if (!payload) {
@@ -43,23 +39,6 @@ module.exports = async function handler(req) {
     };
     await push('areas', area);
     return jsonResponse(201, { area }, origin);
-  }
-
-  if (req.method === 'DELETE' && !isCollection) {
-    const token = bearerToken(req);
-    const payload = token && verifyToken(token);
-    if (!payload) {
-      return jsonResponse(401, { erro: 'Autenticação necessária.' }, origin);
-    }
-    let areas = await readCollection('areas');
-    const target = areas.find(a => String(a.id) === String(id));
-    if (!target) return jsonResponse(404, { erro: 'Área não encontrada.' }, origin);
-    if (payload.perfil !== 'admin' && String(target.authoredBy) !== String(payload.sub)) {
-      return jsonResponse(403, { erro: 'Você só pode excluir suas próprias áreas.' }, origin);
-    }
-    areas = areas.filter(a => String(a.id) !== String(id));
-    await writeCollection('areas', areas);
-    return jsonResponse(200, { ok: true }, origin);
   }
 
   return jsonResponse(405, { erro: 'Método não permitido.' }, origin);

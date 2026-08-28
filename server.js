@@ -16,10 +16,13 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 
 const handlers = {
-  auth: require('./api/auth'),
+  login: require('./api/auth/login'),
+  logout: require('./api/auth/logout'),
+  me: require('./api/auth/me'),
   alertas: require('./api/alertas'),
   reports: require('./api/reports'),
   areas: require('./api/areas'),
+  areaId: require('./api/areas/[id]'),
   proxy: require('./api/proxy'),
 };
 
@@ -54,15 +57,15 @@ function wrap(fn) {
   };
 }
 
-app.post('/api/auth/login', wrap(handlers.auth));
-app.post('/api/auth/logout', wrap(handlers.auth));
-app.get('/api/auth/me', wrap(handlers.auth));
+app.post('/api/auth/login', wrap(handlers.login));
+app.post('/api/auth/logout', wrap(handlers.logout));
+app.get('/api/auth/me', wrap(handlers.me));
 app.get('/api/alertas', wrap(handlers.alertas));
 app.get('/api/reports', wrap(handlers.reports));
 app.post('/api/reports', wrap(handlers.reports));
 app.get('/api/areas', wrap(handlers.areas));
 app.post('/api/areas', wrap(handlers.areas));
-app.delete('/api/areas/:id', wrap(handlers.areas));
+app.delete('/api/areas/:id', wrap(handlers.areaId));
 app.get('/api/proxy', wrap(handlers.proxy));
 app.options('/api/proxy', wrap(handlers.proxy));
 

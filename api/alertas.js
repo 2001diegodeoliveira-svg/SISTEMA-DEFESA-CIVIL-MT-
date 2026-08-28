@@ -1,5 +1,5 @@
 /* GET /api/alertas → { alertas:[...], atualizadoEm }  (curados + avisos INMET ao vivo) */
-const { jsonResponse } = require('./_lib/http');
+const { jsonResponse, reqUrl } = require('./_lib/http');
 const { readCollection, writeCollection } = require('./_lib/store');
 const { ALERTAS_SEED } = require('./_lib/seed');
 
@@ -28,8 +28,10 @@ function datasAtuais(al, idx) {
 }
 
 async function fetchInmetAvisos() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
   try {
-    const r = await fetch('https://apiprevmet3.inmet.gov.br/avisos/rss');
+    const r = await fetch('https://apiprevmet3.inmet.gov.br/avisos/rss', { signal: controller.signal });
     if (!r.ok) return [];
     const xml = await r.text();
     const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
@@ -60,6 +62,8 @@ async function fetchInmetAvisos() {
     return avisos;
   } catch {
     return [];
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -79,7 +83,8 @@ module.exports = async function handler(req) {
   }
 
   let comInmet = true;
-  try { comInmet = new URL(req.url).searchParams.get('inmet') !== '0'; } catch {}
+  const ru = reqUrl(req);
+  try { comInmet = ru ? ru.searchParams.get('inmet') !== '0' : true; } catch {}
   const inmet = comInmet ? await fetchInmetAvisos() : [];
 
   return jsonResponse(200, {
