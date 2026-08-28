@@ -53,18 +53,19 @@ function dcRenderUserArea() {
         return;
     }
     const perfilLabel = (typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].label : (s.perfil || 'Usuário');
-    const icone = (typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].icone : 'fa-user';
+    const icone = (typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].icone : 'user';
     el.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:6px 8px 6px 12px;">
-            <i class="fa-solid ${icone}" style="color:var(--accent-orange);font-size:13px;"></i>
+            <i data-lucide="${icone}" style="color:var(--accent-orange);width:16px;height:16px;"></i>
             <div style="line-height:1.2;">
                 <div style="font-size:12px;font-weight:600;">${s.nome || perfilLabel}</div>
                 <div style="font-size:9.5px;color:var(--text-muted);">${perfilLabel}${s.municipio ? ' · ' + s.municipio : ''}</div>
             </div>
             <button onclick="dcLogout()" title="Sair" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px 6px;font-size:12px;">
-                <i class="fa-solid fa-right-from-bracket"></i>
+                <i data-lucide="log-out" style="width:14px;height:14px;"></i>
             </button>
         </div>`;
+    if (window.lucide) lucide.createIcons();
 }
 
 document.addEventListener('DOMContentLoaded', dcRenderUserArea);

@@ -5,18 +5,18 @@
    ============================================================ */
 
 const NIVEIS = {
-    atencao:     { label: 'Atenção',    cor: '#eab308', icone: 'fa-triangle-exclamation' },
-    alerta:      { label: 'Alerta',     cor: '#f9631c', icone: 'fa-circle-exclamation' },
-    emergencia:  { label: 'Emergência', cor: '#ef4444', icone: 'fa-tower-broadcast' },
+    atencao:     { label: 'Atenção',    cor: '#eab308', icone: 'triangle-alert' },
+    alerta:      { label: 'Alerta',     cor: '#f9631c', icone: 'circle-alert' },
+    emergencia:  { label: 'Emergência', cor: '#ef4444', icone: 'radio-tower' },
 };
 
 const TIPOS = {
-    enchente:        { label: 'Enchente / Inundação', icone: 'fa-house-water' },
-    chuvas_intensas: { label: 'Chuvas Intensas',      icone: 'fa-cloud-showers-heavy' },
-    incendio:        { label: 'Incêndio Florestal',   icone: 'fa-fire' },
-    estiagem:        { label: 'Estiagem / Seca',      icone: 'fa-sun-plant-wilt' },
-    vento:           { label: 'Vendaval',             icone: 'fa-wind' },
-    granizo:         { label: 'Granizo',              icone: 'fa-cloud-hail' },
+    enchente:        { label: 'Enchente / Inundação', icone: 'waves' },
+    chuvas_intensas: { label: 'Chuvas Intensas',      icone: 'cloud-rain' },
+    incendio:        { label: 'Incêndio Florestal',   icone: 'flame' },
+    estiagem:        { label: 'Estiagem / Seca',      icone: 'sun' },
+    vento:           { label: 'Vendaval',             icone: 'wind' },
+    granizo:         { label: 'Granizo',              icone: 'cloud-hail' },
 };
 
 const ALERTAS_ATIVOS = [
@@ -124,10 +124,10 @@ const ALERTAS_ATIVOS = [
    home, mapa e alertas. Formato pronto p/ API do backend.
    ============================================================ */
 const TIPO_ESTACAO = {
-    rain:    { cor: '#f9631c', icone: 'fa-cloud-rain',        rotulo: 'Pluviômetro' },
-    river:   { cor: '#38bdf8', icone: 'fa-water',             rotulo: 'Régua fluvial' },
-    fire:    { cor: '#ef4444', icone: 'fa-fire',              rotulo: 'Foco de calor' },
-    shelter: { cor: '#34d399', icone: 'fa-house-chimney-user',rotulo: 'Abrigo' },
+    rain:    { cor: '#f9631c', icone: 'cloud-rain',    rotulo: 'Pluviômetro' },
+    river:   { cor: '#38bdf8', icone: 'waves',         rotulo: 'Régua fluvial' },
+    fire:    { cor: '#ef4444', icone: 'flame',         rotulo: 'Foco de calor' },
+    shelter: { cor: '#34d399', icone: 'home',          rotulo: 'Abrigo' },
 };
 
 const ESTACOES_DC = [
@@ -143,10 +143,10 @@ const ESTACOES_DC = [
 
 /* Perfis de acesso (item 9 da proposta) */
 const PERFIS = {
-    comum:     { label: 'Usuário comum',          desc: 'Camadas públicas, áreas de interesse e alertas da sua região', icone: 'fa-user' },
-    avancado:  { label: 'Usuário avançado',       desc: 'Painéis analíticos, validação de ocorrências e relatórios',    icone: 'fa-user-gear' },
-    admin:     { label: 'Administrador estadual', desc: 'Fontes/camadas, regras de alerta, perfis e auditoria',         icone: 'fa-user-shield' },
-    municipal: { label: 'Gestor municipal',       desc: 'Acesso restrito ao seu território, confirmação e evidências',  icone: 'fa-city' },
+    comum:     { label: 'Usuário comum',          desc: 'Camadas públicas, áreas de interesse e alertas da sua região', icone: 'user' },
+    avancado:  { label: 'Usuário avançado',       desc: 'Painéis analíticos, validação de ocorrências e relatórios',    icone: 'user-cog' },
+    admin:     { label: 'Administrador estadual', desc: 'Fontes/camadas, regras de alerta, perfis e auditoria',         icone: 'user-shield' },
+    municipal: { label: 'Gestor municipal',       desc: 'Acesso restrito ao seu território, confirmação e evidências',  icone: 'building-2' },
 };
 
 const ordemNivel = { emergencia: 0, alerta: 1, atencao: 2 };

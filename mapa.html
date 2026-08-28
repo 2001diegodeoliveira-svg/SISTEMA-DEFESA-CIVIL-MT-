@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f172a">
     <title>Mapa Integrado — Painel Defesa Civil Mato Grosso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
     <style>
         :root {
@@ -27,6 +27,12 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        [data-lucide] {
+            width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2;
+        }
+        .lucide-spin { animation: luSpin 1s linear infinite; }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
 
         html, body { height: 100%; overflow: hidden; background: var(--bg-dark); color: var(--text-main); }
 
@@ -95,7 +101,7 @@
             border: 1px solid var(--glass-border); border-radius: 10px;
             padding: 0 14px; height: 42px;
         }
-        #searchBox i { color: var(--text-muted); }
+        #searchBox i, #searchBox svg[data-lucide] { color: var(--text-muted); }
         #searchInput {
             flex: 1; background: transparent; border: none; outline: none;
             color: var(--text-main); font-size: 13.5px;
@@ -112,7 +118,7 @@
         .sr-item { padding: 11px 14px; font-size: 13px; cursor: pointer; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--glass-border); }
         .sr-item:last-child { border-bottom: none; }
         .sr-item:hover { background: var(--bg-card-hover); }
-        .sr-item i { color: var(--accent-orange); font-size: 12px; }
+        .sr-item i, .sr-item svg[data-lucide] { color: var(--accent-orange); font-size: 12px; }
         .sr-item small { display: block; color: var(--text-muted); font-size: 11px; }
 
         .top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
@@ -123,7 +129,7 @@
             padding: 10px 14px; border-radius: 8px; transition: background .2s; white-space: nowrap; cursor: pointer;
         }
         .icon-btn:hover { background: var(--bg-card-hover); }
-        .icon-btn i { color: var(--accent-orange); }
+        .icon-btn i, .icon-btn svg[data-lucide] { color: var(--accent-orange); }
 
         /* ===== Painel de camadas ===== */
         #layersPanel {
@@ -151,7 +157,7 @@
             transition: left .28s cubic-bezier(.4,0,.2,1), background .15s;
         }
         .layers-toggle:hover { background: rgba(255,255,255,.1); }
-        .layers-toggle i { color: var(--accent-orange); font-size: 14px; transition: transform .25s ease; }
+        .layers-toggle i, .layers-toggle svg[data-lucide] { color: var(--accent-orange); font-size: 14px; transition: transform .25s ease; }
         #layersPanel.collapsed ~ .layers-toggle { left: 16px; }
         #layersPanel:not(.collapsed) ~ .layers-toggle { left: 262px; }
 
@@ -172,9 +178,9 @@
         }
         .layer-btn:hover { background: var(--bg-card-hover); color: var(--text-main); }
         .layer-btn.active { background: linear-gradient(90deg, rgba(249,115,22,.12), rgba(249,115,22,.06)); border-color: rgba(249,115,22,.35); color: var(--text-main); }
-        .layer-btn i:first-child { width: 20px; text-align: center; font-size: 15px; }
-        .layer-btn.radar.active i.fa-cloud-showers-heavy,
-        .layer-btn.clouds.active i.fa-cloud { color: var(--accent-orange); }
+        .layer-btn i:first-child, .layer-btn svg[data-lucide]:first-child { width: 20px; text-align: center; font-size: 15px; }
+        .layer-btn.radar.active svg[data-lucide],
+        .layer-btn.clouds.active svg[data-lucide] { color: var(--accent-orange); }
         .layer-btn .sub { display: block; font-size: 9.5px; color: var(--text-muted); font-weight: 400; margin-top: 2px; line-height: 1.35; }
         .layer-btn .sub b { color: #b6c5d4; font-weight: 600; }
 
@@ -184,7 +190,7 @@
         }
         .check-row:hover { background: var(--bg-card-hover); }
         .check-row label { display: flex; align-items: baseline; gap: 9px; cursor: pointer; font-size: 12.5px; color: #cbd5e1; min-width: 0; }
-        .check-row label i { width: 17px; text-align: center; font-size: 13px; flex-shrink: 0; }
+        .check-row label i, .check-row label svg[data-lucide] { width: 17px; text-align: center; font-size: 13px; flex-shrink: 0; }
         .swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; align-self: center; }
         .toggle { position: relative; width: 30px; height: 17px; background: rgba(255,255,255,.1); border-radius: 9px; cursor: pointer; transition: background .15s; flex-shrink: 0; }
         .toggle.on { background: var(--accent-orange); }
@@ -194,7 +200,7 @@
 
         .ext-row { display: flex; align-items: center; gap: 9px; padding: 8px 12px; font-size: 12px; color: var(--text-muted); text-decoration: none; border-radius: 8px; }
         .ext-row:hover { background: var(--bg-card-hover); color: var(--blue-glow); }
-        .ext-row i { font-size: 11px; }
+        .ext-row i, .ext-row svg[data-lucide] { font-size: 11px; }
 
         #opacityRow { display: none; padding: 8px 12px 4px; }
         #opacityRow.open { display: block; }
@@ -234,7 +240,7 @@
             padding: 7px 12px; font-size: 11.5px; color: #cbd5e1;
             border-top: 1px solid var(--glass-border);
         }
-        .area-item i.fa-draw-polygon { color: var(--accent-orange); }
+        .area-item svg[data-lucide] { color: var(--accent-orange); }
         .area-item .ai-info { flex: 1; min-width: 0; }
         .area-item .ai-info b { display: block; font-size: 11.5px; }
         .area-item .ai-info span { font-size: 9.5px; color: var(--text-muted); }
@@ -254,7 +260,7 @@
             box-shadow: 0 10px 32px rgba(0,0,0,.4);
         }
         #drawBar.show { display: flex; }
-        #drawBar i { color: var(--accent-orange); }
+        #drawBar i, #drawBar svg[data-lucide] { color: var(--accent-orange); }
         #drawDone {
             background: var(--accent-orange); border: none; color: #fff; font-weight: 600;
             font-size: 12px; padding: 7px 14px; border-radius: 6px; cursor: pointer;
@@ -334,7 +340,7 @@
         #ppDesc { font-size: 12.5px; color: var(--text-muted); }
         .pp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 14px; margin-top: 14px; }
         .pp-cell { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--text-muted); }
-        .pp-cell i { width: 16px; text-align: center; color: var(--blue-glow); }
+        .pp-cell i, .pp-cell svg[data-lucide] { width: 16px; text-align: center; color: var(--blue-glow); }
         .pp-cell b { color: var(--text-main); font-weight: 600; }
         .wind-arrow { display: inline-block; transition: transform .3s; }
 
@@ -360,13 +366,13 @@
             padding: 24px; box-shadow: 0 16px 48px rgba(0,0,0,.5);
         }
         .modal-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 9px; }
-        .modal-box h3 i { color: var(--accent-orange); }
+        .modal-box h3 i, .modal-box h3 svg[data-lucide] { color: var(--accent-orange); }
         .modal-box p.note { font-size: 11.5px; color: var(--text-muted); line-height: 1.55; margin-bottom: 16px; }
         .portal-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 8px; text-decoration: none; transition: background .15s; }
         .portal-item:hover { background: var(--bg-card-hover); }
         .portal-item b { font-size: 12.5px; color: var(--text-main); display: block; }
         .portal-item span { font-size: 10.5px; color: var(--text-muted); }
-        .portal-item i { color: var(--blue-glow); }
+        .portal-item i, .portal-item svg[data-lucide] { color: var(--blue-glow); }
         .modal-close { margin-top: 8px; width: 100%; background: var(--bg-card-hover); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background .15s; }
 
         /* ===== Toast ===== */
@@ -503,7 +509,7 @@
         }
         #toggleTableBtn:hover { color: var(--text-main); background: var(--bg-card-hover); }
         #toggleTableBtn.show { display: flex; align-items: center; gap: 6px; }
-        #toggleTableBtn i { color: var(--accent-orange); }
+        #toggleTableBtn i, #toggleTableBtn svg[data-lucide] { color: var(--accent-orange); }
 
         @media (max-width: 900px) {
             #layersPanel { width: 216px; max-height: calc(100vh - 190px); }
@@ -540,14 +546,14 @@
             transition: right .28s cubic-bezier(.4,0,.2,1), background .15s;
         }
         .climate-toggle:hover { background: rgba(255,255,255,.1); }
-        .climate-toggle i { color: var(--blue-glow); font-size: 14px; transition: transform .25s ease; }
+        .climate-toggle i, .climate-toggle svg[data-lucide] { color: var(--blue-glow); font-size: 14px; transition: transform .25s ease; }
         #climatePanel.collapsed ~ .climate-toggle { right: 12px; }
         #climatePanel:not(.collapsed) ~ .climate-toggle { right: 252px; }
         .cp-header {
             font-size: 10.5px; font-weight: 700; color: var(--text-main);
             margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
         }
-        .cp-header i { color: var(--blue-glow); font-size: 12px; }
+        .cp-header i, .cp-header svg[data-lucide] { color: var(--blue-glow); font-size: 12px; }
         .cp-header span { margin-left: auto; font-weight: 400; color: var(--text-muted); font-size: 9px; }
         .cp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
         .cp-card {
@@ -557,7 +563,7 @@
             transition: background .15s;
         }
         .cp-card:hover { background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); }
-        .cp-card i { font-size: 13px; }
+        .cp-card i, .cp-card svg[data-lucide] { font-size: 13px; }
         .cp-val { font-size: 14px; font-weight: 800; color: var(--text-main); margin: 2px 0; }
         .cp-lbl { font-size: 8.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
         @keyframes cpFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
@@ -597,7 +603,7 @@
         .mp-card-idh .mp-val { font-size: 15px; color: var(--blue-glow); }
         .mp-card .mp-lbl { font-size: 7.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; line-height: 1.2; }
         .mp-section { font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin: 8px 0 4px; display: flex; align-items: center; gap: 5px; }
-        .mp-section i { color: var(--blue-glow); font-size: 10px; }
+        .mp-section i, .mp-section svg[data-lucide] { color: var(--blue-glow); font-size: 10px; }
         .mp-contacts { font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,.03); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; line-height: 1.5; }
         .mp-risk-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); margin-bottom: 8px; overflow: hidden; }
         .mp-risk-bar .fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
@@ -621,15 +627,15 @@
             font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
             transition: all .2s ease; min-width: 54px; position: relative;
         }
-        .ov-btn i { font-size: 17px; transition: color .2s, transform .2s; }
+        .ov-btn i, .ov-btn svg[data-lucide] { font-size: 17px; transition: color .2s, transform .2s; }
         .ov-btn:hover { background: rgba(255,255,255,.06); color: var(--text-main); transform: translateY(-1px); }
-        .ov-btn:hover i { transform: scale(1.1); }
+        .ov-btn:hover i, .ov-btn:hover svg[data-lucide] { transform: scale(1.1); }
         .ov-btn:active { transform: translateY(0) scale(.97); }
         .ov-btn.active {
             background: rgba(249,99,28,.12); border-color: rgba(249,99,28,.35);
             color: var(--accent-orange); box-shadow: 0 0 12px rgba(249,99,28,.15);
         }
-        .ov-btn.active i { color: var(--accent-orange); }
+        .ov-btn.active i, .ov-btn.active svg[data-lucide] { color: var(--accent-orange); }
         .ov-btn .ov-key {
             font-size: 8px; color: var(--text-muted); opacity: .6;
             background: rgba(255,255,255,.06); border-radius: 4px;
@@ -640,7 +646,7 @@
         .ov-btn.off-btn { color: var(--text-muted); }
         .ov-btn.off-btn:hover { color: #ef4444; background: rgba(239,68,68,.08); }
         .ov-btn.off-btn.active { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #ef4444; box-shadow: 0 0 12px rgba(239,68,68,.12); }
-        .ov-btn.off-btn.active i { color: #ef4444; }
+        .ov-btn.off-btn.active i, .ov-btn.off-btn.active svg[data-lucide] { color: #ef4444; }
         @keyframes ovPulse { 0%,100%{box-shadow:0 0 0 0 rgba(249,99,28,.25)} 50%{box-shadow:0 0 0 5px rgba(249,99,28,0)} }
         .ov-btn.active:not(.off-btn) { animation: ovPulse 2.5s ease-in-out infinite; }
         .ov-btn.active.off-btn { animation: none; }
@@ -723,7 +729,7 @@
         #windLegend.show, #tempLegend.show, #fireLegend.show { display: block; animation: fadeInUp .3s ease; }
         @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
         .lg-title, .wl-title { font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-size: 9.5px; display: flex; align-items: center; gap: 5px; }
-        .lg-title i { font-size: 11px; }
+        .lg-title i, .lg-title svg[data-lucide] { font-size: 11px; }
         .lg-bar, .wl-bar { width: 140px; height: 10px; border-radius: 5px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,.05); }
         .lg-bar-temp { background: linear-gradient(90deg, #3b82f6, #38bdf8, #22d3ee, #fbbf24, #f9731c, #ef4444, #dc2626); }
         .lg-bar-fire { background: linear-gradient(90deg, #22c55e, #84cc16, #fbbf24, #f9731c, #ef4444, #dc2626); }
@@ -774,7 +780,7 @@
         /* ===== Enhanced Point Panel (Windy-style) ===== */
         #pointPanel .pp-extra { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.06); }
         #pointPanel .pp-extra h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        #pointPanel .pp-extra h4 i { color: var(--accent-orange); font-size: 11px; }
+        #pointPanel .pp-extra h4 i, #pointPanel .pp-extra h4 svg[data-lucide] { color: var(--accent-orange); font-size: 11px; }
         .pp-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .pp-detail-card {
             background: linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.06); border-radius: 8px; padding: 7px 8px; text-align: center;
@@ -892,15 +898,15 @@
             font-size: 9px; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted);
             font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
         }
-        .pd-section-title i { font-size: 10px; }
-        .pd-section-title i.fire { color: #ef4444; }
-        .pd-section-title i.climate { color: #f9731c; }
-        .pd-section-title i.wind { color: #38bdf8; }
-        .pd-section-title i.radar { color: #22c55e; }
-        .pd-section-title i.station { color: #a78bfa; }
-        .pd-section-title i.forecast { color: #fbbf24; }
-        .pd-section-title i.sources { color: #94a3b8; }
-        .pd-section-title i.alert { color: #ef4444; }
+        .pd-section-title i, .pd-section-title svg[data-lucide] { font-size: 10px; }
+        .pd-section-title .fire { color: #ef4444; }
+        .pd-section-title .climate { color: #f9731c; }
+        .pd-section-title .wind { color: #38bdf8; }
+        .pd-section-title .radar { color: #22c55e; }
+        .pd-section-title .station { color: #a78bfa; }
+        .pd-section-title .forecast { color: #fbbf24; }
+        .pd-section-title .sources { color: #94a3b8; }
+        .pd-section-title .alert { color: #ef4444; }
 
         .pd-summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; }
         .pd-summary-card {
@@ -925,7 +931,7 @@
         .pd-city-name { font-size: 9px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pd-city-temp { font-size: 13px; font-weight: 800; line-height: 1.2; }
         .pd-city-meta { display: flex; gap: 6px; font-size: 8px; color: var(--text-muted); margin-top: 1px; }
-        .pd-city-meta i { font-size: 7px; }
+        .pd-city-meta i, .pd-city-meta svg[data-lucide] { font-size: 7px; }
 
         .pd-fire-row {
             display: flex; align-items: center; gap: 6px;
@@ -974,7 +980,7 @@
         @media (max-width: 900px) {
             #overlayBar { gap: 1px; padding: 4px 6px; border-radius: 10px; }
             .ov-btn { padding: 5px 8px; min-width: 42px; font-size: 8px; gap: 1px; }
-            .ov-btn i { font-size: 14px; }
+            .ov-btn i, .ov-btn svg[data-lucide] { font-size: 14px; }
             .ov-btn .ov-key { display: none; }
             #windLegend, #tempLegend, #fireLegend { right: 8px; bottom: 120px; padding: 8px 10px; min-width: 130px; }
             .lg-bar, .wl-bar { width: 110px; }
@@ -1003,41 +1009,41 @@
 
         <div id="searchWrap">
             <div id="searchBox">
-                <i class="fa-solid fa-magnifying-glass"></i>
+                <i data-lucide="search"></i>
                 <input id="searchInput" type="text" placeholder="Município, endereço ou coordenada (ex.: -15.6, -56.1)" autocomplete="off">
             </div>
             <div id="searchResults"></div>
         </div>
 
         <div class="top-actions">
-            <button class="icon-btn" id="btnSources" title="Fontes de dados"><i class="fa-solid fa-database"></i> <span class="lbl">Fontes</span></button>
-            <a class="icon-btn" href="painel.html"><i class="fa-solid fa-chart-column"></i> <span class="lbl">Painel</span></a>
-            <a class="icon-btn" href="alertas.html"><i class="fa-solid fa-bell"></i> <span class="lbl">Alertas</span></a>
-            <a class="icon-btn" href="waze.html"><i class="fa-solid fa-road"></i> <span class="lbl">Waze</span></a>
+            <button class="icon-btn" id="btnSources" title="Fontes de dados"><i data-lucide="database"></i> <span class="lbl">Fontes</span></button>
+            <a class="icon-btn" href="painel.html"><i data-lucide="bar-chart-3"></i> <span class="lbl">Painel</span></a>
+            <a class="icon-btn" href="alertas.html"><i data-lucide="bell"></i> <span class="lbl">Alertas</span></a>
+            <a class="icon-btn" href="waze.html"><i data-lucide="road"></i> <span class="lbl">Waze</span></a>
             <div id="userArea"></div>
-            <a class="icon-btn" href="index.html"><i class="fa-solid fa-house"></i> <span class="lbl">Início</span></a>
+            <a class="icon-btn" href="index.html"><i data-lucide="home"></i> <span class="lbl">Início</span></a>
         </div>
     </div>
 
     <!-- Windy-style Overlay Selector Bar -->
     <div id="overlayBar">
         <button class="ov-btn" data-ov="wind" title="Vento — partículas animadas (W)">
-            <i class="fa-solid fa-wind"></i>Vento<span class="ov-key">W</span>
+            <i data-lucide="wind"></i>Vento<span class="ov-key">W</span>
         </button>
         <button class="ov-btn" data-ov="rain" title="Precipitação — radar (R)">
-            <i class="fa-solid fa-cloud-showers-heavy"></i>Chuva<span class="ov-key">R</span>
+            <i data-lucide="cloud-rain"></i>Chuva<span class="ov-key">R</span>
         </button>
         <button class="ov-btn" data-ov="clouds" title="Nuvens — satélite IR (C)">
-            <i class="fa-solid fa-cloud"></i>Nuvens<span class="ov-key">C</span>
+            <i data-lucide="cloud"></i>Nuvens<span class="ov-key">C</span>
         </button>
         <button class="ov-btn" data-ov="temp" title="Temperatura — calor (T)">
-            <i class="fa-solid fa-temperature-half"></i>Temp<span class="ov-key">T</span>
+            <i data-lucide="thermometer"></i>Temp<span class="ov-key">T</span>
         </button>
         <button class="ov-btn" data-ov="fire" title="Risco de fogo — INPE (F)">
-            <i class="fa-solid fa-fire"></i>Fogo<span class="ov-key">F</span>
+            <i data-lucide="flame"></i>Fogo<span class="ov-key">F</span>
         </button>
         <button class="ov-btn off-btn" data-ov="none" title="Desativar camada (ESC)">
-            <i class="fa-solid fa-eye-slash"></i>Off<span class="ov-key">ESC</span>
+            <i data-lucide="eye-off"></i>Off<span class="ov-key">ESC</span>
         </button>
     </div>
 
@@ -1049,7 +1055,7 @@
 
     <!-- Wind legend -->
     <div id="windLegend">
-        <div class="wl-title"><i class="fa-solid fa-wind"></i> Velocidade do vento</div>
+        <div class="wl-title"><i data-lucide="wind"></i> Velocidade do vento</div>
         <div class="wl-bar" id="wlBar"></div>
         <div class="wl-labels"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>60+</span></div>
         <div class="wl-unit">km/h</div>
@@ -1057,14 +1063,14 @@
 
     <!-- Temperature legend -->
     <div id="tempLegend">
-        <div class="lg-title"><i class="fa-solid fa-temperature-half"></i> Temperatura</div>
+        <div class="lg-title"><i data-lucide="thermometer"></i> Temperatura</div>
         <div class="lg-bar lg-bar-temp"></div>
         <div class="lg-labels"><span>&lt;10°C</span><span>18°</span><span>24°</span><span>28°</span><span>32°</span><span>36°+</span></div>
     </div>
 
     <!-- Fire risk legend -->
     <div id="fireLegend">
-        <div class="lg-title"><i class="fa-solid fa-fire"></i> Risco de Fogo</div>
+        <div class="lg-title"><i data-lucide="flame"></i> Risco de Fogo</div>
         <div class="lg-bar lg-bar-fire"></div>
         <div class="lg-labels"><span>Mínimo</span><span>Baixo</span><span>Médio</span><span>Alto</span><span>Crítico</span></div>
     </div>
@@ -1077,13 +1083,13 @@
 
     <!-- Painel de camadas -->
     <aside id="layersPanel">
-        <div class="group-title"><i class="fa-solid fa-cloud-bolt"></i> Meteorologia</div>
+        <div class="group-title"><i data-lucide="cloud-lightning"></i> Meteorologia</div>
         <button class="layer-btn radar" data-layer="radar">
-            <i class="fa-solid fa-satellite-dish"></i>
+            <i data-lucide="satellite-dish"></i>
             <span>Radar de chuva<span class="sub">RainViewer · <b id="mtRadarMeta">últimas 2h</b></span></span>
         </button>
         <button class="layer-btn clouds" data-layer="clouds">
-            <i class="fa-solid fa-cloud-sun"></i>
+            <i data-lucide="cloud-sun"></i>
             <span>Nuvens<span class="sub">Satélite infravermelho · RainViewer</span></span>
         </button>
         <div id="opacityRow">
@@ -1091,39 +1097,39 @@
             <input type="range" id="opacityRange" min="20" max="100" value="80">
         </div>
 
-        <div class="group-title"><i class="fa-solid fa-map"></i> Território</div>
+        <div class="group-title"><i data-lucide="map"></i> Território</div>
         <div class="check-row" data-check="mtOutline">
-            <label><span class="swatch" style="background:#f9631c;"></span><i class="fa-solid fa-expand"></i>Limite de Mato Grosso</label>
+            <label><span class="swatch" style="background:#f9631c;"></span><i data-lucide="expand"></i>Limite de Mato Grosso</label>
             <div class="toggle on"></div>
         </div>
         <div class="meta-line">IBGE · Malhas Territoriais <span id="metaMt"></span></div>
         <div class="check-row" data-check="municipios">
-            <label><span class="swatch" style="background:#38bdf8;"></span><i class="fa-solid fa-location-dot"></i>Municípios (141)</label>
+            <label><span class="swatch" style="background:#38bdf8;"></span><i data-lucide="map-pin"></i>Municípios (141)</label>
             <div class="toggle on"></div>
         </div>
         <div class="meta-line">Consulta por clique: nome, código e área</div>
 
-        <div class="group-title"><i class="fa-solid fa-seedling"></i> Ambiente</div>
+        <div class="group-title"><i data-lucide="sprout"></i> Ambiente</div>
         <div class="check-row" data-check="ucs">
-            <label><span class="swatch" style="background:#34d399;"></span><i class="fa-solid fa-tree"></i>Unidades de Conservação</label>
+            <label><span class="swatch" style="background:#34d399;"></span><i data-lucide="trees"></i>Unidades de Conservação</label>
             <div class="toggle"></div>
         </div>
         <div class="meta-line">CNUC/MMA via INDE · versão 03/2026</div>
         <div class="check-row" data-check="focos">
-            <label><span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i class="fa-solid fa-fire-flame-curved"></i>Focos de calor 24h</label>
+            <label><span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor 24h</label>
             <div class="toggle" id="focosToggleBadge"></div>
         </div>
         <div class="meta-line" id="metaFocos">INPE BDQueimadas · carregando...</div>
         <div class="check-row" data-check="barragens">
-            <label><span class="swatch" style="background:#eab308;"></span><i class="fa-solid fa-water"></i>Barragens (SNISB)</label>
+            <label><span class="swatch" style="background:#eab308;"></span><i data-lucide="waves"></i>Barragens (SNISB)</label>
             <div class="toggle" id="barragensBadge"></div>
         </div>
         <div class="meta-line" id="metaBarragens">ANA/SNISB · 1.274 em MT</div>
         <a class="ext-row" href="https://www.gov.br/funai/pt-br/assuntos/terras-indigenas" target="_blank" rel="noopener">
-            <i class="fa-solid fa-up-right-from-square"></i> Terras Indígenas — portal FUNAI
+            <i data-lucide="external-link"></i> Terras Indígenas — portal FUNAI
         </a>
 
-        <div class="group-title"><i class="fa-solid fa-filter"></i> Filtros INPE</div>
+        <div class="group-title"><i data-lucide="filter"></i> Filtros INPE</div>
         <div class="filter-group">
             <label>Período</label>
             <div class="filter-btns" id="filterPeriodo">
@@ -1172,65 +1178,65 @@
         </div>
         <div style="padding:6px 8px;">
             <button id="applyFiltersBtn" style="width:100%;background:var(--accent-orange);border:none;color:#fff;font-size:11px;font-weight:700;padding:7px;border-radius:6px;cursor:pointer;transition:background .15s;">
-                <i class="fa-solid fa-check"></i> Aplicar filtros
+                <i data-lucide="check"></i> Aplicar filtros
             </button>
         </div>
 
-        <div class="group-title"><i class="fa-solid fa-layer-group"></i> Camadas INPE</div>
+        <div class="group-title"><i data-lucide="layers"></i> Camadas INPE</div>
         <div class="check-row" data-check="wmsFocos48h">
-            <label><span class="swatch" style="background:#ff4d00;"></span><i class="fa-solid fa-satellite"></i>Focos 48h (WMS)</label>
+            <label><span class="swatch" style="background:#ff4d00;"></span><i data-lucide="satellite"></i>Focos 48h (WMS)</label>
             <div class="toggle"></div>
         </div>
         <div class="meta-line">TerraBrasilis · raster de todos os satélites</div>
 
-        <div class="group-title"><i class="fa-solid fa-table-cells"></i> Tabela de dados</div>
+        <div class="group-title"><i data-lucide="table"></i> Tabela de dados</div>
         <div style="padding:2px 8px;">
             <button id="openTableBtn" class="filter-btn" style="width:100%;min-width:auto;padding:6px;">
-                <i class="fa-solid fa-table-list"></i> Abrir tabela de focos
+                <i data-lucide="list"></i> Abrir tabela de focos
             </button>
         </div>
 
-        <div class="group-title"><i class="fa-solid fa-tower-broadcast"></i> Painel DC</div>
+        <div class="group-title"><i data-lucide="radio-tower"></i> Painel DC</div>
         <div class="check-row" data-check="stations">
-            <label><span class="swatch" style="background:#f9631c;border-radius:50%;"></span><i class="fa-solid fa-tower-broadcast"></i>Estações e ocorrências</label>
+            <label><span class="swatch" style="background:#f9631c;border-radius:50%;"></span><i data-lucide="radio-tower"></i>Estações e ocorrências</label>
             <div class="toggle on"></div>
         </div>
         <div class="meta-line">Rede estadual ilustrativa (dados simulados)</div>
         <div class="check-row" data-check="inmetStations">
-            <label><span class="swatch" style="background:#22d3ee;border-radius:50%;"></span><i class="fa-solid fa-satellite-dish"></i>Estações INMET (EAM)</label>
+            <label><span class="swatch" style="background:#22d3ee;border-radius:50%;"></span><i data-lucide="satellite-dish"></i>Estações INMET (EAM)</label>
             <div class="toggle" id="inmetBadge"></div>
         </div>
         <div class="meta-line" id="metaInmet">INMET · carregando estações...</div>
         <div class="check-row" data-check="sipam">
-            <label><span class="swatch" style="background:#dc2626;border-radius:50%;"></span><i class="fa-solid fa-fire-flame-curved"></i>Painel do Fogo (SIPAM)</label>
+            <label><span class="swatch" style="background:#dc2626;border-radius:50%;"></span><i data-lucide="flame"></i>Painel do Fogo (SIPAM)</label>
             <div class="toggle" id="sipamBadge"></div>
         </div>
         <div class="meta-line" id="metaSipam">CENSIPAM · carregando eventos...</div>
 
-        <div class="group-title"><i class="fa-solid fa-calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
+        <div class="group-title"><i data-lucide="calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
         <div id="cptecPanel" style="padding:0 2px;">
-            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;"><i class="fa-solid fa-link" style="font-size:9px;"></i> Fonte: CPTEC/INPE via BrasilAPI</div>
+            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;"><i data-lucide="link" style="font-size:9px;"></i> Fonte: CPTEC/INPE via BrasilAPI</div>
             <div id="cptecCards" style="display:flex;flex-direction:column;gap:5px;"></div>
         </div>
 
         <div id="areaActions">
-            <button class="mini-btn" id="drawBtn"><i class="fa-solid fa-pen-to-square"></i> Desenhar área</button>
+            <button class="mini-btn" id="drawBtn"><i data-lucide="pencil"></i> Desenhar área</button>
         </div>
         <div id="areasList"></div>
     </aside>
-    <button class="layers-toggle" id="layersToggle" title="Mostrar/ocultar filtros"><i class="fa-solid fa-angles-left"></i></button>
+    <button class="layers-toggle" id="layersToggle" title="Mostrar/ocultar filtros"><i data-lucide="chevrons-left"></i></button>
 
     <!-- Barra de desenho -->
     <div id="drawBar">
-        <i class="fa-solid fa-pen-nib"></i>
+        <i data-lucide="pen-tool"></i>
         <span>Clique para adicionar vértices · <b id="drawCount">0</b> pontos</span>
-        <button id="drawDone"><i class="fa-solid fa-check"></i> Concluir</button>
-        <button id="drawCancel" title="Cancelar"><i class="fa-solid fa-xmark"></i></button>
+        <button id="drawDone"><i data-lucide="check"></i> Concluir</button>
+        <button id="drawCancel" title="Cancelar"><i data-lucide="x"></i></button>
     </div>
 
     <!-- Painel de previsão ao clicar -->
     <aside id="pointPanel">
-        <button id="ppClose"><i class="fa-solid fa-xmark"></i></button>
+        <button id="ppClose"><i data-lucide="x"></i></button>
         <div id="ppStatus">Carregando previsão...</div>
         <div id="ppContent" style="display:none;">
             <div id="ppPlace">
@@ -1241,47 +1247,47 @@
             <div id="ppCurrent">
                 <div id="ppTemp">--°<sup>C</sup></div>
                 <div>
-                    <div style="font-size:26px;" id="ppIcon"><i class="fa-solid fa-cloud-sun"></i></div>
+                    <div style="font-size:26px;" id="ppIcon"><i data-lucide="cloud-sun"></i></div>
                     <div id="ppDesc">—</div>
                 </div>
                 <div style="grid-column: 1 / -1;" class="pp-grid">
-                    <div class="pp-cell"><i class="fa-solid fa-temperature-half"></i>Sensação <b id="ppFeels">--°C</b></div>
-                    <div class="pp-cell"><i class="fa-solid fa-droplet"></i>Umidade <b id="ppHum">--%</b></div>
-                    <div class="pp-cell"><i class="fa-solid fa-wind"></i>Vento <b id="ppWind">-- km/h</b> <span class="wind-arrow" id="ppWindArrow">↑</span></div>
-                    <div class="pp-cell"><i class="fa-solid fa-cloud-rain"></i>Chuva <b id="ppPrecip">-- mm</b></div>
+                    <div class="pp-cell"><i data-lucide="thermometer"></i>Sensação <b id="ppFeels">--°C</b></div>
+                    <div class="pp-cell"><i data-lucide="droplet"></i>Umidade <b id="ppHum">--%</b></div>
+                    <div class="pp-cell"><i data-lucide="wind"></i>Vento <b id="ppWind">-- km/h</b> <span class="wind-arrow" id="ppWindArrow">↑</span></div>
+                    <div class="pp-cell"><i data-lucide="cloud-rain"></i>Chuva <b id="ppPrecip">-- mm</b></div>
                 </div>
             </div>
             <!-- Detalhes extras -->
             <div class="pp-extra" id="ppExtraSection">
-                <h4><i class="fa-solid fa-chart-bar"></i> Detalhes</h4>
+                <h4><i data-lucide="bar-chart-3"></i> Detalhes</h4>
                 <div class="pp-detail-grid">
                     <div class="pp-detail-card">
-                        <div class="pdc-icon" style="color:#f97316;"><i class="fa-solid fa-gauge-high"></i></div>
+                        <div class="pdc-icon" style="color:#f97316;"><i data-lucide="gauge"></i></div>
                         <div class="pdc-val" id="ppPressure">—</div>
                         <div class="pdc-lbl">Pressão</div>
                     </div>
                     <div class="pp-detail-card">
-                        <div class="pdc-icon" style="color:#38bdf8;"><i class="fa-solid fa-eye"></i></div>
+                        <div class="pdc-icon" style="color:#38bdf8;"><i data-lucide="eye"></i></div>
                         <div class="pdc-val" id="ppVisibility">—</div>
                         <div class="pdc-lbl">Visibilidade</div>
                     </div>
                     <div class="pp-detail-card">
-                        <div class="pdc-icon" style="color:#fbbf24;"><i class="fa-solid fa-sun"></i></div>
+                        <div class="pdc-icon" style="color:#fbbf24;"><i data-lucide="sun"></i></div>
                         <div class="pdc-val" id="ppUV">—</div>
                         <div class="pdc-lbl">UV Index</div>
                     </div>
                     <div class="pp-detail-card">
-                        <div class="pdc-icon" style="color:#a78bfa;"><i class="fa-solid fa-cloud"></i></div>
+                        <div class="pdc-icon" style="color:#a78bfa;"><i data-lucide="cloud"></i></div>
                         <div class="pdc-val" id="ppCloud">—</div>
                         <div class="pdc-lbl">Nuvens</div>
                     </div>
                     <div class="pp-detail-card">
-                        <div class="pdc-icon" style="color:#f43f5e;"><i class="fa-solid fa-wind"></i></div>
+                        <div class="pdc-icon" style="color:#f43f5e;"><i data-lucide="wind"></i></div>
                         <div class="pdc-val" id="ppGusts">—</div>
                         <div class="pdc-lbl">Rajadas</div>
                     </div>
                     <div class="pp-detail-card">
-                        <div class="pdc-icon" style="color:#06b6d4;"><i class="fa-solid fa-droplet"></i></div>
+                        <div class="pdc-icon" style="color:#06b6d4;"><i data-lucide="droplet"></i></div>
                         <div class="pdc-val" id="ppDew">—</div>
                         <div class="pdc-lbl">Pto. Orvalho</div>
                     </div>
@@ -1289,27 +1295,27 @@
             </div>
             <!-- Rosa dos ventos -->
             <div class="pp-extra" id="ppWindRoseSection">
-                <h4><i class="fa-solid fa-compass"></i> Rosa dos ventos</h4>
+                <h4><i data-lucide="compass"></i> Rosa dos ventos</h4>
                 <div class="pp-windrose" id="ppWindRose"></div>
             </div>
             <!-- Previsão 48h hora a hora -->
             <div class="pp-extra" id="ppHourlySection">
-                <h4><i class="fa-solid fa-clock"></i> Próximas 48h</h4>
+                <h4><i data-lucide="clock"></i> Próximas 48h</h4>
                 <div class="pp-hourly-row" id="ppHourlyRow"></div>
             </div>
             <!-- Previsão 7 dias -->
             <div class="pp-extra" id="ppDailySection">
-                <h4><i class="fa-solid fa-calendar-week"></i> Previsão 7 dias</h4>
+                <h4><i data-lucide="calendar-days"></i> Previsão 7 dias</h4>
                 <div class="pp-daily" id="ppDailyForecast"></div>
             </div>
             <!-- Avaliação de risco -->
             <div class="pp-extra" id="ppRiskSection">
-                <h4><i class="fa-solid fa-triangle-exclamation"></i> Avaliação de risco</h4>
+                <h4><i data-lucide="triangle-alert"></i> Avaliação de risco</h4>
                 <div class="pp-risk-grid" id="ppRiskGrid"></div>
             </div>
             <!-- Estação mais próxima -->
             <div class="pp-extra" id="ppStationSection">
-                <h4><i class="fa-solid fa-tower-broadcast"></i> Estação mais próxima</h4>
+                <h4><i data-lucide="radio-tower"></i> Estação mais próxima</h4>
                 <div id="ppNearestStation"></div>
             </div>
             <div id="ppHourly">
@@ -1321,7 +1327,7 @@
 
     <!-- Linha do tempo -->
     <div id="timelineBar">
-        <button id="playBtn" title="Reproduzir animação"><i class="fa-solid fa-pause"></i></button>
+        <button id="playBtn" title="Reproduzir animação"><i data-lucide="pause"></i></button>
         <div class="tl-mid">
             <div class="tl-top">
                 <div id="tlTime">--:--<small id="tlDate"></small></div>
@@ -1366,51 +1372,51 @@
 
     <!-- Painel Climático em Tempo Real -->
     <div id="climatePanel">
-        <div class="cp-header"><i class="fa-solid fa-satellite-dish"></i> Clima em Tempo Real <span id="cpTime"></span></div>
+        <div class="cp-header"><i data-lucide="satellite-dish"></i> Clima em Tempo Real <span id="cpTime"></span></div>
         <div class="cp-grid">
             <div class="cp-card">
-                <i class="fa-solid fa-temperature-half" style="color:#ef4444;"></i>
+                <i data-lucide="thermometer" style="color:#ef4444;"></i>
                 <div class="cp-val" id="cpTemp">—</div>
                 <div class="cp-lbl">Temperatura</div>
             </div>
             <div class="cp-card">
-                <i class="fa-solid fa-droplet" style="color:#38bdf8;"></i>
+                <i data-lucide="droplet" style="color:#38bdf8;"></i>
                 <div class="cp-val" id="cpHum">—</div>
                 <div class="cp-lbl">Umidade</div>
             </div>
             <div class="cp-card">
-                <i class="fa-solid fa-wind" style="color:#94a3b8;"></i>
+                <i data-lucide="wind" style="color:#94a3b8;"></i>
                 <div class="cp-val" id="cpWind">—</div>
                 <div class="cp-lbl">Vento</div>
             </div>
             <div class="cp-card">
-                <i class="fa-solid fa-fire" style="color:#f9631c;"></i>
+                <i data-lucide="flame" style="color:#f9631c;"></i>
                 <div class="cp-val" id="cpFogos">—</div>
                 <div class="cp-lbl">Focos 24h</div>
             </div>
             <div class="cp-card">
-                <i class="fa-solid fa-cloud-showers-heavy" style="color:#38bdf8;"></i>
+                <i data-lucide="cloud-rain" style="color:#38bdf8;"></i>
                 <div class="cp-val" id="cpChuva">—</div>
                 <div class="cp-lbl">Chuva hoje</div>
             </div>
             <div class="cp-card">
-                <i class="fa-solid fa-sun" style="color:#fbbf24;"></i>
+                <i data-lucide="sun" style="color:#fbbf24;"></i>
                 <div class="cp-val" id="cpUV">—</div>
                 <div class="cp-lbl">UV Index</div>
             </div>
         </div>
     </div>
-    <button class="climate-toggle" id="climateToggle" title="Mostrar/ocultar painel climático"><i class="fa-solid fa-angles-right"></i></button>
+    <button class="climate-toggle" id="climateToggle" title="Mostrar/ocultar painel climático"><i data-lucide="chevrons-right"></i></button>
 
     <!-- Painel de Detalhes do Município -->
     <div id="munPanel" class="mun-panel">
         <div class="mp-head">
             <div class="mp-title" id="mpNome">—</div>
-            <button class="mp-close" id="mpClose"><i class="fa-solid fa-xmark"></i></button>
+            <button class="mp-close" id="mpClose"><i data-lucide="x"></i></button>
         </div>
         <div class="mp-sub" id="mpSub">—</div>
 
-        <div class="mp-section"><i class="fa-solid fa-map-location-dot"></i> Território</div>
+        <div class="mp-section"><i data-lucide="map-pin"></i> Território</div>
         <div class="mp-grid mp-grid-4">
             <div class="mp-card"><div class="mp-val" id="mpPop">—</div><div class="mp-lbl">População</div></div>
             <div class="mp-card"><div class="mp-val" id="mpArea">—</div><div class="mp-lbl">Área km²</div></div>
@@ -1418,7 +1424,7 @@
             <div class="mp-card"><div class="mp-val" id="mpUrb">—</div><div class="mp-lbl">Urbanização</div></div>
         </div>
 
-        <div class="mp-section"><i class="fa-solid fa-chart-line"></i> IDHM (2010)</div>
+        <div class="mp-section"><i data-lucide="activity"></i> IDHM (2010)</div>
         <div class="mp-grid mp-grid-4">
             <div class="mp-card mp-card-idh"><div class="mp-val" id="mpIdh">—</div><div class="mp-lbl">IDHM Geral</div></div>
             <div class="mp-card"><div class="mp-val" id="mpIdhR">—</div><div class="mp-lbl">Renda</div></div>
@@ -1426,20 +1432,20 @@
             <div class="mp-card"><div class="mp-val" id="mpIdhE">—</div><div class="mp-lbl">Educação</div></div>
         </div>
 
-        <div class="mp-section"><i class="fa-solid fa-dollar-sign"></i> Economia (2021)</div>
+        <div class="mp-section"><i data-lucide="dollar-sign"></i> Economia (2021)</div>
         <div class="mp-grid mp-grid-2">
             <div class="mp-card"><div class="mp-val" id="mpPib">—</div><div class="mp-lbl">PIB per capita</div></div>
             <div class="mp-card"><div class="mp-val" id="mpPibTot">—</div><div class="mp-lbl">PIB total</div></div>
         </div>
 
-        <div class="mp-section"><i class="fa-solid fa-heart-pulse"></i> Saúde & Educação</div>
+        <div class="mp-section"><i data-lucide="activity"></i> Saúde & Educação</div>
         <div class="mp-grid mp-grid-3">
             <div class="mp-card"><div class="mp-val" id="mpMort">—</div><div class="mp-lbl">Mortal. Infantil</div></div>
             <div class="mp-card"><div class="mp-val" id="mpEscol">—</div><div class="mp-lbl">Escolarização</div></div>
             <div class="mp-card"><div class="mp-val" id="mpIdade">—</div><div class="mp-lbl">Esperança vida</div></div>
         </div>
 
-        <div class="mp-section"><i class="fa-solid fa-cloud-sun"></i> Clima & Risco (tempo real)</div>
+        <div class="mp-section"><i data-lucide="cloud-sun"></i> Clima & Risco (tempo real)</div>
         <div class="mp-grid mp-grid-3">
             <div class="mp-card"><div class="mp-val" id="mpTemp">—</div><div class="mp-lbl">Temperatura</div></div>
             <div class="mp-card"><div class="mp-val" id="mpUmidade">—</div><div class="mp-lbl">Umidade</div></div>
@@ -1452,7 +1458,7 @@
         </div>
         <div class="mp-risk-bar" id="mpRiskBar"></div>
 
-        <div class="mp-section"><i class="fa-solid fa-phone-volume"></i> Contatos</div>
+        <div class="mp-section"><i data-lucide="phone-call"></i> Contatos</div>
         <div class="mp-contacts" id="mpContatos">Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192</div>
 
         <div class="mp-footer">
@@ -1471,25 +1477,25 @@
     <!-- Flash Popup — Alertas Climáticos -->
     <div id="flashPopup">
         <div class="fp-head">
-            <div class="fp-icon" id="fpIcon"><i class="fa-solid fa-bell"></i></div>
+            <div class="fp-icon" id="fpIcon"><i data-lucide="bell"></i></div>
             <div><div class="fp-title" id="fpTitle">—</div><div class="fp-city" id="fpCity">—</div></div>
         </div>
         <div class="fp-body" id="fpBody">—</div>
         <div class="fp-foot">
             <span class="fp-sev-badge" id="fpSev">INFO</span>
             <span class="fp-time" id="fpTime">—</span>
-            <button class="fp-close" id="fpClose"><i class="fa-solid fa-xmark"></i></button>
+            <button class="fp-close" id="fpClose"><i data-lucide="x"></i></button>
         </div>
     </div>
 
     <!-- Botão toggler da tabela -->
-    <button id="toggleTableBtn"><i class="fa-solid fa-table-columns"></i> Dados dos focos</button>
+    <button id="toggleTableBtn"><i data-lucide="columns-2"></i> Dados dos focos</button>
 
     <!-- Painel de tabela de dados INPE -->
     <div id="dataTablePanel">
         <div class="dtp-head">
-            <span><i class="fa-solid fa-table" style="color:var(--accent-orange);margin-right:6px;"></i>Focos de Calor — BDQueimadas <small id="dtCount"></small></span>
-            <button class="dtp-close" id="dtClose"><i class="fa-solid fa-xmark"></i></button>
+            <span><i data-lucide="table" style="color:var(--accent-orange);margin-right:6px;"></i>Focos de Calor — BDQueimadas <small id="dtCount"></small></span>
+            <button class="dtp-close" id="dtClose"><i data-lucide="x"></i></button>
         </div>
         <div id="dataTableBody">
             <table class="dt-table">
@@ -1512,7 +1518,7 @@
     <!-- Modal de fontes oficiais -->
     <div id="sourcesModal">
         <div class="modal-box">
-            <h3><i class="fa-solid fa-database"></i> Fontes oficiais de dados</h3>
+            <h3><i data-lucide="database"></i> Fontes oficiais de dados</h3>
             <p class="note">O painel integra dados públicos e oficiais, mantendo a atribuição de origem. Quando não há serviço web compatível, o acesso é direcionado ao portal oficial (conforme proposta técnica, item 12).</p>
             <div id="portalsList"></div>
             <button class="modal-close" id="closeSources">Fechar</button>
@@ -1521,6 +1527,7 @@
 </div>
 
 <script src="js/data.js"></script>
+<script src="js/proxy.js"></script>
 <script src="js/session.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
@@ -1573,7 +1580,7 @@ async function loadWeather() {
         for (const k in radarLayers) delete radarLayers[k];
         for (const k in satLayers) delete satLayers[k];
 
-        const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+        const res = await dcProxyFetch('https://api.rainviewer.com/public/weather-maps.json');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         weather = await res.json();
         radarFrames = [...(weather.radar?.past || []), ...(weather.radar?.nowcast || [])];
@@ -1636,7 +1643,8 @@ function updateWeatherLabel() {
 }
 function startPlaying() {
     stopPlaying(); playing = true;
-    document.getElementById('playBtn').innerHTML = '<i class="fa-solid fa-pause"></i>';
+    document.getElementById('playBtn').innerHTML = '<i data-lucide="pause"></i>';
+    if (window.lucide) lucide.createIcons();
     playTimer = setInterval(() => {
         const total = activeOverlay === 'clouds' ? satFrames.length : radarFrames.length;
         if (!total) return;
@@ -1645,7 +1653,8 @@ function startPlaying() {
 }
 function stopPlaying() {
     playing = false; clearInterval(playTimer);
-    document.getElementById('playBtn').innerHTML = '<i class="fa-solid fa-play"></i>';
+    document.getElementById('playBtn').innerHTML = '<i data-lucide="play"></i>';
+    if (window.lucide) lucide.createIcons();
 }
 document.getElementById('playBtn').addEventListener('click', () => playing ? stopPlaying() : startPlaying());
 document.getElementById('timeSlider').addEventListener('input', e => { stopPlaying(); showFrame(+e.target.value); });
@@ -1704,9 +1713,9 @@ function geomAreaKm2(geom) {
 async function loadTerritorio() {
     try {
         const [malhaMT, malhaMun, nomes] = await Promise.all([
-            fetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima').then(r => r.json()),
-            fetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima').then(r => r.json()),
-            fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios').then(r => r.json())
+            dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima').then(r => r.json()),
+            dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima').then(r => r.json()),
+            dcProxyFetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios').then(r => r.json())
         ]);
         const nomeByCod = {};
         nomes.forEach(m => { nomeByCod[String(m.id)] = m.nome; });
@@ -1757,7 +1766,7 @@ async function loadTerritorio() {
                             </div>
                             <div style="margin-top:10px;display:flex;gap:8px;">
                                 <button onclick="previsaoMun('${cod}')" style="flex:1;background:#f9631c;border:none;color:#fff;font-size:11px;font-weight:600;padding:7px;border-radius:6px;cursor:pointer;">
-                                    <i class="fa-solid fa-cloud-sun"></i> Previsão no ponto
+                                    <i data-lucide="cloud-sun"></i> Previsão no ponto
                                 </button>
                             </div>
                             <div style="margin-top:9px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:#94a3b8;line-height:1.5;">
@@ -1794,7 +1803,7 @@ window.previsaoMun = function (cod) {
 
     // ===== DADOS IBGE =====
     // Nome e localização
-    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios/${cod}`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios/${cod}`)
         .then(r => r.json())
         .then(mun => {
             document.getElementById('mpNome').textContent = mun.nome;
@@ -1805,61 +1814,61 @@ window.previsaoMun = function (cod) {
         .catch(() => { document.getElementById('mpNome').textContent = 'Município ' + cod; });
 
     // População e área
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2022/variaveis/9324?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2022/variaveis/9324?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
             if (v) document.getElementById('mpPop').textContent = parseInt(v).toLocaleString('pt-BR');
         }).catch(() => {});
 
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/4455?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/4455?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
             if (v) document.getElementById('mpArea').textContent = parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:1 });
         }).catch(() => {});
 
     // Densidade demográfica
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/3706/periodos/2022/variaveis/93?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/3706/periodos/2022/variaveis/93?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
             if (v) document.getElementById('mpDens').textContent = parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:1 }) + '/km²';
         }).catch(() => {});
 
     // IDHM (2010)
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30255/periodos/2010/variaveis/30255?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30255/periodos/2010/variaveis/30255?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
             if (v) document.getElementById('mpIdh').textContent = parseFloat(v).toFixed(3);
         }).catch(() => {});
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30260/periodos/2010/variaveis/30260?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30260/periodos/2010/variaveis/30260?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
             if (v) document.getElementById('mpIdhL').textContent = parseFloat(v).toFixed(3);
         }).catch(() => {});
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30266/periodos/2010/variaveis/30266?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30266/periodos/2010/variaveis/30266?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
             if (v) document.getElementById('mpIdhE').textContent = parseFloat(v).toFixed(3);
         }).catch(() => {});
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30272/periodos/2010/variaveis/30272?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30272/periodos/2010/variaveis/30272?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
             if (v) document.getElementById('mpIdhR').textContent = parseFloat(v).toFixed(3);
         }).catch(() => {});
 
     // PIB per capita (2021)
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3706?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3706?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2021'];
             if (v) document.getElementById('mpPib').textContent = 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:2 });
         }).catch(() => {});
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3713?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3713?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2021'];
             if (v) document.getElementById('mpPibTot').textContent = 'R$ ' + (parseFloat(v) / 1e6).toFixed(1) + ' mi';
         }).catch(() => {});
 
     // Mortalidade infantil
-    fetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4561/periodos/2022/variaveis/20712?localidades=N6[${cod}]`)
+    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4561/periodos/2022/variaveis/20712?localidades=N6[${cod}]`)
         .then(r => r.json()).then(d => {
             const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
             if (v) document.getElementById('mpMort').textContent = parseFloat(v).toFixed(1) + '‰';
@@ -1878,7 +1887,7 @@ window.previsaoMun = function (cod) {
     }
 
     // ===== CLIMA OPEN-METEO =====
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat.toFixed(4)}&longitude=${c.lng.toFixed(4)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`)
+    dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat.toFixed(4)}&longitude=${c.lng.toFixed(4)}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`)
         .then(r => r.json())
         .then(d => {
             const cur = d.current;
@@ -1988,7 +1997,7 @@ dcStations.forEach(s => {
             <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">${s.name}</div>
             <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${s.city} · MT</div>
             <div style="font-size:11.5px;display:flex;align-items:center;gap:7px;">
-                <i class="fa-solid ${st.icon}" style="color:${st.color};"></i>
+                <i data-lucide="${st.icon}" style="color:${st.color};"></i>
                 ${s.val} — <b>${s.status}</b>
             </div>
         </div>`).addTo(stationsLayer);
@@ -2011,7 +2020,7 @@ async function loadFocos() {
         const d = new Date(Date.now() - i * 86400000);
         const iso = d.toISOString().slice(0, 10).replaceAll('-', '');
         try {
-            const res = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+            const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
             if (!res.ok) continue;
             const txt = await res.text();
             if (txt.length > 100) { csvText = txt; usadoData = iso; }
@@ -2048,7 +2057,7 @@ async function loadFocos() {
         }).bindPopup(`
             <div style="min-width:200px;">
                 <div style="font-weight:700;font-size:12.5px;color:#ff7a45;margin-bottom:2px;">
-                    <i class="fa-solid fa-fire"></i> Foco de calor detectado
+                    <i data-lucide="flame"></i> Foco de calor detectado
                 </div>
                 <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${(cols[iMun] || '—').trim()} · MT</div>
                 <div style="font-size:11px;line-height:1.75;">
@@ -2064,7 +2073,7 @@ async function loadFocos() {
                     <a href="https://data.inpe.br/queimadas/bdqueimadas/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
                 </div>
                 <a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-                    <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                    <i data-lucide="navigation"></i> Navegar com Waze
                 </a>
             </div>`).addTo(focosLayer);
         n++;
@@ -2081,7 +2090,8 @@ async function loadFocos() {
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     meta.innerHTML = `INPE BDQueimadas · <b>${n.toLocaleString('pt-BR')} focos em MT</b> · atualizado ${horaCsv}`;
     document.querySelector('.check-row[data-check="focos"] label').innerHTML =
-        `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i class="fa-solid fa-fire"></i>Focos de calor 24h <b style="color:#ff7a45;">(${n.toLocaleString('pt-BR')})</b> <span style="font-size:9px;color:#94a3b8;font-weight:400;">· ${horaCsv}</span>`;
+        `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor 24h <b style="color:#ff7a45;">(${n.toLocaleString('pt-BR')})</b> <span style="font-size:9px;color:#94a3b8;font-weight:400;">· ${horaCsv}</span>`;
+    if (window.lucide) lucide.createIcons();
     document.getElementById('legUc').insertAdjacentHTML('beforebegin',
         `<div id="legFocos" class="leg-row" style="display:none;"><span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;"></span> Focos de calor 24h (INPE)</div>`);
     refreshLegend();
@@ -2164,7 +2174,7 @@ async function loadCptec() {
     if (!container) return;
     container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;padding:6px;">Carregando...</div>';
     try {
-        const res = await fetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+        const res = await dcProxyFetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
         const data = await res.json();
         if (!data.clima || !data.clima.length) { container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Sem dados</div>'; return; }
         const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -2193,7 +2203,7 @@ async function loadInmetStations() {
     const meta = document.getElementById('metaInmet');
     meta.innerHTML = 'INMET · <b>carregando...</b>';
     try {
-        const res = await fetch('https://apitempo.inmet.gov.br/estacoes/T');
+        const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
         const data = await res.json();
         const mtStations = data.filter(s => s.SG_ESTADO === 'MT' && s.CD_SITUACAO === 'Operante');
         inmetLayer = L.layerGroup();
@@ -2209,7 +2219,7 @@ async function loadInmetStations() {
             L.marker([lat, lon], { icon }).bindPopup(`
                 <div style="min-width:180px;">
                     <div style="font-weight:700;font-size:12px;margin-bottom:2px;">
-                        <i class="fa-solid fa-tower-broadcast" style="color:#22d3ee;margin-right:4px;"></i>${s.DC_NOME}
+                        <i data-lucide="radio-tower" style="color:#22d3ee;margin-right:4px;"></i>${s.DC_NOME}
                     </div>
                     <div style="color:#94a3b8;font-size:10px;margin-bottom:6px;">Código: ${s.CD_ESTACAO} · ${s.TP_ESTACAO}</div>
                     <div style="font-size:10.5px;line-height:1.6;">
@@ -2252,7 +2262,7 @@ async function loadSIPAM() {
     const meta = document.getElementById('metaSipam');
     meta.innerHTML = 'CENSIPAM · <b>carregando eventos...</b>';
     try {
-        const res = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const eventos = await res.json();
         if (!Array.isArray(eventos) || !eventos.length) {
@@ -2280,7 +2290,7 @@ async function loadSIPAM() {
             }).bindPopup(`
                 <div style="min-width:230px;">
                     <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">
-                        <i class="fa-solid fa-fire-flame-curved" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}
+                        <i data-lucide="flame" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}
                     </div>
                     <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">
                         Status: <b style="color:${cor};">${ev.status_evento}</b> · ${ev.municipio || '—'}
@@ -2300,7 +2310,7 @@ async function loadSIPAM() {
                         <a href="https://panorama.sipam.gov.br/painel-do-fogo/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
                     </div>
                     <a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-                        <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                        <i data-lucide="navigation"></i> Navegar com Waze
                     </a>
                 </div>`).addTo(sipamLayer);
         });
@@ -2364,10 +2374,10 @@ map.on('click', e => {
             .setContent(`
                 <div style="text-align:center;padding:2px 0;">
                     <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">
-                        <i class="fa-solid fa-location-dot" style="color:#ef4444;"></i> ${lat.toFixed(4)}, ${lng.toFixed(4)}
+                        <i data-lucide="map-pin" style="color:#ef4444;"></i> ${lat.toFixed(4)}, ${lng.toFixed(4)}
                     </div>
                     <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:12px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 20px rgba(0,153,255,.5)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-                        <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                        <i data-lucide="navigation"></i> Navegar com Waze
                     </a>
                 </div>
             `)
@@ -2437,13 +2447,13 @@ function renderAreas() {
         const div = document.createElement('div');
         div.className = 'area-item';
         div.innerHTML = `
-            <i class="fa-solid fa-draw-polygon"></i>
+            <i data-lucide="pentagon"></i>
             <div class="ai-info">
                 <b>${a.nome}</b>
                 <span>${a.areaKm2.toLocaleString('pt-BR')} km² · ${a.estacoes} estação(ões)</span>
             </div>
-            <button title="Centralizar" aria-label="Centralizar"><i class="fa-solid fa-crosshairs"></i></button>
-            <button title="Excluir" aria-label="Excluir"><i class="fa-solid fa-trash-can"></i></button>`;
+            <button title="Centralizar" aria-label="Centralizar"><i data-lucide="crosshair"></i></button>
+            <button title="Excluir" aria-label="Excluir"><i data-lucide="trash-2"></i></button>`;
         const [zoomBtn, delBtn] = div.querySelectorAll('button');
         zoomBtn.addEventListener('click', () => {
             const poly = L.polygon(a.coords);
@@ -2459,6 +2469,7 @@ function renderAreas() {
         });
         list.appendChild(div);
     });
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ================= Busca (locais + coordenada) ================= */
@@ -2494,7 +2505,7 @@ async function doSearch(q) {
     }
     try {
         const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=br&viewbox=-66.5,-9.8,-40.2,-27.5&bounded=0&q=${encodeURIComponent(q)}`;
-        const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+        const res = await dcProxyFetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
         renderResults(await res.json());
     } catch (e) { toast('Falha na busca de locais.'); }
 }
@@ -2508,7 +2519,7 @@ function renderResults(places) {
             const div = document.createElement('div');
             div.className = 'sr-item';
             const parts = p.display_name.split(',');
-            div.innerHTML = `<i class="fa-solid fa-location-dot"></i><div><div>${parts[0]}</div><small>${parts.slice(1, 4).join(',').trim()}</small></div>`;
+            div.innerHTML = `<i data-lucide="map-pin"></i><div><div>${parts[0]}</div><small>${parts.slice(1, 4).join(',').trim()}</small></div>`;
             div.addEventListener('click', () => {
                 searchResults.classList.remove('open');
                 map.flyTo([+p.lat, +p.lon], 9, { duration: 1 });
@@ -2518,6 +2529,7 @@ function renderResults(places) {
         });
     }
     searchResults.classList.add('open');
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ================= Previsão pontual (Open-Meteo) ================= */
@@ -2531,27 +2543,27 @@ document.getElementById('ppClose').addEventListener('click', () => pp.panel.clas
 
 function wmoDesc(code) {
     const table = {
-        0: ['Céu limpo', 'fa-sun'], 1: ['Predomínio de sol', 'fa-cloud-sun'], 2: ['Parcialmente nublado', 'fa-cloud-sun'],
-        3: ['Nublado', 'fa-cloud'], 45: ['Nevoeiro', 'fa-smog'], 48: ['Nevoeiro com geada', 'fa-smog'],
-        51: ['Garoa fraca', 'fa-cloud-rain'], 53: ['Garoa moderada', 'fa-cloud-rain'], 55: ['Garoa intensa', 'fa-cloud-rain'],
-        61: ['Chuva fraca', 'fa-cloud-rain'], 63: ['Chuva moderada', 'fa-cloud-showers-heavy'], 65: ['Chuva forte', 'fa-cloud-showers-heavy'],
-        71: ['Neve fraca', 'fa-snowflake'], 73: ['Neve moderada', 'fa-snowflake'], 75: ['Neve forte', 'fa-snowflake'],
-        80: ['Pancadas isoladas', 'fa-cloud-showers-heavy'], 81: ['Pancadas moderadas', 'fa-cloud-showers-heavy'],
-        82: ['Pancadas violentas', 'fa-cloud-showers-heavy'],
-        95: ['Tempestade', 'fa-cloud-bolt'], 96: ['Tempestade com granizo', 'fa-cloud-bolt'], 99: ['Tempestade severa', 'fa-cloud-bolt'],
+        0: ['Céu limpo', 'sun'], 1: ['Predomínio de sol', 'cloud-sun'], 2: ['Parcialmente nublado', 'cloud-sun'],
+        3: ['Nublado', 'cloud'], 45: ['Nevoeiro', 'cloud-fog'], 48: ['Nevoeiro com geada', 'cloud-fog'],
+        51: ['Garoa fraca', 'cloud-rain'], 53: ['Garoa moderada', 'cloud-rain'], 55: ['Garoa intensa', 'cloud-rain'],
+        61: ['Chuva fraca', 'cloud-rain'], 63: ['Chuva moderada', 'cloud-rain'], 65: ['Chuva forte', 'cloud-rain'],
+        71: ['Neve fraca', 'snowflake'], 73: ['Neve moderada', 'snowflake'], 75: ['Neve forte', 'snowflake'],
+        80: ['Pancadas isoladas', 'cloud-rain'], 81: ['Pancadas moderadas', 'cloud-rain'],
+        82: ['Pancadas violentas', 'cloud-rain'],
+        95: ['Tempestade', 'cloud-lightning'], 96: ['Tempestade com granizo', 'cloud-lightning'], 99: ['Tempestade severa', 'cloud-lightning'],
     };
-    return table[code] || ['Condição indisponível', 'fa-cloud'];
+    return table[code] || ['Condição indisponível', 'cloud'];
 }
 
 const WMO_ICONS = {
-    0: ['\u2600\uFE0F','C\u00E9u limpo','fa-sun'], 1: ['\uD83C\uDF24\uFE0F','Predom\u00EDnio de sol','fa-cloud-sun'], 2: ['\u26C5','Parc. nublado','fa-cloud-sun'],
-    3: ['\u2601\uFE0F','Nublado','fa-cloud'], 45: ['\uD83C\uDF2B\uFE0F','Nevoeiro','fa-smog'], 48: ['\uD83C\uDF2B\uFE0F','Nevoeiro c/ geada','fa-smog'],
-    51: ['\uD83C\uDF26\uFE0F','Garoa fraca','fa-cloud-rain'], 53: ['\uD83C\uDF26\uFE0F','Garoa moderada','fa-cloud-rain'], 55: ['\uD83C\uDF27\uFE0F','Garoa intensa','fa-cloud-rain'],
-    61: ['\uD83C\uDF27\uFE0F','Chuva fraca','fa-cloud-rain'], 63: ['\uD83C\uDF27\uFE0F','Chuva moderada','fa-cloud-showers-heavy'], 65: ['\u26C8\uFE0F','Chuva forte','fa-cloud-showers-heavy'],
-    71: ['\u2744\uFE0F','Neve fraca','fa-snowflake'], 73: ['\u2744\uFE0F','Neve moderada','fa-snowflake'], 75: ['\u2744\uFE0F','Neve forte','fa-snowflake'],
-    80: ['\uD83C\uDF26\uFE0F','Pancadas isoladas','fa-cloud-showers-heavy'], 81: ['\uD83C\uDF27\uFE0F','Pancadas moderadas','fa-cloud-showers-heavy'],
-    82: ['\u26C8\uFE0F','Pancadas violentas','fa-cloud-showers-heavy'],
-    95: ['\u26C8\uFE0F','Tempestade','fa-cloud-bolt'], 96: ['\u26C8\uFE0F','Tempestade c/ granizo','fa-cloud-bolt'], 99: ['\u26C8\uFE0F','Tempestade severa','fa-cloud-bolt'],
+    0: ['\u2600\uFE0F','C\u00E9u limpo','sun'], 1: ['\uD83C\uDF24\uFE0F','Predom\u00EDnio de sol','cloud-sun'], 2: ['\u26C5','Parc. nublado','cloud-sun'],
+    3: ['\u2601\uFE0F','Nublado','cloud'], 45: ['\uD83C\uDF2B\uFE0F','Nevoeiro','cloud-fog'], 48: ['\uD83C\uDF2B\uFE0F','Nevoeiro c/ geada','cloud-fog'],
+    51: ['\uD83C\uDF26\uFE0F','Garoa fraca','cloud-rain'], 53: ['\uD83C\uDF26\uFE0F','Garoa moderada','cloud-rain'], 55: ['\uD83C\uDF27\uFE0F','Garoa intensa','cloud-rain'],
+    61: ['\uD83C\uDF27\uFE0F','Chuva fraca','cloud-rain'], 63: ['\uD83C\uDF27\uFE0F','Chuva moderada','cloud-rain'], 65: ['\u26C8\uFE0F','Chuva forte','cloud-rain'],
+    71: ['\u2744\uFE0F','Neve fraca','snowflake'], 73: ['\u2744\uFE0F','Neve moderada','snowflake'], 75: ['\u2744\uFE0F','Neve forte','snowflake'],
+    80: ['\uD83C\uDF26\uFE0F','Pancadas isoladas','cloud-rain'], 81: ['\uD83C\uDF27\uFE0F','Pancadas moderadas','cloud-rain'],
+    82: ['\u26C8\uFE0F','Pancadas violentas','cloud-rain'],
+    95: ['\u26C8\uFE0F','Tempestade','cloud-lightning'], 96: ['\u26C8\uFE0F','Tempestade c/ granizo','cloud-lightning'], 99: ['\u26C8\uFE0F','Tempestade severa','cloud-lightning'],
 };
 
 async function openPointPanel(lat, lng, fonteExtra = '') {
@@ -2565,23 +2577,24 @@ async function openPointPanel(lat, lng, fonteExtra = '') {
 
     try {
         const [wx, place] = await Promise.all([
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`
                 + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,`
                 + `wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,cloud_cover,uv_index,visibility,dew_point_2m`
                 + `&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,cloud_cover,relative_humidity_2m`
                 + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max`
                 + `&forecast_days=7&timezone=auto`).then(r => r.json()),
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=pt-BR`)
+            dcProxyFetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=pt-BR`)
                 .then(r => r.json()).catch(() => null)
         ]);
 
         const c = wx.current;
-        const [desc, iconFA] = WMO_ICONS[c.weather_code] || ['\u2601\uFE0F', 'Indispon\u00EDvel', 'fa-cloud'];
+        const [desc, iconFA] = WMO_ICONS[c.weather_code] || ['\u2601\uFE0F', 'Indispon\u00EDvel', 'cloud'];
         const placeName = place?.address?.city || place?.address?.town || place?.address?.village || place?.address?.county || place?.name || 'Local selecionado';
 
         document.getElementById('ppName').textContent = placeName;
         document.getElementById('ppTemp').innerHTML = `${Math.round(c.temperature_2m)}\u00B0<sup>C</sup>`;
-        document.getElementById('ppIcon').innerHTML = `<i class="fa-solid ${iconFA}" style="color:var(--accent-orange);"></i>`;
+        document.getElementById('ppIcon').innerHTML = `<i data-lucide="${iconFA}" style="color:var(--accent-orange);"></i>`;
+        if (window.lucide) lucide.createIcons();
         document.getElementById('ppDesc').textContent = desc;
         document.getElementById('ppFeels').textContent = `${Math.round(c.apparent_temperature)}\u00B0C`;
         document.getElementById('ppHum').textContent = `${c.relative_humidity_2m}%`;
@@ -2658,10 +2671,11 @@ function renderHourly48h(hourly) {
             <span class="phi-time">${dayLabel}${hr}</span>
             <span class="phi-icon">${emoji}</span>
             <span class="phi-temp">${temp != null ? Math.round(temp) + '\u00B0' : '\u2014'}</span>
-            <span class="phi-wind"><i class="fa-solid fa-wind" style="font-size:7px;"></i>${Math.round(wind)}<sup style="font-size:6px;color:#ef4444;">${gusts > wind ? ' g' + Math.round(gusts) : ''}</sup></span>
+            <span class="phi-wind"><i data-lucide="wind" style="font-size:7px;"></i>${Math.round(wind)}<sup style="font-size:6px;color:#ef4444;">${gusts > wind ? ' g' + Math.round(gusts) : ''}</sup></span>
             <span class="phi-rain">${rain > 0 ? rain.toFixed(1) + 'mm' : (prob > 0 ? prob + '%' : '')}</span>`;
         container.appendChild(item);
     }
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ================= Windy-style: 7-Day Daily Forecast ================= */
@@ -2684,10 +2698,11 @@ function renderDaily7(daily) {
             <span class="pp-day-name">${isToday ? 'Hoje' : diaSem[dt.getDay()]}</span>
             <span class="pp-day-icon">${emoji}</span>
             <span class="pp-day-temps"><span class="pp-day-tmax">${tmax}\u00B0</span><span class="pp-day-tmin">${tmin}\u00B0</span></span>
-            <span class="pp-day-rain"><i class="fa-solid fa-droplet" style="font-size:8px;"></i> ${rain}mm</span>
-            <span class="pp-day-wind"><i class="fa-solid fa-wind" style="font-size:8px;"></i> ${windMax}</span>`;
+            <span class="pp-day-rain"><i data-lucide="droplet" style="font-size:8px;"></i> ${rain}mm</span>
+            <span class="pp-day-wind"><i data-lucide="wind" style="font-size:8px;"></i> ${windMax}</span>`;
         container.appendChild(row);
     }
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ================= Windy-style: Wind Rose (SVG) ================= */
@@ -2754,20 +2769,21 @@ function renderRiskCards(current, daily) {
 
     container.innerHTML = `
         <div class="pp-risk-card ${fireSev}">
-            <div class="prc-icon" style="color:${fireColor};"><i class="fa-solid fa-fire"></i></div>
+            <div class="prc-icon" style="color:${fireColor};"><i data-lucide="flame"></i></div>
             <div class="prc-val" style="color:${fireColor};">${fireRisk}%</div>
             <div class="prc-lbl">Risco Fogo</div>
         </div>
         <div class="pp-risk-card ${stormSev}">
-            <div class="prc-icon" style="color:${stormColor};"><i class="fa-solid fa-cloud-bolt"></i></div>
+            <div class="prc-icon" style="color:${stormColor};"><i data-lucide="cloud-lightning"></i></div>
             <div class="prc-val" style="color:${stormColor};">${stormLabel}</div>
             <div class="prc-lbl">Tempestade</div>
         </div>
         <div class="pp-risk-card ${heatSev}">
-            <div class="prc-icon" style="color:${heatColor};"><i class="fa-solid fa-temperature-high"></i></div>
+            <div class="prc-icon" style="color:${heatColor};"><i data-lucide="thermometer-sun"></i></div>
             <div class="prc-val" style="color:${heatColor};">${heatLabel}</div>
             <div class="prc-lbl">Calor Extremo</div>
         </div>`;
+    if (window.lucide) lucide.createIcons();
 }
 
 /* ================= Windy-style: Nearest INMET Station ================= */
@@ -2800,8 +2816,9 @@ function renderNearestStation(lat, lng, currentWeather) {
 document.getElementById('portalsList').innerHTML = PORTAIS_OFICIAIS.map(p => `
     <a class="portal-item" href="${p.url}" target="_blank" rel="noopener">
         <div><b>${p.nome}</b><span>${p.uso}</span></div>
-        <i class="fa-solid fa-up-right-from-square"></i>
+        <i data-lucide="external-link"></i>
     </a>`).join('');
+if (window.lucide) lucide.createIcons();
 document.getElementById('btnSources').addEventListener('click', () =>
     document.getElementById('sourcesModal').classList.add('open'));
 document.getElementById('closeSources').addEventListener('click', () =>
@@ -2819,6 +2836,10 @@ loadWeather();
 loadFocos();
 renderAreas();
 applyChecks();
+
+// Renderiza ícones Lucide do DOM inicial e após cada popup do Leaflet ser aberto
+if (window.lucide) lucide.createIcons();
+map.on('popupopen', () => { if (window.lucide) lucide.createIcons(); });
 
 // Foco por hash vindo de outras páginas: #lat,lng[,zoom]
 (function focusFromHash() {
@@ -2848,7 +2869,7 @@ setTimeout(() => map.invalidateSize(), 300);
     // Open-Meteo: Cuiabá (capital) — temperatura, umidade, vento, chuva, UV
     async function loadOpenMeteo() {
         try {
-            const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.588&longitude=-56.097&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,uv_index&timezone=America/Cuiaba');
+            const r = await dcProxyFetch('https://api.open-meteo.com/v1/forecast?latitude=-15.588&longitude=-56.097&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,uv_index&timezone=America/Cuiaba');
             if (!r.ok) throw 0;
             const d = await r.json();
             const c = d.current;
@@ -2864,7 +2885,7 @@ setTimeout(() => map.invalidateSize(), 300);
     async function loadFogos() {
         try {
             const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
-            const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+            const r = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
             if (!r.ok) throw 0;
             const txt = await r.text();
             const lines = txt.split('\n');
@@ -2976,7 +2997,7 @@ function renderFocosFiltered() {
         }).bindPopup(`
             <div style="min-width:200px;">
                 <div style="font-weight:700;font-size:12px;color:${cor};margin-bottom:2px;">
-                    <i class="fa-solid fa-fire"></i> Foco de calor
+                    <i data-lucide="flame"></i> Foco de calor
                 </div>
                 <div style="color:#94a3b8;font-size:10px;margin-bottom:6px;">${f.municipio} · ${f.estado}</div>
                 <div style="font-size:10.5px;line-height:1.7;">
@@ -3251,7 +3272,7 @@ async function fetchWindData() {
             }
         }
         const results = await Promise.all(batch.map(p =>
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto`)
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto`)
                 .then(r => {
                     if (!r.ok) throw new Error(`wind-${r.status}`);
                     return r.json();
@@ -3455,15 +3476,15 @@ function tempWeatherIcon(code) {
 }
 
 function tempWeatherFA(code) {
-    if (code == null) return 'fa-sun';
-    if (code === 0) return 'fa-sun';
-    if (code <= 2) return 'fa-cloud-sun';
-    if (code === 3) return 'fa-cloud';
-    if (code >= 51 && code <= 55) return 'fa-cloud-rain';
-    if (code >= 61 && code <= 65) return 'fa-cloud-showers-heavy';
-    if (code >= 80 && code <= 82) return 'fa-cloud-showers-heavy';
-    if (code >= 95) return 'fa-cloud-bolt';
-    return 'fa-cloud-sun';
+    if (code == null) return 'sun';
+    if (code === 0) return 'sun';
+    if (code <= 2) return 'cloud-sun';
+    if (code === 3) return 'cloud';
+    if (code >= 51 && code <= 55) return 'cloud-rain';
+    if (code >= 61 && code <= 65) return 'cloud-rain';
+    if (code >= 80 && code <= 82) return 'cloud-rain';
+    if (code >= 95) return 'cloud-lightning';
+    return 'cloud-sun';
 }
 
 function tempBadgeHTML(city, data) {
@@ -3484,8 +3505,8 @@ function tempBadgeHTML(city, data) {
             </div>
             <div class="tb-feels">Sensação ${feelsLike}°C</div>
             <div class="tb-extra">
-                <span class="tb-stat"><i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> <b>${hum}%</b></span>
-                <span class="tb-stat"><i class="fa-solid fa-wind" style="color:#22d3ee;"></i> <b>${wind}</b> ${windDir}</span>
+                <span class="tb-stat"><i data-lucide="droplet" style="color:#38bdf8;"></i> <b>${hum}%</b></span>
+                <span class="tb-stat"><i data-lucide="wind" style="color:#22d3ee;"></i> <b>${wind}</b> ${windDir}</span>
             </div>
         </div>`;
 }
@@ -3538,7 +3559,7 @@ async function showTempOverlay() {
     for (let i = 0; i < pts.length; i += batchSize) {
         const batch = pts.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(p =>
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code&timezone=auto`)
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code&timezone=auto`)
                 .then(r => {
                     if (!r.ok) throw new Error(`temp-${r.status}`);
                     return r.json();
@@ -3598,7 +3619,7 @@ async function showTempOverlay() {
                     Umidade: <b>${data.hum ?? '--'}%</b> · Vento: <b>${data.wind != null ? Math.round(data.wind) : '--'} km/h</b>
                 </div>
                 <a href="https://www.waze.com/ul?ll=${cid.lat},${cid.lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-                    <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                    <i data-lucide="navigation"></i> Navegar com Waze
                 </a>
             </div>`, { className: 'ov-custom-popup' }).addTo(tempBadgeLayer);
     }
@@ -3611,6 +3632,7 @@ async function showTempOverlay() {
 
     tempOverlay.addTo(map);
     tempBadgeLayer.addTo(map);
+    if (window.lucide) lucide.createIcons();
     loadEl.classList.remove('show');
     overlayRequestLock.temp = false;
     toast('Mapa de temperatura carregado.', true);
@@ -3687,7 +3709,7 @@ async function showFireOverlay() {
     for (let i = 0; i < pts.length; i += batchSize) {
         const batch = pts.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(p =>
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=precipitation_sum&timezone=auto&past_days=1&forecast_days=0`)
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=precipitation_sum&timezone=auto&past_days=1&forecast_days=0`)
                 .then(r => {
                     if (!r.ok) throw new Error(`fire-${r.status}`);
                     return r.json();
@@ -3718,13 +3740,13 @@ async function showFireOverlay() {
                     <div class="ov-lbl">Risco ${riskLabel}</div>
                     <div class="ov-bar"><div class="ov-bar-fill" style="width:${risco}%;background:${color};"></div></div>
                     <div class="ov-factors">
-                        <span><i class="fa-solid fa-droplet" style="color:#38bdf8;"></i> Umidade: ${hum}%</span>
-                        <span><i class="fa-solid fa-wind" style="color:#22d3ee;"></i> Vento: ${Math.round(wind)} km/h</span>
-                        <span><i class="fa-solid fa-cloud-rain" style="color:#a78bfa;"></i> Chuva: ${chuva.toFixed(1)} mm</span>
-                        <span><i class="fa-solid fa-temperature-half" style="color:#f9731c;"></i> Temp: ${Math.round(temp)}°C</span>
+                        <span><i data-lucide="droplet" style="color:#38bdf8;"></i> Umidade: ${hum}%</span>
+                        <span><i data-lucide="wind" style="color:#22d3ee;"></i> Vento: ${Math.round(wind)} km/h</span>
+                        <span><i data-lucide="cloud-rain" style="color:#a78bfa;"></i> Chuva: ${chuva.toFixed(1)} mm</span>
+                        <span><i data-lucide="thermometer" style="color:#f9731c;"></i> Temp: ${Math.round(temp)}°C</span>
                     </div>
                     <a href="https://www.waze.com/ul?ll=${batch[j].lat},${batch[j].lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-                        <i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze
+                        <i data-lucide="navigation"></i> Navegar com Waze
                     </a>
                 </div>`, { className: 'ov-custom-popup' });
             markers.push(marker);
@@ -3754,19 +3776,19 @@ function fireRiskColor(risco) {
 // Toggle layers panel visibility
 document.getElementById('layersToggle').addEventListener('click', () => {
     const panel = document.getElementById('layersPanel');
-    const icon = document.querySelector('#layersToggle i');
+    const icon = document.querySelector('#layersToggle [data-lucide]');
     panel.classList.toggle('collapsed');
-    icon.classList.toggle('fa-angles-left');
-    icon.classList.toggle('fa-angles-right');
+    icon.setAttribute('data-lucide', panel.classList.contains('collapsed') ? 'chevrons-right' : 'chevrons-left');
+    if (window.lucide) lucide.createIcons();
 });
 
 // Toggle climate panel visibility
 document.getElementById('climateToggle').addEventListener('click', () => {
     const panel = document.getElementById('climatePanel');
-    const icon = document.querySelector('#climateToggle i');
+    const icon = document.querySelector('#climateToggle [data-lucide]');
     panel.classList.toggle('collapsed');
-    icon.classList.toggle('fa-angles-left');
-    icon.classList.toggle('fa-angles-right');
+    icon.setAttribute('data-lucide', panel.classList.contains('collapsed') ? 'chevrons-right' : 'chevrons-left');
+    if (window.lucide) lucide.createIcons();
 });
 
 /* ================= Alertas Climáticos em Tempo Real ================= */
@@ -3806,7 +3828,7 @@ document.getElementById('fpClose').addEventListener('click', () => {
 });
 
 function sevIcon(type) {
-    return { temp:'fa-temperature-half', wind:'fa-wind', rain:'fa-cloud-showers-heavy', humidity:'fa-droplet', fire:'fa-fire-flame-curved', event:'fa-triangle-exclamation', uv:'fa-sun', pressure:'fa-gauge-high' }[type] || 'fa-bell';
+    return { temp:'thermometer', wind:'wind', rain:'cloud-rain', humidity:'droplet', fire:'flame', event:'triangle-alert', uv:'sun', pressure:'gauge' }[type] || 'bell';
 }
 function sevIconClass(type) {
     return { temp:'temp', wind:'wind', rain:'rain', humidity:'humidity', fire:'fire', event:'event', uv:'uv', pressure:'pressure' }[type] || 'temp';
@@ -3824,7 +3846,8 @@ function showNextAlert() {
     const a = monAlertQueue.shift();
     fpEl.className = 'sev-' + a.severity + ' show';
     fpIcon.className = 'fp-icon ' + sevIconClass(a.type);
-    fpIcon.innerHTML = '<i class="fa-solid ' + sevIcon(a.type) + '"></i>';
+    fpIcon.innerHTML = '<i data-lucide="' + sevIcon(a.type) + '"></i>';
+    if (window.lucide) lucide.createIcons();
     fpTitle.textContent = a.title;
     fpCity.textContent = a.city;
     fpBody.textContent = a.desc;
@@ -3841,7 +3864,7 @@ function showNextAlert() {
 
 async function fetchMonWeather(city) {
     try {
-        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,precipitation,surface_pressure,uv_index&timezone=America/Cuiaba`);
+        const r = await dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,precipitation,surface_pressure,uv_index&timezone=America/Cuiaba`);
         if (!r.ok) return null;
         const d = await r.json();
         const c = d.current;
@@ -3884,7 +3907,7 @@ function detectMonAlerts(city, prev, curr) {
 async function detectNewFocos() {
     try {
         const iso = new Date().toISOString().slice(0,10).replaceAll('-','');
-        const res = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+        const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
         if (!res.ok) return;
         const txt = await res.text();
         const lines = txt.split('\n');
@@ -3910,7 +3933,7 @@ async function detectNewFocos() {
 
 async function detectNewSipam() {
     try {
-        const res = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
         if (!res.ok) return;
         const eventos = await res.json();
         if (!Array.isArray(eventos)) return;

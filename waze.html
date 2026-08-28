@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Waze - Monitoramento em Tempo Real — Defesa Civil MT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -23,6 +23,11 @@
             --blue-glow: #00d2ff;
         }
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+        [data-lucide] {
+            width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2;
+        }
+        .lucide-spin { animation: luSpin 1s linear infinite; }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
         body { background:var(--bg-dark); color:var(--text-main); overflow-x:hidden; }
 
         header {
@@ -156,7 +161,7 @@
         <div class="live-badge"><span class="dot"></span> AO VIVO</div>
         <div id="userArea"></div>
         <button class="emergency-btn" onclick="alert('Ligando para 199 — Defesa Civil MT')">
-            <i class="fa-solid fa-triangle-exclamation"></i> EMERGENCIA 199
+            <i data-lucide="triangle-alert"></i> EMERGENCIA 199
         </button>
     </div>
 </header>
@@ -165,25 +170,25 @@
     <div id="wazeMap"></div>
     <div class="right-panel">
         <div class="stats-bar">
-            <div class="stat-item"><i class="fa-solid fa-fire" style="color:#ef4444;"></i><span>SIPAM: <span class="stat-count" id="statSipam">...</span></span></div>
-            <div class="stat-item"><i class="fa-solid fa-fire-flame-curved" style="color:var(--accent-orange);"></i><span>Focos INPE: <span class="stat-count" id="statFocos">...</span></span></div>
-            <div class="stat-item"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i><span>Urgentes: <span class="stat-count" id="statUrgent">0</span></span></div>
-            <div class="stat-item"><i class="fa-solid fa-circle-exclamation" style="color:var(--accent-orange);"></i><span>Avisos: <span class="stat-count" id="statWarning">0</span></span></div>
+            <div class="stat-item"><i data-lucide="flame" style="color:#ef4444;"></i><span>SIPAM: <span class="stat-count" id="statSipam">...</span></span></div>
+            <div class="stat-item"><i data-lucide="flame" style="color:var(--accent-orange);"></i><span>Focos INPE: <span class="stat-count" id="statFocos">...</span></span></div>
+            <div class="stat-item"><i data-lucide="triangle-alert" style="color:#ef4444;"></i><span>Urgentes: <span class="stat-count" id="statUrgent">0</span></span></div>
+            <div class="stat-item"><i data-lucide="circle-alert" style="color:var(--accent-orange);"></i><span>Avisos: <span class="stat-count" id="statWarning">0</span></span></div>
         </div>
 
-        <button class="report-btn" id="btnReport"><i class="fa-solid fa-plus"></i> Reportar Evento</button>
-        <div class="click-hint" id="clickHint" style="display:none;"><i class="fa-solid fa-location-dot"></i> Clique no mapa para definir a localizacao</div>
+        <button class="report-btn" id="btnReport"><i data-lucide="plus"></i> Reportar Evento</button>
+        <div class="click-hint" id="clickHint" style="display:none;"><i data-lucide="map-pin"></i> Clique no mapa para definir a localizacao</div>
 
         <div class="filter-section">
             <div class="filter-title">Filtrar por Tipo</div>
             <div class="filter-options">
-                <label class="filter-option"><input type="checkbox" id="f-acidente" checked><i class="fa-solid fa-car-crash"></i> Acidente</label>
-                <label class="filter-option"><input type="checkbox" id="f-engarrafamento" checked><i class="fa-solid fa-traffic-light"></i> Engarrafamento</label>
-                <label class="filter-option"><input type="checkbox" id="f-evento" checked><i class="fa-solid fa-calendar"></i> Evento</label>
-                <label class="filter-option"><input type="checkbox" id="f-clima" checked><i class="fa-solid fa-cloud"></i> Clima</label>
-                <label class="filter-option"><input type="checkbox" id="f-fogo" checked><i class="fa-solid fa-fire"></i> Fogo</label>
-                <label class="filter-option"><input type="checkbox" id="f-sipam" checked><i class="fa-solid fa-fire-flame-curved"></i> SIPAM</label>
-                <label class="filter-option"><input type="checkbox" id="f-inpe" checked><i class="fa-solid fa-satellite-dish"></i> INPE Focos</label>
+                <label class="filter-option"><input type="checkbox" id="f-acidente" checked><i data-lucide="car"></i> Acidente</label>
+                <label class="filter-option"><input type="checkbox" id="f-engarrafamento" checked><i data-lucide="traffic-cone"></i> Engarrafamento</label>
+                <label class="filter-option"><input type="checkbox" id="f-evento" checked><i data-lucide="calendar"></i> Evento</label>
+                <label class="filter-option"><input type="checkbox" id="f-clima" checked><i data-lucide="cloud"></i> Clima</label>
+                <label class="filter-option"><input type="checkbox" id="f-fogo" checked><i data-lucide="flame"></i> Fogo</label>
+                <label class="filter-option"><input type="checkbox" id="f-sipam" checked><i data-lucide="flame"></i> SIPAM</label>
+                <label class="filter-option"><input type="checkbox" id="f-inpe" checked><i data-lucide="satellite-dish"></i> INPE Focos</label>
             </div>
         </div>
 
@@ -194,7 +199,7 @@
 <div id="reportModal" class="modal-overlay">
     <div class="modal-box" style="position:relative;">
         <button class="modal-close" id="modalClose">&times;</button>
-        <h2><i class="fa-solid fa-plus-circle" style="color:var(--accent-orange);"></i> Reportar Evento</h2>
+        <h2><i data-lucide="plus-circle" style="color:var(--accent-orange);"></i> Reportar Evento</h2>
         <form id="reportForm">
             <div class="form-group">
                 <label>Tipo de Evento *</label>
@@ -231,12 +236,13 @@
                 <label>Coordenadas</label>
                 <input type="text" id="eventCoords" placeholder="Clique no mapa para definir" readonly style="color:var(--accent-orange);font-weight:600;">
             </div>
-            <button type="submit" class="report-btn" style="background:var(--blue-glow);"><i class="fa-solid fa-send"></i> Enviar Reporte</button>
+            <button type="submit" class="report-btn" style="background:var(--blue-glow);"><i data-lucide="send"></i> Enviar Reporte</button>
         </form>
     </div>
 </div>
 
 <script src="js/session.js"></script>
+<script src="js/proxy.js"></script>
 <script src="js/api.js"></script>
 <script>
 (function() {
@@ -248,11 +254,11 @@
     }).addTo(map);
 
     const iconTypes = {
-        acidente: 'fa-car-crash',
-        engarrafamento: 'fa-traffic-light',
-        evento: 'fa-calendar',
-        clima: 'fa-cloud',
-        fogo: 'fa-fire'
+        acidente: 'car',
+        engarrafamento: 'traffic-cone',
+        evento: 'calendar',
+        clima: 'cloud',
+        fogo: 'flame'
     };
     const sevColors = { urgent:'#ef4444', warning:'#f9731c', info:'#00d2ff' };
 
@@ -319,7 +325,7 @@
         const color = sevColors[sev] || '#94a3b8';
         return L.divIcon({
             className:'',
-            html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}55;border:2px solid #fff;"><i class="fa-solid ${iconTypes[type]||'fa-circle'}" style="color:#fff;font-size:12px;"></i></div>`,
+            html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}55;border:2px solid #fff;"><i data-lucide="${iconTypes[type]||'circle'}" style="color:#fff;font-size:12px;"></i></div>`,
             iconSize:[30,30], iconAnchor:[15,15]
         });
     }
@@ -339,13 +345,14 @@
             L.marker([ev.lat, ev.lng], { icon: userIcon(ev.type, ev.severity) })
                 .bindPopup(`
                     <div style="min-width:200px;">
-                        <div style="font-weight:700;font-size:12px;margin-bottom:4px;"><i class="fa-solid ${iconTypes[ev.type]||'fa-circle'}" style="color:${sevColors[ev.severity]};margin-right:4px;"></i>${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</div>
+                        <div style="font-weight:700;font-size:12px;margin-bottom:4px;"><i data-lucide="${iconTypes[ev.type]||'circle'}" style="color:${sevColors[ev.severity]};margin-right:4px;"></i>${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</div>
                         <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${ev.severity==='urgent'?'URGENTE':ev.severity==='warning'?'AVISO':'INFO'} · ${fmtTime(ev.ts)}</div>
                         <div style="font-size:11px;line-height:1.5;"><b>${ev.location}</b><br>${ev.description}<br><span style="color:#94a3b8;">Por: ${ev.reporter}</span></div>
-                        <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze</a>
+                        <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i data-lucide="navigation"></i> Navegar com Waze</a>
                     </div>`, { className:'waze-nav-popup' })
                 .addTo(reportLayer);
         });
+        if (window.lucide) lucide.createIcons();
         document.getElementById('statUrgent').textContent = visible.filter(e=>e.severity==='urgent').length;
         document.getElementById('statWarning').textContent = visible.filter(e=>e.severity==='warning').length;
     }
@@ -360,18 +367,19 @@
             fogo: document.getElementById('f-fogo').checked
         };
         const visible = userReports.filter(e => types[e.type]);
-        if (!visible.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:11px;padding:16px;"><i class="fa-solid fa-inbox"></i><br><br>Nenhum evento encontrado</p>'; return; }
+        if (!visible.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:11px;padding:16px;"><i data-lucide="inbox"></i><br><br>Nenhum evento encontrado</p>'; if (window.lucide) lucide.createIcons(); return; }
         el.innerHTML = visible.map(ev => `
             <div class="report-card ${ev.severity}" data-lat="${ev.lat}" data-lng="${ev.lng}">
                 <div class="report-header">
-                    <div class="report-type"><i class="fa-solid ${iconTypes[ev.type]||'fa-circle'}"></i> ${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</div>
+                    <div class="report-type"><i data-lucide="${iconTypes[ev.type]||'circle'}"></i> ${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</div>
                     <div class="report-time">${fmtTime(ev.ts)}</div>
                 </div>
-                <div class="report-location"><i class="fa-solid fa-map-pin"></i> ${ev.location}</div>
+                <div class="report-location"><i data-lucide="map-pin"></i> ${ev.location}</div>
                 <div class="report-desc">${ev.description}</div>
-                <a href="https://www.waze.com/ul?ll=${ev.lat},${ev.lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" class="waze-link" onclick="event.stopPropagation();"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>
+                <a href="https://www.waze.com/ul?ll=${ev.lat},${ev.lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" class="waze-link" onclick="event.stopPropagation();"><i data-lucide="navigation"></i> Waze</a>
             </div>
         `).join('');
+        if (window.lucide) lucide.createIcons();
         el.querySelectorAll('.report-card').forEach(card => {
             card.addEventListener('click', () => {
                 const lat = parseFloat(card.dataset.lat), lng = parseFloat(card.dataset.lng);
@@ -383,7 +391,7 @@
     async function loadSIPAM() {
         document.getElementById('statSipam').textContent = '...';
         try {
-            const r = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+            const r = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
             if (!r.ok) throw 0;
             sipamEvents = await r.json();
             if (!Array.isArray(sipamEvents)) sipamEvents = [];
@@ -405,7 +413,7 @@
                 radius:raio, color:'#fff', weight:.8, fillColor:cor, fillOpacity:.85
             }).bindPopup(`
                 <div style="min-width:220px;">
-                    <div style="font-weight:700;font-size:12px;"><i class="fa-solid fa-fire-flame-curved" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}</div>
+                    <div style="font-weight:700;font-size:12px;"><i data-lucide="flame" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}</div>
                     <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${ev.municipio||'—'} · ${ev.status_evento||'—'}</div>
                     <div style="font-size:11px;line-height:1.6;">
                         <b>Area:</b> ${ev.area_total_evento ? ev.area_total_evento.toFixed(2)+' ha' : '—'}<br>
@@ -413,7 +421,7 @@
                         <b>Ultima visao:</b> ${fmtSipam(ev.dt_ultima_visao)}<br>
                         <b>Coords:</b> ${lat.toFixed(4)}, ${lng.toFixed(4)}
                     </div>
-                    <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze</a>
+                    <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i data-lucide="navigation"></i> Navegar com Waze</a>
                     <div style="margin-top:6px;font-size:9px;color:#94a3b8;"><a href="https://panorama.sipam.gov.br/painel-do-fogo/" target="_blank" rel="noopener" style="color:#38bdf8;">portal SIPAM</a></div>
                 </div>`)
                 .addTo(sipamLayer);
@@ -428,7 +436,7 @@
             const d = new Date(Date.now() - i*86400000);
             const iso = d.toISOString().slice(0,10).replaceAll('-','');
             try {
-                const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+                const r = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
                 if (!r.ok) continue;
                 const txt = await r.text();
                 if (txt.length > 100) csvText = txt;
@@ -454,7 +462,7 @@
                 radius:3, color:'#ffb08a', weight:.5, fillColor:'#ff4d00', fillOpacity:.85
             }).bindPopup(`
                 <div style="min-width:200px;">
-                    <div style="font-weight:700;font-size:12px;color:#ff7a45;"><i class="fa-solid fa-fire"></i> Foco de calor</div>
+                    <div style="font-weight:700;font-size:12px;color:#ff7a45;"><i data-lucide="flame"></i> Foco de calor</div>
                     <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${(c[iMun]||'—').trim()} · MT</div>
                     <div style="font-size:11px;line-height:1.5;">
                         Satelite: <b>${(c[iSat]||'—').trim()}</b><br>
@@ -462,7 +470,7 @@
                         ${c[iBioma] ? 'Bioma: '+c[iBioma].trim()+'<br>' : ''}
                         Coords: ${lat.toFixed(3)}, ${lng.toFixed(3)}
                     </div>
-                    <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i class="fa-solid fa-diamond-turn-right"></i> Navegar com Waze</a>
+                    <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i data-lucide="navigation"></i> Navegar com Waze</a>
                 </div>`)
                 .addTo(inpeLayer);
             n++;
@@ -555,6 +563,7 @@
 
     setInterval(() => { renderReportCards(); }, 60000);
 })();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>

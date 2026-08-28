@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alertas Ativos — Defesa Civil Mato Grosso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
     <style>
         :root {
@@ -20,6 +20,12 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        [data-lucide] {
+            width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2;
+        }
+        .lucide-spin { animation: luSpin 1s linear infinite; }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
 
         body { background-color: var(--bg-dark); color: var(--text-main); overflow-x: hidden; }
 
@@ -236,9 +242,9 @@
 <body>
 
     <div class="top-bar">
-        <a href="#"><i class="fa-solid fa-universal-access"></i> Acessibilidade</a>
-        <a href="#"><i class="fa-solid fa-eye"></i> Transparência</a>
-        <a href="#"><i class="fa-solid fa-search"></i> Pesquisar</a>
+        <a href="#"><i data-lucide="accessibility"></i> Acessibilidade</a>
+        <a href="#"><i data-lucide="eye"></i> Transparência</a>
+        <a href="#"><i data-lucide="search"></i> Pesquisar</a>
     </div>
 
     <header>
@@ -264,7 +270,7 @@
         <div style="display:flex;align-items:center;gap:16px;">
             <div id="userArea"></div>
             <button class="emergency-btn">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+                <i data-lucide="triangle-alert"></i>
                 EMERGÊNCIA LIGUE 199
             </button>
         </div>
@@ -278,27 +284,27 @@
 
         <div class="stats-row">
             <div class="stat-chip" style="--chip:#ef4444;">
-                <i class="fa-solid fa-tower-broadcast" style="color:#ef4444;"></i>
+                <i data-lucide="radio-tower" style="color:#ef4444;"></i>
                 <div><b id="stEmergencia">0</b><span>Emergências</span></div>
             </div>
             <div class="stat-chip">
-                <i class="fa-solid fa-circle-exclamation" style="color:var(--accent-orange);"></i>
+                <i data-lucide="circle-alert" style="color:var(--accent-orange);"></i>
                 <div><b id="stAlerta">0</b><span>Alertas</span></div>
             </div>
             <div class="stat-chip">
-                <i class="fa-solid fa-triangle-exclamation" style="color:#eab308;"></i>
+                <i data-lucide="triangle-alert" style="color:#eab308;"></i>
                 <div><b id="stAtencao">0</b><span>Atenções</span></div>
             </div>
             <div class="stat-chip">
-                <i class="fa-solid fa-city" style="color:#38bdf8;"></i>
+                <i data-lucide="building-2" style="color:#38bdf8;"></i>
                 <div><b id="stMunicipios">0</b><span>Municípios afetados</span></div>
             </div>
             <div class="stat-chip">
-                <i class="fa-solid fa-cloud-sun-rain" style="color:#4ade80;"></i>
+                <i data-lucide="cloud-sun-rain" style="color:#4ade80;"></i>
                 <div><b id="stInmet">0</b><span>Avisos INMET (tempo real)</span></div>
             </div>
             <div class="stat-chip">
-                <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
+                <i data-lucide="clock" style="color:#94a3b8;"></i>
                 <div><b id="stUpdate">--:--</b><span>Última atualização</span></div>
             </div>
         </div>
@@ -307,11 +313,11 @@
     <!-- Filtros -->
     <div class="filter-bar">
         <button class="filter-btn active" data-filter="todos">Todos <span class="count" id="cTodos">0</span></button>
-        <button class="filter-btn" data-filter="emergencia"><i class="fa-solid fa-tower-broadcast"></i> Emergência <span class="count" id="cEmergencia">0</span></button>
-        <button class="filter-btn" data-filter="alerta"><i class="fa-solid fa-circle-exclamation"></i> Alerta <span class="count" id="cAlerta">0</span></button>
-        <button class="filter-btn" data-filter="atencao"><i class="fa-solid fa-triangle-exclamation"></i> Atenção <span class="count" id="cAtencao">0</span></button>
+        <button class="filter-btn" data-filter="emergencia"><i data-lucide="radio-tower"></i> Emergência <span class="count" id="cEmergencia">0</span></button>
+        <button class="filter-btn" data-filter="alerta"><i data-lucide="circle-alert"></i> Alerta <span class="count" id="cAlerta">0</span></button>
+        <button class="filter-btn" data-filter="atencao"><i data-lucide="triangle-alert"></i> Atenção <span class="count" id="cAtencao">0</span></button>
         <div class="search-mini">
-            <i class="fa-solid fa-magnifying-glass"></i>
+            <i data-lucide="search"></i>
             <input type="text" id="buscaMunicipio" placeholder="Filtrar por município...">
         </div>
     </div>
@@ -320,7 +326,7 @@
     <section class="inmet-section" id="inmetSection">
         <div class="inmet-head">
             <div class="inmet-title">
-                <h3><i class="fa-solid fa-cloud-sun-rain" style="color:#4ade80;margin-right:6px;"></i>Avisos Meteorológicos INMET</h3>
+                <h3><i data-lucide="cloud-sun-rain" style="color:#4ade80;margin-right:6px;"></i>Avisos Meteorológicos INMET</h3>
                 <span class="live-badge"><span class="dot"></span>TEMPO REAL</span>
             </div>
             <div class="inmet-meta" id="inmetMeta">Carregando avisos do INMET...</div>
@@ -340,14 +346,15 @@
         </div>
         <div class="footer-social">
             <span>Siga nossas redes</span>
-            <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="#"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#"><i class="fa-brands fa-twitter"></i></a>
-            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#"><i data-lucide="facebook"></i></a>
+            <a href="#"><i data-lucide="instagram"></i></a>
+            <a href="#"><i data-lucide="twitter"></i></a>
+            <a href="#"><i data-lucide="youtube"></i></a>
         </div>
     </footer>
 
     <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
     <script src="js/session.js"></script>
     <script>
         let filtroAtual = 'todos';
@@ -403,9 +410,10 @@
             if (!filtrados.length) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <i class="fa-regular fa-bell-slash"></i>
+                        <i data-lucide="bell-off"></i>
                         <p>Nenhum alerta encontrado com os filtros atuais.</p>
                     </div>`;
+                if (window.lucide) lucide.createIcons();
                 return;
             }
 
@@ -422,20 +430,20 @@
 
                 card.innerHTML = `
                     <div class="card-top">
-                        <div class="tipo-icon"><i class="fa-solid ${tipo.icone}"></i></div>
+                        <div class="tipo-icon"><i data-lucide="${tipo.icone}"></i></div>
                         <div class="alert-summary">
                             <div style="display:flex;gap:10px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
-                                <span class="nivel-badge"><i class="fa-solid ${nivel.icone}"></i>${nivel.label}</span>
+                                <span class="nivel-badge"><i data-lucide="${nivel.icone}"></i>${nivel.label}</span>
                                 <strong style="font-size:13.5px;">${tipo.label}</strong>
                             </div>
                             <h3>${al.municipio}</h3>
                             <div class="meta">
-                                <span><i class="fa-regular fa-clock"></i>Emitido ${fmtData(emitidoEm)}</span>
-                                <span><i class="fa-solid fa-map-pin"></i>${al.areasAfetadas.length} área(s) afetada(s)</span>
+                                <span><i data-lucide="clock"></i>Emitido ${fmtData(emitidoEm)}</span>
+                                <span><i data-lucide="map-pin"></i>${al.areasAfetadas.length} área(s) afetada(s)</span>
                             </div>
                             <p>${al.resumo}</p>
                         </div>
-                        <i class="fa-solid fa-chevron-down expand-icon"></i>
+                        <i data-lucide="chevron-down" class="expand-icon"></i>
                     </div>
                     <div class="alert-details">
                         <div class="details-inner">
@@ -443,20 +451,20 @@
                             <p class="desc">${al.descricao}</p>
                             <h4>Áreas afetadas</h4>
                             <div class="areas-list">
-                                ${al.areasAfetadas.map(ar => `<span class="area-tag"><i class="fa-solid fa-location-dot"></i>${ar}</span>`).join('')}
+                                ${al.areasAfetadas.map(ar => `<span class="area-tag"><i data-lucide="map-pin"></i>${ar}</span>`).join('')}
                             </div>
                             <h4>Orientações à população</h4>
                             <ul class="orient-list">
-                                ${al.orientacoes.map(o => `<li><i class="fa-solid fa-circle-check"></i><span>${o}</span></li>`).join('')}
+                                ${al.orientacoes.map(o => `<li><i data-lucide="check-circle"></i><span>${o}</span></li>`).join('')}
                             </ul>
                             <div class="card-footer">
-                                <span class="validade"><i class="fa-regular fa-calendar-xmark"></i> Vigente até ${fmtData(validoAte)}</span>
+                                <span class="validade"><i data-lucide="calendar-x"></i> Vigente até ${fmtData(validoAte)}</span>
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                     ${(TIPO_FONTES[al.tipo] || []).map(f => `
                                         <a class="btn-map" href="${f.url}" target="_blank" rel="noopener" title="Fonte oficial (proposta, item 6)">
-                                            <i class="fa-solid fa-up-right-from-square"></i> ${f.nome}
+                                            <i data-lucide="external-link"></i> ${f.nome}
                                         </a>`).join('')}
-                                    <a class="btn-map" href="mapa.html"><i class="fa-solid fa-map-location-dot"></i> Ver no mapa</a>
+                                    <a class="btn-map" href="mapa.html"><i data-lucide="map-pin"></i> Ver no mapa</a>
                                 </div>
                             </div>
                         </div>
@@ -465,6 +473,8 @@
                 card.querySelector('.card-top').addEventListener('click', () => card.classList.toggle('open'));
                 container.appendChild(card);
             });
+
+            if (window.lucide) lucide.createIcons();
         }
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -489,14 +499,14 @@
 
         // Evento INMET -> tipo do sistema (para ícone) e nível pela severidade
         const INMET_TIPO_ICONE = {
-            'chuvas intensas': 'fa-cloud-showers-heavy',
-            'tempestade': 'fa-cloud-bolt',
-            'baixa umidade': 'fa-droplet-slash',
-            'vendaval': 'fa-wind',
-            'onda de calor': 'fa-temperature-arrow-up',
-            'granizo': 'fa-cloud-hail',
-            'acumulado de chuva': 'fa-cloud-rain',
-            'nevoeiro': 'fa-smog',
+            'chuvas intensas': 'cloud-rain',
+            'tempestade': 'cloud-lightning',
+            'baixa umidade': 'droplet-off',
+            'vendaval': 'wind',
+            'onda de calor': 'thermometer-sun',
+            'granizo': 'cloud-hail',
+            'acumulado de chuva': 'cloud-rain',
+            'nevoeiro': 'smog',
         };
         const INMET_SEV = { 'Perigo Potencial': 2, 'Perigo': 1, 'Grande Perigo': 0 };
         const INMET_SEV_COR = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
@@ -515,7 +525,7 @@
 
         async function fetchInmetAvisos() {
             try {
-                const r = await fetch(INMET_RSS);
+                const r = await dcProxyFetch(INMET_RSS);
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const xml = await r.text();
                 const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
@@ -570,44 +580,48 @@
                 new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
             meta.innerHTML = inmetCount
-                ? `<i class="fa-solid fa-satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) cobrindo MT · fonte <span class="src">INMET (apiprevmet3.inmet.gov.br)</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                ? `<i data-lucide="satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) cobrindo MT · fonte <span class="src">INMET (apiprevmet3.inmet.gov.br)</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
                 : 'Nenhum aviso INMET cobrindo Mato Grosso no momento.';
+            if (window.lucide) lucide.createIcons();
 
             if (g.error) {
-                grid.innerHTML = `<div class="inmet-empty"><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;color:#f97316;"></i>Não foi possível carregar os avisos do INMET agora.</div>`;
+                grid.innerHTML = `<div class="inmet-empty"><i data-lucide="triangle-alert" style="margin-right:8px;color:#f97316;"></i>Não foi possível carregar os avisos do INMET agora.</div>`;
+                if (window.lucide) lucide.createIcons();
                 return;
             }
             if (!g.avisos.length) {
-                grid.innerHTML = `<div class="inmet-empty"><i class="fa-regular fa-circle-check" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para Mato Grosso neste momento.</div>`;
+                grid.innerHTML = `<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para Mato Grosso neste momento.</div>`;
+                if (window.lucide) lucide.createIcons();
                 return;
             }
 
             grid.innerHTML = g.avisos.map(a => {
-                const icon = INMET_TIPO_ICONE[(a.evento || '').toLowerCase()] || 'fa-cloud';
+                const icon = INMET_TIPO_ICONE[(a.evento || '').toLowerCase()] || 'cloud';
                 const cor = INMET_SEV_COR[a.sev] || '#f97316';
                 const sevLabel = a.severidade || '—';
                 const areas = a.area.replace(/^Aviso para as Áreas:\s*/i, '').split(/\s*,\s*/).filter(Boolean);
                 return `
                     <div class="inmet-card" style="--sev-cor:${cor};">
                         <div class="top">
-                            <div class="ic-tipo"><i class="fa-solid ${icon}"></i></div>
+                            <div class="ic-tipo"><i data-lucide="${icon}"></i></div>
                             <div style="flex:1;min-width:0;">
                                 <span class="sev-tag sev-${a.sev}">${sevLabel}</span>
                                 <h4 style="margin-top:4px;">Aviso de ${a.evento}</h4>
                                 <div class="vig">
-                                    <span><i class="fa-regular fa-clock"></i>De ${fmtDh(a.inicio)}</span>
-                                    <span><i class="fa-regular fa-calendar-xmark"></i>Até ${fmtDh(a.fim)}</span>
+                                    <span><i data-lucide="clock"></i>De ${fmtDh(a.inicio)}</span>
+                                    <span><i data-lucide="calendar-x"></i>Até ${fmtDh(a.fim)}</span>
                                 </div>
                             </div>
                         </div>
                         <p class="desc">${a.descricao}</p>
-                        <div class="areas"><i class="fa-solid fa-map-pin" style="margin-right:5px;color:${cor};"></i><b>Regiões:</b> ${areas.join(', ')}</div>
+                        <div class="areas"><i data-lucide="map-pin" style="margin-right:5px;color:${cor};"></i><b>Regiões:</b> ${areas.join(', ')}</div>
                         <div class="links">
-                            <a class="lnk official" href="${a.link}" target="_blank" rel="noopener"><i class="fa-solid fa-up-right-from-square"></i> Detalhe INMET</a>
-                            <a class="lnk official" href="https://avisos.inmet.gov.br/${a.id}" target="_blank" rel="noopener"><i class="fa-solid fa-map-location-dot"></i> Mapa do aviso</a>
+                            <a class="lnk official" href="${a.link}" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Detalhe INMET</a>
+                            <a class="lnk official" href="https://avisos.inmet.gov.br/${a.id}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i> Mapa do aviso</a>
                         </div>
                     </div>`;
             }).join('');
+            if (window.lucide) lucide.createIcons();
         }
 
         async function loadInmet() {
@@ -634,6 +648,8 @@
                 }, 150);
             }
         }
+
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>

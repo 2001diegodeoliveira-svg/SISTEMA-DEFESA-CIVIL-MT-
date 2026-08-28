@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Defesa Civil - Estado de Mato Grosso</title>
-    <!-- Google Fonts & FontAwesome para ícones -->
+    <!-- Google Fonts & Lucide para ícones -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     
     <style>
         :root {
@@ -27,6 +27,12 @@
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
+
+        [data-lucide] {
+            width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2;
+        }
+        .lucide-spin { animation: luSpin 1s linear infinite; }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
 
         body {
             background-color: var(--bg-dark);
@@ -752,9 +758,9 @@
 
     <!-- Barra Superior -->
     <div class="top-bar">
-        <a href="#"><i class="fa-solid fa-universal-access"></i> Acessibilidade</a>
-        <a href="#"><i class="fa-solid fa-eye"></i> Transparência</a>
-        <a href="#"><i class="fa-solid fa-search"></i> Pesquisar</a>
+        <a href="#"><i data-lucide="accessibility"></i> Acessibilidade</a>
+        <a href="#"><i data-lucide="eye"></i> Transparência</a>
+        <a href="#"><i data-lucide="search"></i> Pesquisar</a>
     </div>
 
     <!-- Cabeçalho Principal -->
@@ -781,7 +787,7 @@
         <div style="display:flex;align-items:center;gap:16px;">
             <div id="userArea"></div>
             <button class="emergency-btn">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+                <i data-lucide="triangle-alert"></i>
                 EMERGÊNCIA LIGUE 199
             </button>
         </div>
@@ -795,9 +801,9 @@
 
             <div class="hero-action">
                 <a href="alertas.html" class="btn-main-alert">
-                    <i class="fa-solid fa-circle-exclamation"></i> Ver Alertas Ativos
+                    <i data-lucide="circle-alert"></i> Ver Alertas Ativos
                 </a>
-                <span class="hero-subinfo"><i class="fa-regular fa-clock"></i> Monitoramento 24h por dia, 7 dias por semana</span>
+                <span class="hero-subinfo"><i data-lucide="clock"></i> Monitoramento 24h por dia, 7 dias por semana</span>
             </div>
 
             <div class="hero-stats">
@@ -815,7 +821,7 @@
                 <svg id="mtMapSvg" viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa de Mato Grosso"></svg>
 
                 <div class="live-chip"><span class="red-dot"></span> AO VIVO · MT</div>
-                <a class="hm-open" href="mapa.html">Mapa completo <i class="fa-solid fa-up-right-from-square"></i></a>
+                <a class="hm-open" href="mapa.html">Mapa completo <i data-lucide="external-link"></i></a>
                 <div id="mapTip"></div>
                 <div class="hm-badge">
                     <span class="red-dot"></span> <b id="hmCritical">—</b>&nbsp;estações em estado crítico
@@ -840,35 +846,35 @@
     <!-- Cards de Acesso Rápido -->
     <div class="quick-access">
         <a href="alertas.html" class="quick-card">
-            <div class="quick-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div class="quick-icon"><i data-lucide="circle-alert"></i></div>
             <div class="quick-content">
                 <h3>Alertas e Avisos</h3>
                 <p>Acompanhe os alertas e avisos da sua região</p>
             </div>
         </a>
         <a href="painel.html" class="quick-card">
-            <div class="quick-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+            <div class="quick-icon"><i data-lucide="satellite-dish"></i></div>
             <div class="quick-content">
                 <h3>Painel em Tempo Real</h3>
                 <p>Dados ao vivo: focos de incêndio, clima e alertas do estado</p>
             </div>
         </a>
         <a href="#" class="quick-card">
-            <div class="quick-icon"><i class="fa-solid fa-file-shield"></i></div>
+            <div class="quick-icon"><i data-lucide="shield-check"></i></div>
             <div class="quick-content">
                 <h3>Orientações</h3>
                 <p>Saiba como se prevenir e o que fazer em casos de emergência</p>
             </div>
         </a>
         <a href="#" class="quick-card">
-            <div class="quick-icon"><i class="fa-solid fa-phone-volume"></i></div>
+            <div class="quick-icon"><i data-lucide="phone-call"></i></div>
             <div class="quick-content">
                 <h3>Emergência</h3>
                 <p>Em situação de risco, ligue 199 ou envie sua localização</p>
             </div>
         </a>
         <a href="#" class="quick-card">
-            <div class="quick-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="quick-icon"><i data-lucide="users"></i></div>
             <div class="quick-content">
                 <h3>Seja Voluntário</h3>
                 <p>Faça parte da rede de voluntários da Defesa Civil</p>
@@ -891,7 +897,7 @@
         <!-- Painel em Tempo Real -->
         <div class="section-box">
             <div class="section-title">
-                <span><i class="fa-solid fa-satellite-dish" style="color:#f9731c;margin-right:6px;"></i> PAINEL EM TEMPO REAL</span>
+                <span><i data-lucide="satellite-dish" style="color:#f9731c;margin-right:6px;"></i> PAINEL EM TEMPO REAL</span>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span id="painelLastUpdate" style="font-size:10px;color:var(--text-muted);">—</span>
                     <a href="mapa.html">Ver mapa completo &rarr;</a>
@@ -899,7 +905,7 @@
             </div>
 
             <div id="painelDashboard">
-                <div class="pd-loading"><i class="fa-solid fa-spinner fa-spin"></i> Coletando dados...</div>
+                <div class="pd-loading"><i data-lucide="loader" class="lucide-spin"></i> Coletando dados...</div>
             </div>
         </div>
 
@@ -927,10 +933,10 @@
         </div>
         <div class="footer-social">
             <span>Siga nossas redes</span>
-            <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="#"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#"><i class="fa-brands fa-twitter"></i></a>
-            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#"><i data-lucide="facebook"></i></a>
+            <a href="#"><i data-lucide="instagram"></i></a>
+            <a href="#"><i data-lucide="twitter"></i></a>
+            <a href="#"><i data-lucide="youtube"></i></a>
         </div>
         <div class="footer-apps">
             <span style="font-size: 11px;">Aplicativo Defesa Civil MT</span>
@@ -950,8 +956,8 @@
     <div id="orientModal" class="orient-modal">
         <div class="om-box">
             <div class="om-head">
-                <h3><i class="fa-solid fa-shield-halved"></i> Orientações de Segurança</h3>
-                <button class="om-close" onclick="document.getElementById('orientModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+                <h3><i data-lucide="shield"></i> Orientações de Segurança</h3>
+                <button class="om-close" onclick="document.getElementById('orientModal').classList.remove('open')"><i data-lucide="x"></i></button>
             </div>
             <div class="om-video-wrap">
                 <video id="orientVideo" controls preload="metadata" poster="imagens/logo.png">
@@ -963,7 +969,7 @@
                 <p>Assista ao vídeo de orientações da Defesa Civil de Mato Grosso. Saiba como agir antes, durante e depois de cada tipo de emergência.</p>
             </div>
             <div class="om-actions">
-                <a href="index.html" class="om-home"><i class="fa-solid fa-house"></i> Voltar ao Início</a>
+                <a href="index.html" class="om-home"><i data-lucide="home"></i> Voltar ao Início</a>
                 <button class="om-close-btn" onclick="document.getElementById('orientModal').classList.remove('open')">Fechar</button>
             </div>
         </div>
@@ -1058,6 +1064,7 @@
 
     <!-- Painel de alertas ativos no hero -->
     <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
     <script src="js/session.js"></script>
     <script>
         (function renderHomeAlerts() {
@@ -1074,7 +1081,7 @@
 
             async function renderInmet() {
                 try {
-                    const r = await fetch('https://apiprevmet3.inmet.gov.br/avisos/rss');
+                    const r = await dcProxyFetch('https://apiprevmet3.inmet.gov.br/avisos/rss');
                     if (!r.ok) return;
                     const xml = await r.text();
                     const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
@@ -1098,7 +1105,7 @@
                     }
                     const sev = { 'Perigo Potencial': 2, 'Perigo': 1, 'Grande Perigo': 0 };
                     const cor = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
-                    const icon = { 'chuvas intensas': 'fa-cloud-showers-heavy', 'tempestade': 'fa-cloud-bolt', 'baixa umidade': 'fa-droplet-slash', 'vendaval': 'fa-wind', 'onda de calor': 'fa-temperature-arrow-up', 'granizo': 'fa-cloud-hail' };
+                    const icon = { 'chuvas intensas': 'cloud-rain', 'tempestade': 'cloud-lightning', 'baixa umidade': 'droplet', 'vendaval': 'wind', 'onda de calor': 'thermometer-sun', 'granizo': 'cloud-hail' };
                     avisos.sort((a, b) => (sev[a.severidade] ?? 2) - (sev[b.severidade] ?? 2));
                     const top = avisos.slice(0, 3);
 
@@ -1108,13 +1115,13 @@
                         <a href="alertas.html" class="alert-card inmet" style="text-decoration:none;border-left:3px solid ${c};">
                             <div class="alert-info">
                                 <h4 style="display:flex;align-items:center;gap:6px;">
-                                    <i class="fa-solid ${icon[(a.evento||'').toLowerCase()] || 'fa-cloud'}" style="color:${c};"></i>
+                                    <i data-lucide="${icon[(a.evento||'').toLowerCase()] || 'cloud'}" style="color:${c};"></i>
                                     INMET · ${a.evento}
                                     <span style="font-size:8.5px;background:${c}22;color:${c};padding:2px 6px;border-radius:8px;font-weight:800;letter-spacing:.4px;">${a.severidade.toUpperCase()}</span>
                                 </h4>
                                 <p>Vigente ${(a.descricao || '').slice(0, 44)}…</p>
                             </div>
-                            <i class="fa-solid fa-chevron-right"></i>
+                            <i data-lucide="chevron-right"></i>
                         </a>`;
                     }).join('');
 
@@ -1127,6 +1134,7 @@
                             ${bloco}
                         </div>`;
                     list.innerHTML = htmlBloco + (list.dataset.curados || '');
+                    if (window.lucide) lucide.createIcons();
                     list.dataset.inmetDone = '1';
                 } catch (e) {
                     // se falhar, mantém só os curados
@@ -1139,13 +1147,14 @@
             const inicial = base.map(al => `
                 <a href="alertas.html#${al.id}" class="alert-card curado" style="text-decoration:none;">
                     <div class="alert-info">
-                        <h4><i class="fa-solid ${NIVEIS[al.nivel].icone}" style="color:${NIVEIS[al.nivel].cor};"></i>
+                        <h4><i data-lucide="${NIVEIS[al.nivel].icone}" style="color:${NIVEIS[al.nivel].cor};"></i>
                             ${NIVEIS[al.nivel].label.toUpperCase()} — ${al.municipio}</h4>
                         <p>${TIPOS[al.tipo].label} · ${al.resumo.length > 52 ? al.resumo.slice(0, 52) + '…' : al.resumo}</p>
                     </div>
-                    <i class="fa-solid fa-chevron-right"></i>
+                    <i data-lucide="chevron-right"></i>
                 </a>`).join('');
             list.innerHTML = inicial;
+            if (window.lucide) lucide.createIcons();
             list.dataset.curados = inicial;
 
             // Badge dinâmico no botão do hero
@@ -1169,12 +1178,13 @@
                    style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px;text-decoration:none;transition:all .2s;"
                    onmouseover="this.style.borderColor='rgba(249,99,28,.5)'"
                    onmouseout="this.style.borderColor='var(--border-color)'">
-                    <i class="fa-solid fa-up-right-from-square" style="color:#38bdf8;font-size:12px;"></i>
+                    <i data-lucide="external-link" style="color:#38bdf8;font-size:12px;"></i>
                     <div>
                         <div style="font-size:12.5px;font-weight:600;color:var(--text-main);">${p.nome}</div>
                         <div style="font-size:10.5px;color:var(--text-muted);">${p.uso}</div>
                     </div>
                 </a>`).join('');
+            if (window.lucide) lucide.createIcons();
         })();
 
         // ===== Mapa de Mato Grosso animado (SVG a partir da malha oficial IBGE) =====
@@ -1203,7 +1213,7 @@
 
         async function fetchCity(city) {
             try {
-                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,uv_index,wind_gusts_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`);
+                const r = await dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,uv_index,wind_gusts_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`);
                 if (!r.ok) return null;
                 const d = await r.json();
                 const c = d.current;
@@ -1220,7 +1230,7 @@
                     const d = new Date(Date.now() - i * 86400000);
                     iso = d.toISOString().slice(0, 10).replaceAll('-', '');
                     try {
-                        const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+                        const r = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
                         if (!r.ok) continue;
                         const t = await r.text();
                         if (t.length > 100) txt = t;
@@ -1238,7 +1248,7 @@
 
         async function fetchSipam() {
             try {
-                const r = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+                const r = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
                 if (!r.ok) return [];
                 const d = await r.json();
                 return Array.isArray(d) ? d : [];
@@ -1247,7 +1257,7 @@
 
         async function fetchCptec() {
             try {
-                const r = await fetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+                const r = await dcProxyFetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
                 if (!r.ok) return [];
                 const d = await r.json();
                 if (!d.clima?.length) return [];
@@ -1281,7 +1291,7 @@
 
             // --- Summary cards ---
             html += `<div class="pd-section">
-                <div class="pd-section-title"><i class="fa-solid fa-chart-pie climate"></i> Resumo Geral</div>
+                <div class="pd-section-title"><i data-lucide="pie-chart" class="climate"></i> Resumo Geral</div>
                 <div class="pd-summary-grid">
                     <div class="pd-summary-card fire">
                         <div class="pdc-i">🔥</div>
@@ -1308,7 +1318,7 @@
 
             // --- Cities monitored ---
             html += `<div class="pd-section">
-                <div class="pd-section-title"><i class="fa-solid fa-city climate"></i> Clima das Cidades</div>
+                <div class="pd-section-title"><i data-lucide="building-2" class="climate"></i> Clima das Cidades</div>
                 <div class="pd-city-grid">`;
             MON_CITIES.forEach((c, i) => {
                 const curr = cityResults[i];
@@ -1321,8 +1331,8 @@
                     <div class="pd-city-name">${c.nome}</div>
                     <div class="pd-city-temp" style="color:${tc};">${Math.round(curr.temp)}°C</div>
                     <div class="pd-city-meta">
-                        <span><i class="fa-solid fa-droplet"></i> ${curr.humidity}%</span>
-                        <span><i class="fa-solid fa-wind"></i> ${Math.round(curr.wind)} km/h</span>
+                        <span><i data-lucide="droplet"></i> ${curr.humidity}%</span>
+                        <span><i data-lucide="wind"></i> ${Math.round(curr.wind)} km/h</span>
                     </div>
                 </div>`;
             });
@@ -1333,7 +1343,7 @@
 
             // Fire INPE
             html += `<div>
-                <div class="pd-section-title"><i class="fa-solid fa-fire-flame-curved fire"></i> Focos INPE</div>
+                <div class="pd-section-title"><i data-lucide="flame" class="fire"></i> Focos INPE</div>
                 <div class="pd-fire-row"><div class="pd-fr-icon">🔥</div><div class="pd-fr-val" style="color:#ef4444;">${focosCount}</div><div class="pd-fr-label">focos hoje em MT</div></div>
                 <div class="pd-fire-row"><div class="pd-fr-icon">🛰️</div><div class="pd-fr-val">${focos.sats.length}</div><div class="pd-fr-label">satélites: ${focos.sats.join(', ') || '—'}</div></div>
                 ${sipam.slice(0, 3).map(ev => `<div class="pd-fire-row"><div class="pd-fr-icon" style="color:${ev.status_evento === 'Ativo' ? '#ef4444' : '#22c55e'};">●</div><div class="pd-fr-val" style="font-size:9px;">#${ev.id_evento}</div><div class="pd-fr-label">${ev.municipio || 'MT'} — ${ev.status_evento || '—'}</div></div>`).join('')}
@@ -1341,7 +1351,7 @@
 
             // CPTEC
             html += `<div>
-                <div class="pd-section-title"><i class="fa-solid fa-calendar-days forecast"></i> CPTEC Previsão</div>`;
+                <div class="pd-section-title"><i data-lucide="calendar-days" class="forecast"></i> CPTEC Previsão</div>`;
             if (cptec.length) {
                 cptec.slice(0, 5).forEach(c => {
                     html += `<div class="pd-cptec-row">
@@ -1358,7 +1368,7 @@
 
             // --- Data sources ---
             html += `<div class="pd-section">
-                <div class="pd-section-title"><i class="fa-solid fa-database sources"></i> Fontes de Dados</div>
+                <div class="pd-section-title"><i data-lucide="database" class="sources"></i> Fontes de Dados</div>
                 <div class="pd-source-row"><div class="pd-source-dot ok"></div><div class="pd-source-name">Open-Meteo</div><div class="pd-source-status" style="color:#22c55e;">ONLINE</div></div>
                 <div class="pd-source-row"><div class="pd-source-dot ${focosCount > 0 ? 'ok' : 'err'}"></div><div class="pd-source-name">INPE BDQueimadas</div><div class="pd-source-status" style="color:${focosCount > 0 ? '#22c55e' : '#ef4444'};">${focosCount > 0 ? 'ONLINE' : 'OFFLINE'}</div></div>
                 <div class="pd-source-row"><div class="pd-source-dot ${sipamCount > 0 ? 'ok' : 'err'}"></div><div class="pd-source-name">SIPAM Painel do Fogo</div><div class="pd-source-status" style="color:${sipamCount > 0 ? '#22c55e' : '#ef4444'};">${sipamCount > 0 ? 'ONLINE' : 'OFFLINE'}</div></div>
@@ -1367,10 +1377,11 @@
 
             // Refresh button
             html += `<div style="text-align:center;padding-top:8px;">
-                <button class="pd-refresh-btn" onclick="renderPainel()"><i class="fa-solid fa-arrows-rotate"></i> Atualizar agora</button>
+                <button class="pd-refresh-btn" onclick="renderPainel()"><i data-lucide="rotate-cw"></i> Atualizar agora</button>
             </div>`;
 
             el.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
             const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             updEl.textContent = 'Atualizado às ' + now;
         }
@@ -1403,7 +1414,7 @@
             const NS = 'http://www.w3.org/2000/svg';
             const W = 520, H = 480, P = 36;
 
-            fetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima')
+            dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima')
                 .then(r => r.json())
                 .then(gj => {
                     // Anel externo do polígono do estado
@@ -1554,6 +1565,8 @@
 
             document.querySelectorAll('.reveal, .monitoring-metrics').forEach(el => io.observe(el));
         })();
+
+        if (window.lucide) lucide.createIcons();
     </script>
 </body>
 </html>

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f172a">
     <title>Painel de Operações — Defesa Civil MT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -18,6 +18,11 @@
             --red: #ef4444; --green: #22c55e; --blue: #38bdf8; --amber: #fbbf24; --purple: #a78bfa;
         }
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+        [data-lucide] {
+            width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2;
+        }
+        .lucide-spin { animation: luSpin 1s linear infinite; }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
         body { background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
         /* HEADER */
@@ -174,11 +179,11 @@
             <div class="date-str" id="dateStr">—</div>
         </div>
         <div class="sep"></div>
-        <a href="index.html" class="hdr-btn btn-home"><i class="fa-solid fa-house"></i> Início</a>
-        <a href="mapa.html" class="hdr-btn btn-home"><i class="fa-solid fa-map"></i> Mapa</a>
-        <a href="alertas.html" class="hdr-btn btn-home"><i class="fa-solid fa-triangle-exclamation"></i> Alertas</a>
-        <a href="waze.html" class="hdr-btn btn-home"><i class="fa-solid fa-road"></i> Waze</a>
-        <button class="hdr-btn btn-emergency" onclick="alert('Ligando para 199 — Defesa Civil MT')"><i class="fa-solid fa-phone"></i> 199</button>
+        <a href="index.html" class="hdr-btn btn-home"><i data-lucide="home"></i> Início</a>
+        <a href="mapa.html" class="hdr-btn btn-home"><i data-lucide="map"></i> Mapa</a>
+        <a href="alertas.html" class="hdr-btn btn-home"><i data-lucide="triangle-alert"></i> Alertas</a>
+        <a href="waze.html" class="hdr-btn btn-home"><i data-lucide="road"></i> Waze</a>
+        <button class="hdr-btn btn-emergency" onclick="alert('Ligando para 199 — Defesa Civil MT')"><i data-lucide="phone"></i> 199</button>
     </div>
 </div>
 
@@ -188,7 +193,7 @@
     <!-- COL 1: STATS + CITIES -->
     <div class="panel">
         <div class="panel-hdr">
-            <h2><i class="fa-solid fa-chart-pie" style="color:var(--accent);"></i> Indicadores</h2>
+            <h2><i data-lucide="pie-chart" style="color:var(--accent);"></i> Indicadores</h2>
             <span id="updStats" style="font-size:9px;color:var(--muted);">—</span>
         </div>
         <div class="panel-body">
@@ -199,12 +204,12 @@
                 <div class="stat-card ok"><div class="ico">🛰️</div><div class="val" id="sSats">—</div><div class="lbl">Satélites</div><div class="badge" id="sSatsBadge">INPE</div></div>
             </div>
 
-            <div class="sec-title"><i class="fa-solid fa-city" style="color:var(--blue);"></i> Clima das 8 Cidades</div>
+            <div class="sec-title"><i data-lucide="building-2" style="color:var(--blue);"></i> Clima das 8 Cidades</div>
             <div class="city-grid" id="cityGrid">
-                <div class="loading" style="grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+                <div class="loading" style="grid-column:1/-1;"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>
             </div>
 
-            <div class="sec-title"><i class="fa-solid fa-database" style="color:var(--muted);"></i> Fontes de Dados</div>
+            <div class="sec-title"><i data-lucide="database" style="color:var(--muted);"></i> Fontes de Dados</div>
             <div id="srcList"></div>
         </div>
     </div>
@@ -212,7 +217,7 @@
     <!-- COL 2: MAP -->
     <div class="panel">
         <div class="panel-hdr">
-            <h2><i class="fa-solid fa-earth-americas" style="color:var(--green);"></i> Mapa em Tempo Real</h2>
+            <h2><i data-lucide="earth" style="color:var(--green);"></i> Mapa em Tempo Real</h2>
             <div style="display:flex;align-items:center;gap:10px;">
                 <span id="mapCount" style="font-size:9px;color:var(--muted);">—</span>
                 <a href="mapa.html" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none;font-weight:600;">Tela Cheia ↗</a>
@@ -221,9 +226,9 @@
         <div class="map-wrap">
             <div id="painelMap"></div>
             <div class="map-controls">
-                <button class="map-ctrl-btn active" id="btnFocos" onclick="toggleLayer('focos')"><i class="fa-solid fa-fire"></i> Focos</button>
-                <button class="map-ctrl-btn active" id="btnSipam" onclick="toggleLayer('sipam')"><i class="fa-solid fa-triangle-exclamation"></i> SIPAM</button>
-                <button class="map-ctrl-btn active" id="btnCidades" onclick="toggleLayer('cidades')"><i class="fa-solid fa-city"></i> Cidades</button>
+                <button class="map-ctrl-btn active" id="btnFocos" onclick="toggleLayer('focos')"><i data-lucide="flame"></i> Focos</button>
+                <button class="map-ctrl-btn active" id="btnSipam" onclick="toggleLayer('sipam')"><i data-lucide="triangle-alert"></i> SIPAM</button>
+                <button class="map-ctrl-btn active" id="btnCidades" onclick="toggleLayer('cidades')"><i data-lucide="building-2"></i> Cidades</button>
             </div>
             <div class="map-legend">
                 <h4>Legenda</h4>
@@ -242,31 +247,31 @@
         <!-- FIRE & SIPAM -->
         <div class="panel" style="flex:0 0 auto;">
             <div class="panel-hdr">
-                <h2><i class="fa-solid fa-fire-flame-curved" style="color:var(--red);"></i> Focos INPE & SIPAM</h2>
+                <h2><i data-lucide="flame" style="color:var(--red);"></i> Focos INPE & SIPAM</h2>
             </div>
             <div class="panel-body" style="max-height:160px;" id="firePanel">
-                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+                <div class="loading"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>
             </div>
         </div>
 
         <!-- CPTEC -->
         <div class="panel" style="flex:0 0 auto;">
             <div class="panel-hdr">
-                <h2><i class="fa-solid fa-cloud-sun" style="color:var(--amber);"></i> CPTEC Previsão — Cuiabá</h2>
+                <h2><i data-lucide="cloud-sun" style="color:var(--amber);"></i> CPTEC Previsão — Cuiabá</h2>
             </div>
             <div class="panel-body" style="max-height:170px;" id="cptecPanel">
-                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+                <div class="loading"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>
             </div>
         </div>
 
         <!-- FEED -->
         <div class="panel" style="flex:1;min-height:0;">
             <div class="panel-hdr">
-                <h2><i class="fa-solid fa-list-ul" style="color:var(--accent);"></i> Eventos em Tempo Real</h2>
+                <h2><i data-lucide="list" style="color:var(--accent);"></i> Eventos em Tempo Real</h2>
                 <span style="font-size:8px;font-weight:700;color:var(--red);background:rgba(239,68,68,.12);padding:2px 8px;border-radius:4px;">AO VIVO</span>
             </div>
             <div class="panel-body" id="feedPanel">
-                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>
+                <div class="loading"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>
             </div>
         </div>
     </div>
@@ -277,6 +282,8 @@
     <span>&copy; 2026 Defesa Civil de Mato Grosso — <a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a></span>
     <span>Atualização automática a cada 5 min</span>
 </div>
+
+<script src="js/proxy.js"></script>
 
 <script>
 // ===== CLOCK =====
@@ -304,7 +311,7 @@ const ICONE_CPTEC = { 'Chuva':'🌧️','Chuvoso':'🌧️','Ensolarado':'☀️
 // ===== API FETCHERS =====
 async function fetchCity(c) {
     try {
-        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,uv_index,wind_gusts_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`);
+        const r = await dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,uv_index,wind_gusts_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`);
         if (!r.ok) return null;
         const d = await r.json();
         const curr = d.current;
@@ -321,7 +328,7 @@ async function fetchFocos() {
             const d = new Date(Date.now() - i * 86400000);
             const iso = d.toISOString().slice(0,10).replaceAll('-','');
             try {
-                const r = await fetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+                const r = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
                 if (!r.ok) continue;
                 const t = await r.text();
                 if (t.length > 100) txt = t;
@@ -348,7 +355,7 @@ async function fetchFocos() {
 
 async function fetchSipam() {
     try {
-        const r = await fetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        const r = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
         if (!r.ok) return [];
         const d = await r.json();
         return Array.isArray(d) ? d : [];
@@ -357,7 +364,7 @@ async function fetchSipam() {
 
 async function fetchCptec() {
     try {
-        const r = await fetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+        const r = await dcProxyFetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
         if (!r.ok) return [];
         const d = await r.json();
         if (!d.clima?.length) return [];
@@ -396,9 +403,10 @@ async function renderPainel() {
         return `<div class="city-card">
             <div class="cn">${c.nome}</div>
             <div class="ct" style="color:${tc};">${Math.round(d.temp)}°C</div>
-            <div class="cm"><span><i class="fa-solid fa-droplet"></i> ${d.hum}%</span><span><i class="fa-solid fa-wind"></i> ${Math.round(d.wind)} km/h</span></div>
+            <div class="cm"><span><i data-lucide="droplet"></i> ${d.hum}%</span><span><i data-lucide="wind"></i> ${Math.round(d.wind)} km/h</span></div>
         </div>`;
     }).join('');
+    if (window.lucide) lucide.createIcons();
 
     // --- Fire Panel ---
     const fp = document.getElementById('firePanel');
@@ -431,8 +439,9 @@ async function renderPainel() {
             <div class="cptec-temp"><span style="color:var(--accent);">${c.tmax}°</span> <span style="color:var(--blue);font-weight:400;">${c.tmin}°</span></div>
         </div>`).join('');
     } else {
-        cp.innerHTML = '<div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</div>';
+        cp.innerHTML = '<div class="loading"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>';
     }
+    if (window.lucide) lucide.createIcons();
 
     // --- Feed (SIPAM events + top fire muns) ---
     const feed = document.getElementById('feedPanel');
@@ -443,21 +452,22 @@ async function renderPainel() {
         feedHtml += `<div class="feed-item${cor}">
             <div class="feed-head"><span class="feed-tag" style="color:${tagCor}">${ev.status_evento||'—'}</span><span class="feed-time">#${ev.id_evento}</span></div>
             <div class="feed-title">Evento — ${ev.municipio||'MT'}</div>
-            <div class="feed-loc"><i class="fa-solid fa-location-dot"></i> ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':''} ${ev.tipo_evento||''}</div>
+            <div class="feed-loc"><i data-lucide="map-pin"></i> ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':''} ${ev.tipo_evento||''}</div>
         </div>`;
     });
     if (focos.topMun.length) {
-        feedHtml += `<div class="sec-title" style="margin:8px 0 6px;"><i class="fa-solid fa-fire" style="color:var(--red);"></i> Top Municípios — Focos</div>`;
+        feedHtml += `<div class="sec-title" style="margin:8px 0 6px;"><i data-lucide="flame" style="color:var(--red);"></i> Top Municípios — Focos</div>`;
         focos.topMun.forEach(([m,n]) => {
             feedHtml += `<div class="feed-item yellow">
                 <div class="feed-head"><span class="feed-tag" style="color:var(--amber);background:rgba(251,191,36,.12);">INPE</span><span class="feed-time">${n} focos</span></div>
                 <div class="feed-title">${m}</div>
-                <div class="feed-loc"><i class="fa-solid fa-location-dot"></i> Mato Grosso</div>
+                <div class="feed-loc"><i data-lucide="map-pin"></i> Mato Grosso</div>
             </div>`;
         });
     }
     if (!feedHtml) feedHtml = '<div class="loading">Nenhum evento no momento</div>';
     feed.innerHTML = feedHtml;
+    if (window.lucide) lucide.createIcons();
 
     // --- Sources ---
     const sl = document.getElementById('srcList');
@@ -604,7 +614,7 @@ function updateMap(focosData, sipamData, cityResults) {
             `<span>Risco: <b style="color:${risco>=0.6?'#ef4444':'#fbbf24'}">${risco.toFixed(2)}</b></span><br>` +
             `<span>Satélite: ${f.satelite||'—'}</span><br>` +
             `<span>Bióma: ${f.bioma||'—'}</span><br>` +
-            `<a href="https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>`
+            `<a href="https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i data-lucide="navigation"></i> Waze</a>`
         ).addTo(layerFocos);
 
         totalCount++;
@@ -631,7 +641,7 @@ function updateMap(focosData, sipamData, cityResults) {
             `<span>Status: <b style="color:${col}">${status}</b></span><br>` +
             `<span>Área: ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'—'}</span><br>` +
             `<span>Tipo: ${ev.tipo_evento||'—'}</span><br>` +
-            `<a href="${wazeUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>`
+            `<a href="${wazeUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i data-lucide="navigation"></i> Waze</a>`
         ).addTo(layerSipam);
     });
 
@@ -653,7 +663,7 @@ function updateMap(focosData, sipamData, cityResults) {
             `<span>Umidade: ${d.hum}%</span><br>` +
             `<span>Vento: ${Math.round(d.wind)} km/h</span>` +
             (d.uv != null ? `<br><span>UV: ${d.uv.toFixed(1)}</span>` : '') +
-            `<br><a href="https://www.waze.com/ul?ll=${c.lat},${c.lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i class="fa-solid fa-diamond-turn-right"></i> Waze</a>`
+            `<br><a href="https://www.waze.com/ul?ll=${c.lat},${c.lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i data-lucide="navigation"></i> Waze</a>`
         ).addTo(layerCidades);
     });
 
@@ -664,9 +674,14 @@ function updateMap(focosData, sipamData, cityResults) {
 // Garantir que o mapa seja desenhado após o container ter dimensões
 window.addEventListener('load', () => {
     pMap.invalidateSize();
+    if (window.lucide) lucide.createIcons();
 });
 
+// Recebe popups abertos após renderização (ex.: ícones lucide no conteúdo)
+pMap.on('popupopen', () => { if (window.lucide) lucide.createIcons(); });
+
 // Bootstrap: agora que updateMap está definido, iniciar o painel
+if (window.lucide) lucide.createIcons();
 renderPainel();
 setInterval(renderPainel, 5*60*1000);
 </script>

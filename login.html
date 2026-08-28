@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso Restrito — Defesa Civil Mato Grosso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
     <style>
         :root {
@@ -20,6 +20,12 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        [data-lucide] {
+            width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2;
+        }
+        .lucide-spin { animation: luSpin 1s linear infinite; }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
 
         body {
             background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh;
@@ -106,7 +112,7 @@
             </div>
         </a>
         <a href="index.html" style="color:var(--text-muted);font-size:12.5px;text-decoration:none;">
-            <i class="fa-solid fa-arrow-left"></i> Voltar ao início
+            <i data-lucide="arrow-left"></i> Voltar ao início
         </a>
     </header>
 
@@ -145,7 +151,7 @@
             <div id="loginMsg" style="font-size:12px;color:#ef4444;margin-bottom:12px;display:none;"></div>
 
             <button class="btn-enter" id="entrarBtn">
-                <i class="fa-solid fa-right-to-bracket"></i> ENTRAR NO PAINEL
+                <i data-lucide="log-in"></i> ENTRAR NO PAINEL
             </button>
 
             <div class="demo-note">
@@ -162,6 +168,7 @@
     </footer>
 
     <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
     <script src="js/api.js"></script>
     <script src="js/session.js"></script>
     <script>
@@ -173,7 +180,7 @@
             btn.type = 'button';
             btn.className = 'profile-card';
             btn.dataset.perfil = key;
-            btn.innerHTML = `<i class="fa-solid ${p.icone}"></i><b>${p.label}</b><span>${p.desc}</span>`;
+            btn.innerHTML = `<i data-lucide="${p.icone}"></i><b>${p.label}</b><span>${p.desc}</span>`;
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
                 btn.classList.add('selected');
@@ -182,10 +189,11 @@
             });
             grid.appendChild(btn);
         });
+        if (window.lucide) lucide.createIcons();
 
         // Municípios para o perfil gestor municipal
-        fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios')
-            .then(r => r.json())
+        (window.dcProxyJson || function (u) { return fetch(u).then(function (r) { return r.json(); }); })
+            ('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios')
             .then(list => {
                 const sel = document.getElementById('munSelect');
                 sel.innerHTML = '<option value="">Selecione o município...</option>' +
@@ -210,13 +218,13 @@
 
             const btn = document.getElementById('entrarBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Validando...';
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Validando...';
             msg.style.display = 'none';
 
             const res = await dcLogin(usuario, senha);
 
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> ENTRAR NO PAINEL';
+            btn.innerHTML = '<i data-lucide="log-in"></i> ENTRAR NO PAINEL';
 
             if (!res.ok) {
                 msg.style.display = 'block';
