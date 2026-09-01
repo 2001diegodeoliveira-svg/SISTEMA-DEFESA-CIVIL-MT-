@@ -183,6 +183,10 @@
         .layer-btn.clouds.active svg[data-lucide] { color: var(--accent-orange); }
         .layer-btn .sub { display: block; font-size: 9.5px; color: var(--text-muted); font-weight: 400; margin-top: 2px; line-height: 1.35; }
         .layer-btn .sub b { color: #b6c5d4; font-weight: 600; }
+        .layer-btn.unavailable { opacity: .55; cursor: not-allowed; }
+        .layer-btn.unavailable .sub { color: #f59e0b; }
+        .ov-btn.unavailable { opacity: .45; }
+        .ov-btn.unavailable i, .ov-btn.unavailable svg[data-lucide] { color: var(--text-muted) !important; }
 
         .check-row {
             display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -1601,6 +1605,7 @@ async function loadWeather() {
         radarFrames.forEach((f, i) => { radarLayers[i] = makeFrameLayer(f, false).addTo(map); });
         document.getElementById('mtRadarMeta').textContent =
             `${fmtTime(weather.generated)} gerado`;
+        updateCloudsAvailability();
         updateTimeline();
         showFrame(radarFrames.length - 1);
         startPlaying();
@@ -1609,6 +1614,25 @@ async function loadWeather() {
         toast('Não foi possível carregar o radar meteorológico.');
         document.getElementById('playBtn').disabled = true;
         document.getElementById('timeSlider').disabled = true;
+    }
+}
+
+// RainViewer descontinuou o produto gratuito de satélite infravermelho — quando
+// vier vazio, sinaliza no painel em vez de deixar o botão "Nuvens" sem efeito.
+function updateCloudsAvailability() {
+    const btn = document.querySelector('.layer-btn.clouds');
+    const sub = btn?.querySelector('.sub');
+    const ovBtn = document.querySelector('.ov-btn[data-ov="clouds"]');
+    if (!satFrames.length) {
+        if (sub) sub.textContent = 'Indisponível — provedor sem cobertura no momento';
+        btn?.classList.add('unavailable');
+        ovBtn?.classList.add('unavailable');
+        if (ovBtn) ovBtn.title = 'Nuvens — indisponível (RainViewer sem cobertura de satélite no momento)';
+    } else {
+        if (sub) sub.textContent = 'Satélite infravermelho · RainViewer';
+        btn?.classList.remove('unavailable');
+        ovBtn?.classList.remove('unavailable');
+        if (ovBtn) ovBtn.title = 'Nuvens — satélite IR (C)';
     }
 }
 
@@ -3256,16 +3280,32 @@ function handleOverlaySwitch() {
         windLegendEl.classList.add('show');
         startWindAnimation();
     } else if (activeOverlayWindy === 'rain') {
-        activeOverlay = 'radar';
-        document.querySelector('.layer-btn.radar')?.classList.add('active');
-        startPlaying();
-        showFrame(radarFrames.length - 1);
+        if (!radarFrames.length) {
+            toast('Radar de chuva sem dados no momento — tente novamente em instantes.');
+            activeOverlayWindy = 'none';
+            document.querySelectorAll('.ov-btn').forEach(b => b.classList.remove('active'));
+        } else {
+            activeOverlay = 'radar';
+            document.querySelector('.layer-btn.radar')?.classList.add('active');
+            startPlaying();
+            showFrame(radarFrames.length - 1);
+            toast('Radar de chuva atualizado — ' + fmtTime(weather.generated) + '.', true);
+        }
     } else if (activeOverlayWindy === 'clouds') {
-        activeOverlay = 'clouds';
-        document.querySelector('.layer-btn.clouds')?.classList.add('active');
-        ensureSatLayers();
-        startPlaying();
-        showFrame(satFrames.length - 1);
+        if (!satFrames.length) {
+            // RainViewer descontinuou o produto de satélite infravermelho gratuito
+            // (a API pública passou a devolver "satellite.infrared": [] sempre vazio).
+            toast('Camada de nuvens (satélite IR) indisponível — o provedor RainViewer não está fornecendo esse produto no momento.');
+            activeOverlayWindy = 'none';
+            document.querySelectorAll('.ov-btn').forEach(b => b.classList.remove('active'));
+        } else {
+            activeOverlay = 'clouds';
+            document.querySelector('.layer-btn.clouds')?.classList.add('active');
+            ensureSatLayers();
+            startPlaying();
+            showFrame(satFrames.length - 1);
+            toast('Satélite infravermelho atualizado.', true);
+        }
     } else if (activeOverlayWindy === 'temp') {
         showTempOverlay();
         if (tempLegendEl) tempLegendEl.classList.add('show');
@@ -3742,13 +3782,13 @@ function drawTempHeatmap(points) {
 
     for (const p of points) {
         const pos = map.latLngToContainerPoint([p.lat, p.lon]);
-        const radius = 120;
+        const radius = 85;
         const rgb = tempColorRGB(p.temp);
 
         const grad = tempCtx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, radius);
-        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`);
-        grad.addColorStop(0.3, `rgba(${rgb.r},${rgb.g},${rgb.b},0.25)`);
-        grad.addColorStop(0.6, `rgba(${rgb.r},${rgb.g},${rgb.b},0.10)`);
+        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.28)`);
+        grad.addColorStop(0.3, `rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`);
+        grad.addColorStop(0.6, `rgba(${rgb.r},${rgb.g},${rgb.b},0.06)`);
         grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
 
         tempCtx.fillStyle = grad;
@@ -3826,8 +3866,8 @@ async function showFireOverlay() {
             const color = fireRiskColor(risco);
             const riskLabel = risco >= 70 ? 'Crítico' : risco >= 50 ? 'Alto' : risco >= 30 ? 'Médio' : risco >= 15 ? 'Baixo' : 'Mínimo';
             const marker = L.circleMarker([batch[j].lat, batch[j].lon], {
-                radius: 22, weight: 0,
-                fillColor: color, fillOpacity: 0.3,
+                radius: 14, weight: 0,
+                fillColor: color, fillOpacity: 0.2,
                 className: 'ov-fire-marker'
             }).bindPopup(`
                 <div class="ov-popup ov-popup-fire">
