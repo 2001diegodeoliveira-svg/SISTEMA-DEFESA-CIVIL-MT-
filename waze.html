@@ -244,13 +244,19 @@
 <script src="js/session.js"></script>
 <script src="js/proxy.js"></script>
 <script src="js/api.js"></script>
+<script>dcRenderUserArea();</script>
 <script>
 (function() {
     const map = L.map('wazeMap', { zoomControl:false }).setView([-13.5, -55.5], 5);
     L.control.zoom({ position:'topright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
+    // CARTO exige API key nos tiles gratuitos (vinha com marca d'água "API key
+    // required"); usamos o Esri "World Dark Gray", gratuito e sem chave.
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution:'&copy; Esri &copy; OpenStreetMap', maxZoom:19, maxNativeZoom:16
+    }).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        attribution:'&copy; Esri', maxZoom:19, maxNativeZoom:16
     }).addTo(map);
 
     const iconTypes = {
@@ -262,37 +268,55 @@
     };
     const sevColors = { urgent:'#ef4444', warning:'#f9731c', info:'#00d2ff' };
 
-    let userReports = JSON.parse(localStorage.getItem('wazeEvents') || '[]');
-    if (!userReports.length) {
-        userReports = [
-            { id:1, type:'acidente', severity:'urgent', location:'Av. Getulio Vargas, Cuiaba', description:'Acidente com 2 veiculos - pista bloqueada', reporter:'Anonimo', lat:-15.5941, lng:-56.0990, ts:Date.now()-300000 },
-            { id:2, type:'clima', severity:'warning', location:'Rondonopolis', description:'Chuva intensa com ventania - risco de queda de arvores', reporter:'Sistema', lat:-16.4833, lng:-54.6333, ts:Date.now()-600000 },
-            { id:3, type:'fogo', severity:'urgent', location:'Regiao de Sinop', description:'Queimada em larga escala - vento auxiliando propagacao', reporter:'INPE', lat:-11.8697, lng:-55.4846, ts:Date.now()-900000 },
-            { id:4, type:'engarrafamento', severity:'info', location:'BR-364, entrada de Cuiaba', description:'Congestionamento intenso - 5km de fila', reporter:'Waze Community', lat:-15.5000, lng:-56.1000, ts:Date.now()-1200000 }
-        ];
-        localStorage.setItem('wazeEvents', JSON.stringify(userReports));
+    // Reportes de demonstração — usados apenas como fallback se o backend estiver
+    // indisponível (nunca mesclados permanentemente com dados reais).
+    const DEMO_REPORTS = [
+        { id:'demo-1', type:'acidente', severity:'urgent', location:'Av. Getulio Vargas, Cuiaba', description:'Acidente com 2 veiculos - pista bloqueada', reporter:'Anonimo', lat:-15.5941, lng:-56.0990, ts:Date.now()-300000 },
+        { id:'demo-2', type:'clima', severity:'warning', location:'Rondonopolis', description:'Chuva intensa com ventania - risco de queda de arvores', reporter:'Sistema', lat:-16.4833, lng:-54.6333, ts:Date.now()-600000 },
+        { id:'demo-3', type:'fogo', severity:'urgent', location:'Regiao de Sinop', description:'Queimada em larga escala - vento auxiliando propagacao', reporter:'INPE', lat:-11.8697, lng:-55.4846, ts:Date.now()-900000 },
+        { id:'demo-4', type:'engarrafamento', severity:'info', location:'BR-364, entrada de Cuiaba', description:'Congestionamento intenso - 5km de fila', reporter:'Waze Community', lat:-15.5000, lng:-56.1000, ts:Date.now()-1200000 },
+    ];
+    // Última lista confirmada pelo backend (compartilhada com todos os usuários).
+    let apiReports = [];
+    let backendOk = false;
+    // Reportes criados neste navegador que não foram confirmados no backend
+    // (ex.: usuário sem login) — ficam visíveis só localmente até sincronizar.
+    let localOnlyReports = JSON.parse(localStorage.getItem('wazeLocalReports') || '[]');
+
+    function salvarLocalOnly() {
+        try { localStorage.setItem('wazeLocalReports', JSON.stringify(localOnlyReports)); } catch (e) {}
     }
 
-    // Carrega ocorrências persistidas no backend; se indisponível, mantém a local
+    // Lista efetivamente exibida: reportes locais ainda não confirmados + dados
+    // reais do backend (ou demonstração, se o backend estiver fora do ar).
+    function userReportsAtuais() {
+        const base = backendOk ? apiReports : DEMO_REPORTS;
+        const extras = localOnlyReports.filter(l => !base.some(b => String(b.id) === String(l.id)));
+        return extras.concat(base);
+    }
+
+    // Busca ocorrências do backend (compartilhadas em tempo real entre usuários);
+    // chamada periodicamente — ver setInterval mais abaixo.
     function loadReports() {
-        if (!window.dcApi) return renderUserReports();
+        if (!window.dcApi) { backendOk = false; renderUserReports(); renderReportCards(); return; }
         dcApi.reports().then(function (r) {
-            if (r.ok && Array.isArray(r.data.reports)) {
-                const api = r.data.reports.map(x => ({
+            if (r.ok && r.data && Array.isArray(r.data.reports)) {
+                backendOk = true;
+                apiReports = r.data.reports.map(x => ({
                     id: x.id, type: x.type, severity: x.severity || 'info',
                     location: x.location, description: x.description,
                     reporter: x.reporter, lat: x.lat, lng: x.lng, ts: x.ts
                 }));
-                // mescla com os reportes locais de demonstração (primeiros 4)
-                if (userReports.length > 4) {
-                    userReports = userReports.slice(0, 4).concat(api.filter(a => !userReports.some(u => String(u.id) === String(a.id))));
-                } else {
-                    userReports = userReports.concat(api.filter(a => !userReports.some(u => String(u.id) === String(a.id))));
-                }
-                renderUserReports();
-                renderReportCards();
+                // remove da lista local qualquer item que já foi confirmado no backend
+                const antes = localOnlyReports.length;
+                localOnlyReports = localOnlyReports.filter(l => !apiReports.some(a => String(a.id) === String(l.id)));
+                if (localOnlyReports.length !== antes) salvarLocalOnly();
+            } else {
+                backendOk = false;
             }
-        }).catch(function () {});
+            renderUserReports();
+            renderReportCards();
+        }).catch(function () { backendOk = false; renderUserReports(); renderReportCards(); });
     }
 
     let sipamEvents = [];
@@ -339,7 +363,7 @@
             clima: document.getElementById('f-clima').checked,
             fogo: document.getElementById('f-fogo').checked
         };
-        const visible = userReports.filter(e => types[e.type]);
+        const visible = userReportsAtuais().filter(e => types[e.type]);
         visible.forEach(ev => {
             const wazeUrl = `https://www.waze.com/ul?ll=${ev.lat},${ev.lng}&navigate=yes&zoom=17`;
             L.marker([ev.lat, ev.lng], { icon: userIcon(ev.type, ev.severity) })
@@ -366,7 +390,7 @@
             clima: document.getElementById('f-clima').checked,
             fogo: document.getElementById('f-fogo').checked
         };
-        const visible = userReports.filter(e => types[e.type]);
+        const visible = userReportsAtuais().filter(e => types[e.type]);
         if (!visible.length) { el.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:11px;padding:16px;"><i data-lucide="inbox"></i><br><br>Nenhum evento encontrado</p>'; if (window.lucide) lucide.createIcons(); return; }
         el.innerHTML = visible.map(ev => `
             <div class="report-card ${ev.severity}" data-lat="${ev.lat}" data-lng="${ev.lng}">
@@ -515,7 +539,7 @@
         map.getContainer().style.cursor = '';
     });
 
-    document.getElementById('reportForm').addEventListener('submit', function(ev) {
+    document.getElementById('reportForm').addEventListener('submit', async function(ev) {
         ev.preventDefault();
         const type = document.getElementById('eventType').value;
         const loc = document.getElementById('eventLocation').value.trim();
@@ -523,30 +547,40 @@
         if (!type || !loc || !desc) { alert('Preencha todos os campos obrigatorios.'); return; }
         if (desc.length < 10) { alert('A descricao deve ter pelo menos 10 caracteres.'); return; }
         if (!reportLatLng) { alert('Clique no mapa para definir a localizacao.'); return; }
-        const newEv = {
-            id: Date.now(), type,
+        const payload = {
+            type,
             severity: document.getElementById('eventSeverity').value,
             location: loc, description: desc,
             reporter: document.getElementById('eventName').value.trim() || 'Anonimo',
             lat: reportLatLng.lat, lng: reportLatLng.lng,
-            ts: Date.now()
         };
-        userReports.unshift(newEv);
-        localStorage.setItem('wazeEvents', JSON.stringify(userReports));
-        // persiste no backend quando possível
-        if (window.dcApi) {
-            dcApi.createReport({
-                type: newEv.type, severity: newEv.severity,
-                location: newEv.location, description: newEv.description,
-                reporter: newEv.reporter, lat: newEv.lat, lng: newEv.lng
-            }).catch(function () {});
+
+        // Tenta persistir no backend (exige login) para aparecer em tempo real
+        // para todos os usuários; sem login, fica salvo só neste navegador.
+        let sincronizado = false;
+        if (window.dcApi && window.dcGetToken && dcGetToken()) {
+            try {
+                const r = await dcApi.createReport(payload);
+                if (r.ok && r.data && r.data.report) {
+                    sincronizado = true;
+                    apiReports.unshift({ ...payload, id: r.data.report.id, ts: r.data.report.ts || Date.now() });
+                    backendOk = true;
+                }
+            } catch (e) { /* mantém sincronizado = false */ }
         }
+        if (!sincronizado) {
+            localOnlyReports.unshift({ ...payload, id: 'local-' + Date.now(), ts: Date.now() });
+            salvarLocalOnly();
+        }
+
         reportLatLng = null;
         this.reset();
         document.getElementById('eventCoords').value = '';
         document.getElementById('reportModal').classList.remove('open');
         applyFilters();
-        alert('Evento reportado com sucesso!');
+        alert(sincronizado
+            ? 'Evento reportado com sucesso! Visível para todos os usuários em tempo real.'
+            : 'Evento salvo neste navegador. Faça login para compartilhar em tempo real com outros usuários.');
     });
 
     applyFilters();
@@ -554,14 +588,9 @@
     loadSIPAM();
     loadINPE();
 
-    setInterval(() => {
-        renderUserReports();
-        renderReportCards();
-        loadSIPAM();
-        loadINPE();
-    }, 10*60*1000);
-
-    setInterval(() => { renderReportCards(); }, 60000);
+    setInterval(loadReports, 30*1000);                 // reportes de outros usuários — tempo real
+    setInterval(() => { loadSIPAM(); loadINPE(); }, 10*60*1000);
+    setInterval(renderReportCards, 60000);              // atualiza rótulos relativos ("há Xm")
 })();
 if (window.lucide) lucide.createIcons();
 </script>

@@ -1151,7 +1151,9 @@
     <!-- Painel de alertas ativos no hero -->
     <script src="js/data.js"></script>
     <script src="js/proxy.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/session.js"></script>
+    <script>dcRenderUserArea();</script>
     <script>
         (function renderHomeAlerts() {
             const list = document.getElementById('homeAlertsList');
@@ -1165,10 +1167,24 @@
                 return m ? m[1].replace(/<[^>]+>/g, '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/\s+/g, ' ').trim() : '';
             }
 
-            async function renderInmet() {
+            async function obterAvisosInmet() {
+                // Prioriza o backend (mesma fonte usada em alertas.html — já filtrada e ordenada).
+                if (window.dcApi && window.dcApi.alertas) {
+                    try {
+                        const r = await dcApi.alertas();
+                        if (r.ok && r.data && Array.isArray(r.data.inmet)) {
+                            return r.data.inmet.map(item => ({
+                                evento: item.evento, severidade: item.severidade,
+                                descricao: item.descricao, inicio: item.inicio, fim: item.fim,
+                                link: item.link,
+                            }));
+                        }
+                    } catch (e) { /* cai para busca direta abaixo */ }
+                }
+                // Sem backend: busca direta no INMET via proxy CORS.
                 try {
                     const r = await dcProxyFetch('https://apiprevmet3.inmet.gov.br/avisos/rss');
-                    if (!r.ok) return;
+                    if (!r.ok) return [];
                     const xml = await r.text();
                     const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
                     const avisos = [];
@@ -1189,11 +1205,21 @@
                             fim, link: (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '',
                         });
                     }
+                    return avisos;
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            async function renderInmet() {
+                try {
+                    const avisos = await obterAvisosInmet();
                     const sev = { 'Perigo Potencial': 2, 'Perigo': 1, 'Grande Perigo': 0 };
                     const cor = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
                     const icon = { 'chuvas intensas': 'cloud-rain', 'tempestade': 'cloud-lightning', 'baixa umidade': 'droplet', 'vendaval': 'wind', 'onda de calor': 'thermometer-sun', 'granizo': 'cloud-hail' };
                     avisos.sort((a, b) => (sev[a.severidade] ?? 2) - (sev[b.severidade] ?? 2));
                     const top = avisos.slice(0, 3);
+                    if (!top.length) return;
 
                     const bloco = top.map(a => {
                         const c = cor[sev[a.severidade]] ?? '#f97316';
@@ -1229,7 +1255,7 @@
             }
 
             // Inicial: mostra curados imediatamente, depois carrega INMET por cima
-            const base = [...ALERTAS_ATIVOS].sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel]).slice(0, 3);
+            const base = [...alertasVigentes()].sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel] || new Date(b.emitidoEm) - new Date(a.emitidoEm)).slice(0, 3);
             const inicial = base.map(al => `
                 <a href="alertas.html#${al.id}" class="alert-card curado" style="text-decoration:none;">
                     <div class="alert-info">
@@ -1244,7 +1270,7 @@
             list.dataset.curados = inicial;
 
             // Badge dinâmico no botão do hero
-            const total = ALERTAS_ATIVOS.filter(a => a.nivel !== 'atencao').length;
+            const total = alertasVigentes().filter(a => a.nivel !== 'atencao').length;
             const btn = document.querySelector('.btn-main-alert');
             if (btn && total > 0 && !btn.querySelector('span')) {
                 btn.insertAdjacentHTML('beforeend',

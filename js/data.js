@@ -119,6 +119,38 @@ const ALERTAS_ATIVOS = [
     },
 ];
 
+/* Mantém os alertas de demonstração sempre vigentes em relação a "agora"
+   (mesmo cálculo usado pelo backend em datasAtuais) e nunca expirados,
+   independente de quando a página for aberta. */
+(function normalizarAlertasDemo() {
+    ALERTAS_ATIVOS.forEach((al, idx) => {
+        const origEmit = al.emitidoEm ? new Date(al.emitidoEm).getTime() : NaN;
+        const origVal = al.validoAte ? new Date(al.validoAte).getTime() : NaN;
+        let duracaoDias = 1;
+        if (!isNaN(origEmit) && !isNaN(origVal)) {
+            duracaoDias = Math.max(1, Math.round((origVal - origEmit) / 86400000));
+        }
+        const emit = new Date(Math.max(Date.now() - (idx % 4) * 86400000, isNaN(origEmit) ? 0 : origEmit));
+        let validade = new Date(emit.getTime() + duracaoDias * 86400000 + 12 * 3600000);
+        emit.setHours(6 + (idx % 2) * 4, 0, 0, 0);
+        // Garante que a validade nunca fique no passado (defesa contra reordenação da lista).
+        if (validade.getTime() <= Date.now()) validade = new Date(Date.now() + 6 * 3600000);
+        const fmt = d => d.toISOString().slice(0, 16);
+        al.emitidoEm = fmt(emit);
+        al.validoAte = fmt(validade);
+    });
+})();
+
+/* Apenas alertas ainda vigentes (validoAte no futuro). Use isto em vez de
+   ALERTAS_ATIVOS diretamente para exibir a lista "ativa" ao usuário. */
+function alertasVigentes() {
+    const agora = Date.now();
+    return ALERTAS_ATIVOS.filter(a => {
+        const v = new Date(a.validoAte).getTime();
+        return isNaN(v) || v >= agora;
+    });
+}
+
 /* ============================================================
    Rede de monitoramento DC (ilustrativa) — compartilhada entre
    home, mapa e alertas. Formato pronto p/ API do backend.

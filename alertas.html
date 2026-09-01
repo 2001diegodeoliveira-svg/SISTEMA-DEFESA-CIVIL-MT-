@@ -355,9 +355,14 @@
 
     <script src="js/data.js"></script>
     <script src="js/proxy.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/session.js"></script>
+    <script>dcRenderUserArea();</script>
     <script>
         let filtroAtual = 'todos';
+        // Começa com a lista local (sempre válida); é substituída pelos alertas
+        // reais do backend assim que /api/alertas responder com sucesso.
+        let curadosAtuais = alertasVigentes();
         const container = document.getElementById('alertsContainer');
 
         function fmtData(iso) {
@@ -367,16 +372,17 @@
         }
 
         function renderStats() {
-            const count = n => ALERTAS_ATIVOS.filter(a => a.nivel === n).length;
+            const ativos = curadosAtuais;
+            const count = n => ativos.filter(a => a.nivel === n).length;
             document.getElementById('stEmergencia').textContent = count('emergencia');
             document.getElementById('stAlerta').textContent = count('alerta');
             document.getElementById('stAtencao').textContent = count('atencao');
             document.getElementById('stMunicipios').textContent =
-                new Set(ALERTAS_ATIVOS.map(a => a.municipio)).size;
+                new Set(ativos.map(a => a.municipio)).size;
             document.getElementById('stUpdate').textContent =
                 new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            document.getElementById('cTodos').textContent = ALERTAS_ATIVOS.length;
+            document.getElementById('cTodos').textContent = ativos.length;
             ['emergencia', 'alerta', 'atencao'].forEach(n => {
                 document.getElementById('c' + n.charAt(0).toUpperCase() + n.slice(1)).textContent = count(n);
             });
@@ -386,8 +392,8 @@
             const busca = document.getElementById('buscaMunicipio').value.trim().toLowerCase();
             container.innerHTML = '';
 
-            const filtrados = [...ALERTAS_ATIVOS]
-                .sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel])
+            const filtrados = [...curadosAtuais]
+                .sort((a, b) => ordemNivel[a.nivel] - ordemNivel[b.nivel] || new Date(b.emitidoEm) - new Date(a.emitidoEm))
                 .filter(a => filtroAtual === 'todos' || a.nivel === filtroAtual)
                 .filter(a => !busca || a.municipio.toLowerCase().includes(busca));
 
@@ -495,6 +501,16 @@
         const INMET_SEV_COR = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
         // Regiões de MT (mesorregiões IBGE). Evita "Sul Mato-grossense"/"Mato Grosso do Sul" (não é MT).
         const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
+        const MESO_MT = ['Centro-Sul Mato-grossense', 'Norte Mato-grossense', 'Nordeste Mato-grossense', 'Sudeste Mato-grossense', 'Centro-Oeste de Mato Grosso', 'Sudoeste Mato-grossense'];
+
+        // Avisos do INMET costumam listar dezenas de mesorregiões de vários estados
+        // no mesmo aviso; mantém apenas as que pertencem a Mato Grosso para exibição.
+        function filtrarAreasMT(areaStr) {
+            const limpo = String(areaStr || '').replace(/^Aviso para as Áreas:\s*/i, '');
+            const partes = limpo.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean);
+            const soMt = partes.filter(p => MESO_MT.some(m => m.toLowerCase() === p.toLowerCase()));
+            return soMt.length ? soMt.join(', ') : limpo;
+        }
 
         function hidratar(e, re) {
             const m = e.match(re);
@@ -536,7 +552,7 @@
 
                     avisos.push({
                         id, evento, severidade,
-                        inicio, fim, descricao, area, link,
+                        inicio, fim, descricao, area: filtrarAreasMT(area), link,
                         sev: INMET_SEV[severidade] !== undefined ? INMET_SEV[severidade] : 2,
                     });
                 }
@@ -607,8 +623,35 @@
             if (window.lucide) lucide.createIcons();
         }
 
+        // Tenta obter alertas curados + avisos INMET já processados pelo backend
+        // (fonte única, sempre com datas recalculadas). Retorna null se indisponível.
+        async function carregarDoBackend() {
+            if (!window.dcApi || !window.dcApi.alertas) return null;
+            try {
+                const r = await dcApi.alertas();
+                if (!r.ok || !r.data || !Array.isArray(r.data.alertas)) return null;
+                const inmet = Array.isArray(r.data.inmet) ? r.data.inmet.map(item => ({
+                    id: item.id, evento: item.evento, severidade: item.severidade,
+                    inicio: item.inicio, fim: item.fim, descricao: item.descricao,
+                    area: item.areas, link: item.link,
+                    sev: INMET_SEV[item.severidade] !== undefined ? INMET_SEV[item.severidade] : 2,
+                })) : [];
+                return { alertas: r.data.alertas, avisos: inmet };
+            } catch (e) {
+                return null;
+            }
+        }
+
         async function loadInmet() {
-            const g = await fetchInmetAvisos();
+            const backend = await carregarDoBackend();
+            let g;
+            if (backend) {
+                curadosAtuais = backend.alertas;
+                g = { avisos: backend.avisos };
+            } else {
+                curadosAtuais = alertasVigentes(); // sem backend: mantém local sempre em dia
+                g = await fetchInmetAvisos();
+            }
             renderInmet(g);
             // mantém datas dos curados e contadores atualizados
             renderStats();

@@ -25,6 +25,29 @@ function rewriteUrl(url) {
     return url;
 }
 
+const UPSTREAM_TIMEOUT_MS = 20000;
+
+// Tenta buscar a origem com timeout; refaz 1 tentativa em caso de falha de rede/timeout.
+async function fetchUpstream(target, attempts = 2) {
+    for (let i = 0; i < attempts; i++) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), UPSTREAM_TIMEOUT_MS);
+        try {
+            return await fetch(rewriteUrl(target), {
+                headers: {
+                    'User-Agent': 'DefesaCivilMT/1.0 (+painel-operacional)',
+                    'Accept': '*/*',
+                },
+                signal: ctrl.signal,
+            });
+        } catch (e) {
+            if (i === attempts - 1) throw e;
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+}
+
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
   const headers = corsHeaders(origin);
@@ -56,17 +79,12 @@ module.exports = serve(async function handler(req) {
   }
 
   try {
-    const upstream = await fetch(rewriteUrl(target), {
-      headers: {
-        'User-Agent': 'DefesaCivilMT/1.0 (+painel-operacional)',
-        'Accept': '*/*',
-      },
-    });
+    const upstream = await fetchUpstream(target);
     const buf = Buffer.from(await upstream.arrayBuffer());
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
 
     return new Response(buf, {
-      status: 200,
+      status: upstream.status,
       headers: Object.assign({}, headers, {
         'Content-Type': raw ? contentType : contentType,
         'X-Upstream-Status': String(upstream.status),

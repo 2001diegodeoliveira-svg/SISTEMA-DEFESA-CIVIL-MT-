@@ -1535,6 +1535,7 @@
 <script src="js/proxy.js"></script>
 <script src="js/api.js"></script>
 <script src="js/session.js"></script>
+<script>dcRenderUserArea();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 /* ================= Mapa base ================= */
@@ -1544,9 +1545,15 @@ const map = L.map('map', { zoomControl: false, attributionControl: true })
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 L.control.scale({ position: 'bottomright', imperial: false }).addTo(map);
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
+// CARTO free raster basemaps agora exigem API key (watermark "API key required" sem ela).
+// Usamos o Esri "World Dark Gray" (base + rótulos), que é gratuito e não exige chave.
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18, maxNativeZoom: 16,
+    attribution: '&copy; Esri &copy; OpenStreetMap'
+}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18, maxNativeZoom: 16,
+    attribution: '&copy; Esri'
 }).addTo(map);
 
 /* ================= Estado ================= */

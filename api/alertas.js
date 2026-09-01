@@ -1,10 +1,19 @@
 /* GET /api/alertas → { alertas:[...], atualizadoEm }  (curados + avisos INMET ao vivo) */
 const { jsonResponse, reqUrl } = require('./_lib/http');
-const { readCollection, writeCollection } = require('./_lib/store');
 const { ALERTAS_SEED } = require('./_lib/seed');
 const { serve } = require('./_lib/serverless');
 
 const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
+const MESO_MT = ['Centro-Sul Mato-grossense', 'Norte Mato-grossense', 'Nordeste Mato-grossense', 'Sudeste Mato-grossense', 'Centro-Oeste de Mato Grosso', 'Sudoeste Mato-grossense'];
+
+// Avisos do INMET costumam listar dezenas de mesorregiões de vários estados
+// no mesmo aviso; mantém apenas as que pertencem a Mato Grosso.
+function filtrarAreasMT(areaStr) {
+  const limpo = String(areaStr || '').replace(/^Aviso para as Áreas:\s*/i, '');
+  const partes = limpo.split(/\s*,\s*/).map((s) => s.trim()).filter(Boolean);
+  const soMt = partes.filter((p) => MESO_MT.some((m) => m.toLowerCase() === p.toLowerCase()));
+  return soMt.length ? soMt.join(', ') : limpo;
+}
 
 function campoTabela(html, rotulo) {
   const re = new RegExp('<th[^>]*>' + rotulo + '</th>[\\s\\S]*?<td>([\\s\\S]*?)</td>', 'i');
@@ -22,8 +31,10 @@ function datasAtuais(al, idx) {
   }
   let emit = new Date(Date.now() - (idx % 4) * 86400000);
   if (!isNaN(origEmit)) emit = new Date(Math.max(Date.now() - (idx % 4) * 86400000, origEmit));
-  const validade = new Date(emit.getTime() + duracaoDias * 86400000 + 12 * 3600000);
+  let validade = new Date(emit.getTime() + duracaoDias * 86400000 + 12 * 3600000);
   emit.setHours(6 + (idx % 2) * 4, 0, 0, 0);
+  // Garante que a validade nunca fique no passado (defesa contra reordenação do seed).
+  if (validade.getTime() <= Date.now()) validade = new Date(Date.now() + 6 * 3600000);
   const fmt = d => d.toISOString().slice(0, 16);
   return { emitidoEm: fmt(emit), validoAte: fmt(validade) };
 }
@@ -54,7 +65,7 @@ async function fetchInmetAvisos() {
         descricao: campoTabela(html, 'Descrição'),
         inicio: String(campoTabela(html, 'Início')).replace(' ', 'T'),
         fim: String(fim).replace(' ', 'T'),
-        areas: area,
+        areas: filtrarAreasMT(area),
         link: (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '',
       });
     }
@@ -76,12 +87,13 @@ module.exports = serve(async function handler(req) {
     return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
   }
 
-  // Garante seed na primeira leitura
-  let alertas = await readCollection('alertas');
-  if (!alertas.length) {
-    alertas = ALERTAS_SEED.map((a, i) => ({ ...datasAtuais(a, i), ...a }));
-    await writeCollection('alertas', alertas);
-  }
+  // Alertas curados são recalculados a cada requisição (datas sempre relativas
+  // a "agora"), nunca persistidos — evita servir alertas com validade expirada.
+  let alertas = ALERTAS_SEED.map((a, i) => ({ ...datasAtuais(a, i), ...a }));
+  alertas = alertas.filter((a) => {
+    const v = new Date(a.validoAte).getTime();
+    return isNaN(v) || v >= Date.now();
+  });
 
   let comInmet = true;
   const ru = reqUrl(req);
