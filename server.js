@@ -26,6 +26,7 @@ const handlers = {
   proxy: require('./api/proxy'),
   occurrences: require('./api/occurrences'),
   waze: require('./api/waze'),
+  tomtom: require('./api/tomtom'),
 };
 
 /* Empacota handler de serverless (fetch Request/Response) para Express */
@@ -74,11 +75,16 @@ app.get('/api/occurrences', wrap(handlers.occurrences));
 app.get('/api/waze', wrap(handlers.waze));
 app.post('/api/waze', wrap(handlers.waze));
 app.options('/api/waze', wrap(handlers.waze));
+app.get('/api/tomtom', wrap(handlers.tomtom));
+app.post('/api/tomtom', wrap(handlers.tomtom));
+app.options('/api/tomtom', wrap(handlers.tomtom));
 
-// Job de sincronização Waze (mock por padrão) — só roda no server.js
+// Job de sincronização Waze/TomTom (mock por padrão) — só roda no server.js
 // standalone (processo Node persistente); em serverless (Vercel) use
-// um agendador externo chamando POST /api/waze?action=sync.
+// um agendador externo chamando POST /api/waze?action=sync e
+// POST /api/tomtom?action=sync.
 require('./api/_lib/waze').startJob();
+require('./api/_lib/tomtom').startJob();
 
 /* Serve os estáticos do frontend (mesmo diretório) para testes locais */
 app.use(express.static(path.join(__dirname)));
