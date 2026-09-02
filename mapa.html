@@ -390,49 +390,7 @@
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         #toast.info { background: rgba(56,189,248,.92); color: #06202b; }
 
-        /* ===== Flash Popup — Alertas Climáticos em Tempo Real ===== */
-        #flashPopup {
-            position: absolute; bottom: 18px; left: 16px; z-index: 1250;
-            width: 320px; max-width: calc(100vw - 32px);
-            background: var(--glass-bg); backdrop-filter: blur(16px);
-            border-radius: 12px; padding: 0; overflow: hidden;
-            box-shadow: 0 12px 40px rgba(0,0,0,.5);
-            opacity: 0; transform: translateY(20px); pointer-events: none;
-            transition: all .35s cubic-bezier(.4,0,.2,1);
-            border: 1px solid var(--glass-border);
-        }
-        #flashPopup.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        #flashPopup.sev-critico { border-left: 4px solid #ef4444; }
-        #flashPopup.sev-alto { border-left: 4px solid #f9731c; }
-        #flashPopup.sev-medio { border-left: 4px solid #fbbf24; }
-        #flashPopup.sev-info { border-left: 4px solid #38bdf8; }
-        .fp-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
-        .fp-icon {
-            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; font-size: 16px;
-        }
-        .fp-icon.temp { background: rgba(239,68,68,.15); color: #ef4444; }
-        .fp-icon.wind { background: rgba(148,163,184,.15); color: #94a3b8; }
-        .fp-icon.rain { background: rgba(56,189,248,.15); color: #38bdf8; }
-        .fp-icon.humidity { background: rgba(56,189,248,.15); color: #38bdf8; }
-        .fp-icon.fire { background: rgba(249,115,22,.15); color: #f9731c; }
-        .fp-icon.event { background: rgba(239,68,68,.15); color: #ef4444; }
-        .fp-icon.uv { background: rgba(251,191,36,.15); color: #fbbf24; }
-        .fp-icon.pressure { background: rgba(148,163,184,.15); color: #94a3b8; }
-        .fp-title { font-size: 12px; font-weight: 700; color: var(--text-main); }
-        .fp-city { font-size: 10px; color: var(--text-muted); font-weight: 500; }
-        .fp-body { padding: 0 14px 10px; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
-        .fp-foot { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-top: 1px solid rgba(255,255,255,.05); }
-        .fp-time { font-size: 9px; color: var(--text-muted); }
-        .fp-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; padding: 4px; }
-        .fp-close:hover { color: var(--text-main); }
-        .fp-sev-badge { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 2px 6px; border-radius: 4px; }
-        .fp-sev-badge.critico { background: rgba(239,68,68,.15); color: #ef4444; }
-        .fp-sev-badge.alto { background: rgba(249,115,22,.15); color: #f9731c; }
-        .fp-sev-badge.medio { background: rgba(251,191,36,.15); color: #fbbf24; }
-        .fp-sev-badge.info { background: rgba(56,189,248,.15); color: #38bdf8; }
-        @keyframes fpPulse { 0%,100%{box-shadow:0 12px 40px rgba(0,0,0,.5)} 50%{box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 0 3px rgba(239,68,68,.2)} }
-        #flashPopup.sev-critico.show { animation: fpPulse 2s ease-in-out infinite; }
+        /* Flash Popup e histórico de alertas: injetados por js/monitor.js */
 
         /* ===== Barra de estatísticas INPE ===== */
 
@@ -1483,20 +1441,6 @@
 
     <div id="toast"></div>
 
-    <!-- Flash Popup — Alertas Climáticos -->
-    <div id="flashPopup">
-        <div class="fp-head">
-            <div class="fp-icon" id="fpIcon"><i data-lucide="bell"></i></div>
-            <div><div class="fp-title" id="fpTitle">—</div><div class="fp-city" id="fpCity">—</div></div>
-        </div>
-        <div class="fp-body" id="fpBody">—</div>
-        <div class="fp-foot">
-            <span class="fp-sev-badge" id="fpSev">INFO</span>
-            <span class="fp-time" id="fpTime">—</span>
-            <button class="fp-close" id="fpClose"><i data-lucide="x"></i></button>
-        </div>
-    </div>
-
     <!-- Botão toggler da tabela -->
     <button id="toggleTableBtn"><i data-lucide="columns-2"></i> Dados dos focos</button>
 
@@ -1540,6 +1484,7 @@
 <script src="js/api.js"></script>
 <script src="js/session.js"></script>
 <script>dcRenderUserArea();</script>
+<script src="js/monitor.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 /* ================= Mapa base ================= */
@@ -3926,185 +3871,9 @@ document.getElementById('climateToggle').addEventListener('click', () => {
     if (window.lucide) lucide.createIcons();
 });
 
-/* ================= Alertas Climáticos em Tempo Real ================= */
-const MON_CITIES = [
-    { nome: 'Cuiabá', lat: -15.588, lon: -56.097 },
-    { nome: 'Sinop', lat: -11.860, lon: -55.510 },
-    { nome: 'Rondonópolis', lat: -16.471, lon: -54.637 },
-    { nome: 'Sorriso', lat: -12.545, lon: -55.727 },
-    { nome: 'Cáceres', lat: -16.076, lon: -57.681 },
-    { nome: 'Tangará da Serra', lat: -14.620, lon: -57.426 },
-    { nome: 'Primavera do Leste', lat: -15.527, lon: -54.284 },
-    { nome: 'Barra do Garças', lat: -15.891, lon: -52.262 },
-];
-const MON_THRESHOLDS = {
-    temp: { critico: 40, alto: 35, varCritico: 6, varAlto: 4 },
-    wind: { critico: 60, alto: 45, varCritico: 25, varAlto: 15 },
-    humidity: { critico: 15, dropAlto: 20 },
-    uv: { critico: 11, alto: 8 },
-};
-let monPrev = {};
-let monAlertQueue = [];
-let monShowing = false;
-let monSipamIds = [];
-let monFocoKeys = [];
-
-const fpEl = document.getElementById('flashPopup');
-const fpIcon = document.getElementById('fpIcon');
-const fpTitle = document.getElementById('fpTitle');
-const fpCity = document.getElementById('fpCity');
-const fpBody = document.getElementById('fpBody');
-const fpSev = document.getElementById('fpSev');
-const fpTime = document.getElementById('fpTime');
-document.getElementById('fpClose').addEventListener('click', () => {
-    fpEl.classList.remove('show');
-    monShowing = false;
-    setTimeout(showNextAlert, 300);
-});
-
-function sevIcon(type) {
-    return { temp:'thermometer', wind:'wind', rain:'cloud-rain', humidity:'droplet', fire:'flame', event:'triangle-alert', uv:'sun', pressure:'gauge' }[type] || 'bell';
-}
-function sevIconClass(type) {
-    return { temp:'temp', wind:'wind', rain:'rain', humidity:'humidity', fire:'fire', event:'event', uv:'uv', pressure:'pressure' }[type] || 'temp';
-}
-
-function queueAlert(alert) {
-    monAlertQueue.push(alert);
-    if (monAlertQueue.length > 20) monAlertQueue = monAlertQueue.slice(-20);
-    if (!monShowing) showNextAlert();
-}
-
-function showNextAlert() {
-    if (!monAlertQueue.length || monShowing) return;
-    monShowing = true;
-    const a = monAlertQueue.shift();
-    fpEl.className = 'sev-' + a.severity + ' show';
-    fpIcon.className = 'fp-icon ' + sevIconClass(a.type);
-    fpIcon.innerHTML = '<i data-lucide="' + sevIcon(a.type) + '"></i>';
-    if (window.lucide) lucide.createIcons();
-    fpTitle.textContent = a.title;
-    fpCity.textContent = a.city;
-    fpBody.textContent = a.desc;
-    fpSev.className = 'fp-sev-badge ' + a.severity;
-    fpSev.textContent = a.severity === 'critico' ? 'CRÍTICO' : a.severity === 'alto' ? 'ALTO' : a.severity === 'medio' ? 'MÉDIO' : 'INFO';
-    fpTime.textContent = new Date(a.ts).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-    clearTimeout(fpEl._timer);
-    fpEl._timer = setTimeout(() => {
-        fpEl.classList.remove('show');
-        monShowing = false;
-        setTimeout(showNextAlert, 400);
-    }, 7000);
-}
-
-async function fetchMonWeather(city) {
-    try {
-        const r = await dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,precipitation,surface_pressure,uv_index&timezone=America/Cuiaba`);
-        if (!r.ok) return null;
-        const d = await r.json();
-        const c = d.current;
-        return { temp: c.temperature_2m, humidity: c.relative_humidity_2m, wind: c.wind_speed_10m, gusts: c.wind_gusts_10m||0, rain: c.precipitation, pressure: c.surface_pressure, uv: c.uv_index };
-    } catch { return null; }
-}
-
-function detectMonAlerts(city, prev, curr) {
-    if (!prev || !curr) return [];
-    const alerts = [];
-    const T = MON_THRESHOLDS;
-    const dTemp = curr.temp - prev.temp;
-    if (Math.abs(dTemp) >= T.temp.varCritico) alerts.push({ type:'temp', severity:'critico', title:`Temperatura ${dTemp>0?'subiu':'caiu'} ${Math.abs(dTemp).toFixed(1)}°C`, desc:`De ${Math.round(prev.temp)}°C para ${Math.round(curr.temp)}°C`, city:city.nome, ts:Date.now() });
-    else if (Math.abs(dTemp) >= T.temp.varAlto) alerts.push({ type:'temp', severity:'alto', title:`Temperatura variou ${Math.abs(dTemp).toFixed(1)}°C`, desc:`De ${Math.round(prev.temp)}°C para ${Math.round(curr.temp)}°C`, city:city.nome, ts:Date.now() });
-    if (curr.temp >= T.temp.critico) alerts.push({ type:'temp', severity:'critico', title:`Temperatura extrema: ${Math.round(curr.temp)}°C`, desc:'Acima de 40°C — risco à saúde', city:city.nome, ts:Date.now() });
-    else if (curr.temp >= T.temp.alto) alerts.push({ type:'temp', severity:'alto', title:`Temperatura alta: ${Math.round(curr.temp)}°C`, desc:'Acima de 35°C', city:city.nome, ts:Date.now() });
-
-    const dWind = curr.wind - prev.wind;
-    if (Math.abs(dWind) >= T.wind.varCritico) alerts.push({ type:'wind', severity:'critico', title:`Vento ${dWind>0?'aumentou':'diminuiu'} ${Math.abs(dWind).toFixed(0)} km/h`, desc:`De ${Math.round(prev.wind)} para ${Math.round(curr.wind)} km/h`, city:city.nome, ts:Date.now() });
-    else if (Math.abs(dWind) >= T.wind.varAlto) alerts.push({ type:'wind', severity:'alto', title:`Vento variou ${Math.abs(dWind).toFixed(0)} km/h`, desc:`De ${Math.round(prev.wind)} para ${Math.round(curr.wind)} km/h`, city:city.nome, ts:Date.now() });
-    if (curr.gusts >= T.wind.critico + 15) alerts.push({ type:'wind', severity:'critico', title:`Rajadas extremas: ${Math.round(curr.gusts)} km/h`, desc:'Perigo para estruturas e transporte', city:city.nome, ts:Date.now() });
-    else if (curr.wind >= T.wind.alto) alerts.push({ type:'wind', severity:'alto', title:`Vento forte: ${Math.round(curr.wind)} km/h`, desc:'Possíveis danos leves', city:city.nome, ts:Date.now() });
-
-    const dHum = curr.humidity - prev.humidity;
-    if (dHum <= -T.humidity.dropAlto) alerts.push({ type:'humidity', severity:'alto', title:`Umidade caiu ${Math.abs(dHum)}%`, desc:`De ${prev.humidity}% para ${curr.humidity}%`, city:city.nome, ts:Date.now() });
-    if (curr.humidity <= T.humidity.critico) alerts.push({ type:'humidity', severity:'critico', title:`Umidade crítica: ${curr.humidity}%`, desc:'Seca extrema — risco de incêndio', city:city.nome, ts:Date.now() });
-
-    if (curr.rain > 0 && prev.rain === 0) alerts.push({ type:'rain', severity:'info', title:'Precipitação iniciada', desc:`${curr.rain} mm detectado`, city:city.nome, ts:Date.now() });
-
-    if (curr.uv >= T.uv.critico && (prev.uv == null || prev.uv < T.uv.critico)) alerts.push({ type:'uv', severity:'alto', title:`UV extremo: ${curr.uv}`, desc:'Evite exposição solar', city:city.nome, ts:Date.now() });
-
-    if (prev.pressure && curr.pressure) {
-        const pDrop = prev.pressure - curr.pressure;
-        if (pDrop >= 8) alerts.push({ type:'pressure', severity:'critico', title:`Pressão caiu ${pDrop.toFixed(1)} hPa`, desc:'Tempestade possível', city:city.nome, ts:Date.now() });
-        else if (pDrop >= 5) alerts.push({ type:'pressure', severity:'alto', title:`Pressão reduziu ${pDrop.toFixed(1)} hPa`, desc:`De ${Math.round(prev.pressure)} para ${Math.round(curr.pressure)} hPa`, city:city.nome, ts:Date.now() });
-    }
-    return alerts;
-}
-
-async function detectNewFocos() {
-    try {
-        const iso = new Date().toISOString().slice(0,10).replaceAll('-','');
-        const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
-        if (!res.ok) return;
-        const txt = await res.text();
-        const lines = txt.split('\n');
-        const header = lines[0].split(',').map(h => h.trim());
-        const iLat = header.indexOf('lat'), iLon = header.indexOf('lon');
-        const current = [];
-        for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(',');
-            if (cols.length < header.length - 2) continue;
-            if ((cols[header.indexOf('estado')]||'').trim().toUpperCase() !== 'MATO GROSSO') continue;
-            const lat = parseFloat(cols[iLat]), lon = parseFloat(cols[iLon]);
-            if (isFinite(lat) && isFinite(lon)) current.push(`${lat.toFixed(3)},${lon.toFixed(3)}`);
-        }
-        if (monFocoKeys.length > 0) {
-            const newOnes = current.filter(k => !monFocoKeys.includes(k));
-            if (newOnes.length > 0) {
-                queueAlert({ type:'fire', severity: newOnes.length > 5 ? 'critico' : newOnes.length > 2 ? 'alto' : 'medio', title:`${newOnes.length} novo(s) foco(s) detectado(s)`, desc:'INPE identificou novos pontos de calor em MT', city:'Estado de MT', ts:Date.now() });
-            }
-        }
-        monFocoKeys = current;
-    } catch {}
-}
-
-async function detectNewSipam() {
-    try {
-        const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
-        if (!res.ok) return;
-        const eventos = await res.json();
-        if (!Array.isArray(eventos)) return;
-        const ids = eventos.map(e => e.id_evento);
-        if (monSipamIds.length > 0) {
-            eventos.filter(e => !monSipamIds.includes(e.id_evento)).forEach(ev => {
-                queueAlert({ type:'event', severity: ev.status_evento === 'Ativo' ? 'alto' : 'medio', title:`Novo evento SIPAM #${ev.id_evento}`, desc:`${ev.status_evento} — ${ev.municipio||'MT'} — ${ev.area_total_evento ? ev.area_total_evento.toFixed(1)+' ha' : '—'}`, city: ev.municipio||'MT', ts:Date.now() });
-            });
-        }
-        monSipamIds = ids;
-    } catch {}
-}
-
-let monFirstRun = true;
-async function runMonitorCycle() {
-    const results = await Promise.all(MON_CITIES.map(c => fetchMonWeather(c)));
-    MON_CITIES.forEach((city, i) => {
-        const curr = results[i];
-        if (!curr) return;
-        const prev = monPrev[city.nome];
-        const alerts = detectMonAlerts(city, prev, curr);
-        alerts.forEach(a => queueAlert(a));
-        monPrev[city.nome] = curr;
-    });
-
-    await Promise.all([detectNewFocos(), detectNewSipam()]);
-
-    if (monFirstRun) {
-        monFirstRun = false;
-        const okCities = MON_CITIES.filter(c => monPrev[c.nome]).length;
-        queueAlert({ type:'event', severity:'info', title:'Monitoramento Ativo', desc:`${okCities} de ${MON_CITIES.length} cidades conectadas · Ciclo a cada 5 min`, city:'Defesa Civil MT', ts:Date.now() });
-    }
-
-    setTimeout(runMonitorCycle, 5 * 60 * 1000);
-}
-setTimeout(runMonitorCycle, 4000);
+/* ================= Alertas Climáticos em Tempo Real =================
+   Lógica movida para js/monitor.js (compartilhada entre todas as páginas). */
 </script>
 </body>
 </html>
+
