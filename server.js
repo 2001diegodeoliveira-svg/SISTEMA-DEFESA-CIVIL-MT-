@@ -24,6 +24,8 @@ const handlers = {
   areas: require('./api/areas'),
   areaId: require('./api/areas/[id]'),
   proxy: require('./api/proxy'),
+  occurrences: require('./api/occurrences'),
+  waze: require('./api/waze'),
 };
 
 /* Empacota handler de serverless (fetch Request/Response) para Express */
@@ -68,6 +70,15 @@ app.post('/api/areas', wrap(handlers.areas));
 app.delete('/api/areas/:id', wrap(handlers.areaId));
 app.get('/api/proxy', wrap(handlers.proxy));
 app.options('/api/proxy', wrap(handlers.proxy));
+app.get('/api/occurrences', wrap(handlers.occurrences));
+app.get('/api/waze', wrap(handlers.waze));
+app.post('/api/waze', wrap(handlers.waze));
+app.options('/api/waze', wrap(handlers.waze));
+
+// Job de sincronização Waze (mock por padrão) — só roda no server.js
+// standalone (processo Node persistente); em serverless (Vercel) use
+// um agendador externo chamando POST /api/waze?action=sync.
+require('./api/_lib/waze').startJob();
 
 /* Serve os estáticos do frontend (mesmo diretório) para testes locais */
 app.use(express.static(path.join(__dirname)));

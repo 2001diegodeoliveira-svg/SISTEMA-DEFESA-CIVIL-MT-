@@ -194,8 +194,92 @@
         </div>
 
         <div id="reportsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+        <!-- INTEGRAÇÃO WAZE — ocorrências ingeridas via WazeSyncService
+             (feed oficial quando WAZE_ENABLED=true, ou dados simulados
+             enquanto aguarda credenciais — ver /docs/WAZE_INTEGRATION.md) -->
+        <div class="filter-section" style="margin-top:4px;">
+            <div class="filter-title" style="display:flex;align-items:center;justify-content:space-between;">
+                <span><i data-lucide="database" style="color:#33ccff;"></i> Integração Waze</span>
+                <span id="wazeIntStatusPill" style="font-size:9px;font-weight:800;padding:3px 7px;border-radius:10px;background:rgba(148,163,184,.15);color:var(--text-muted);">...</span>
+            </div>
+            <div id="wazeIntMensagem" style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Carregando status...</div>
+            <div class="stats-bar" style="margin-bottom:8px;">
+                <div class="stat-item"><i data-lucide="list" style="color:#33ccff;"></i><span>Total: <span class="stat-count" id="wazeIntTotal">0</span></span></div>
+                <div class="stat-item"><i data-lucide="triangle-alert" style="color:#ef4444;"></i><span>Críticas: <span class="stat-count" id="wazeIntCriticas">0</span></span></div>
+                <div class="stat-item"><i data-lucide="circle-alert" style="color:var(--accent-orange);"></i><span>Altas: <span class="stat-count" id="wazeIntAltas">0</span></span></div>
+                <div class="stat-item"><i data-lucide="activity" style="color:#22c55e;"></i><span>Ativas: <span class="stat-count" id="wazeIntAtivas">0</span></span></div>
+            </div>
+            <div id="wazeIntList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;"></div>
+        </div>
     </div>
 </div>
+
+<script>
+    /* Painel da Integração Waze — consome /api/waze e /api/occurrences.
+       Atualiza sozinho a cada 30s (mesmo ritmo de loadReports). */
+    const PRIORITY_CLASS = { CRITICA: 'urgent', ALTA: 'urgent', MEDIA: 'warning', BAIXA: 'info' };
+    const TYPE_LABEL = { ACIDENTE: 'Acidente', ENGARRAFAMENTO: 'Engarrafamento', PERIGO: 'Perigo', CLIMA: 'Clima', INTERDICAO: 'Interdição', OBRA: 'Obra', OUTROS: 'Outros' };
+
+    async function loadWazeIntegration() {
+        try {
+            const [statusRes, occRes] = await Promise.all([
+                fetch('/api/waze?action=status'),
+                fetch('/api/occurrences?view=waze&period=24h'),
+            ]);
+            const status = await statusRes.json();
+            const occ = await occRes.json();
+            renderWazeIntegrationStatus(status);
+            renderWazeIntegrationList(occ.occurrences || []);
+        } catch (e) {
+            document.getElementById('wazeIntMensagem').textContent = 'Falha ao consultar a integração (backend indisponível).';
+        }
+    }
+
+    function renderWazeIntegrationStatus(status) {
+        const pill = document.getElementById('wazeIntStatusPill');
+        const map = {
+            CONECTADO: { text: status.mockEnabled ? '🟡 DEMONSTRAÇÃO' : '🟢 CONECTADO', bg: status.mockEnabled ? 'rgba(249,115,28,.15)' : 'rgba(34,197,94,.15)', color: status.mockEnabled ? 'var(--accent-orange)' : '#22c55e' },
+            AGUARDANDO_CONFIGURACAO: { text: '🟡 AGUARDANDO CONFIG.', bg: 'rgba(249,115,28,.15)', color: 'var(--accent-orange)' },
+            ERRO: { text: '🔴 ERRO', bg: 'rgba(239,68,68,.15)', color: '#ef4444' },
+        };
+        const cfg = map[status.status] || map.AGUARDANDO_CONFIGURACAO;
+        pill.textContent = cfg.text;
+        pill.style.background = cfg.bg;
+        pill.style.color = cfg.color;
+        document.getElementById('wazeIntMensagem').textContent = status.mensagem + (status.lastSyncAt ? ` · última sinc.: ${new Date(status.lastSyncAt).toLocaleTimeString('pt-BR')}` : '');
+    }
+
+    function renderWazeIntegrationList(occurrences) {
+        document.getElementById('wazeIntTotal').textContent = occurrences.length;
+        document.getElementById('wazeIntCriticas').textContent = occurrences.filter(o => o.priority === 'CRITICA').length;
+        document.getElementById('wazeIntAltas').textContent = occurrences.filter(o => o.priority === 'ALTA').length;
+        document.getElementById('wazeIntAtivas').textContent = occurrences.filter(o => !['RESOLVIDA', 'ENCERRADA'].includes(o.status)).length;
+
+        const list = document.getElementById('wazeIntList');
+        if (!occurrences.length) {
+            list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:8px;">Nenhuma ocorrência Waze nas últimas 24h.</div>';
+            return;
+        }
+        list.innerHTML = occurrences.slice(0, 20).map(o => {
+            const cls = PRIORITY_CLASS[o.priority] || 'info';
+            const wazeUrl = (o.latitude != null && o.longitude != null) ? `https://www.waze.com/ul?ll=${o.latitude},${o.longitude}&navigate=yes&zoom=17` : null;
+            return `<div class="report-card ${cls}" style="padding:9px;">
+                <div class="report-header">
+                    <span class="report-type">${TYPE_LABEL[o.type] || o.type}</span>
+                    <span class="report-time">${new Date(o.reportedAt).toLocaleTimeString('pt-BR')}</span>
+                </div>
+                <div class="report-location">${o.city || o.street || 'Mato Grosso'}</div>
+                <div class="report-desc">${o.description || ''}</div>
+                ${wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i data-lucide="navigation"></i> Waze</a>` : ''}
+            </div>`;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    loadWazeIntegration();
+    setInterval(loadWazeIntegration, 30 * 1000);
+</script>
 
 <div id="reportModal" class="modal-overlay">
     <div class="modal-box" style="position:relative;">
