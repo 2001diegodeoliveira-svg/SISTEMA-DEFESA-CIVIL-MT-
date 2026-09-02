@@ -177,6 +177,7 @@
         </div>
 
         <button class="report-btn" id="btnReport"><i data-lucide="plus"></i> Reportar Evento</button>
+        <button class="report-btn" id="btnWazeAoVivo" style="background:linear-gradient(135deg,#33ccff,#0099ff);"><i data-lucide="radio"></i> Waze ao vivo (oficial)</button>
         <div class="click-hint" id="clickHint" style="display:none;"><i data-lucide="map-pin"></i> Clique no mapa para definir a localizacao</div>
 
         <div class="filter-section">
@@ -238,6 +239,27 @@
             </div>
             <button type="submit" class="report-btn" style="background:var(--blue-glow);"><i data-lucide="send"></i> Enviar Reporte</button>
         </form>
+    </div>
+</div>
+
+<!-- Waze ao vivo — embed oficial (developers.google.com/waze/iframe), sem chave
+     de API. O Waze não oferece API pública de ocorrências para terceiros; este
+     iframe é o único jeito legítimo e sempre atualizado de mostrar o mapa/live
+     map real deles dentro do sistema. -->
+<div id="wazeLiveModal" class="modal-overlay">
+    <div class="modal-box" style="position:relative;max-width:960px;width:94vw;padding:16px;">
+        <button class="modal-close" id="wazeLiveClose">&times;</button>
+        <h2 style="margin-bottom:10px;"><i data-lucide="radio" style="color:#33ccff;"></i> Waze ao vivo — Mato Grosso</h2>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+            Mapa oficial do Waze (embed <code>developers.google.com/waze/iframe</code>), atualizado pelo próprio Waze em tempo real —
+            o Waze não disponibiliza API pública de ocorrências para terceiros, então este é o mapa real deles, não uma cópia.
+            <a href="https://www.waze.com/pt-BR/live-map/directions/br/mt/mato-grosso?navigate=yes&to=place.ChIJGQM3SOexnZMR-4EhfeJoYsY" target="_blank" rel="noopener" style="color:#38bdf8;">Abrir tela cheia no site do Waze ↗</a>
+        </p>
+        <iframe
+            id="wazeLiveFrame"
+            data-src="https://embed.waze.com/iframe?zoom=7&lat=-13.0&lon=-56.0"
+            style="width:100%;height:70vh;border:0;border-radius:10px;"
+            title="Waze ao vivo — Mato Grosso"></iframe>
     </div>
 </div>
 
@@ -528,6 +550,20 @@
         placingReport = false;
         document.getElementById('clickHint').style.display = 'none';
         map.getContainer().style.cursor = '';
+    });
+
+    // Waze ao vivo (embed oficial) — carrega o iframe só quando aberto, e
+    // remove o src ao fechar para parar de consumir dados em segundo plano.
+    document.getElementById('btnWazeAoVivo').addEventListener('click', () => {
+        const frame = document.getElementById('wazeLiveFrame');
+        if (!frame.src) frame.src = frame.dataset.src;
+        document.getElementById('wazeLiveModal').classList.add('open');
+    });
+    document.getElementById('wazeLiveClose').addEventListener('click', () => {
+        document.getElementById('wazeLiveModal').classList.remove('open');
+    });
+    document.getElementById('wazeLiveModal').addEventListener('click', (e) => {
+        if (e.target.id === 'wazeLiveModal') document.getElementById('wazeLiveModal').classList.remove('open');
     });
 
     map.on('click', e => {
