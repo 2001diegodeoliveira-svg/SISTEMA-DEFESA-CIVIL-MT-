@@ -162,6 +162,81 @@
         #layersPanel.collapsed ~ .layers-toggle { left: 16px; }
         #layersPanel:not(.collapsed) ~ .layers-toggle { left: 262px; }
 
+        /* ------------- Estações INMET — Pluviômetro ------------- */
+        .pluv-toggle {
+            position: absolute; top: 120px; left: 16px; z-index: 1101;
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--glass-bg); backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,.3);
+            transition: left .28s cubic-bezier(.4,0,.2,1), background .15s;
+            color: #22d3ee;
+        }
+        .pluv-toggle:hover { background: rgba(255,255,255,.1); }
+        .pluv-toggle i, .pluv-toggle svg[data-lucide] { color: #22d3ee; font-size: 15px; }
+        #layersPanel.collapsed ~ .pluv-toggle { left: 16px; }
+        #layersPanel:not(.collapsed) ~ .pluv-toggle { left: 262px; }
+
+        #pluvPanel {
+            position: absolute; top: 70px; right: 16px; z-index: 1105;
+            width: 520px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px);
+            background: var(--glass-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.5);
+            display: flex; flex-direction: column; overflow: hidden;
+            transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s;
+            font-size: 12px;
+        }
+        #pluvPanel.hidden-panel { transform: translateX(120%); opacity: 0; pointer-events: none; }
+        #pluvPanel.collapsed { max-height: 52px; }
+        .pluv-head {
+            display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+            border-bottom: 1px solid var(--glass-border); cursor: pointer; flex: none;
+        }
+        .pluv-head h3 { font-size: 13px; margin: 0; display: flex; align-items: center; gap: 7px; flex: 1; }
+        .pluv-head h3 svg, .pluv-head h3 i { color: #22d3ee; }
+        .pluv-head .ph-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; }
+        .pluv-head .ph-close:hover { color: #fff; }
+        #pluvSummary {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+            padding: 10px 14px; border-bottom: 1px solid var(--glass-border); flex: none;
+        }
+        .pluv-stat { background: var(--bg-card); border-radius: 8px; padding: 7px 9px; text-align: center; }
+        .pluv-stat .pv { font-size: 17px; font-weight: 800; line-height: 1.1; }
+        .pluv-stat .pv.cyan { color: #22d3ee; }
+        .pluv-stat .pv.green { color: #4ade80; }
+        .pluv-stat .pv.red { color: #f87171; }
+        .pluv-stat .pv.amber { color: #fbbf24; }
+        .pluv-stat .pl { font-size: 8.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+        .pluv-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--glass-border); flex: none; flex-wrap: wrap; }
+        .pluv-search { flex: 1; min-width: 120px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-main); padding: 6px 9px; font-size: 11.5px; }
+        .pluv-filter { background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-main); padding: 6px 8px; font-size: 11px; }
+        .pluv-refresh { background: var(--accent-orange); border: none; border-radius: 6px; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .pluv-refresh:disabled { opacity: .5; cursor: not-allowed; }
+        .pluv-wrap { overflow: auto; flex: 1; }
+        .pluv-wrap::-webkit-scrollbar { width: 6px; }
+        .pluv-wrap::-webkit-scrollbar-thumb { background: var(--bg-card-hover); border-radius: 3px; }
+        #pluvTable { width: 100%; border-collapse: collapse; }
+        #pluvTable th {
+            position: sticky; top: 0; background: var(--bg-card); color: var(--text-muted);
+            font-size: 9px; text-transform: uppercase; letter-spacing: .5px; text-align: left;
+            padding: 7px 8px; cursor: pointer; user-select: none; white-space: nowrap; z-index: 2;
+        }
+        #pluvTable th:hover { color: var(--text-main); }
+        #pluvTable th .arr { font-size: 8px; color: var(--accent-orange); }
+        #pluvTable td { padding: 6px 8px; border-top: 1px solid var(--glass-border); vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        #pluvTable tr.op{ cursor: default; }
+        #pluvTable tr.pane td { opacity: .55; }
+        .pluv-rain-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+        .pluv-badge { font-size: 8px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        .pluv-badge.op { background: rgba(74,222,128,.15); color: #4ade80; }
+        .pluv-badge.pane { background: rgba(248,113,113,.15); color: #f87171; }
+        .pluv-legend { display: flex; gap: 10px; padding: 8px 14px; font-size: 9.5px; color: var(--text-muted); border-top: 1px solid var(--glass-border); flex: none; flex-wrap: wrap; }
+        .pluv-legend .lg { display: flex; align-items: center; gap: 4px; }
+        .pluv-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 11.5px; }
+        @media (max-width: 640px) { #pluvSummary { grid-template-columns: repeat(2, 1fr); } #pluvPanel { width: calc(100vw - 24px); } }
+
         .group-title {
             font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.2px;
             color: var(--accent-orange); font-weight: 700;
@@ -1198,6 +1273,57 @@
         <div id="areasList"></div>
     </aside>
     <button class="layers-toggle" id="layersToggle" title="Mostrar/ocultar filtros"><i data-lucide="chevrons-left"></i></button>
+    <button class="pluv-toggle" id="pluvToggle" title="Estações INMET — Pluviômetro"><i data-lucide="droplets"></i></button>
+
+    <!-- Painel Estações INMET — Pluviômetro -->
+    <aside id="pluvPanel" class="hidden-panel">
+        <div class="pluv-head" id="pluvHead">
+            <h3><i data-lucide="droplets"></i> Estações INMET · Pluviômetro — MT</h3>
+            <button class="ph-close" id="pluvClose" title="Fechar"><i data-lucide="x"></i></button>
+        </div>
+        <div id="pluvSummary">
+            <div class="pluv-stat"><div class="pv cyan" id="psTotal">—</div><div class="pl">Esta&ccedil;&otilde;es</div></div>
+            <div class="pluv-stat"><div class="pv green" id="psOper">—</div><div class="pl">Operantes</div></div>
+            <div class="pluv-stat"><div class="pv red" id="psPane">—</div><div class="pl">Em pane</div></div>
+            <div class="pluv-stat"><div class="pv amber" id="psTop">—</div><div class="pl">Chuva 24h m&aacute;x.</div></div>
+        </div>
+        <div class="pluv-toolbar">
+            <input class="pluv-search" id="pluvSearch" type="text" placeholder="Buscar esta&ccedil;&atilde;o ou munic&iacute;pio...">
+            <select class="pluv-filter" id="pluvFilter">
+                <option value="all">Todas as situa&ccedil;&otilde;es</option>
+                <option value="op">Somente operantes</option>
+                <option value="pane">Somente em pane</option>
+                <option value="chuva">Com chuva agora</option>
+            </select>
+            <button class="pluv-refresh" id="pluvRefresh"><i data-lucide="refresh-cw"></i> Atualizar</button>
+        </div>
+        <div class="pluv-wrap">
+            <div class="pluv-empty" id="pluvEmpty">Carregando esta&ccedil;&otilde;es INMET do estado todo...</div>
+            <table id="pluvTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th data-sort="codigo">C&oacute;digo <span class="arr"></span></th>
+                        <th data-sort="nome">Esta&ccedil;&atilde;o <span class="arr"></span></th>
+                        <th data-sort="chuva">Chuva agora <span class="arr"></span></th>
+                        <th data-sort="c24">Chuva 24h <span class="arr"></span></th>
+                        <th data-sort="c7">Chuva 7d <span class="arr"></span></th>
+                        <th data-sort="umid">Umid. <span class="arr"></span></th>
+                        <th data-sort="temp">Temp <span class="arr"></span></th>
+                        <th data-sort="sit">Situa&ccedil;&atilde;o <span class="arr"></span></th>
+                    </tr>
+                </thead>
+                <tbody id="pluvBody"></tbody>
+            </table>
+        </div>
+        <div class="pluv-legend">
+            <span>Intensidade (mm/h):</span>
+            <span class="lg"><span class="pluv-rain-dot" style="background:#22d3ee;"></span>0 seco</span>
+            <span class="lg"><span class="pluv-rain-dot" style="background:#34d399;"></span>&lt;2 fraca</span>
+            <span class="lg"><span class="pluv-rain-dot" style="background:#fbbf24;"></span>2-10 moderada</span>
+            <span class="lg"><span class="pluv-rain-dot" style="background:#f97316;"></span>10-25 forte</span>
+            <span class="lg"><span class="pluv-rain-dot" style="background:#dc2626;"></span>&gt;25 torrencial</span>
+        </div>
+    </aside>
 
     <!-- Barra de desenho -->
     <div id="drawBar">
@@ -2348,6 +2474,226 @@ async function loadInmetStations() {
     }
 }
 
+/* ================= Estações INMET — Pluviômetro (estado todo) ================= */
+let pluvLayer = null, pluvStations = [], pluvLoading = false;
+const RAIN_COR = p => p <= 0 ? '#22d3ee' : p < 2 ? '#34d399' : p < 10 ? '#fbbf24' : p < 25 ? '#f97316' : '#dc2626';
+
+function rainIconDiv(p, size) {
+    size = size || 26;
+    const inner = Math.round(size * 0.5);
+    const cor = RAIN_COR(p || 0);
+    const lbl = (p === undefined || p === null) ? '–' : (p.toFixed(1) + '');
+    return L.divIcon({
+        className: 'pluv-marker',
+        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${cor};border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:9px;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 2px 8px ${cor}88;">${lbl}</div>`,
+        iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+    });
+}
+
+function pluvChip(v, suffix) {
+    if (v === undefined || v === null || v === '') return '<span style="color:#64748b;">—</span>';
+    return v.toFixed(v < 10 ? 1 : 0) + (suffix || '');
+}
+
+async function loadInmetPluvio() {
+    if (pluvLoading) return;
+    pluvLoading = true;
+    const btn = document.getElementById('pluvRefresh');
+    const empty = document.getElementById('pluvEmpty');
+    const tbl = document.getElementById('pluvTable');
+    if (btn) btn.disabled = true;
+    empty.style.display = 'block';
+    empty.textContent = 'Carregando estações INMET do estado todo...';
+    tbl.style.display = 'none';
+    try {
+        const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
+        const data = await res.json();
+        const mtStations = data.filter(s => s.SG_ESTADO === 'MT' && s.VL_LATITUDE && s.VL_LONGITUDE);
+        // Agrupa em lotes (Open-Meteo aceita até ~50 pontos por chamada)
+        const chunks = [];
+        for (let i = 0; i < mtStations.length; i += 40) chunks.push(mtStations.slice(i, i + 40));
+        const meteor = [];
+        for (const chunk of chunks) {
+            const lats = chunk.map(s => parseFloat(s.VL_LATITUDE)).join(',');
+            const lons = chunk.map(s => parseFloat(s.VL_LONGITUDE)).join(',');
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=precipitation,relative_humidity_2m,temperature_2m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=7&forecast_days=3`;
+            try {
+                const r = await dcProxyFetch(url);
+                const j = await r.json();
+                // Multi-ponto retorna um ARRAY de objetos; ponto único retorna objeto.
+                if (Array.isArray(j)) meteor.push(j);
+                else if (j && j.daily) meteor.push([j]);
+            } catch (e) { /* estação lote falhou */ }
+        }
+        // Monta mapa de leituras por índice de estação
+        const leituras = {};
+        let idx = 0;
+        for (let ci = 0; ci < chunks.length; ci++) {
+            const arrLoc = meteor[ci] || [];
+            for (let k = 0; k < chunks[ci].length; k++) {
+                const globalIdx = idx++;
+                const m = arrLoc[k];
+                if (!m || !m.current) continue;
+                const cur = m.current;
+                const daily = m.daily;
+                let sum7 = 0, c24 = 0;
+                if (daily && daily.precipitation_sum && daily.time) {
+                    const arr = daily.precipitation_sum;
+                    const times = daily.time;
+                    const today = new Date().toISOString().slice(0, 10);
+                    // "c24" = acumulado até hoje; "sum7" = últimos 7 dias observados (até hoje)
+                    const lastIdx = Math.min(arr.length, times.length);
+                    for (let d = 0; d < lastIdx; d++) {
+                        const v = parseFloat(arr[d]) || 0;
+                        if (times[d] <= today) sum7 += v;
+                        if (times[d] === today) c24 += v;
+                    }
+                } else if (daily && daily.precipitation_sum) {
+                    const arr = daily.precipitation_sum;
+                    const lastIdx = arr.length;
+                    for (let d = Math.max(0, lastIdx - 7); d < lastIdx; d++) sum7 += (parseFloat(arr[d]) || 0);
+                    c24 = parseFloat(arr[lastIdx - 1]) || 0;
+                }
+                leituras[globalIdx] = {
+                    chuva: (cur.precipitation !== undefined ? cur.precipitation : 0),
+                    c24: c24,
+                    c7: sum7,
+                    umid: (cur.relative_humidity_2m !== undefined ? cur.relative_humidity_2m : null),
+                    temp: (cur.temperature_2m !== undefined ? cur.temperature_2m : null),
+                };
+            }
+        }
+        // Monta array de estações enriquecidas
+        pluvStations = [];
+        idx = 0;
+        for (const s of mtStations) {
+            const lat = parseFloat(s.VL_LATITUDE);
+            const lon = parseFloat(s.VL_LONGITUDE);
+            const leg = leituras[idx] || {};
+            idx++;
+            pluvStations.push({
+                codigo: s.CD_ESTACAO,
+                nome: s.DC_NOME,
+                lat, lon,
+                alt: s.VL_ALTITUDE,
+                sit: s.CD_SITUACAO,
+                chuva: leg.chuva ?? 0,
+                c24: leg.c24 ?? 0,
+                c7: leg.c7 ?? 0,
+                umid: leg.umid,
+                temp: leg.temp,
+            });
+        }
+
+        // Camada de marcadores coloridos por intensidade de chuva
+        if (pluvLayer) { try { map.removeLayer(pluvLayer); } catch {} }
+        pluvLayer = L.layerGroup();
+        pluvStations.forEach(st => {
+            if (!st.lat || !st.lon) return;
+            const m = L.marker([st.lat, st.lon], { icon: rainIconDiv(st.chuva, 24) });
+            m.bindPopup(`
+                <div style="min-width:190px;">
+                    <div style="font-weight:700;font-size:12px;margin-bottom:2px;"><i data-lucide="droplets" style="color:#22d3ee;margin-right:4px;"></i>${st.nome}</div>
+                    <div style="color:#94a3b8;font-size:10px;margin-bottom:7px;">${st.codigo} · INMET · MT</div>
+                    <div style="font-size:11px;line-height:1.7;">
+                        <div><b style="color:${RAIN_COR(st.chuva)};">☔ Chuva agora:</b> ${st.chuva} mm/h</div>
+                        <div><b>Chuva 24h:</b> ${st.c24} mm · <b>7d:</b> ${st.c7} mm</div>
+                        <div><b>Temperatura:</b> ${st.temp !== null ? st.temp + ' °C' : '—'} · <b>Umid.:</b> ${st.umid !== null ? st.umid + '%' : '—'}</div>
+                        <div><b>Altitude:</b> ${st.alt} m</div>
+                        <div><b>Situação:</b> ${st.sit}</div>
+                    </div>
+                </div>`);
+            m.addTo(pluvLayer);
+        });
+        pluvLayer.addTo(map);
+
+        renderPluvTable();
+        empty.style.display = 'none';
+        tbl.style.display = 'table';
+        if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        empty.style.display = 'block';
+        empty.textContent = 'Falha ao carregar estações INMET.';
+    } finally {
+        if (btn) btn.disabled = false;
+        pluvLoading = false;
+    }
+}
+
+let pluvSortKey = 'codigo', pluvSortDir = 1, pluvLastFn = null;
+function renderPluvTable() {
+    const body = document.getElementById('pluvBody');
+    const total = document.getElementById('psTotal');
+    const oper = document.getElementById('psOper');
+    const pane = document.getElementById('psPane');
+    const top = document.getElementById('psTop');
+    const q = (document.getElementById('pluvSearch')?.value || '').toLowerCase().trim();
+    const f = document.getElementById('pluvFilter')?.value || 'all';
+    let rows = pluvStations.filter(st => {
+        if (q && !(st.nome.toLowerCase().includes(q) || String(st.codigo).toLowerCase().includes(q))) return false;
+        if (f === 'op' && st.sit !== 'Operante') return false;
+        if (f === 'pane' && st.sit === 'Operante') return false;
+        if (f === 'chuva' && !(st.chuva > 0)) return false;
+        return true;
+    });
+    rows.sort((a, b) => {
+        const va = a[pluvSortKey], vb = b[pluvSortKey];
+        const na = (va === null || va === undefined) ? -Infinity : (typeof va === 'string' ? va : va);
+        const nb = (vb === null || vb === undefined) ? -Infinity : (typeof vb === 'string' ? vb : vb);
+        if (na < nb) return -1 * pluvSortDir;
+        if (na > nb) return 1 * pluvSortDir;
+        return 0;
+    });
+    total.textContent = pluvStations.length;
+    oper.textContent = pluvStations.filter(s => s.sit === 'Operante').length;
+    pane.textContent = pluvStations.filter(s => s.sit !== 'Operante').length;
+    const max24 = pluvStations.reduce((m, s) => (s.c24 > m) ? s.c24 : m, 0);
+    top.textContent = max24 > 0 ? max24.toFixed(1) + ' mm' : '0 mm';
+    document.querySelectorAll('#pluvTable th .arr').forEach(el => el.textContent = '');
+    const th = document.querySelector(`#pluvTable th[data-sort="${pluvSortKey}"]`);
+    if (th) th.querySelector('.arr').textContent = pluvSortDir > 0 ? '▲' : '▼';
+    if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="8" class="pluv-empty">Nenhuma estação encontrada.</td></tr>`;
+        return;
+    }
+    body.innerHTML = rows.map(st => `
+        <tr class="${st.sit === 'Operante' ? 'op' : 'pane'}">
+            <td style="font-weight:700;">${st.codigo}</td>
+            <td>${st.nome}</td>
+            <td><span class="pluv-rain-dot" style="background:${RAIN_COR(st.chuva)};"></span><b style="color:${RAIN_COR(st.chuva)};">${st.chuva}</b> mm/h</td>
+            <td>${pluvChip(st.c24)} mm</td>
+            <td>${pluvChip(st.c7)} mm</td>
+            <td>${st.umid != null ? st.umid + '%' : '—'}</td>
+            <td>${st.temp != null ? st.temp.toFixed(1) + '°' : '—'}</td>
+            <td><span class="pluv-badge ${st.sit === 'Operante' ? 'op' : 'pane'}">${st.sit === 'Operante' ? 'OPERANTE' : 'PANE'}</span></td>
+        </tr>`).join('');
+}
+
+document.querySelectorAll('#pluvTable th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (pluvSortKey === key) pluvSortDir *= -1; else { pluvSortKey = key; pluvSortDir = 1; }
+        renderPluvTable();
+    });
+});
+document.getElementById('pluvSearch')?.addEventListener('input', renderPluvTable);
+document.getElementById('pluvFilter')?.addEventListener('change', renderPluvTable);
+document.getElementById('pluvRefresh')?.addEventListener('click', loadInmetPluvio);
+document.getElementById('pluvClose')?.addEventListener('click', () => {
+    document.getElementById('pluvPanel').classList.add('hidden-panel');
+});
+document.getElementById('pluvToggle')?.addEventListener('click', () => {
+    const p = document.getElementById('pluvPanel');
+    const opening = p.classList.contains('hidden-panel');
+    p.classList.toggle('hidden-panel', !opening);
+    if (opening && !pluvStations.length && !pluvLoading) loadInmetPluvio();
+});
+document.getElementById('pluvHead')?.addEventListener('click', (e) => {
+    if (e.target.closest('.ph-close')) return;
+    document.getElementById('pluvPanel').classList.toggle('collapsed');
+});
+
+
 /* ================= SIPAM Painel do Fogo — Eventos ativos em MT ================= */
 const SIPAM_STATUS_COR = { 'Em observação': '#f97316', 'Ativo': '#dc2626' };
 
@@ -3328,7 +3674,13 @@ function hideAllOverlays() {
     Object.values(satLayers).forEach(l => { try { l.setOpacity(0); } catch {} });
     activeOverlay = 'none';
     clearTempOverlay();
+    // Invalida qualquer showFireOverlay() ainda em andamento (fetch em lote
+    // demorado) — sem isso, ele terminava depois de fechado e reabria o
+    // overlay sozinho, sem nenhum jeito de fechar de novo.
+    fireOverlayToken++;
     if (fireOverlay) { map.removeLayer(fireOverlay); fireOverlay = null; }
+    document.getElementById('ovLoading')?.classList.remove('show');
+    overlayRequestLock.fire = false;
     document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
 }
 
@@ -3942,6 +4294,8 @@ async function showFireOverlay() {
     }
     if (token !== fireOverlayToken) {
         if (overlay) { try { map.removeLayer(overlay); } catch {} }
+        loadEl.classList.remove('show');
+        overlayRequestLock.fire = false;
         return;
     }
     markers.forEach(m => m.addTo(overlay));
