@@ -192,12 +192,14 @@
         if (window.lucide) lucide.createIcons();
 
         // Municípios para o perfil gestor municipal
+        let munCodigoPorNome = {};
         (window.dcProxyJson || function (u) { return fetch(u).then(function (r) { return r.json(); }); })
             ('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios')
             .then(list => {
                 const sel = document.getElementById('munSelect');
                 sel.innerHTML = '<option value="">Selecione o município...</option>' +
                     list.map(m => `<option>${m.nome}</option>`).join('');
+                munCodigoPorNome = Object.fromEntries(list.map(m => [m.nome, m.id]));
             })
             .catch(() => {
                 const sel = document.getElementById('munSelect');
@@ -236,9 +238,20 @@
             const s = dcGetSession();
             if (nome && s && (!s.nome || s.nome === 'Cidadão')) {
                 s.nome = nome;
-                localStorage.setItem('dcmt_session', JSON.stringify(s));
             }
-            location.href = 'index.html';
+            // Gestor municipal: aplica o município escolhido no formulário — é isso
+            // que faz o mapa e os painéis abrirem já focados na cidade dele.
+            let munCodigoSelecionado = '';
+            const munNome = document.getElementById('munSelect').value;
+            if (s && s.perfil === 'municipal' && munNome) {
+                s.municipio = munNome;
+                munCodigoSelecionado = munCodigoPorNome[munNome] || '';
+            }
+            if (s) localStorage.setItem('dcmt_session', JSON.stringify(s));
+
+            location.href = munCodigoSelecionado
+                ? 'mapa.html?municipio=' + encodeURIComponent(munCodigoSelecionado)
+                : 'index.html';
         });
     </script>
 </body>

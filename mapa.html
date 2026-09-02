@@ -1516,7 +1516,12 @@ let overlayOpacity = 0.8;
 let mtLayer = null, munLayer = null, ucWms = null, focosLayer = null;
 let focosLoaded = false, focosLoading = false, focosCount = 0;
 const centroidByCod = {};
+const codByNomeNormalizado = {};
 let ibgeLoadedAt = null;
+
+function normalizarNome(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
 
 /* ================= Utilidades ================= */
 function toast(msg, info = false) {
@@ -1723,6 +1728,9 @@ async function loadTerritorio() {
             onEachFeature: (f, lyr) => {
                 const cod = String(f.properties.codarea);
                 const nome = nomeByCod[cod] || 'Município ' + cod;
+                const centro = lyr.getBounds().getCenter();
+                centroidByCod[cod] = { lat: centro.lat, lng: centro.lng };
+                codByNomeNormalizado[normalizarNome(nome)] = cod;
                 lyr.bindTooltip(nome, {
                     permanent: false, direction: 'center',
                     className: 'mun-tooltip'
@@ -1761,6 +1769,7 @@ async function loadTerritorio() {
                 });
             }
         }).addTo(map);
+        focarMunicipioInicial();
     } catch (e) {
         toast('Falha ao carregar malha territorial do IBGE.');
         setCheck('mtOutline', false);
@@ -1931,6 +1940,36 @@ window.previsaoMun = function (cod) {
         })
         .catch(() => {});
 };
+
+/* Foca (centraliza + abre o painel de detalhes) num município específico.
+   Aceita código IBGE ou nome (com/sem acento). */
+let focarMunicipioFeito = false;
+function focarMunicipio(alvo) {
+    if (!alvo) return false;
+    const alvoStr = String(alvo);
+    const cod = /^\d+$/.test(alvoStr) && centroidByCod[alvoStr] ? alvoStr : codByNomeNormalizado[normalizarNome(alvoStr)];
+    if (!cod || !centroidByCod[cod]) { toast('Município não encontrado: ' + alvoStr); return false; }
+    const c = centroidByCod[cod];
+    map.flyTo([c.lat, c.lng], 10, { duration: 1 });
+    setTimeout(() => window.previsaoMun(cod), 900);
+    return true;
+}
+
+/* Ao abrir o mapa: foca automaticamente no município do usuário logado
+   (perfil "gestor municipal") ou no informado via ?municipio= na URL —
+   assim o sistema já entra "no contexto" de cada município, sem precisar
+   procurar manualmente toda vez. */
+function focarMunicipioInicial() {
+    if (focarMunicipioFeito) return;
+    const porUrl = new URLSearchParams(location.search).get('municipio');
+    if (porUrl) { focarMunicipioFeito = focarMunicipio(porUrl); return; }
+    try {
+        const sessao = JSON.parse(localStorage.getItem('dcmt_session') || 'null');
+        if (sessao && sessao.perfil === 'municipal' && sessao.municipio) {
+            focarMunicipioFeito = focarMunicipio(sessao.municipio);
+        }
+    } catch (e) {}
+}
 
 /* ================= Ambiente: UCs via WMS CNUC ================= */
 map.createPane('ambiente');
