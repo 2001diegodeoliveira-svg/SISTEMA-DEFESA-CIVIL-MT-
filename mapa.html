@@ -1180,6 +1180,11 @@
             <div class="toggle" id="sipamBadge"></div>
         </div>
         <div class="meta-line" id="metaSipam">CENSIPAM · carregando eventos...</div>
+        <div class="check-row" data-check="vigiaMais">
+            <label><span class="swatch" style="background:#7c3aed;border-radius:50%;"></span><i data-lucide="cctv"></i>Vigia Mais MT (câmeras)</label>
+            <div class="toggle" id="vigiaMaisBadge"></div>
+        </div>
+        <div class="meta-line" id="metaVigiaMais">SESP-MT · cobertura por município</div>
 
         <div class="group-title"><i data-lucide="calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
         <div id="cptecPanel" style="padding:0 2px;">
@@ -1335,6 +1340,9 @@
         </div>
         <div id="legFocosWms" class="leg-row" style="display:none;">
             <span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;margin-right:5px;opacity:.7;"></span> Focos 48h (WMS INPE)
+        </div>
+        <div id="legVigiaMais" class="leg-row" style="display:none;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#7c3aed;display:inline-block;margin-right:5px;"></span> Vigia Mais MT (cobertura municipal, SESP-MT)
         </div>
     </div>
 
@@ -1771,11 +1779,39 @@ async function loadTerritorio() {
             }
         }).addTo(map);
         focarMunicipioInicial();
+        buildVigiaMaisLayer(nomeByCod);
     } catch (e) {
         toast('Falha ao carregar malha territorial do IBGE.');
         setCheck('mtOutline', false);
         setCheck('municipios', false);
     }
+}
+
+/* Vigia Mais MT (SESP-MT) — programa estadual de videomonitoramento com IA/
+   reconhecimento facial, ativo em ~100% dos municípios de MT (Lei 11.766/2022).
+   A SESP NÃO publica as coordenadas exatas dos pontos de câmera (informação de
+   segurança pública) — não existe API/dado aberto com isso. Este marcador
+   representa a ADESÃO do município ao programa (nível municipal, no centroide),
+   não a posição real de cada câmera. */
+function buildVigiaMaisLayer(nomeByCod) {
+    vigiaMaisLayer = L.layerGroup();
+    Object.entries(nomeByCod).forEach(([cod, nome]) => {
+        const c = centroidByCod[cod];
+        if (!c) return;
+        L.marker([c.lat, c.lng], { icon: iconDivMarker('cctv', '#7c3aed', 22) }).bindPopup(`
+            <div style="min-width:220px;">
+                <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">${nome}</div>
+                <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">Programa Vigia Mais MT · SESP-MT</div>
+                <div style="font-size:11px;line-height:1.6;">Município aderiu ao videomonitoramento integrado (Lei 11.766/2022).</div>
+                <div style="margin-top:9px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:#94a3b8;line-height:1.5;">
+                    A SESP-MT não divulga a localização exata de cada câmera (informação de
+                    segurança pública) — marcador no centro do município, não na posição real do equipamento.<br>
+                    <a href="https://www.sesp.mt.gov.br/vigia-mais-mt" target="_blank" rel="noopener" style="color:#38bdf8;">Fonte: SESP-MT — Vigia Mais MT</a>
+                </div>
+            </div>`).addTo(vigiaMaisLayer);
+    });
+    document.getElementById('metaVigiaMais').textContent = `SESP-MT · ${Object.keys(nomeByCod).length} municípios aderidos (cobertura, não são pontos reais de câmera)`;
+    applyChecks();
 }
 
 /* Serviços essenciais reais (hospitais, bombeiros, polícia) próximos ao centro do
@@ -1985,14 +2021,15 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
         let sipamData = [];
 let wmsFocos48hLayer = null;
 let reportsLayer = null, reportsLoaded = false, reportsLoading = false;
+let vigiaMaisLayer = null;
 
 function setCheck(key, val) {
     checkState[key] = val;
@@ -2016,6 +2053,7 @@ function applyChecks() {
     if (sipamLayer) checkState.sipam ? sipamLayer.addTo(map) : map.removeLayer(sipamLayer);
     if (wmsFocos48hLayer) checkState.wmsFocos48h ? wmsFocos48hLayer.addTo(map) : map.removeLayer(wmsFocos48hLayer);
     if (reportsLayer) checkState.reports ? reportsLayer.addTo(map) : map.removeLayer(reportsLayer);
+    if (vigiaMaisLayer) checkState.vigiaMais ? vigiaMaisLayer.addTo(map) : map.removeLayer(vigiaMaisLayer);
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
@@ -2033,7 +2071,8 @@ function refreshLegend() {
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
     document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
     document.getElementById('legFocosWms').style.display = checkState.wmsFocos48h && wmsFocos48hLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h || checkState.reports;
+    document.getElementById('legVigiaMais').style.display = checkState.vigiaMais && vigiaMaisLayer ? '' : 'none';
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -2050,6 +2089,7 @@ const MARKER_SVG = {
     flame: '<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/>',
     home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     'radio-tower': '<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
+    cctv: '<path d="M16.75 12h3.632a1 1 0 0 1 .894 1.447l-2.034 4.069a1 1 0 0 1-1.708.134l-2.124-2.97"/><path d="M17.106 9.053a1 1 0 0 1 .447 1.341l-3.106 6.211a1 1 0 0 1-1.342.447L3.61 12.3a2.92 2.92 0 0 1-1.3-3.91L3.69 5.6a2.92 2.92 0 0 1 3.92-1.3z"/><path d="M2 19h3.76a2 2 0 0 0 1.8-1.1L9 15"/><path d="M2 21v-4"/><path d="M7 9h.01"/>',
 };
 function iconDivMarker(iconKey, color, size) {
     size = size || 26;
