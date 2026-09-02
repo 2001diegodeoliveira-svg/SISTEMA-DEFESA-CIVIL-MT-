@@ -16,6 +16,7 @@ const DEFAULT_SEED = [
   { usuario: 'operador', senha: 'mt199',   nome: 'Operador',    perfil: 'avancado',  municipio: 'Cuiabá' },
   { usuario: 'comum',  senha: 'comum123',  nome: 'Cidadão',     perfil: 'comum',     municipio: '' },
   { usuario: 'gestor', senha: 'mt199',     nome: 'Gestor',      perfil: 'municipal', municipio: 'Sinop' },
+  { usuario: 'Dev@2026', senha: 'Dev@2026', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
 ];
 
 function seedUsers() {
