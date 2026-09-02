@@ -1767,6 +1767,34 @@ async function loadTerritorio() {
         setCheck('municipios', false);
     }
 }
+
+/* Serviços essenciais reais (hospitais, bombeiros, polícia) próximos ao centro do
+   município, via Overpass API (OpenStreetMap) — gratuito, sem chave de API. */
+function distKm(lat1, lon1, lat2, lon2) {
+    const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+async function loadServicosProximos(lat, lon) {
+    const el = document.getElementById('mpContatos');
+    const query = `[out:json][timeout:15];(node["amenity"="hospital"](around:20000,${lat},${lon});node["amenity"="fire_station"](around:20000,${lat},${lon});node["amenity"="police"](around:20000,${lat},${lon}););out center 15;`;
+    try {
+        const r = await dcProxyFetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        const rotulo = { hospital: 'Hospital', fire_station: 'Bombeiros', police: 'Polícia' };
+        const itens = (data.elements || [])
+            .map(e => ({ nome: e.tags?.name || rotulo[e.tags?.amenity] || 'Serviço', tipo: rotulo[e.tags?.amenity] || '—', dist: distKm(lat, lon, e.lat, e.lon) }))
+            .sort((a, b) => a.dist - b.dist)
+            .slice(0, 4);
+        if (!itens.length) throw new Error('sem resultados');
+        el.innerHTML = 'Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192<br>' +
+            itens.map(i => `<span style="display:inline-block;margin-top:4px;">${i.tipo}: <b>${i.nome}</b> — ${i.dist.toFixed(1)} km</span>`).join('<br>');
+    } catch (e) {
+        // Sem cobertura do OSM na região: mantém apenas os números gerais.
+    }
+}
+
 window.previsaoMun = function (cod) {
     map.closePopup();
     const c = centroidByCod[cod];
@@ -1782,6 +1810,7 @@ window.previsaoMun = function (cod) {
     document.getElementById('mpRiskBar').innerHTML = '';
     document.getElementById('mpAtualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
     document.getElementById('mpContatos').textContent = 'Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192';
+    loadServicosProximos(c.lat, c.lng);
 
     // ===== DADOS IBGE =====
     // Nome e localização
@@ -1898,7 +1927,7 @@ window.previsaoMun = function (cod) {
             document.getElementById('mpRisco').textContent = riscoTxt;
             document.getElementById('mpRisco').style.color = riscoCor;
             document.getElementById('mpRiskBar').innerHTML = `<div class="fill" style="width:${risco}%;background:${riscoCor};"></div>`;
-            document.getElementById('mpFontes').textContent = 'IBGE · INPE · Open-Meteo';
+            document.getElementById('mpFontes').textContent = 'IBGE · INPE · Open-Meteo · OpenStreetMap';
         })
         .catch(() => {});
 };
@@ -1971,13 +2000,31 @@ function refreshLegend() {
 /* ================= Estações DC (compartilhadas via data.js) ================= */
 const dcStations = ESTACOES_DC;
 const typeStyle = Object.fromEntries(Object.entries(TIPO_ESTACAO).map(([k, v]) => [k, { color: v.cor, icon: v.icone }]));
+
+// Ícones inline (paths do Lucide) para marcadores do mapa — evita depender do
+// timing de lucide.createIcons() em markers que só entram no DOM quando a
+// camada é adicionada ao mapa.
+const MARKER_SVG = {
+    'cloud-rain': '<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>',
+    waves: '<path d="M2 12q2.5 2 5 0t5 0 5 0 5 0"/><path d="M2 19q2.5 2 5 0t5 0 5 0 5 0"/><path d="M2 5q2.5 2 5 0t5 0 5 0 5 0"/>',
+    flame: '<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/>',
+    home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    'radio-tower': '<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
+};
+function iconDivMarker(iconKey, color, size) {
+    size = size || 26;
+    const inner = Math.round(size * 0.52);
+    return L.divIcon({
+        className: '',
+        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}77;"><svg xmlns="http://www.w3.org/2000/svg" width="${inner}" height="${inner}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${MARKER_SVG[iconKey] || ''}</svg></div>`,
+        iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+    });
+}
+
 const stationsLayer = L.layerGroup();
 dcStations.forEach(s => {
     const st = typeStyle[s.type];
-    L.circleMarker([s.lat, s.lng], {
-        radius: 7, color: '#fff', weight: 1.5,
-        fillColor: st.color, fillOpacity: 0.95
-    }).bindPopup(`
+    L.marker([s.lat, s.lng], { icon: iconDivMarker(st.icon, st.color) }).bindPopup(`
         <div style="min-width:190px;">
             <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">${s.name}</div>
             <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${s.city} · MT</div>
@@ -2146,11 +2193,11 @@ const CPTEC_CIDADES = [
     { nome: 'Cáceres', id: 218 }
 ];
 const CPTEC_ICONE = {
-    'ci': '☀️', 'cv': '🌤️', 'ec': '⛈️', 'eq': '⚡', 'er': '🌧️',
-    'os': '☁️', 'pc': '🌦️', 'pp': '🌧️', 'ps': '🌤️', 'pn': '⛅',
-    'rb': '🌧️', 'rc': '🌧️', 'rr': '🌧️', 'rs': '⛈️', 'sc': '❄️',
-    'ch': '🌧️', 'ct': '☁️', 'np': '☁️', 'lc': '☁️', 'vc': '🌤️',
-    'pm': '🌤️', 'nc': '⛅'
+    'ci': 'sun', 'cv': 'cloud-sun', 'ec': 'cloud-lightning', 'eq': 'zap', 'er': 'cloud-rain',
+    'os': 'cloud', 'pc': 'cloud-drizzle', 'pp': 'cloud-rain', 'ps': 'cloud-sun', 'pn': 'cloud',
+    'rb': 'cloud-rain', 'rc': 'cloud-rain', 'rr': 'cloud-rain', 'rs': 'cloud-lightning', 'sc': 'snowflake',
+    'ch': 'cloud-rain', 'ct': 'cloud', 'np': 'cloud', 'lc': 'cloud', 'vc': 'cloud-sun',
+    'pm': 'cloud-sun', 'nc': 'cloud'
 };
 
 let cpTecGlobal = [];
@@ -2165,16 +2212,17 @@ async function loadCptec() {
         const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         cpTecGlobal = data.clima.map(d => {
             const dt = new Date(d.data + 'T12:00:00');
-            return { dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth()+1}`, icone: CPTEC_ICONE[d.condicao] || '🌡️', desc: d.condicao_desc, tmax: d.max, tmin: d.min };
+            return { dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth()+1}`, icone: CPTEC_ICONE[d.condicao] || 'cloud-sun', desc: d.condicao_desc, tmax: d.max, tmin: d.min };
         });
         container.innerHTML = cpTecGlobal.map(c =>
             `<div class="cptec-card">
                 <span class="dia">${c.dia}<br><span style="font-weight:400;font-size:9px;color:var(--text-muted);">${c.data}</span></span>
-                <span class="icone">${c.icone}</span>
+                <span class="icone"><i data-lucide="${c.icone}"></i></span>
                 <span class="desc">${c.desc}</span>
                 <span class="temps"><span class="tmax">${c.tmax}°</span><span class="tmin">${c.tmin}°</span></span>
             </div>`
         ).join('');
+        if (window.lucide) lucide.createIcons();
     } catch (e) {
         container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Erro ao carregar previsão</div>';
     }
@@ -2196,12 +2244,7 @@ async function loadInmetStations() {
             const lat = parseFloat(s.VL_LATITUDE);
             const lon = parseFloat(s.VL_LONGITUDE);
             if (!lat || !lon) return;
-            const icon = L.divIcon({
-                className: '',
-                html: `<div style="width:10px;height:10px;border-radius:50%;background:#22d3ee;border:2px solid #fff;box-shadow:0 0 6px rgba(34,211,238,.6);"></div>`,
-                iconSize: [14, 14], iconAnchor: [7, 7]
-            });
-            L.marker([lat, lon], { icon }).bindPopup(`
+            L.marker([lat, lon], { icon: iconDivMarker('radio-tower', '#22d3ee', 22) }).bindPopup(`
                 <div style="min-width:180px;">
                     <div style="font-weight:700;font-size:12px;margin-bottom:2px;">
                         <i data-lucide="radio-tower" style="color:#22d3ee;margin-right:4px;"></i>${s.DC_NOME}
@@ -2269,10 +2312,7 @@ async function loadSIPAM() {
             const territorios = [ev.terra_indigena, ev.unidade_conservacao, ev.quilombola, ev.projeto_assentamento]
                 .filter(Boolean).map(t => t.trim()).join(', ');
             const persistencia = ev.persistencia_dias != null ? ev.persistencia_dias + ' dia(s)' : '—';
-            L.circleMarker([lat, lng], {
-                radius: raio, color: '#fff', weight: 0.8,
-                fillColor: cor, fillOpacity: 0.85
-            }).bindPopup(`
+            L.marker([lat, lng], { icon: iconDivMarker('flame', cor, Math.round(raio * 2.6)) }).bindPopup(`
                 <div style="min-width:230px;">
                     <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">
                         <i data-lucide="flame" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}
@@ -2619,14 +2659,14 @@ function wmoDesc(code) {
 }
 
 const WMO_ICONS = {
-    0: ['\u2600\uFE0F','C\u00E9u limpo','sun'], 1: ['\uD83C\uDF24\uFE0F','Predom\u00EDnio de sol','cloud-sun'], 2: ['\u26C5','Parc. nublado','cloud-sun'],
-    3: ['\u2601\uFE0F','Nublado','cloud'], 45: ['\uD83C\uDF2B\uFE0F','Nevoeiro','cloud-fog'], 48: ['\uD83C\uDF2B\uFE0F','Nevoeiro c/ geada','cloud-fog'],
-    51: ['\uD83C\uDF26\uFE0F','Garoa fraca','cloud-rain'], 53: ['\uD83C\uDF26\uFE0F','Garoa moderada','cloud-rain'], 55: ['\uD83C\uDF27\uFE0F','Garoa intensa','cloud-rain'],
-    61: ['\uD83C\uDF27\uFE0F','Chuva fraca','cloud-rain'], 63: ['\uD83C\uDF27\uFE0F','Chuva moderada','cloud-rain'], 65: ['\u26C8\uFE0F','Chuva forte','cloud-rain'],
-    71: ['\u2744\uFE0F','Neve fraca','snowflake'], 73: ['\u2744\uFE0F','Neve moderada','snowflake'], 75: ['\u2744\uFE0F','Neve forte','snowflake'],
-    80: ['\uD83C\uDF26\uFE0F','Pancadas isoladas','cloud-rain'], 81: ['\uD83C\uDF27\uFE0F','Pancadas moderadas','cloud-rain'],
-    82: ['\u26C8\uFE0F','Pancadas violentas','cloud-rain'],
-    95: ['\u26C8\uFE0F','Tempestade','cloud-lightning'], 96: ['\u26C8\uFE0F','Tempestade c/ granizo','cloud-lightning'], 99: ['\u26C8\uFE0F','Tempestade severa','cloud-lightning'],
+    0: ['Céu limpo','sun'], 1: ['Predomínio de sol','cloud-sun'], 2: ['Parc. nublado','cloud-sun'],
+    3: ['Nublado','cloud'], 45: ['Nevoeiro','cloud-fog'], 48: ['Nevoeiro c/ geada','cloud-fog'],
+    51: ['Garoa fraca','cloud-drizzle'], 53: ['Garoa moderada','cloud-drizzle'], 55: ['Garoa intensa','cloud-drizzle'],
+    61: ['Chuva fraca','cloud-rain'], 63: ['Chuva moderada','cloud-rain'], 65: ['Chuva forte','cloud-rain'],
+    71: ['Neve fraca','snowflake'], 73: ['Neve moderada','snowflake'], 75: ['Neve forte','snowflake'],
+    80: ['Pancadas isoladas','cloud-drizzle'], 81: ['Pancadas moderadas','cloud-rain'],
+    82: ['Pancadas violentas','cloud-lightning'],
+    95: ['Tempestade','cloud-lightning'], 96: ['Tempestade c/ granizo','cloud-lightning'], 99: ['Tempestade severa','cloud-lightning'],
 };
 
 async function openPointPanel(lat, lng, fonteExtra = '') {
@@ -2645,13 +2685,13 @@ async function openPointPanel(lat, lng, fonteExtra = '') {
                 + `wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,cloud_cover,uv_index,visibility,dew_point_2m`
                 + `&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,cloud_cover,relative_humidity_2m`
                 + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max`
-                + `&forecast_days=7&timezone=auto`).then(r => r.json()),
+                + `&forecast_days=7&timezone=America/Cuiaba`).then(r => r.json()),
             dcProxyFetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=pt-BR`)
                 .then(r => r.json()).catch(() => null)
         ]);
 
         const c = wx.current;
-        const [desc, iconFA] = WMO_ICONS[c.weather_code] || ['\u2601\uFE0F', 'Indispon\u00EDvel', 'cloud'];
+        const [desc, iconFA] = WMO_ICONS[c.weather_code] || ['Indisponível', 'cloud'];
         const placeName = place?.address?.city || place?.address?.town || place?.address?.village || place?.address?.county || place?.name || 'Local selecionado';
 
         document.getElementById('ppName').textContent = placeName;
@@ -3352,7 +3392,7 @@ async function fetchWindData() {
             }
         }
         const results = await Promise.all(batch.map(p =>
-            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=auto`)
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America/Cuiaba`)
                 .then(r => {
                     if (!r.ok) throw new Error(`wind-${r.status}`);
                     return r.json();
@@ -3543,18 +3583,6 @@ function tempColorRGB(t) {
     };
 }
 
-function tempWeatherIcon(code) {
-    if (code == null) return '\u2600\uFE0F';
-    if (code === 0) return '\u2600\uFE0F';
-    if (code <= 2) return '\uD83C\uDF24\uFE0F';
-    if (code === 3) return '\u2601\uFE0F';
-    if (code >= 51 && code <= 55) return '\uD83C\uDF26\uFE0F';
-    if (code >= 61 && code <= 65) return '\uD83C\uDF27\uFE0F';
-    if (code >= 80 && code <= 82) return '\uD83C\uDF26\uFE0F';
-    if (code >= 95) return '\u26C8\uFE0F';
-    return '\u26C5';
-}
-
 function tempWeatherFA(code) {
     if (code == null) return 'sun';
     if (code === 0) return 'sun';
@@ -3570,7 +3598,7 @@ function tempWeatherFA(code) {
 function tempBadgeHTML(city, data) {
     const t = Math.round(data.temp);
     const color = tempColor(data.temp);
-    const icon = tempWeatherIcon(data.wcode);
+    const icon = tempWeatherFA(data.wcode);
     const feelsLike = data.feels != null ? Math.round(data.feels) : '--';
     const hum = data.hum != null ? data.hum : '--';
     const wind = data.wind != null ? Math.round(data.wind) : '--';
@@ -3580,7 +3608,7 @@ function tempBadgeHTML(city, data) {
             <div class="tb-glow" style="background:${color};"></div>
             <div class="tb-city">${city.nome}</div>
             <div class="tb-row">
-                <span class="tb-icon">${icon}</span>
+                <span class="tb-icon"><i data-lucide="${icon}"></i></span>
                 <span class="tb-val" style="color:${color};">${t}<span class="tb-unit">°C</span></span>
             </div>
             <div class="tb-feels">Sensação ${feelsLike}°C</div>
@@ -3639,7 +3667,7 @@ async function showTempOverlay() {
     for (let i = 0; i < pts.length; i += batchSize) {
         const batch = pts.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(p =>
-            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code&timezone=auto`)
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code&timezone=America/Cuiaba`)
                 .then(r => {
                     if (!r.ok) throw new Error(`temp-${r.status}`);
                     return r.json();
@@ -3789,7 +3817,7 @@ async function showFireOverlay() {
     for (let i = 0; i < pts.length; i += batchSize) {
         const batch = pts.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(p =>
-            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=precipitation_sum&timezone=auto&past_days=1&forecast_days=0`)
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=precipitation_sum&timezone=America/Cuiaba&past_days=1&forecast_days=0`)
                 .then(r => {
                     if (!r.ok) throw new Error(`fire-${r.status}`);
                     return r.json();
