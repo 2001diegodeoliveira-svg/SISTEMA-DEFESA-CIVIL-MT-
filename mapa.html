@@ -903,6 +903,8 @@
         .lg-bar-fire { background: linear-gradient(90deg, #22c55e, #84cc16, #fbbf24, #f9731c, #ef4444, #dc2626); }
         .lg-labels, .wl-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 8px; }
         .wl-unit { text-align: right; font-size: 7px; color: var(--text-muted); margin-top: 2px; opacity: .6; }
+        .wl-note { margin-top: 7px; padding-top: 7px; border-top: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 7.5px; opacity: .85; }
+        .wl-note i, .wl-note svg[data-lucide] { font-size: 10px; color: #38bdf8; }
 
         /* ===== Overlay Popups (Temp / Fire) ===== */
         .leaflet-popup-content-wrapper { background: var(--glass-bg); backdrop-filter: blur(14px); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.45); color: var(--text-main); }
@@ -1227,6 +1229,7 @@
         <div class="wl-bar" id="wlBar"></div>
         <div class="wl-labels"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>60+</span></div>
         <div class="wl-unit">km/h</div>
+        <div class="wl-note"><i data-lucide="compass"></i> As setas indicam para onde o vento sopra</div>
     </div>
 
     <!-- Temperature legend -->
@@ -4460,49 +4463,53 @@ async function fetchWindData() {
     windLastFetch = now;
 
     const bounds = map.getBounds();
-    const latMin = Math.max(-15.5, bounds.getSouth() - 2);
+    const latMin = Math.max(-16.5, bounds.getSouth() - 2);
     const latMax = Math.min(-8.0, bounds.getNorth() + 2);
-    const lonMin = Math.max(-62.5, bounds.getWest() - 2);
+    const lonMin = Math.max(-62.0, bounds.getWest() - 2);
     const lonMax = Math.min(-51.0, bounds.getEast() + 2);
-    const latStep = (latMax - latMin) / 14;
-    const lonStep = (lonMax - lonMin) / 14;
 
+    const nLat = 12, nLon = 14;
     const lats = [], lons = [];
-    for (let lat = latMin; lat <= latMax; lat += latStep) lats.push(lat.toFixed(2));
-    for (let lon = lonMin; lon <= lonMax; lon += lonStep) lons.push(lon.toFixed(2));
+    const dLat = (latMax - latMin) / (nLat - 1);
+    const dLon = (lonMax - lonMin) / (nLon - 1);
+    for (let i = 0; i < nLat; i++) lats.push(latMin + i * dLat);
+    for (let j = 0; j < nLon; j++) lons.push(lonMin + j * dLon);
 
-    const windPoints = [];
-    const batchSize = 30;
-    for (let i = 0; i < lats.length * lons.length; i += batchSize) {
-        const batch = [];
-        let idx = 0;
-        for (const lat of lats) {
-            for (const lon of lons) {
-                if (idx >= i && idx < i + batchSize) batch.push({ lat, lon });
-                idx++;
-            }
+    // Grade regular 2D -> interpolação bilinear suave (sem saltos de direção)
+    const vals = [], points = [];
+    for (let i = 0; i < nLat; i++) {
+        vals[i] = [];
+        for (let j = 0; j < nLon; j++) {
+            vals[i][j] = { speed: 0, dir: 0, gust: 0 };
+            points.push({ i, j, lat: +lats[i].toFixed(2), lon: +lons[j].toFixed(2), used: false });
         }
-        const results = await Promise.all(batch.map(p =>
-            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America/Cuiaba`)
+    }
+
+    const batchSize = 20;
+    for (let k = 0; k < points.length; k += batchSize) {
+        const batch = points.slice(k, k + batchSize);
+        const results = await Promise.all(batch.map(pt =>
+            dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${pt.lat}&longitude=${pt.lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America/Cuiaba`)
                 .then(r => {
                     if (!r.ok) throw new Error(`wind-${r.status}`);
                     return r.json();
                 }).catch(() => null)
         ));
-        results.forEach((d, j) => {
+        results.forEach((d, n) => {
             if (d?.current) {
-                windPoints.push({
-                    lat: parseFloat(batch[j].lat), lon: parseFloat(batch[j].lon),
+                const b = batch[n];
+                vals[b.i][b.j] = {
                     speed: d.current.wind_speed_10m || 0,
                     dir: d.current.wind_direction_10m || 0,
                     gust: d.current.wind_gusts_10m || 0,
-                });
+                };
+                b.used = true;
             }
         });
     }
-    if (windPoints.length > 0) {
-        windData = windPoints;
-        overlayCache.wind = { data: windPoints, ts: Date.now() };
+    if (points.some(p => p.used)) {
+        windData = { lats, lons, vals, latMin, latMax, lonMin, lonMax };
+        overlayCache.wind = { data: windData, ts: Date.now() };
     }
     overlayRequestLock.wind = false;
 }
@@ -4516,25 +4523,58 @@ function initWindParticles() {
         const y = Math.random() * windCanvas.height;
         const trail = [];
         for (let t = 0; t < trailLen; t++) trail.push({ x, y });
+        const initW = getWindAtPixel(x, y);
         windParticles.push({
             x, y,
             trail,
             age: Math.random() * 120,
             maxAge: 80 + Math.random() * 120,
-            prevSpeed: 0,
+            dirSmooth: initW.dir,
+            spdSmooth: initW.speed,
         });
     }
 }
 
+// Interpolação angular pelos caminho mais curto (evita giro de 360° na transição 0<->359)
+function lerpAngle(a, b, t) {
+    let d = ((b - a + 540) % 360) - 180;
+    return (a + d * t + 360) % 360;
+}
+
+function bilinearWind(v00, v10, v01, v11, a, b) {
+    const lrp = (p, q) => p + (q - p) * a;
+    const mix = (t, bt, bb) => t + (bt - t) * bb;
+    const speedT = lrp(v00.speed, v10.speed), speedB = lrp(v01.speed, v11.speed);
+    const gustT = lrp(v00.gust, v10.gust), gustB = lrp(v01.gust, v11.gust);
+    const dirT = lerpAngle(v00.dir, v10.dir, a), dirB = lerpAngle(v01.dir, v11.dir, a);
+    return { speed: mix(speedT, speedB, b), gust: mix(gustT, gustB, b), dir: lerpAngle(dirT, dirB, b) };
+}
+
 function getWindAtPixel(px, py) {
-    if (!windData || !windData.length) return { speed: 0, dir: 0, gust: 0 };
+    if (!windData || !windData.lats) return { speed: 0, dir: 0, gust: 0 };
     const latlng = map.containerPointToLatLng([px, py]);
-    let closest = windData[0], minDist = Infinity;
-    for (const p of windData) {
-        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
-        if (d < minDist) { minDist = d; closest = p; }
+    const lat = latlng.lat, lon = latlng.lng;
+    const { lats, lons, vals } = windData;
+    const nLat = lats.length, nLon = lons.length;
+    if (nLat < 2 || nLon < 2) {
+        let best = vals[0][0], bd = Infinity;
+        for (let i = 0; i < nLat; i++) {
+            for (let j = 0; j < nLon; j++) {
+                const d = Math.pow(lats[i] - lat, 2) + Math.pow(lons[j] - lon, 2);
+                if (d < bd) { bd = d; best = vals[i][j]; }
+            }
+        }
+        return best;
     }
-    return closest;
+    const spanLat = lats[nLat - 1] - lats[0];
+    const spanLon = lons[nLon - 1] - lons[0];
+    const fi = (lat - lats[0]) / spanLat * (nLat - 1);
+    const fj = (lon - lons[0]) / spanLon * (nLon - 1);
+    const i0 = Math.max(0, Math.min(nLat - 2, Math.floor(fi)));
+    const j0 = Math.max(0, Math.min(nLon - 2, Math.floor(fj)));
+    const a = Math.min(1, Math.max(0, fi - i0));
+    const b = Math.min(1, Math.max(0, fj - j0));
+    return bilinearWind(vals[i0][j0], vals[i0 + 1][j0], vals[i0][j0 + 1], vals[i0 + 1][j0 + 1], a, b);
 }
 
 function drawWindFrame() {
@@ -4545,8 +4585,11 @@ function drawWindFrame() {
         const wind = getWindAtPixel(p.x, p.y);
         const speed = wind.speed;
         const gustFactor = wind.gust > speed * 1.3 ? 1.4 : 1.0;
-        const rad = (wind.dir + 180) * Math.PI / 180;
-        const step = speed * 0.22 * gustFactor;
+        // Suavização temporal: a partícula "acelera" até a nova direção em vez de pular
+        p.dirSmooth = lerpAngle(p.dirSmooth, wind.dir, 0.14);
+        p.spdSmooth += (speed - p.spdSmooth) * 0.12;
+        const rad = (p.dirSmooth + 180) * Math.PI / 180;
+        const step = p.spdSmooth * 0.22 * gustFactor;
         const dx = Math.cos(rad) * step;
         const dy = -Math.sin(rad) * step;
 
@@ -4561,29 +4604,31 @@ function drawWindFrame() {
         p.x += dx;
         p.y += dy;
         p.age++;
-        p.prevSpeed += (speed - p.prevSpeed) * 0.15;
+        const prevSpeed = p.spdSmooth;
 
         if (p.age > p.maxAge || p.x < -40 || p.x > windCanvas.width + 40 || p.y < -40 || p.y > windCanvas.height + 40) {
             p.x = Math.random() * windCanvas.width;
             p.y = Math.random() * windCanvas.height;
             for (let t = 0; t < trailLen; t++) { p.trail[t].x = p.x; p.trail[t].y = p.y; }
             p.age = 0;
-            p.prevSpeed = 0;
+            const res = getWindAtPixel(p.x, p.y);
+            p.dirSmooth = res.dir;
+            p.spdSmooth = res.speed;
         }
 
         const lifeRatio = Math.min(1, (p.maxAge - p.age) / p.maxAge);
         const fadeHead = Math.min(1, p.age / 25);
-        const speedFade = Math.min(1, p.prevSpeed / 5);
+        const speedFade = Math.min(1, prevSpeed / 5);
         const alpha = lifeRatio * fadeHead * speedFade;
         if (alpha <= 0.01) continue;
 
-        const rgb = windSpeedRGB(p.prevSpeed);
-        const drawLen = Math.min(trailLen, Math.max(4, Math.floor(p.prevSpeed * 0.6) + 3));
+        const rgb = windSpeedRGB(prevSpeed);
+        const drawLen = Math.min(trailLen, Math.max(4, Math.floor(prevSpeed * 0.6) + 3));
 
         windCtx.lineCap = 'round';
         windCtx.lineJoin = 'round';
 
-        const baseWidth = Math.min(2.8, 0.6 + p.prevSpeed * 0.03);
+        const baseWidth = Math.min(2.8, 0.6 + prevSpeed * 0.03);
         for (let t = 0; t < drawLen - 1; t++) {
             const ratioT = 1 - t / drawLen;
             const tAlpha = alpha * ratioT * ratioT * 0.75;
@@ -4598,10 +4643,24 @@ function drawWindFrame() {
             windCtx.stroke();
         }
 
-        if (speed > 3 && alpha > 0.1) {
+        if (prevSpeed > 3 && alpha > 0.1) {
+            // Cabeça da partícula
             windCtx.beginPath();
             windCtx.arc(p.trail[0].x, p.trail[0].y, baseWidth * 0.6, 0, Math.PI * 2);
             windCtx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha * 0.6})`;
+            windCtx.fill();
+
+            // Seta de direção: triângulo apontando para onde o vento sopra
+            const arw = Math.min(15, 4 + prevSpeed * 0.5);
+            const ex = Math.cos(rad), ey = -Math.sin(rad);
+            const bx = p.x - ex * arw, by = p.y - ey * arw;
+            const ox = ey * arw * 0.45, oy = -ex * arw * 0.45;
+            windCtx.beginPath();
+            windCtx.moveTo(p.x, p.y);
+            windCtx.lineTo(bx + ox, by + oy);
+            windCtx.lineTo(bx - ox, by - oy);
+            windCtx.closePath();
+            windCtx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${Math.min(0.92, alpha * 1.3)})`;
             windCtx.fill();
         }
     }

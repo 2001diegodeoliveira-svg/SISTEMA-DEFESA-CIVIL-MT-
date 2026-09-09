@@ -231,6 +231,54 @@
         .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
         .section-divider b { color: var(--text-main); }
 
+        /* ===== Alertas automáticos Open-Meteo por município ===== */
+        .om-section { padding: 26px 5% 0; max-width: 1200px; }
+        .om-head {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
+        }
+        .om-title { display: flex; align-items: center; gap: 12px; }
+        .om-title h3 { font-size: 18px; font-weight: 700; }
+        .om-autobadge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(56,189,248,.12); color: #38bdf8; font-size: 11px; font-weight: 700;
+            padding: 3px 10px; border-radius: 12px; letter-spacing: .4px;
+        }
+        .om-meta { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .om-meta .src { color: #38bdf8; }
+        .om-refresh {
+            background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted);
+            width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: all .15s;
+        }
+        .om-refresh:hover { color: #38bdf8; border-color: rgba(56,189,248,.4); }
+        .om-refresh .spin { animation: luSpin 1s linear infinite; }
+        .om-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+        .om-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-left: 4px solid var(--om-cor, var(--accent-orange));
+            border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 9px;
+            transition: border-color .2s, transform .2s;
+        }
+        .om-card:hover { border-color: rgba(255,255,255,.18); transform: translateY(-1px); }
+        .om-card .om-top { display: flex; gap: 12px; align-items: flex-start; }
+        .om-card .om-city { font-size: 13.5px; font-weight: 700; margin-top: 3px; }
+        .om-nivel {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+            padding: 2px 8px; border-radius: 4px; color: var(--om-cor);
+            background: color-mix(in srgb, var(--om-cor) 14%, transparent);
+        }
+        .om-val {
+            margin-left: auto; font-size: 12.5px; font-weight: 800;
+            color: var(--om-cor); white-space: nowrap;
+        }
+        .om-card .om-rows { font-size: 12px; color: #cbd5e1; line-height: 1.55; display: grid; gap: 3px; }
+        .om-card .om-rows b { color: #f1f5f9; }
+        .om-card .om-muni { font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+        .om-card .om-muni .src { color: #38bdf8; }
+
         @media (max-width: 1024px) {
             nav ul { display: none; }
             .details-inner { padding-left: 20px; }
@@ -305,6 +353,10 @@
                 <div><b id="stInmet">0</b><span>Avisos INMET (tempo real)</span></div>
             </div>
             <div class="stat-chip">
+                <i data-lucide="zap" style="color:#38bdf8;"></i>
+                <div><b id="stOm">0</b><span>Alertas automáticos (Open-Meteo)</span></div>
+            </div>
+            <div class="stat-chip">
                 <i data-lucide="clock" style="color:#94a3b8;"></i>
                 <div><b id="stUpdate">--:--</b><span>Última atualização</span></div>
             </div>
@@ -333,6 +385,19 @@
             <div class="inmet-meta" id="inmetMeta">Carregando avisos do INMET...</div>
         </div>
         <div class="inmet-grid" id="inmetGrid"></div>
+    </section>
+
+    <!-- Alertas automáticos Open-Meteo por município -->
+    <section class="om-section" id="omSection">
+        <div class="om-head">
+            <div class="om-title">
+                <h3><i data-lucide="zap" style="color:#38bdf8;margin-right:6px;"></i>Alertas automáticos por município</h3>
+                <span class="om-autobadge"><i data-lucide="satellite-dish"></i>OPEN-METEO</span>
+            </div>
+            <div class="om-meta" id="omMeta">Preparando varredura dos 141 municípios de MT...</div>
+            <button class="om-refresh" id="omRefresh" title="Atualizar previsão agora"><i data-lucide="refresh-cw"></i></button>
+        </div>
+        <div class="om-grid" id="omGrid"></div>
     </section>
 
     <div class="section-divider"><span>Alertas emitidos pela <b>Defesa Civil MT</b> — conteúdo operacional curado</span></div>
@@ -477,7 +542,7 @@
             });
         });
 
-        document.getElementById('buscaMunicipio').addEventListener('input', renderAlerts);
+        document.getElementById('buscaMunicipio').addEventListener('input', () => { renderAlerts(); filtrarOmega(); });
 
         document.querySelector('.emergency-btn').addEventListener('click', () => {
             alert('Ligando para a central de emergência da Defesa Civil: 199');
@@ -656,7 +721,252 @@
             }
             renderInmet(g);
             // mantém datas dos curados e contadores atualizados
-            renderStats();
+// ================= Alertas automáticos Open-Meteo por município =================
+        // Varre todos os municípios de MT e gera alertas pela previsão diária do Open-Meteo.
+        const OM_GEOJSON = 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json';
+        const OM_FALLBACK = [
+            { id: '5103403', nome: 'Cuiabá', lat: -15.601, lon: -56.097 },
+            { id: '5107877', nome: 'Sinop', lat: -11.860, lon: -55.502 },
+            { id: '5107927', nome: 'Rondonópolis', lat: -16.470, lon: -54.635 },
+            { id: '5107922', nome: 'Sorriso', lat: -12.545, lon: -55.728 },
+            { id: '5102504', nome: 'Cáceres', lat: -16.076, lon: -57.681 },
+            { id: '5101803', nome: 'Barra do Garças', lat: -15.890, lon: -52.257 },
+            { id: '5107067', nome: 'Primavera do Leste', lat: -15.360, lon: -54.280 },
+            { id: '5107950', nome: 'Tangará da Serra', lat: -14.620, lon: -57.430 },
+            { id: '5105259', nome: 'Lucas do Rio Verde', lat: -13.058, lon: -55.927 },
+            { id: '5108401', nome: 'Várzea Grande', lat: -15.647, lon: -56.133 },
+            { id: '5103502', nome: 'Alta Floresta', lat: -9.876, lon: -56.086 },
+            { id: '5106225', nome: 'Juína', lat: -11.377, lon: -58.741 },
+        ];
+        const OM_PESO = { emergencia: 0, alerta: 1, atencao: 2 };
+        const OM_COR = { emergencia: '#ef4444', alerta: '#f97316', atencao: '#eab308' };
+        const OM_TEMPESTADE = new Set([95, 96, 99]);
+        let omAlertas = 0;
+
+        function omCacheGet(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } }
+        function omCacheSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+        function centroideMT(f) {
+            if (Array.isArray(f.bbox)) {
+                return { lat: (f.bbox[1] + f.bbox[3]) / 2, lon: (f.bbox[0] + f.bbox[2]) / 2 };
+            }
+            let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+            const walk = c => {
+                if (typeof c[0] === 'number') {
+                    const lon = c[0], lat = c[1];
+                    if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+                    if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+                } else c.forEach(walk);
+            };
+            walk((f.geometry && f.geometry.coordinates) || f.coordinates || []);
+            return { lat: (minLat + maxLat) / 2, lon: (minLon + maxLon) / 2 };
+        }
+
+        async function obterMunicipiosMT() {
+            const cached = omCacheGet('om_mun_mt_v1');
+            if (cached && cached.list && cached.list.length > 20 && Date.now() - cached.ts < 30 * 24 * 3600 * 1000) {
+                return cached.list;
+            }
+            try {
+                const r = await dcProxyFetch(OM_GEOJSON);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const gj = await r.json();
+                const list = (gj.features || []).map(f => {
+                    const c = centroideMT(f);
+                    const props = f.properties || {};
+                    return {
+                        id: String(props.id ?? f.id ?? 'm' + Math.random()),
+                        nome: props.name || props.nome || 'Município',
+                        lat: +c.lat.toFixed(4), lon: +c.lon.toFixed(4),
+                    };
+                }).filter(m => isFinite(m.lat) && isFinite(m.lon) && m.lat !== 0 && m.lon !== 0);
+                if (list.length < 20) throw new Error('poucos municípios');
+                omCacheSet('om_mun_mt_v1', { list, ts: Date.now() });
+                return list;
+            } catch (e) {
+                return OM_FALLBACK.slice();
+            }
+        }
+
+        async function fetchOmegaPrevisao(m, force) {
+            const key = 'om_prev_v1_' + m.id;
+            if (!force) {
+                const c = omCacheGet(key);
+                if (c && c.d && Date.now() - c.ts < 10 * 60 * 1000) return c.d;
+            }
+            try {
+                const r = await dcProxyFetch(`https://api.open-meteo.com/v1/forecast?latitude=${m.lat}&longitude=${m.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,relative_humidity_2m_min,wind_speed_10m_max,wind_gusts_10m_max,weather_code&timezone=America%2FCuiaba&forecast_days=1`);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const d = await r.json();
+                if (!d.daily) return null;
+                omCacheSet(key, { d, ts: Date.now() });
+                return d;
+            } catch { return null; }
+        }
+
+        function avaliarOmega(m, d) {
+            const dia = d.daily || {};
+            const tmax = dia.temperature_2m_max ? dia.temperature_2m_max[0] : null;
+            const tmin = dia.temperature_2m_min ? dia.temperature_2m_min[0] : null;
+            const chuva = dia.precipitation_sum ? dia.precipitation_sum[0] : 0;
+            const pop = dia.precipitation_probability_max ? dia.precipitation_probability_max[0] : 0;
+            const humMin = dia.relative_humidity_2m_min ? dia.relative_humidity_2m_min[0] : null;
+            const rajada = dia.wind_gusts_10m_max ? dia.wind_gusts_10m_max[0] : 0;
+            const vento = dia.wind_speed_10m_max ? dia.wind_speed_10m_max[0] : 0;
+            const wc = dia.weather_code ? dia.weather_code[0] : 0;
+            const cand = [];
+            const add = (nivel, tipo, valor, resumo) => cand.push({ nivel, tipo, valor, resumo });
+
+            if (rajada >= 100) add('emergencia', 'Vendaval', Math.round(rajada) + ' km/h',
+                `Rajadas de até ${Math.round(rajada)} km/h em ${m.nome} — risco de destelhamentos, quedas de árvores e postes.`);
+            else if (rajada >= 75) add('alerta', 'Vento forte', Math.round(rajada) + ' km/h',
+                `Rajadas de até ${Math.round(rajada)} km/h em ${m.nome} — possíveis danos a estruturas e energia.`);
+            else if (rajada >= 60) add('atencao', 'Vento moderado', Math.round(rajada) + ' km/h',
+                `Rajadas de até ${Math.round(rajada)} km/h em ${m.nome} — atenção para objetos soltos.`);
+
+            if (chuva >= 90) add('emergencia', 'Chuva intensa', chuva.toFixed(0) + ' mm',
+                `Previsão de ${Math.round(chuva)} mm de chuva em ${m.nome} — risco de alagamentos e deslizamentos.`);
+            else if (chuva >= 50) add('alerta', 'Chuva forte', chuva.toFixed(0) + ' mm',
+                `Previsão de ${Math.round(chuva)} mm de chuva em ${m.nome} — possíveis transtornos urbanos.`);
+            else if (chuva >= 25) add('atencao', 'Chuva moderada', chuva.toFixed(0) + ' mm',
+                `Previsão de ${Math.round(chuva)} mm de chuva em ${m.nome}.`);
+            else if (pop >= 80 && OM_TEMPESTADE.has(wc)) add('atencao', 'Tempestade', 'POP ' + Math.round(pop) + '%',
+                `Alta probabilidade de tempestade (${Math.round(pop)}%) em ${m.nome}.`);
+
+            if (tmin != null && tmin <= 5) add('alerta', 'Frio intenso', Math.round(tmin) + '°C',
+                `Mínima de ${Math.round(tmin)}°C em ${m.nome} — risco à população vulnerável.`);
+            else if (tmin != null && tmin <= 8) add('atencao', 'Frio', Math.round(tmin) + '°C',
+                `Mínima de ${Math.round(tmin)}°C em ${m.nome}.`);
+
+            if (tmax != null && tmax >= 40) add('alerta', 'Onda de calor', Math.round(tmax) + '°C',
+                `Máxima de ${Math.round(tmax)}°C em ${m.nome} — hidratação e atenção ao calor extremo.`);
+            else if (tmax != null && tmax >= 37) add('atencao', 'Calor intenso', Math.round(tmax) + '°C',
+                `Máxima de ${Math.round(tmax)}°C em ${m.nome}.`);
+
+            if (humMin != null && humMin <= 20) add('alerta', 'Baixa umidade', Math.round(humMin) + '%',
+                `Umidade mínima de ${Math.round(humMin)}% em ${m.nome} — risco de incêndio e problemas respiratórios.`);
+            else if (humMin != null && humMin <= 30) add('atencao', 'Umidade baixa', Math.round(humMin) + '%',
+                `Umidade mínima de ${Math.round(humMin)}% em ${m.nome}.`);
+
+            if (!cand.length) return null;
+            cand.sort((a, b) => OM_PESO[a.nivel] - OM_PESO[b.nivel]);
+            return { ...cand[0], m, muni: m.nome, chuva, pop, tmin, tmax, humMin, rajada, vento };
+        }
+
+        function omCardHtml(al, icone) {
+            const cor = OM_COR[al.nivel];
+            const r1 = al.rajada > 0
+                ? `<div><b>Rajadas:</b> até ${Math.round(al.rajada)} km/h · <b>Vento:</b> ${Math.round(al.vento)} km/h</div>`
+                : `<div><b>Vento:</b> ${Math.round(al.vento)} km/h</div>`;
+            const r2 = `<div><b>Temperatura:</b> ${al.tmin != null ? Math.round(al.tmin) + '°' : '—'}–${al.tmax != null ? Math.round(al.tmax) + '°C' : '—'} · <b>Umidade mín:</b> ${al.humMin != null ? Math.round(al.humMin) + '%' : '—'}</div>`;
+            const r3 = `<div><b>Chuva:</b> ${al.chuva.toFixed(1)} mm · <b>POP:</b> ${Math.round(al.pop)}%</div>`;
+            return `
+                <div class="om-card" style="--om-cor:${cor};" data-muni="${encodeURIComponent(al.muni)}">
+                    <div class="om-top">
+                        <div class="ic-tipo" style="color:var(--om-cor);"><i data-lucide="${icone}"></i></div>
+                        <div style="flex:1;min-width:0;">
+                            <span class="om-nivel"><i data-lucide="${InmetNivelIcon[al.nivel]}"></i>${al.nivel}</span>
+                            <div class="om-city">${al.muni}</div>
+                        </div>
+                        <div class="om-val">${al.valor}</div>
+                    </div>
+                    <div class="om-rows">${r1}${r2}${r3}</div>
+                    <div class="om-muni"><i data-lucide="map-pin" style="font-size:10px;"></i>${al.tipo} · <span class="src">Open-Meteo</span> · previsão do dia</div>
+                </div>`;
+        }
+        const InmetNivelIcon = { emergencia: 'circle-alert', alerta: 'triangle-alert', atencao: 'info' };
+
+        function mapLimit(items, limit, fn) {
+            const out = new Array(items.length);
+            let i = 0;
+            const workers = Array(Math.min(limit, items.length)).fill().map(async () => {
+                while (i < items.length) {
+                    const j = i++;
+                    try { out[j] = await fn(items[j], j); } catch { out[j] = null; }
+                }
+            });
+            return Promise.all(workers).then(() => out);
+        }
+
+        function filtrarOmega() {
+            const busca = (document.getElementById('buscaMunicipio').value || '').trim().toLowerCase();
+            document.querySelectorAll('#omGrid .om-card').forEach(card => {
+                let nome = '';
+                try { nome = decodeURIComponent(card.dataset.muni || '').toLowerCase(); } catch {}
+                card.style.display = (!busca || nome.includes(busca)) ? '' : 'none';
+            });
+        }
+
+        async function renderOmega(force) {
+            const grid = document.getElementById('omGrid');
+            const meta = document.getElementById('omMeta');
+            const refreshBtn = document.getElementById('omRefresh');
+            if (!grid || !meta) return;
+
+            grid.innerHTML = '';
+            meta.innerHTML = '<i data-lucide="loader-2" style="font-size:11px;"></i>Carregando lista de municípios...</meta>';
+            const refreshIcon = refreshBtn && refreshBtn.querySelector('[data-lucide]');
+            if (refreshIcon) { refreshIcon.classList.add('spin'); refreshBtn.disabled = true; }
+
+            const munic = await obterMunicipiosMT();
+            if (!munic.length) {
+                meta.textContent = 'Nenhum município disponível para varredura.';
+                if (refreshIcon) refreshIcon.classList.remove('spin');
+                if (refreshBtn) refreshBtn.disabled = false;
+                return;
+            }
+
+            let feitos = 0, emAlerta = 0;
+            const total = munic.length;
+            meta.textContent = `Consultando previsão do Open-Meteo em ${total} municípios...`;
+
+            await mapLimit(munic, 6, async (m) => {
+                const d = await fetchOmegaPrevisao(m, force);
+                feitos++;
+                if (!d) return;
+                const al = avaliarOmega(m, d);
+                if (al) {
+                    emAlerta++;
+                    const icone = OM_ICONES[al.tipo] || OM_ICONES.default;
+                    grid.insertAdjacentHTML('beforeend', omCardHtml(al, icone));
+                    if (!grid.querySelector('.om-card') || grid.querySelectorAll('.om-card').length <= 1) {
+                        // first card já inserido
+                    }
+                }
+                meta.textContent = `${feitos}/${total} municípios consultados · ${emAlerta} em alerta`;
+            });
+
+            if (refreshIcon) refreshIcon.classList.remove('spin');
+            if (refreshBtn) refreshBtn.disabled = false;
+
+            omAlertas = emAlerta;
+            const st = document.getElementById('stOm');
+            if (st) st.textContent = emAlerta;
+
+            if (!emAlerta) {
+                grid.innerHTML = `<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Nenhum alerta automático para os municípios de MT no momento — previsão sem extremos nas próximas horas.</div>`;
+            } else {
+                const nE = grid.querySelectorAll('.om-card').length;
+                meta.innerHTML = `Varredura concluída: <b style="color:#f1f5f9;">${emAlerta}</b> município(s) em alerta de ${total} · fonte <span class="src">Open-Meteo</span> · ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+            }
+            if (window.lucide) lucide.createIcons();
+            filtrarOmega();
+        }
+        const OM_ICONES = {
+            'Vendaval': 'wind', 'Vento forte': 'wind', 'Vento moderado': 'wind',
+            'Chuva intensa': 'cloud-rain', 'Chuva forte': 'cloud-rain', 'Chuva moderada': 'cloud-rain',
+            'Tempestade': 'cloud-lightning',
+            'Onda de calor': 'thermometer-sun', 'Calor intenso': 'thermometer-sun',
+            'Frio intenso': 'thermometer', 'Frio': 'thermometer',
+            'Baixa umidade': 'droplet-off', 'Umidade baixa': 'droplet',
+            default: 'cloud-sun-rain',
+        };
+
+        document.getElementById('omRefresh').addEventListener('click', () => renderOmega(true));
+
+        renderOmega();
+
+        renderStats();
             renderAlerts();
         }
 
