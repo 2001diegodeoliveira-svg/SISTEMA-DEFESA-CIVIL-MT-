@@ -48,6 +48,7 @@
         // Ocorrências (Waze)
         reports: function () { return request('reports'); },
         createReport: function (data) { return request('reports', { method: 'POST', body: data }); },
+        occurrencesMap: function () { return request('occurrences?view=map'); },
 
         // Áreas de interesse
         areas: function () { return request('areas'); },

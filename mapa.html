@@ -3305,11 +3305,12 @@ async function loadSIPAM() {
 
 /* ================= Ocorrências / Acontecimentos (reports da API) ================= */
 const REPORT_ICONS = {
-    acidente: 'car', engarrafamento: 'traffic-cone', evento: 'calendar', clima: 'cloud',
+    acidente: 'car', engarrafamento: 'traffic-cone', evento: 'calendar', clima: 'cloud-lightning',
     chuva: 'cloud-rain', vento: 'wind', fogo: 'flame', alagamento: 'waves',
-    arvore: 'tree-deciduous', deslizamento: 'triangle-alert', rachadura: 'triangle-alert'
+    arvore: 'tree-deciduous', deslizamento: 'triangle-alert', rachadura: 'triangle-alert',
+    perigo: 'triangle-alert', obra: 'construction', interdicao: 'traffic-cone'
 };
-const REPORT_SEV_COLOR = { urgent: '#ef4444', warning: '#f97316', alto: '#ef4444', medio: '#f97316', info: '#00d2ff' };
+const REPORT_SEV_COLOR = { urgent: '#ef4444', warning: '#f97316', alto: '#ef4444', medio: '#f97316', info: '#00d2ff', critica: '#ef4444', alta: '#f97316', media: '#fbbf24', baixa: '#00d2ff' };
 
 function reportIcon(type) {
     const t = String(type || '').toLowerCase();
@@ -3333,36 +3334,53 @@ async function loadReports() {
     const meta = document.getElementById('metaReports');
     if (meta) meta.innerHTML = 'Ocorrências · <b>carregando...</b>';
     try {
-        let reports = [];
-        if (window.dcApi && window.dcApi.reports) {
+        let points = [];
+        // Fonte principal: ocorrências consolidadas (Waze/TOMTOM + manuais)
+        if (window.dcApi && window.dcApi.occurrencesMap) {
+            const r = await window.dcApi.occurrencesMap();
+            const pts = r && r.data && Array.isArray(r.data.points) ? r.data.points : null;
+            if (pts) points = pts;
+        }
+        // Fallback: coleção antiga de reports (mesmo formato visual)
+        if (!points.length && window.dcApi && window.dcApi.reports) {
             const r = await window.dcApi.reports();
-            reports = (r && r.data && r.data.reports) || [];
+            const rep = (r && r.data && r.data.reports) || [];
+            points = rep.filter(x => isFinite(Number(x.lat)) && isFinite(Number(x.lng))).map(x => ({
+                id: x.id, type: x.type, priority: x.severity || 'info', status: 'INFO',
+                source: x.reporter || 'Anônimo', latitude: Number(x.lat), longitude: Number(x.lng),
+                street: x.location || '', city: '', reportedAt: x.ts || x.createdAt,
+                description: x.description || ''
+            }));
         }
         if (reportsLayer) { try { map.removeLayer(reportsLayer); } catch {} }
         reportsLayer = L.layerGroup();
-        reports.forEach(rep => {
-            const lat = Number(rep.lat), lng = Number(rep.lng);
+        let renderizados = 0;
+        points.forEach(rep => {
+            const lat = Number(rep.latitude), lng = Number(rep.longitude);
             if (!isFinite(lat) || !isFinite(lng)) return;
+            renderizados++;
             const icon = reportIcon(rep.type);
-            const color = reportSevColor(rep.severity);
-            const titulo = String(rep.type || 'acontecimento').charAt(0).toUpperCase() + String(rep.type || 'acontecimento').slice(1);
+            const color = reportSevColor(rep.priority);
+            const titulo = (String(rep.type || 'acontecimento')).toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
             const iconeHTML = `<i data-lucide="${icon}" style="color:#fff;width:15px;height:15px;"></i>`;
             const markerIcon = L.divIcon({
                 className: '',
                 html: `<div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}55;border:2px solid #fff;">${iconeHTML}</div>`,
                 iconSize: [30, 30], iconAnchor: [15, 15]
             });
+            const cidade = rep.city ? (rep.state && rep.state !== 'MT' ? rep.city + ' · ' + rep.state : rep.city + ' · MT') : 'Local não informado';
             L.marker([lat, lng], { icon: markerIcon }).bindPopup(`
                 <div style="min-width:200px;">
                     <div style="font-weight:700;font-size:12.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
                         <i data-lucide="${icon}" style="color:${color};"></i>${titulo}
                     </div>
-                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${String(rep.location || 'Local não informado')}</div>
+                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${cidade}</div>
                     <div style="font-size:11px;line-height:1.7;">
-                        ${rep.description ? '<div>'+rep.description+'</div>' : ''}
-                        <div style="margin-top:4px;"><b>Severidade:</b> <span style="color:${color};">${String(rep.severity || 'info')}</span></div>
-                        <div><b>Reportado por:</b> ${String(rep.reporter || 'Anônimo')}</div>
-                        <div><b>Hora:</b> ${rep.ts ? new Date(rep.ts).toLocaleString('pt-BR') : '—'}</div>
+                        ${rep.description ? '<div>' + rep.description + '</div>' : ''}
+                        <div style="margin-top:4px;"><b>Prioridade:</b> <span style="color:${color};">${String(rep.priority || 'info')}</span></div>
+                        <div><b>Status:</b> ${String(rep.status || '—')}</div>
+                        <div><b>Fonte:</b> ${String(rep.source || '—')}</div>
+                        <div><b>Hora:</b> ${rep.reportedAt ? new Date(rep.reportedAt).toLocaleString('pt-BR') : '—'}</div>
                     </div>
                     ${reportMarkerBtn(lat, lng)}
                 </div>`).addTo(reportsLayer);
@@ -3370,10 +3388,9 @@ async function loadReports() {
         reportsLoaded = true;
         reportsLoading = false;
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        if (meta) meta.innerHTML = `Ocorrências · <b>${reports.length.toLocaleString('pt-BR')}</b> acontecimento(s) · atualizado ${hora}`;
+        if (meta) meta.innerHTML = `Ocorrências · <b>${renderizados.toLocaleString('pt-BR')}</b> acontecimento(s) · atualizado ${hora}`;
         applyChecks();
         if (window.lucide) lucide.createIcons();
-        map.once('popupopen', () => { if (window.lucide) lucide.createIcons(); });
         setTimeout(loadReports, 10 * 60 * 1000);
     } catch (e) {
         reportsLoading = false;
