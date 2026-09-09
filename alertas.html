@@ -279,6 +279,51 @@
         .om-card .om-muni { font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
         .om-card .om-muni .src { color: #38bdf8; }
 
+        /* ===== Popup destacado de alertas Open-Meteo ===== */
+        #omPopup { position: fixed; top: 14px; left: 0; right: 0; z-index: 10000; display: flex; justify-content: center; pointer-events: none; }
+        .om-popup {
+            --om-cor: var(--accent-orange);
+            pointer-events: auto; width: min(560px, calc(100vw - 24px));
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(11,18,32,.97); border: 1px solid color-mix(in srgb, var(--om-cor) 55%, transparent);
+            border-radius: 14px; padding: 12px 14px;
+            box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 3px color-mix(in srgb, var(--om-cor) 12%, transparent);
+            backdrop-filter: blur(10px);
+            animation: omPopIn .45s cubic-bezier(.2,.9,.3,1.15) both;
+        }
+        @keyframes omPopIn {
+            from { opacity: 0; transform: translateY(-26px) scale(.94); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .om-pop-icon {
+            width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: color-mix(in srgb, var(--om-cor) 16%, transparent);
+            color: var(--om-cor); animation: omPulse 1.9s ease-in-out infinite;
+        }
+        @keyframes omPulse {
+            0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--om-cor) 45%, transparent); }
+            50% { box-shadow: 0 0 0 11px transparent; }
+        }
+        .om-pop-body { flex: 1; min-width: 0; }
+        .om-pop-title { font-size: 13.5px; font-weight: 800; color: #f1f5f9; display: flex; align-items: center; gap: 8px; }
+        .om-pop-title .om-pop-count { font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--om-cor); background: color-mix(in srgb, var(--om-cor) 16%, transparent); padding: 2px 8px; border-radius: 10px; }
+        .om-pop-sub { font-size: 11.5px; color: #94a3b8; margin-top: 3px; line-height: 1.45; }
+        .om-pop-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .om-pop-btn {
+            background: color-mix(in srgb, var(--om-cor) 18%, transparent); color: var(--om-cor);
+            border: 1px solid color-mix(in srgb, var(--om-cor) 45%, transparent);
+            font-size: 11px; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; transition: all .15s;
+        }
+        .om-pop-btn:hover { background: var(--om-cor); color: #0b1220; }
+        .om-pop-x {
+            width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--border-color);
+            background: transparent; color: #94a3b8; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all .15s;
+        }
+        .om-pop-x:hover { color: #f1f5f9; border-color: rgba(255,255,255,.35); }
+        @media (max-width: 520px) { .om-pop-btn span { display: none; } }
+
         @media (max-width: 1024px) {
             nav ul { display: none; }
             .details-inner { padding-left: 20px; }
@@ -399,6 +444,8 @@
         </div>
         <div class="om-grid" id="omGrid"></div>
     </section>
+
+    <div id="omPopup"></div>
 
     <div class="section-divider"><span>Alertas emitidos pela <b>Defesa Civil MT</b> — conteúdo operacional curado</span></div>
 
@@ -917,6 +964,8 @@
             }
 
             let feitos = 0, emAlerta = 0;
+            let piorNivel = null;
+            const nomesAlerta = [];
             const total = munic.length;
             meta.textContent = `Consultando previsão do Open-Meteo em ${total} municípios...`;
 
@@ -927,6 +976,8 @@
                 const al = avaliarOmega(m, d);
                 if (al) {
                     emAlerta++;
+                    nomesAlerta.push(al.muni);
+                    if (piorNivel === null || OM_PESO[al.nivel] < OM_PESO[piorNivel]) piorNivel = al.nivel;
                     const icone = OM_ICONES[al.tipo] || OM_ICONES.default;
                     grid.insertAdjacentHTML('beforeend', omCardHtml(al, icone));
                     if (!grid.querySelector('.om-card') || grid.querySelectorAll('.om-card').length <= 1) {
@@ -951,6 +1002,34 @@
             }
             if (window.lucide) lucide.createIcons();
             filtrarOmega();
+            mostrarPopupOM(emAlerta, piorNivel, nomesAlerta);
+        }
+
+        function mostrarPopupOM(total, piorNivel, nomes) {
+            const box = document.getElementById('omPopup');
+            if (!box) return;
+            if (!total || !piorNivel) { box.innerHTML = ''; return; }
+            const cor = OM_COR[piorNivel];
+            const icone = piorNivel === 'emergencia' ? 'siren' : (piorNivel === 'alerta' ? 'triangle-alert' : 'bell-ring');
+            const nomesTxt = nomes.slice(0, 4).join(', ') + (nomes.length > 4 ? ` e +${nomes.length - 4} outros` : '');
+            box.innerHTML = `
+                <div class="om-popup" style="--om-cor:${cor};">
+                    <div class="om-pop-icon"><i data-lucide="${icone}"></i></div>
+                    <div class="om-pop-body">
+                        <div class="om-pop-title">Alerta climático em Mato Grosso <span class="om-pop-count">${total} município${total > 1 ? 's' : ''}</span></div>
+                        <div class="om-pop-sub"><b style="color:#e2e8f0;text-transform:capitalize;">${piorNivel}</b> — ${nomesTxt} · previsão do Open-Meteo</div>
+                    </div>
+                    <div class="om-pop-actions">
+                        <button class="om-pop-btn" id="omPopupVer"><i data-lucide="arrow-down" style="width:12px;height:12px;"></i><span> Ver alertas</span></button>
+                        <button class="om-pop-x" id="omPopupClose" title="Fechar aviso"><i data-lucide="x"></i></button>
+                    </div>
+                </div>`;
+            if (window.lucide) lucide.createIcons();
+            box.querySelector('#omPopupClose').addEventListener('click', () => { box.innerHTML = ''; });
+            box.querySelector('#omPopupVer').addEventListener('click', () => {
+                const sec = document.getElementById('omSection');
+                if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         }
         const OM_ICONES = {
             'Vendaval': 'wind', 'Vento forte': 'wind', 'Vento moderado': 'wind',
