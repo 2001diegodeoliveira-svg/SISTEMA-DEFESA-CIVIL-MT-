@@ -605,6 +605,31 @@
         }
         .foco-flame svg { width: 100%; height: 100%; }
         @keyframes focoPulse { 0%, 100% { transform: scale(1); opacity: .95; } 50% { transform: scale(1.2); opacity: 1; } }
+        .foco-sat {
+            --fc: #ff4d00; --fs: 24px;
+            position: relative; width: calc(var(--fs) * 2); height: calc(var(--fs) * 2);
+            display: grid; place-items: center; align-content: center;
+        }
+        .foco-sat .foco-sat-core {
+            width: var(--fs); height: var(--fs); border-radius: 50%;
+            display: grid; place-items: center;
+            background: linear-gradient(160deg, rgba(13, 17, 26, .94), rgba(24, 32, 48, .9));
+            border: 1.5px solid var(--fc);
+            box-shadow: 0 0 10px color-mix(in srgb, var(--fc) 55%, transparent), inset 0 0 6px rgba(0, 0, 0, .45);
+        }
+        .foco-sat .foco-sat-core svg { width: calc(var(--fs) * .58); height: calc(var(--fs) * .58); filter: drop-shadow(0 0 2px var(--fc)); }
+        .foco-sat .foco-sat-ring {
+            position: absolute; width: calc(var(--fs) * 1.85); height: calc(var(--fs) * 1.85); border-radius: 50%;
+            border: 1px dashed var(--fc); opacity: .5;
+            animation: focoPulse 1.8s ease-in-out infinite; will-change: transform;
+        }
+        .foco-sat-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 9.5px; font-weight: 600; color: #38bdf8;
+            background: rgba(56, 189, 248, .12); border: 1px solid rgba(56, 189, 248, .28);
+            border-radius: 999px; padding: 2px 9px; margin-bottom: 6px;
+        }
+        .foco-sat-badge i, .foco-sat-badge svg[data-lucide] { width: 11px; height: 11px; }
         .dam-alto { animation: damPulse 1.6s ease-in-out infinite; will-change: transform; }
         @keyframes damPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.16); } }
         .bar-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; padding: 2px 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
@@ -1996,6 +2021,21 @@ async function loadTerritorio() {
             attribution: 'IBGE'
         }).addTo(map);
 
+        MT_GEOM = [];
+        if (malhaMT && malhaMT.features && malhaMT.features[0]) {
+            const g = malhaMT.features[0].geometry;
+            const rings = g.type === 'Polygon' ? [g.coordinates] : (g.coordinates || []);
+            if (rings[0] && rings[0][0]) MT_GEOM = rings[0][0].map(c => [c[1], c[0]]);
+            MT_BBOX = mtLayer.getBounds();
+        }
+        if (wmsFocos48hLayer && !map.getPane('wmsPane')) {
+            const ativo = checkState.wmsFocos48h;
+            map.removeLayer(wmsFocos48hLayer);
+            wmsFocos48hLayer = null;
+            loadWmsFocos48h();
+            if (ativo && wmsFocos48hLayer) wmsFocos48hLayer.addTo(map);
+        }
+
         munLayer = L.geoJSON(malhaMun, {
             style: {
                 color: '#38bdf8', weight: 0.8, opacity: .35,
@@ -2410,14 +2450,23 @@ let focosPeriodoDias = 1;          // 1 = hoje (24h)
 
 function fmtDataISO(iso) { if (!iso) return ''; const p = iso.slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 
-// Ícone de chama para focos, colorido pelo risco de fogo, com pulso leve
-function focoFlameIcon(risco, frp) {
+// Marcador de foco (detectado por satélite): chip glass com chama, cor por risco, escala por FRP
+function focoFlameIcon(risco, frp, nome) {
     const cor = focoRiscoCor(risco);
-    const s = Math.round(22 + Math.min(12, Math.sqrt(frp || 0) * 1.2));
+    const fs = Math.round(20 + Math.min(10, Math.sqrt(frp || 0) * 1.1));
+    const host = nome ? nome.replace(/"/g, '&quot;') : '';
     return L.divIcon({
         className: '',
-        html: `<div class="foco-flame" style="--fc:${cor};"><svg viewBox="0 0 24 24" fill="none" stroke="${cor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></svg></div>`,
-        iconSize: [s, s], iconAnchor: [s / 2, s / 2]
+        html: `<div class="foco-sat" title="${host}" style="--fc:${cor};--fs:${fs}px;">
+            <span class="foco-sat-ring"></span>
+            <span class="foco-sat-core">
+                <svg viewBox="0 0 24 24" fill="${cor}" stroke="${cor}" stroke-width="1.1" stroke-linejoin="round">
+                    <path d="M12 3c1.2 3.3 4.4 5.2 5.6 7.9A7.7 7.7 0 0 1 12 20.7 7.7 7.7 0 0 1 4.4 10.8c-.6-2.5 1-3.9 1.6-6 2.8 1.6 4.9 4 6 1.8z"/>
+                </svg>
+            </span>
+        </div>`,
+        iconSize: [fs * 2, fs * 2],
+        iconAnchor: [fs, fs]
     });
 }
 
@@ -2426,12 +2475,12 @@ function focoPopupSimples(f, dataEst) {
     const frp = isFinite(f.frp) ? f.frp : NaN;
     return `
         <div style="min-width:200px;">
-            <div style="font-weight:700;font-size:12.5px;color:#ff7a45;margin-bottom:2px;">
+            <div style="font-weight:700;font-size:12.5px;color:#ff7a45;margin-bottom:4px;">
                 <i data-lucide="flame"></i> Foco de calor detectado
             </div>
-            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${f.municipio || '—'} · ${f.estado === 'MATO GROSSO' ? 'MT' : (f.estado || '')}</div>
+            <span class="foco-sat-badge"><i data-lucide="satellite"></i> ${f.satelite || '—'}</span>
+            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${f.municipio || '—'} · ${f.estado === 'MATO GROSSO' ? 'MT' : (f.estado || '')}</div>
             <div style="font-size:11px;line-height:1.75;">
-                Satélite: <b>${f.satelite || '—'}</b><br>
                 Detecção (GMT): ${f.data || '—'}<br>
                 ${f.bioma ? 'Bioma: ' + f.bioma + '<br>' : ''}
                 ${isFinite(frp) ? 'FRP: ' + frp + ' MW<br>' : ''}
@@ -2455,7 +2504,7 @@ function buildFocosLayer(rows, dataEst) {
     rows.forEach(f => {
         const popup = focoPopupSimples(f, dataEst);
         if (useFlame) {
-            L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp) }).bindPopup(popup).addTo(focosLayer);
+            L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp, (f.satelite || 'Satélite') + ' · ' + (f.municipio || '')) }).bindPopup(popup).addTo(focosLayer);
         } else {
             L.circleMarker([f.lat, f.lon], {
                 renderer: canvasRenderer,
@@ -3912,14 +3961,52 @@ setTimeout(() => map.invalidateSize(), 300);
     setInterval(refresh, 10 * 60 * 1000);
 })();
 
-/* ================= INPE BDQueimadas — Camada WMS focos 48h ================= */
+/* ================= INPE BDQueimadas — Camada WMS focos 48h (recorte apenas MT) ================= */
+let MT_GEOM = [];
+let MT_BBOX = null;
+let mtClipPath = null;
+function ensureWmsClipPane() {
+    if (map.getPane('wmsPane')) { updateMtClip(); return true; }
+    if (!MT_GEOM.length) return false;
+    const pane = map.createPane('wmsPane');
+    pane.style.zIndex = '250';
+    pane.style.pointerEvents = 'none';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    const clp = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+    clp.id = 'mtFocosClip';
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    clp.appendChild(path);
+    svg.appendChild(clp);
+    pane.appendChild(svg);
+    pane.style.clipPath = 'url(#mtFocosClip)';
+    pane.style.webkitClipPath = 'url(#mtFocosClip)';
+    mtClipPath = path;
+    updateMtClip();
+    map.on('move zoom', updateMtClip);
+    return true;
+}
+function updateMtClip() {
+    if (!mtClipPath || !MT_GEOM.length) return;
+    const pts = MT_GEOM.map(([la, ln]) => {
+        const p = map.latLngToContainerPoint([la, ln]);
+        return p.x.toFixed(1) + ',' + p.y.toFixed(1);
+    });
+    mtClipPath.setAttribute('d', 'M' + pts.join(' L') + ' Z');
+}
 function loadWmsFocos48h() {
     if (wmsFocos48hLayer) return;
-    wmsFocos48hLayer = L.tileLayer.wms('https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/wms', {
+    const clipped = ensureWmsClipPane();
+    const opts = {
         layers: 'focos_48h_br_todosats',
         format: 'image/png', transparent: true, version: '1.1.1',
-        opacity: .75, attribution: 'INPE/TerraBrasilis · BDQueimadas'
-    });
+        opacity: .75, attribution: 'INPE/TerraBrasilis · BDQueimadas · MT'
+    };
+    if (MT_BBOX) opts.bounds = MT_BBOX;
+    if (clipped) opts.pane = 'wmsPane';
+    wmsFocos48hLayer = L.tileLayer.wms('https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/wms', opts);
+    if (checkState.wmsFocos48h) wmsFocos48hLayer.addTo(map);
 }
 
 /* ================= INPE — Estilo avançado dos focos ================= */
@@ -4010,12 +4097,12 @@ function renderFocosFiltered() {
         const raio = focoRaio(f.frp);
         const popup = `
             <div style="min-width:200px;">
-                <div style="font-weight:700;font-size:12px;color:${cor};margin-bottom:2px;">
+                <div style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:12px;color:${cor};margin-bottom:4px;">
                     <i data-lucide="flame"></i> Foco de calor
                 </div>
+                <span class="foco-sat-badge"><i data-lucide="satellite"></i> ${f.satelite || '—'}</span>
                 <div style="color:#94a3b8;font-size:10px;margin-bottom:6px;">${f.municipio} · ${f.estado}</div>
                 <div style="font-size:10.5px;line-height:1.7;">
-                    <div><b>Satélite:</b> ${f.satelite}</div>
                     <div><b>Data (GMT):</b> ${f.data}</div>
                     <div><b>Bioma:</b> ${f.bioma}</div>
                     <div><b>Risco de fogo:</b> <span style="color:${cor};font-weight:700;">${(f.risco_fogo * 100).toFixed(0)}%</span></div>
@@ -4026,7 +4113,7 @@ function renderFocosFiltered() {
                 </div>
             </div>`;
         const mk = useFlame
-            ? L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp) })
+            ? L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp, (f.satelite || 'Satélite') + ' · ' + (f.municipio || '')) })
             : L.circleMarker([f.lat, f.lon], {
                 renderer: canvasRenderer, radius: raio,
                 color: cor, weight: .6, fillColor: cor, fillOpacity: .82
