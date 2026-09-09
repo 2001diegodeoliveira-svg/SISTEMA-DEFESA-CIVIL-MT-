@@ -237,6 +237,79 @@
         .pluv-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 11.5px; }
         @media (max-width: 640px) { #pluvSummary { grid-template-columns: repeat(2, 1fr); } #pluvPanel { width: calc(100vw - 24px); } }
 
+        /* ------------- MSN Clima — Foreca (previsão 10 dias + alertas) ------------- */
+        .msn-toggle {
+            position: absolute; top: 160px; left: 16px; z-index: 1101;
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--glass-bg); backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,.3);
+            transition: left .28s cubic-bezier(.4,0,.2,1), background .15s;
+            color: #38bdf8;
+        }
+        .msn-toggle:hover { background: rgba(255,255,255,.1); }
+        .msn-toggle i, .msn-toggle svg[data-lucide] { color: #38bdf8; font-size: 15px; }
+        #layersPanel.collapsed ~ .msn-toggle { left: 16px; }
+        #layersPanel:not(.collapsed) ~ .msn-toggle { left: 262px; }
+        #msnPanel {
+            position: absolute; top: 70px; right: 16px; z-index: 1105;
+            width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px);
+            background: var(--glass-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.5);
+            display: flex; flex-direction: column; overflow: hidden;
+            transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s;
+            font-size: 12px;
+        }
+        #msnPanel.hidden-panel { transform: translateX(120%); opacity: 0; pointer-events: none; }
+        #msnPanel.collapsed { max-height: 52px; }
+        #msnPanel .msn-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--glass-border); cursor: pointer; flex: none; }
+        #msnPanel .msn-head h3 { font-size: 13px; margin: 0; display: flex; align-items: center; gap: 7px; flex: 1; }
+        #msnPanel .msn-head h3 svg, #msnPanel .msn-head h3 i { color: #38bdf8; }
+        #msnPanel .msn-head .ph-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; }
+        #msnPanel .msn-head .ph-close:hover { color: #fff; }
+        .msn-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--glass-border); flex: none; flex-wrap: wrap; }
+        .msn-toolbar .pluv-filter { flex: 1; min-width: 120px; }
+        .msn-refresh { background: linear-gradient(135deg,#0ea5e9,#38bdf8); border: none; border-radius: 6px; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .msn-refresh:disabled { opacity: .5; cursor: not-allowed; }
+        .msn-body { overflow: auto; flex: 1; padding: 12px 14px; }
+        .msn-body::-webkit-scrollbar { width: 6px; }
+        .msn-body::-webkit-scrollbar-thumb { background: var(--bg-card-hover); border-radius: 3px; }
+        .msn-now { display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: var(--bg-card); border-radius: 10px; margin-bottom: 10px; }
+        .msn-now .msn-temp { font-size: 40px; font-weight: 800; line-height: 1; }
+        .msn-now .msn-temp sup { font-size: 16px; font-weight: 600; color: var(--text-muted); }
+        .msn-now .msn-wx { flex: 1; }
+        .msn-now .msn-wx .msn-cap { font-size: 13px; font-weight: 700; }
+        .msn-now .msn-wx .msn-feels { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+        .msn-now .msn-wx svg { color: #38bdf8; }
+        .msn-upd { text-align: right; font-size: 9px; color: var(--text-muted); }
+        .msn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+        .msn-cell { background: var(--bg-card); border-radius: 8px; padding: 7px 9px; text-align: center; }
+        .msn-cell .mv { font-size: 16px; font-weight: 800; line-height: 1.1; }
+        .msn-cell .mv.blue { color: #38bdf8; }
+        .msn-cell .mv.green { color: #4ade80; }
+        .msn-cell .mv.red { color: #f87171; }
+        .msn-cell .mv.amber { color: #fbbf24; }
+        .msn-cell .ml { font-size: 8.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+        .msn-section { font-size: 10px; font-weight: 700; color: var(--accent-orange); text-transform: uppercase; letter-spacing: .6px; margin: 12px 0 6px; display: flex; align-items: center; gap: 6px; }
+        .msn-alert { display: flex; gap: 8px; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.2); }
+        .msn-alert .msn-alert-icon { color: #f87171; }
+        .msn-alert .msn-alert-title { font-size: 11px; font-weight: 700; color: #fca5a5; }
+        .msn-alert .msn-alert-meta { font-size: 9.5px; color: var(--text-muted); margin-top: 2px; }
+        .msn-alert .msn-alert-meta b { color: #94a3b8; }
+        .msn-days { display: flex; flex-direction: column; gap: 5px; }
+        .msn-day { display: grid; grid-template-columns: 68px 1fr 44px 52px 42px; gap: 8px; align-items: center; padding: 7px 10px; background: var(--bg-card); border-radius: 8px; }
+        .msn-day .md-day { font-size: 10.5px; font-weight: 700; }
+        .msn-day .md-desc { font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .msn-day .md-desc svg { color: #38bdf8; }
+        .msn-day .md-temp { text-align: right; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+        .msn-day .md-rain { text-align: right; font-size: 10px; color: #7dd3fc; white-space: nowrap; }
+        .msn-day .md-wind { text-align: right; font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+        .msn-foot { padding: 8px 14px; font-size: 9px; color: var(--text-muted); border-top: 1px solid var(--glass-border); flex: none; line-height: 1.5; }
+        .msn-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 11.5px; }
+        @media (max-width: 640px) { #msnPanel { width: calc(100vw - 24px); } .msn-grid { grid-template-columns: repeat(2, 1fr); } }
+
         .group-title {
             font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.2px;
             color: var(--accent-orange); font-weight: 700;
@@ -1274,6 +1347,7 @@
     </aside>
     <button class="layers-toggle" id="layersToggle" title="Mostrar/ocultar filtros"><i data-lucide="chevrons-left"></i></button>
     <button class="pluv-toggle" id="pluvToggle" title="Estações INMET — Pluviômetro"><i data-lucide="droplets"></i></button>
+    <button class="msn-toggle" id="msnToggle" title="MSN Clima — Previsão 10 dias (Foreca)"><i data-lucide="cloud-sun"></i></button>
 
     <!-- Painel Estações INMET — Pluviômetro -->
     <aside id="pluvPanel" class="hidden-panel">
@@ -1322,6 +1396,25 @@
             <span class="lg"><span class="pluv-rain-dot" style="background:#fbbf24;"></span>2-10 moderada</span>
             <span class="lg"><span class="pluv-rain-dot" style="background:#f97316;"></span>10-25 forte</span>
             <span class="lg"><span class="pluv-rain-dot" style="background:#dc2626;"></span>&gt;25 torrencial</span>
+        </div>
+    </aside>
+
+    <!-- Painel MSN Clima — Previsão 10 dias (Foreca/MSN) -->
+    <aside id="msnPanel" class="hidden-panel">
+        <div class="msn-head" id="msnHead">
+            <h3><i data-lucide="cloud-sun"></i> MSN Clima · Previsão 10 dias — MT</h3>
+            <button class="ph-close" id="msnClose" title="Fechar"><i data-lucide="x"></i></button>
+        </div>
+        <div class="msn-toolbar">
+            <select class="pluv-filter" id="msnCity"></select>
+            <button class="msn-refresh" id="msnRefresh"><i data-lucide="refresh-cw"></i> Atualizar</button>
+        </div>
+        <div class="msn-body">
+            <div class="msn-empty" id="msnEmpty">Selecione um munic&iacute;pio para carregar a previs&atilde;o MSN Clima (Foreca).</div>
+            <div id="msnContent" style="display:none;"></div>
+        </div>
+        <div class="msn-foot">
+            Fonte: &copy; MSN Clima — dados meteorol&oacute;gicos <b>Foreca</b>, alertas do <b>INMET</b>. Dados n&atilde;o oficiais, para apoio.
         </div>
     </aside>
 
@@ -1652,6 +1745,7 @@ let mtLayer = null, munLayer = null, ucWms = null, focosLayer = null;
 let focosLoaded = false, focosLoading = false, focosCount = 0;
 const centroidByCod = {};
 const codByNomeNormalizado = {};
+let munNomeByCod = {};
 let ibgeLoadedAt = null;
 
 function normalizarNome(s) {
@@ -1841,6 +1935,7 @@ async function loadTerritorio() {
         ]);
         const nomeByCod = {};
         nomes.forEach(m => { nomeByCod[String(m.id)] = m.nome; });
+        munNomeByCod = nomeByCod;
         ibgeLoadedAt = new Date();
         document.getElementById('metaMt').textContent =
             '· carregado ' + ibgeLoadedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -1894,6 +1989,11 @@ async function loadTerritorio() {
                                     <i data-lucide="cloud-sun"></i> Previsão no ponto
                                 </button>
                             </div>
+                            <div style="margin-top:6px;">
+                                <button onclick="openMsnMun('${cod}')" style="width:100%;background:linear-gradient(135deg,#0ea5e9,#38bdf8);border:none;color:#fff;font-size:11px;font-weight:600;padding:7px;border-radius:6px;cursor:pointer;">
+                                    <i data-lucide="cloud-sun"></i> MSN Clima · 10 dias (Foreca)
+                                </button>
+                            </div>
                             <div style="margin-top:9px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:#94a3b8;line-height:1.5;">
                                 Fonte: IBGE — Malhas Territoriais<br>
                                 Atualizado: ${ibgeLoadedAt.toLocaleDateString('pt-BR')} ·
@@ -1906,6 +2006,7 @@ async function loadTerritorio() {
         }).addTo(map);
         focarMunicipioInicial();
         buildVigiaMaisLayer(nomeByCod);
+        populateMsnCity();
     } catch (e) {
         toast('Falha ao carregar malha territorial do IBGE.');
         setCheck('mtOutline', false);
@@ -2692,6 +2793,218 @@ document.getElementById('pluvHead')?.addEventListener('click', (e) => {
     if (e.target.closest('.ph-close')) return;
     document.getElementById('pluvPanel').classList.toggle('collapsed');
 });
+
+
+/* ================= MSN Clima — Previsão 10 dias (Foreca) =================
+   A API é consumida publicamente pelo portal MSN (assets.msn.com/service/weather/overview)
+   com a chave pública JS embutida na página do MSN. Dados: Foreca (previsão),
+   INMET (alertas). Não é oficial — exibido como apoio, seguindo o padrão dos
+   demais painéis do mapa. */
+const MSN_KEYS = {
+    apiKey: 'j5i4gDqHL6nGYwx5wi5kRhXjtf2c5qgFX9fzfk0TOo',
+    appId: '9e21380c-ff19-4c78-b4ea-19558e93a5d3',
+    user: 'm-208331813CAF66850D3D264E3D9F67AB'
+};
+let msnLoading = false;
+const MSN_WX_ICON = {
+    1:'sun',2:'sun',3:'sun',4:'cloud-sun',5:'cloud-sun',6:'cloud-sun',7:'cloud',8:'cloud',
+    11:'cloud',12:'cloud-rain',13:'cloud-rain',14:'cloud-rain',15:'cloud-rain',16:'cloud-lightning',
+    17:'cloud-lightning',18:'cloud-lightning',19:'cloud-rain',20:'cloud-rain',21:'cloud-rain',
+    22:'cloud-rain',23:'snowflake',24:'snowflake',25:'snowflake',26:'cloud',29:'moon',30:'moon',
+    31:'moon',32:'moon',33:'moon',34:'moon',35:'cloud-moon',36:'cloud-moon',37:'cloud-moon',
+    38:'cloud-moon',39:'cloud-moon',40:'cloud-moon',41:'cloud-fog',42:'cloud-fog',43:'cloud-fog',
+    44:'cloud-fog',45:'cloud-fog',46:'cloud-fog',47:'cloud-fog',48:'cloud-fog'
+};
+function msnWxIcon(code) { return MSN_WX_ICON[code] || 'cloud-sun'; }
+
+function buildMsnOverviewUrl(lat, lon) {
+    const p = new URLSearchParams({
+        apiKey: MSN_KEYS.apiKey,
+        appId: MSN_KEYS.appId,
+        activityId: '6aa1980e-7864-406b-a40f-4e2fdf5a17b9',
+        ocid: 'msftweather',
+        cm: 'pt-br',
+        it: 'edgeid',
+        user: MSN_KEYS.user,
+        scn: 'APP_ANON',
+        units: 'C',
+        wrapodata: 'false',
+        startDate: '-1',
+        endDate: '%2B9',
+        discardFutureInsightTimeseries: 'true',
+        distanceinkm: '0',
+        regionDataCount: '20',
+        orderby: 'distance',
+        days: '10',
+        pageOcid: 'prime-weather::weathertoday-peregrine',
+        source: 'weather_csr',
+        region: 'br',
+        market: 'pt-br',
+        locale: 'pt-br',
+        lat: String(lat),
+        lon: String(lon)
+    });
+    return 'https://assets.msn.com/service/weather/overview?' + p.toString();
+}
+
+function populateMsnCity() {
+    const sel = document.getElementById('msnCity');
+    const cur = sel.value;
+    const src = Object.keys(munNomeByCod).length ? munNomeByCod
+        : Object.fromEntries(Object.keys(centroidByCod).map(c => [c, 'Município ' + c]));
+    sel.innerHTML = '';
+    const list = Object.entries(src)
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .map(([cod, nome]) => `<option value="${cod}">${nome}</option>`).join('');
+    sel.innerHTML = `<option value="">Selecione o munic&iacute;pio...</option>` + list;
+    if (cur) sel.value = cur;
+}
+
+async function loadMsnOverview(cod) {
+    if (msnLoading) return;
+    const c = centroidByCod[cod];
+    if (!c) { toast('Município sem coordenadas carregadas (IBGE).'); return; }
+    const nome = munNomeByCod[cod] || ('Município ' + cod);
+    const empty = document.getElementById('msnEmpty');
+    const content = document.getElementById('msnContent');
+    const btn = document.getElementById('msnRefresh');
+    msnLoading = true;
+    btn.disabled = true;
+    empty.style.display = 'block';
+    empty.textContent = 'Carregando previsão MSN (Foreca) para ' + nome + '...';
+    content.style.display = 'none';
+    try {
+        const res = await dcProxyFetch(buildMsnOverviewUrl(c.lat.toFixed(4), c.lng.toFixed(4)));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const w = data?.responses?.[0]?.weather?.[0];
+        if (!w) throw new Error('Resposta vazia');
+        renderMsnOverview(w, nome);
+        empty.style.display = 'none';
+        content.style.display = 'block';
+    } catch (e) {
+        empty.textContent = 'Não foi possível carregar a previsão MSN para ' + nome + '.';
+    } finally {
+        msnLoading = false;
+        btn.disabled = false;
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function renderMsnOverview(w, nome) {
+    const cur = w.current || {};
+    const src = w.source || {};
+    const loc = src.location || {};
+    const upd = cur.created || new Date().toISOString();
+    const alerts = Array.isArray(w.alerts) ? w.alerts : [];
+    const days = w.forecast?.days || [];
+    const cell = (label, v, svg, cls = 'blue') => `<span class="msn-cell"><div class="mv ${cls}"><i data-lucide="${svg}" style="font-size:12px;opacity:.8;margin-right:3px;"></i>${v}</div><div class="ml">${label}</div></span>`;
+    const alertsHtml = alerts.length ? alerts.map(a => `
+        <div class="msn-alert">
+            <div class="msn-alert-icon"><i data-lucide="triangle-alert"></i></div>
+            <div style="flex:1;">
+                <div class="msn-alert-title">${a.title}</div>
+                <div class="msn-alert-meta">
+                    ${a.credit ? '<b>' + a.credit + '</b>' : ''}
+                    ${a.severity ? ' · ' + a.severity : ''}
+                    ${a.statusText ? ' · ' + a.statusText : ''}
+                    ${a.start ? '<br>Início: ' + new Date(a.start).toLocaleString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}
+                    ${a.end ? ' · Fim: ' + new Date(a.end).toLocaleString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}
+                    ${a.safetyGuide ? '<br>' + a.safetyGuide : ''}
+                </div>
+            </div>
+        </div>`).join('') : '<div style="color:#4ade80;font-size:11px;padding:4px 2px;"><i data-lucide="shield-check" style="font-size:11px;margin-right:4px;"></i>Nenhum alerta meteorológico ativo.</div>';
+
+    const timeOpts = { hour: '2-digit', minute: '2-digit', timeZone: loc.TimezoneName || 'America/Cuiaba' };
+    const almanac = days[0]?.almanac;
+    const sunStr = almanac ? `Nascer ${new Date(almanac.sunrise).toLocaleTimeString('pt-BR', timeOpts)} · Pôr ${new Date(almanac.sunset).toLocaleTimeString('pt-BR', timeOpts)}` : '';
+
+    const daysHtml = days.map((d, i) => {
+        const da = d.daily || {};
+        const dayCap = da.day?.cap || da.pvdrCap || '—';
+        const iday = msnWxIcon(da.icon);
+        const label = i === 0 ? 'Hoje' : new Date(d.almanac?.valid || da.valid || Date.now()).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+        const rain = (da.rainAmount ?? 0).toFixed(1).replace('.', ',').replace(',0', '');
+        const wind = da.windMax ?? da.windTh ?? 0;
+        const hi = da.tempHi != null ? Math.round(da.tempHi) : '—';
+        const lo = da.tempLo != null ? Math.round(da.tempLo) : '—';
+        return `<div class="msn-day">
+            <span class="md-day" style="${i === 0 ? 'color:#fbbf24;' : ''}">${label}</span>
+            <span class="md-desc"><i data-lucide="${iday}" style="font-size:13px;"></i>${dayCap}</span>
+            <span class="md-temp">${hi}° / ${lo}°</span>
+            <span class="md-rain"><i data-lucide="cloud-rain" style="font-size:10px;"></i> ${rain} mm</span>
+            <span class="md-wind"><i data-lucide="wind" style="font-size:10px;"></i> ${Math.round(wind)}</span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('msnContent').innerHTML = `
+        <div class="msn-now">
+            <div class="msn-temp">${Math.round(cur.temp ?? cur.feels ?? 0)}<sup>°C</sup></div>
+            <div class="msn-wx">
+                <div class="msn-cap"><i data-lucide="${msnWxIcon(cur.icon)}" style="font-size:15px;margin-right:5px;"></i>${cur.cap || cur.capAbbr || '—'}</div>
+                <div class="msn-feels">Sensação ${Math.round(cur.feels ?? cur.temp ?? 0)}°C · ${loc.Name || nome}, MT</div>
+                ${sunStr ? `<div class="msn-feels">${sunStr}</div>` : ''}
+            </div>
+            <div class="msn-upd">Atualizado<br>${new Date(upd).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+        <div class="msn-grid">
+            ${cell('Temperatura', cur.temp != null ? Math.round(cur.temp) + '°' : '—', 'thermometer', 'red')}
+            ${cell('Sensação', cur.feels != null ? Math.round(cur.feels) + '°' : '—', 'gauge', 'amber')}
+            ${cell('Umidade', cur.rh != null ? Math.round(cur.rh) + '%' : '—', 'droplet', 'blue')}
+            ${cell('Vento', cur.windSpd != null ? Math.round(cur.windSpd) + ' km/h' : '—', 'wind', 'green')}
+            ${cell('Rajada', cur.windGust != null ? Math.round(cur.windGust) + ' km/h' : '—', 'wind', 'blue')}
+            ${cell('UV', cur.uv != null ? cur.uv + (cur.uvDesc ? ' · ' + cur.uvDesc : '') : '—', 'sun', 'amber')}
+            ${cell('Nuvens', cur.cloudCover != null ? cur.cloudCover + '%' : '—', 'cloud', 'blue')}
+            ${cell('Pressão', cur.baro != null ? cur.baro + ' hPa' : '—', 'bar-chart-3', 'green')}
+        </div>
+        ${alerts.length ? `<div class="msn-section"><i data-lucide="triangle-alert"></i> Alertas climatológicos</div>${alertsHtml}` : ''}
+        <div class="msn-section"><i data-lucide="calendar-days"></i> Previsão 10 dias (Foreca)</div>
+        <div class="msn-days">${daysHtml}</div>
+        <div style="margin-top:8px;font-size:9px;color:var(--text-muted);">
+            Fonte do provedor: <b>${w.provider?.name || 'Foreca'}</b> · MSN Clima · Ponto ${Math.round((src.coordinates?.lat || 0) * 100) / 100}, ${Math.round((src.coordinates?.lon || 0) * 100) / 100}
+        </div>`;
+}
+
+document.getElementById('msnClose')?.addEventListener('click', () => {
+    document.getElementById('msnPanel').classList.add('hidden-panel');
+});
+document.getElementById('msnToggle')?.addEventListener('click', () => {
+    const p = document.getElementById('msnPanel');
+    const opening = p.classList.contains('hidden-panel');
+    p.classList.toggle('hidden-panel', !opening);
+    if (opening) {
+        const sel = document.getElementById('msnCity');
+        if (!sel.options.length) populateMsnCity();
+        if (!sel.value) sel.value = msnCityDefault();
+        const cod = sel.value;
+        if (cod && !msnLoading) loadMsnOverview(cod);
+    }
+});
+document.getElementById('msnHead')?.addEventListener('click', (e) => {
+    if (e.target.closest('.ph-close')) return;
+    document.getElementById('msnPanel').classList.toggle('collapsed');
+});
+document.getElementById('msnCity')?.addEventListener('change', () => {
+    const cod = document.getElementById('msnCity').value;
+    if (cod) loadMsnOverview(cod);
+});
+document.getElementById('msnRefresh')?.addEventListener('click', () => {
+    const cod = document.getElementById('msnCity').value;
+    if (cod) loadMsnOverview(cod);
+});
+function msnCityDefault() {
+    const c = centroidByCod['5103403']; // Cuiabá
+    return c ? '5103403' : (Object.keys(centroidByCod)[0] || '');
+}
+function openMsnMun(cod) {
+    const sel = document.getElementById('msnCity');
+    if (!sel.options.length) populateMsnCity();
+    if ([...sel.options].some(o => o.value === String(cod))) sel.value = String(cod);
+    const p = document.getElementById('msnPanel');
+    p.classList.remove('hidden-panel');
+    loadMsnOverview(String(cod));
+    if (window.lucide) lucide.createIcons();
+}
 
 
 /* ================= SIPAM Painel do Fogo — Eventos ativos em MT ================= */
