@@ -588,6 +588,23 @@
         .dtp-head small { font-size: 10px; color: var(--text-muted); margin-left: 8px; }
         .dtp-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
         .dtp-close:hover { color: var(--text-main); }
+        .dtp-actions { display: flex; align-items: center; gap: 8px; }
+        .dtp-btn {
+            display: flex; align-items: center; gap: 5px;
+            background: var(--bg-card); border: 1px solid var(--glass-border);
+            color: var(--text-muted); font-size: 10px; font-weight: 600;
+            padding: 5px 9px; border-radius: 6px; cursor: pointer; text-decoration: none;
+            transition: all .15s;
+        }
+        .dtp-btn:hover { color: var(--text-main); border-color: var(--accent-orange); background: var(--bg-card-hover); }
+        .dtp-btn i, .dtp-btn svg[data-lucide] { color: var(--accent-orange); }
+        .foco-flame {
+            display: flex; align-items: center; justify-content: center;
+            filter: drop-shadow(0 1px 5px var(--fc, #ff4d00));
+            animation: focoPulse 1.8s ease-in-out infinite; will-change: transform;
+        }
+        .foco-flame svg { width: 100%; height: 100%; }
+        @keyframes focoPulse { 0%, 100% { transform: scale(1); opacity: .95; } 50% { transform: scale(1.2); opacity: 1; } }
         #dataTableBody {
             flex: 1; overflow: auto; font-size: 10.5px;
         }
@@ -1303,7 +1320,12 @@
         <div class="group-title"><i data-lucide="table"></i> Tabela de dados</div>
         <div style="padding:2px 8px;">
             <button id="openTableBtn" class="filter-btn" style="width:100%;min-width:auto;padding:6px;">
-                <i data-lucide="list"></i> Abrir tabela de focos
+                <i data-lucide="list"></i> Acessar todos os dados dos focos
+            </button>
+        </div>
+        <div style="padding:2px 8px 10px;">
+            <button id="exportCsvBtn" class="filter-btn" style="width:100%;min-width:auto;padding:6px;">
+                <i data-lucide="download"></i> Exportar CSV de todos os focos
             </button>
         </div>
 
@@ -1676,7 +1698,15 @@
     <div id="dataTablePanel">
         <div class="dtp-head">
             <span><i data-lucide="table" style="color:var(--accent-orange);margin-right:6px;"></i>Focos de Calor — BDQueimadas <small id="dtCount"></small></span>
-            <button class="dtp-close" id="dtClose"><i data-lucide="x"></i></button>
+            <div class="dtp-actions">
+                <a href="https://data.inpe.br/queimadas/bdqueimadas/" target="_blank" rel="noopener" class="dtp-btn">
+                    <i data-lucide="external-link"></i> Portal INPE
+                </a>
+                <button class="dtp-btn" id="exportFocosBtn">
+                    <i data-lucide="download"></i> Exportar CSV
+                </button>
+                <button class="dtp-close" id="dtClose"><i data-lucide="x"></i></button>
+            </div>
         </div>
         <div id="dataTableBody">
             <table class="dt-table">
@@ -1744,6 +1774,7 @@ let overlayOpacity = 0.8;
 let mtLayer = null, munLayer = null, ucWms = null, focosLayer = null;
 let focosFilteredLayer = null;
 let focosLoaded = false, focosLoading = false, focosCount = 0;
+let focosReloadTimer = null;
 const centroidByCod = {};
 const codByNomeNormalizado = {};
 let munNomeByCod = {};
@@ -2352,105 +2383,165 @@ dcStations.forEach(s => {
 
 /* ================= Focos de calor reais — INPE BDQueimadas ================= */
 const canvasRenderer = L.canvas({ padding: 0.3 });
+const FOCO_FLAME_LIMIT = 700;      // acima disso usa círculos canvas (performance)
+const FOCO_MAX_PONTOS = 6000;      // teto de pontos (mapa + tabela)
+const FOCO_MAX_DIAS = 30;          // máximo de dias buscados por período
+let focosPeriodoDias = 1;          // 1 = hoje (24h)
+
+function fmtDataISO(iso) { if (!iso) return ''; const p = iso.slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+
+// Ícone de chama para focos, colorido pelo risco de fogo, com pulso leve
+function focoFlameIcon(risco, frp) {
+    const cor = focoRiscoCor(risco);
+    const s = Math.round(22 + Math.min(12, Math.sqrt(frp || 0) * 1.2));
+    return L.divIcon({
+        className: '',
+        html: `<div class="foco-flame" style="--fc:${cor};"><svg viewBox="0 0 24 24" fill="none" stroke="${cor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></svg></div>`,
+        iconSize: [s, s], iconAnchor: [s / 2, s / 2]
+    });
+}
+
+// Popup dos focos (camada simples)
+function focoPopupSimples(f, dataEst) {
+    const frp = isFinite(f.frp) ? f.frp : NaN;
+    return `
+        <div style="min-width:200px;">
+            <div style="font-weight:700;font-size:12.5px;color:#ff7a45;margin-bottom:2px;">
+                <i data-lucide="flame"></i> Foco de calor detectado
+            </div>
+            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${f.municipio || '—'} · ${f.estado === 'MATO GROSSO' ? 'MT' : (f.estado || '')}</div>
+            <div style="font-size:11px;line-height:1.75;">
+                Satélite: <b>${f.satelite || '—'}</b><br>
+                Detecção (GMT): ${f.data || '—'}<br>
+                ${f.bioma ? 'Bioma: ' + f.bioma + '<br>' : ''}
+                ${isFinite(frp) ? 'FRP: ' + frp + ' MW<br>' : ''}
+                Lat/Lng: ${f.lat.toFixed(3)}, ${f.lon.toFixed(3)}
+            </div>
+            <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:#94a3b8;line-height:1.5;">
+                Fonte: INPE BDQueimadas ${dataEst ? '· ' + dataEst : ''}<br>
+                Foco pontual não confirma incêndio — exige validação operacional.
+                <a href="https://data.inpe.br/queimadas/bdqueimadas/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
+            </div>
+            <a href="https://www.waze.com/ul?ll=${f.lat},${f.lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
+                <i data-lucide="navigation"></i> Navegar com Waze
+            </a>
+        </div>`;
+}
+
+// Monta a camada simples de focos (chamas para poucos pontos, círculos p/ muitos)
+function buildFocosLayer(rows, dataEst) {
+    focosLayer = L.layerGroup({ renderer: canvasRenderer });
+    const useFlame = rows.length <= FOCO_FLAME_LIMIT;
+    rows.forEach(f => {
+        const popup = focoPopupSimples(f, dataEst);
+        if (useFlame) {
+            L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp) }).bindPopup(popup).addTo(focosLayer);
+        } else {
+            L.circleMarker([f.lat, f.lon], {
+                renderer: canvasRenderer,
+                radius: focoRaio(f.frp),
+                color: '#ffb08a', weight: .5, fillColor: '#ff4d00', fillOpacity: .85
+            }).bindPopup(popup).addTo(focosLayer);
+        }
+    });
+    return focosLayer;
+}
+
+// Baixa o CSV diário do Brasil e devolve { iso, rows } (só MT) ou null
+async function fetchFocosDia(iso) {
+    try {
+        const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
+        if (!res.ok) return null;
+        let txt = await res.text();
+        if (txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
+        if (txt.length < 101) return null;
+        return { iso, rows: parseFocosCSV(txt) };
+    } catch (e) { return null; }
+}
 
 async function loadFocos() {
+    return loadFocosPeriodo(focosPeriodoDias);
+}
+
+async function loadFocosPeriodo(dias) {
     focosLoading = true;
     const meta = document.getElementById('metaFocos');
     meta.innerHTML = 'INPE BDQueimadas · <b>carregando...</b>';
 
     if (focosLayer) { try { map.removeLayer(focosLayer); } catch {} }
     focosLayer = null;
+    if (focosFilteredLayer) { try { map.removeLayer(focosFilteredLayer); } catch {} }
+    focosFilteredLayer = null;
 
-    // Tenta o CSV do dia; se ainda não publicado, volta até 3 dias
-    let csvText = null, usadoData = null;
-    for (let i = 0; i < 4 && !csvText; i++) {
+    const diasArr = [];
+    const nDias = Math.max(1, Math.min(Math.round(dias) || 1, FOCO_MAX_DIAS));
+    for (let i = 0; i < nDias; i++) {
         const d = new Date(Date.now() - i * 86400000);
-        const iso = d.toISOString().slice(0, 10).replaceAll('-', '');
-        try {
-            const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
-            if (!res.ok) continue;
-            let txt = await res.text();
-            if (txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
-            if (txt.length > 100) { csvText = txt; usadoData = iso; }
-        } catch (e) { /* tenta próximo dia */ }
+        diasArr.push(d.toISOString().slice(0, 10).replaceAll('-', ''));
     }
 
-    if (!csvText) {
+    const collect = [];
+    const LOTE = 3;
+    for (let i = 0; i < diasArr.length; i += LOTE) {
+        const lote = diasArr.slice(i, i + LOTE);
+        const resps = await Promise.all(lote.map(iso => fetchFocosDia(iso)));
+        resps.forEach(r => { if (r) collect.push(...r.rows); });
+        meta.innerHTML = `INPE BDQueimadas · <b>carregando ${nDias}d</b> (${Math.min(i + LOTE, diasArr.length)}/${diasArr.length})...`;
+    }
+
+    if (!collect.length) {
         meta.textContent = 'INPE indisponível — usando pontos ilustrativos';
         toast('Não foi possível obter os focos do INPE agora.');
         focosLoading = false;
         return;
     }
 
-    focosLayer = L.layerGroup({ renderer: canvasRenderer });
-    const linhas = csvText.split('\n');
-    const header = linhas[0].split(',').map(h => h.trim());
-    const iLat = header.indexOf('lat'), iLon = header.indexOf('lon'), iSat = header.indexOf('satelite'),
-          iMun = header.indexOf('municipio'), iUF = header.indexOf('estado'), iHora = header.indexOf('data_hora_gmt'),
-          iRisco = header.indexOf('risco_fogo'), iFrn = header.indexOf('frp'), iBioma = header.indexOf('bioma');
-
-    const MAX = 4000;
-    let n = 0;
-    for (let i = 1; i < linhas.length && n < MAX; i++) {
-        const cols = linhas[i].split(',');
-        if (cols.length < header.length - 2) continue;
-        if ((cols[iUF] || '').trim().toUpperCase() !== 'MATO GROSSO') continue;
-        const lat = parseFloat(cols[iLat]), lng = parseFloat(cols[iLon]);
-        if (!isFinite(lat) || !isFinite(lng)) continue;
-        const frp = parseFloat(cols[iFrn]);
-        const raio = isFinite(frp) ? Math.min(9, 2.5 + Math.sqrt(frp) / 2) : 3;
-        L.circleMarker([lat, lng], {
-            renderer: canvasRenderer, radius: raio,
-            color: '#ffb08a', weight: .5, fillColor: '#ff4d00', fillOpacity: .85
-        }).bindPopup(`
-            <div style="min-width:200px;">
-                <div style="font-weight:700;font-size:12.5px;color:#ff7a45;margin-bottom:2px;">
-                    <i data-lucide="flame"></i> Foco de calor detectado
-                </div>
-                <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${(cols[iMun] || '—').trim()} · MT</div>
-                <div style="font-size:11px;line-height:1.75;">
-                    Satélite: <b>${(cols[iSat] || '—').trim()}</b><br>
-                    Detecção (GMT): ${(cols[iHora] || '—').trim()}<br>
-                    ${cols[iBioma] ? 'Bioma: ' + cols[iBioma].trim() + '<br>' : ''}
-                    ${isFinite(frp) ? 'FRP: ' + frp + ' MW<br>' : ''}
-                    Lat/Lng: ${lat.toFixed(3)}, ${lng.toFixed(3)}
-                </div>
-                <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:#94a3b8;line-height:1.5;">
-                    Fonte: INPE BDQueimadas · ${usadoData.slice(6)}/${usadoData.slice(4, 6)}/${usadoData.slice(0, 4)}<br>
-                    Foco pontual não confirma incêndio — exige validação operacional.
-                    <a href="https://data.inpe.br/queimadas/bdqueimadas/" target="_blank" rel="noopener" style="color:#38bdf8;">portal oficial</a>
-                </div>
-                <a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
-                    <i data-lucide="navigation"></i> Navegar com Waze
-                </a>
-            </div>`).addTo(focosLayer);
-        n++;
+    // Remove duplicados e aplica teto de pontos
+    const seen = new Set();
+    const rows = [];
+    for (const f of collect) {
+        const k = f.lat.toFixed(4) + ',' + f.lon.toFixed(4) + ',' + f.data;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        rows.push(f);
+        if (rows.length >= FOCO_MAX_PONTOS) break;
     }
+    rows.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : b.risco_fogo - a.risco_fogo));
 
-    focosCount = n;
+    const dataEst = rows.length ? fmtDataISO(rows[0].data) + ' → ' + fmtDataISO(rows[rows.length - 1].data) : '';
+    buildFocosLayer(rows, dataEst);
+    focosCount = rows.length;
     focosLoaded = true;
     focosLoading = false;
+    focosRawData = rows;
+    focosFilteredData = [...rows];
 
-    // Armazena dados brutos para filtros e tabela
-    focosRawData = parseFocosCSV(csvText);
-    focosFilteredData = [...focosRawData];
-
+    const rotulo = nDias <= 1 ? '24h' : nDias + 'd';
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    meta.innerHTML = `INPE BDQueimadas · <b>${n.toLocaleString('pt-BR')} focos em MT</b> · atualizado ${horaCsv}`;
-    document.querySelector('.check-row[data-check="focos"] label').innerHTML =
-        `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor 24h <b style="color:#ff7a45;">(${n.toLocaleString('pt-BR')})</b> <span style="font-size:9px;color:#94a3b8;font-weight:400;">· ${horaCsv}</span>`;
+    meta.innerHTML = `INPE BDQueimadas · <b>${rows.length.toLocaleString('pt-BR')} focos em MT</b> · ${rotulo} · ${horaCsv}`;
+    const lbl = document.querySelector('.check-row[data-check="focos"] label');
+    if (lbl) lbl.innerHTML =
+        `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor ${rotulo} <b style="color:#ff7a45;">(${rows.length.toLocaleString('pt-BR')})</b> <span style="font-size:9px;color:#94a3b8;font-weight:400;">· ${horaCsv}</span>`;
     if (window.lucide) lucide.createIcons();
-    document.getElementById('legUc').insertAdjacentHTML('beforebegin',
-        `<div id="legFocos" class="leg-row" style="display:none;"><span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;"></span> Focos de calor 24h (INPE)</div>`);
+    let leg = document.getElementById('legFocos');
+    if (!leg) {
+        document.getElementById('legUc').insertAdjacentHTML('beforebegin',
+            `<div id="legFocos" class="leg-row" style="display:none;"><span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;"></span> Focos de calor (INPE)</div>`);
+    }
     refreshLegend();
 
     if (checkState.focos) {
-        const filteredOn = focosFilteredLayer && focosFilteredLayer.getLayers().length;
-        if (filteredOn) { focosFilteredLayer.addTo(map); if (focosLayer) map.removeLayer(focosLayer); }
-        else if (focosLayer) { focosLayer.addTo(map); if (focosFilteredLayer) map.removeLayer(focosFilteredLayer); }
+        const filtrosAtivos =
+            document.getElementById('filterSatelite').value ||
+            document.getElementById('filterBioma').value ||
+            parseInt(document.getElementById('filterRisco').value) > 0 ||
+            parseInt(document.getElementById('filterFrp').value) > 0;
+        if (filtrosAtivos) renderFocosFiltered();
+        else focosLayer.addTo(map);
     }
     if (checkState.stations) { /* mantém estações visíveis acima */ }
-    setTimeout(loadFocos, 10 * 60 * 1000);
+    clearTimeout(focosReloadTimer);
+    focosReloadTimer = setTimeout(loadFocos, 10 * 60 * 1000);
 }
 
 // Atualiza legenda de focos junto com as demais
@@ -3842,15 +3933,13 @@ function applyFocosFilters() {
 function renderFocosFiltered() {
     if (focosFilteredLayer) { try { map.removeLayer(focosFilteredLayer); } catch {} }
     focosFilteredLayer = L.layerGroup({ renderer: canvasRenderer });
-    const MAX = 5000;
+    const MAX = FOCO_MAX_PONTOS;
     const data = focosFilteredData.slice(0, MAX);
+    const useFlame = data.length <= FOCO_FLAME_LIMIT;
     data.forEach(f => {
         const cor = focoRiscoCor(f.risco_fogo);
         const raio = focoRaio(f.frp);
-        L.circleMarker([f.lat, f.lon], {
-            renderer: canvasRenderer, radius: raio,
-            color: cor, weight: .6, fillColor: cor, fillOpacity: .82
-        }).bindPopup(`
+        const popup = `
             <div style="min-width:200px;">
                 <div style="font-weight:700;font-size:12px;color:${cor};margin-bottom:2px;">
                     <i data-lucide="flame"></i> Foco de calor
@@ -3866,7 +3955,14 @@ function renderFocosFiltered() {
                     <div><b>Dias sem chuva:</b> ${f.dias_sc}</div>
                     <div><b>Coords:</b> ${f.lat.toFixed(4)}, ${f.lon.toFixed(4)}</div>
                 </div>
-            </div>`).addTo(focosFilteredLayer);
+            </div>`;
+        const mk = useFlame
+            ? L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp) })
+            : L.circleMarker([f.lat, f.lon], {
+                renderer: canvasRenderer, radius: raio,
+                color: cor, weight: .6, fillColor: cor, fillOpacity: .82
+              });
+        mk.bindPopup(popup).addTo(focosFilteredLayer);
     });
     if (checkState.focos) {
         if (focosLayer) map.removeLayer(focosLayer);
@@ -3879,8 +3975,8 @@ function renderDataTable() {
     const body = document.getElementById('dtBody');
     const count = document.getElementById('dtCount');
     const data = focosFilteredData.length ? focosFilteredData : focosRawData;
-    count.textContent = `— ${data.length.toLocaleString('pt-BR')} registros`;
-    const show = data.slice(0, 200);
+    count.textContent = `— ${data.length.toLocaleString('pt-BR')} registros (todos)`;
+    const show = data.slice(0, FOCO_MAX_PONTOS);
     body.innerHTML = show.map(f => {
         const cor = focoRiscoCor(f.risco_fogo);
         return `<tr>
@@ -3897,6 +3993,23 @@ function renderDataTable() {
     }).join('');
 }
 
+function exportFocosCSV() {
+    const data = focosFilteredData.length ? focosFilteredData : focosRawData;
+    if (!data.length) { toast('Sem dados de focos para exportar.'); return; }
+    const cols = ['lat', 'lon', 'data', 'satelite', 'municipio', 'estado', 'bioma', 'risco_fogo', 'frp', 'precipitacao', 'dias_sc'];
+    const cab = cols.join(';');
+    const linhas = data.map(f => cols.map(c => (f[c] === undefined || f[c] === null ? '' : String(f[c])).replace(/;/g, ',')).join(';'));
+    const csv = '\uFEFF' + cab + '\n' + linhas.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    const hoje = new Date().toISOString().slice(0, 10);
+    a.href = URL.createObjectURL(blob);
+    a.download = `focos_mt_inpe_${hoje}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+    toast(`CSV exportado: ${data.length.toLocaleString('pt-BR')} focos.`);
+}
+
 /* ================= INPE — Wiring dos filtros e controles ================= */
 document.getElementById('applyFiltersBtn').addEventListener('click', applyFocosFilters);
 document.getElementById('filterRisco').addEventListener('input', e => {
@@ -3906,11 +4019,20 @@ document.getElementById('filterFrp').addEventListener('input', e => {
     document.getElementById('frpFilterVal').textContent = e.target.value;
 });
 document.querySelectorAll('#filterPeriodo .filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
+        const ativo = btn.classList.contains('active');
         document.querySelectorAll('#filterPeriodo .filter-btn').forEach(b => b.classList.remove('active'));
+        if (ativo) { btn.classList.add('active'); return; }
         btn.classList.add('active');
+        const dias = parseInt(btn.dataset.dias) || 1;
+        focosPeriodoDias = dias;
+        await loadFocosPeriodo(dias);
+        if (window.lucide) lucide.createIcons();
     });
 });
+document.getElementById('exportFocosBtn').addEventListener('click', exportFocosCSV);
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportFocosCSV);
 
 // Tabela toggle
 const dtPanel = document.getElementById('dataTablePanel');
