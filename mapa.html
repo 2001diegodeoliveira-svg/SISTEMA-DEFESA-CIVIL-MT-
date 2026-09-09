@@ -1742,6 +1742,7 @@ let frameIdx = 0, playing = true, playTimer = null;
 let overlayOpacity = 0.8;
 
 let mtLayer = null, munLayer = null, ucWms = null, focosLayer = null;
+let focosFilteredLayer = null;
 let focosLoaded = false, focosLoading = false, focosCount = 0;
 const centroidByCod = {};
 const codByNomeNormalizado = {};
@@ -2273,7 +2274,14 @@ function applyChecks() {
     if (mtLayer) checkState.mtOutline ? mtLayer.addTo(map) : map.removeLayer(mtLayer);
     if (munLayer) checkState.municipios ? munLayer.addTo(map) : map.removeLayer(munLayer);
     if (ucWms) checkState.ucs ? ucWms.addTo(map) : map.removeLayer(ucWms);
-    if (focosLayer && focosLoaded) checkState.focos ? focosLayer.addTo(map) : map.removeLayer(focosLayer);
+    if (checkState.focos) {
+        const filteredOn = focosFilteredLayer && focosFilteredLayer.getLayers().length;
+        if (filteredOn) { focosFilteredLayer.addTo(map); if (focosLayer) map.removeLayer(focosLayer); }
+        else if (focosLayer && focosLoaded) focosLayer.addTo(map);
+    } else {
+        if (focosLayer) map.removeLayer(focosLayer);
+        if (focosFilteredLayer) map.removeLayer(focosFilteredLayer);
+    }
     checkState.stations ? stationsLayer.addTo(map) : map.removeLayer(stationsLayer);
     if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
     if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
@@ -2361,7 +2369,8 @@ async function loadFocos() {
         try {
             const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
             if (!res.ok) continue;
-            const txt = await res.text();
+            let txt = await res.text();
+            if (txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
             if (txt.length > 100) { csvText = txt; usadoData = iso; }
         } catch (e) { /* tenta próximo dia */ }
     }
@@ -2435,7 +2444,11 @@ async function loadFocos() {
         `<div id="legFocos" class="leg-row" style="display:none;"><span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;"></span> Focos de calor 24h (INPE)</div>`);
     refreshLegend();
 
-    if (checkState.focos) focosLayer.addTo(map);
+    if (checkState.focos) {
+        const filteredOn = focosFilteredLayer && focosFilteredLayer.getLayers().length;
+        if (filteredOn) { focosFilteredLayer.addTo(map); if (focosLayer) map.removeLayer(focosLayer); }
+        else if (focosLayer) { focosLayer.addTo(map); if (focosFilteredLayer) map.removeLayer(focosFilteredLayer); }
+    }
     if (checkState.stations) { /* mantém estações visíveis acima */ }
     setTimeout(loadFocos, 10 * 60 * 1000);
 }
@@ -3788,6 +3801,7 @@ function parseFocosCSV(csvText) {
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',');
         if (cols.length < header.length - 2) continue;
+        if ((cols[idx.estado] || '').trim().toUpperCase() !== 'MATO GROSSO') continue;
         const lat = parseFloat(cols[idx.lat]);
         const lon = parseFloat(cols[idx.lon]);
         if (!isFinite(lat) || !isFinite(lon)) continue;
@@ -3825,7 +3839,6 @@ function applyFocosFilters() {
     renderDataTable();
 }
 
-let focosFilteredLayer = null;
 function renderFocosFiltered() {
     if (focosFilteredLayer) { try { map.removeLayer(focosFilteredLayer); } catch {} }
     focosFilteredLayer = L.layerGroup({ renderer: canvasRenderer });
@@ -3855,7 +3868,10 @@ function renderFocosFiltered() {
                 </div>
             </div>`).addTo(focosFilteredLayer);
     });
-    if (checkState.focos) focosFilteredLayer.addTo(map);
+    if (checkState.focos) {
+        if (focosLayer) map.removeLayer(focosLayer);
+        focosFilteredLayer.addTo(map);
+    }
 }
 
 /* ================= INPE — Tabela de dados ================= */
