@@ -2321,9 +2321,13 @@ function applyChecks() {
     if (munLayer) checkState.municipios ? munLayer.addTo(map) : map.removeLayer(munLayer);
     if (ucWms) checkState.ucs ? ucWms.addTo(map) : map.removeLayer(ucWms);
     if (checkState.focos) {
-        const filteredOn = focosFilteredLayer && focosFilteredLayer.getLayers().length;
-        if (filteredOn) { focosFilteredLayer.addTo(map); if (focosLayer) map.removeLayer(focosLayer); }
-        else if (focosLayer && focosLoaded) focosLayer.addTo(map);
+        if (focosFiltrosAtivos() && focosFilteredLayer) {
+            focosFilteredLayer.addTo(map);
+            if (focosLayer) map.removeLayer(focosLayer);
+        } else if (focosLayer && focosLoaded) {
+            focosLayer.addTo(map);
+            if (focosFilteredLayer) map.removeLayer(focosFilteredLayer);
+        }
     } else {
         if (focosLayer) map.removeLayer(focosLayer);
         if (focosFilteredLayer) map.removeLayer(focosFilteredLayer);
@@ -2530,7 +2534,7 @@ async function loadFocosPeriodo(dias) {
     focosLoaded = true;
     focosLoading = false;
     focosRawData = rows;
-    focosFilteredData = [...rows];
+    focosFilteredData = focosFiltrosAtivos() ? rows.filter(focosFiltroTest) : [...rows];
 
     const rotulo = nDias <= 1 ? '24h' : nDias + 'd';
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -2547,12 +2551,7 @@ async function loadFocosPeriodo(dias) {
     refreshLegend();
 
     if (checkState.focos) {
-        const filtrosAtivos =
-            document.getElementById('filterSatelite').value ||
-            document.getElementById('filterBioma').value ||
-            parseInt(document.getElementById('filterRisco').value) > 0 ||
-            parseInt(document.getElementById('filterFrp').value) > 0;
-        if (filtrosAtivos) renderFocosFiltered();
+        if (focosFiltrosAtivos()) renderFocosFiltered();
         else focosLayer.addTo(map);
     }
     if (checkState.stations) { /* mantém estações visíveis acima */ }
@@ -3974,20 +3973,30 @@ function parseFocosCSV(csvText) {
     return result;
 }
 
-function applyFocosFilters() {
+function focosFiltrosAtivos() {
+    return !!(
+        document.getElementById('filterSatelite').value ||
+        document.getElementById('filterBioma').value ||
+        parseInt(document.getElementById('filterRisco').value) > 0 ||
+        parseInt(document.getElementById('filterFrp').value) > 0
+    );
+}
+function focosFiltroTest(f) {
     const satFilter = document.getElementById('filterSatelite').value;
     const bioFilter = document.getElementById('filterBioma').value;
-    const riscoMin = parseInt(document.getElementById('filterRisco').value) / 100;
-    const frpMin = parseInt(document.getElementById('filterFrp').value);
-    focosFilteredData = focosRawData.filter(f => {
-        if (satFilter && f.satelite !== satFilter) return false;
-        if (bioFilter && f.bioma !== bioFilter) return false;
-        if (f.risco_fogo < riscoMin) return false;
-        if (f.frp < frpMin) return false;
-        return true;
-    });
+    const riscoMin = (parseInt(document.getElementById('filterRisco').value) || 0) / 100;
+    const frpMin = parseInt(document.getElementById('filterFrp').value) || 0;
+    if (satFilter && f.satelite !== satFilter) return false;
+    if (bioFilter && f.bioma !== bioFilter) return false;
+    if (f.risco_fogo < riscoMin) return false;
+    if (f.frp < frpMin) return false;
+    return true;
+}
+function applyFocosFilters() {
+    focosFilteredData = focosRawData.filter(focosFiltroTest);
     renderFocosFiltered();
     renderDataTable();
+    refreshLegend();
 }
 
 function renderFocosFiltered() {
