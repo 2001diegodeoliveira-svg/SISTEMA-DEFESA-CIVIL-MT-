@@ -609,19 +609,20 @@
             --fc: #ff4d00; --fs: 24px;
             position: relative; width: calc(var(--fs) * 2); height: calc(var(--fs) * 2);
             display: grid; place-items: center; align-content: center;
+            opacity: .76; transition: opacity .15s, transform .15s;
         }
+        .foco-sat:hover { opacity: 1; transform: scale(1.2); }
         .foco-sat .foco-sat-core {
             width: var(--fs); height: var(--fs); border-radius: 50%;
             display: grid; place-items: center;
-            background: linear-gradient(160deg, rgba(13, 17, 26, .94), rgba(24, 32, 48, .9));
-            border: 1.5px solid var(--fc);
-            box-shadow: 0 0 10px color-mix(in srgb, var(--fc) 55%, transparent), inset 0 0 6px rgba(0, 0, 0, .45);
+            background: linear-gradient(160deg, rgba(13, 17, 26, .48), rgba(24, 32, 48, .4));
+            border: 1px solid color-mix(in srgb, var(--fc) 75%, transparent);
+            box-shadow: 0 0 6px color-mix(in srgb, var(--fc) 20%, transparent);
         }
-        .foco-sat .foco-sat-core svg { width: calc(var(--fs) * .58); height: calc(var(--fs) * .58); filter: drop-shadow(0 0 2px var(--fc)); }
+        .foco-sat .foco-sat-core svg { width: calc(var(--fs) * .52); height: calc(var(--fs) * .52); opacity: .9; }
         .foco-sat .foco-sat-ring {
-            position: absolute; width: calc(var(--fs) * 1.85); height: calc(var(--fs) * 1.85); border-radius: 50%;
-            border: 1px dashed var(--fc); opacity: .5;
-            animation: focoPulse 1.8s ease-in-out infinite; will-change: transform;
+            position: absolute; width: calc(var(--fs) * 1.8); height: calc(var(--fs) * 1.8); border-radius: 50%;
+            border: 1px dashed color-mix(in srgb, var(--fc) 60%, transparent); opacity: .2;
         }
         .foco-sat-badge {
             display: inline-flex; align-items: center; gap: 5px;
@@ -1398,6 +1399,18 @@
             <div class="toggle" id="vigiaMaisBadge"></div>
         </div>
         <div class="meta-line" id="metaVigiaMais">SESP-MT · cobertura por município</div>
+        <div class="check-row" data-check="abrigos">
+            <label><span class="swatch" style="background:#34d399;border-radius:50%;"></span><i data-lucide="home"></i>Abrigos temporários</label>
+            <div class="toggle on" id="abrigosBadge"></div>
+        </div>
+        <div class="meta-line" id="metaAbrigos">Defesa Civil MT · abrigos por município</div>
+
+        <div class="group-title"><i data-lucide="video"></i> Câmeras abertas</div>
+        <div class="check-row" data-check="camsSinfra">
+            <label><span class="swatch" style="background:#38bdf8;border-radius:50%;"></span><i data-lucide="camera"></i>SINFRA — Obras ao Vivo</label>
+            <div class="toggle on" id="camsSinfraBadge"></div>
+        </div>
+        <div class="meta-line" id="metaCamsSinfra">SINFRA MT · carregando câmeras...</div>
 
         <div class="group-title"><i data-lucide="calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
         <div id="cptecPanel" style="padding:0 2px;">
@@ -1627,6 +1640,20 @@
         </div>
         <div id="legVigiaMais" class="leg-row" style="display:none;">
             <span style="width:10px;height:10px;border-radius:50%;background:#7c3aed;display:inline-block;margin-right:5px;"></span> Vigia Mais MT (cobertura municipal, SESP-MT)
+        </div>
+        <div id="legAbrigos" class="leg-row" style="display:none;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#34d399;display:inline-block;margin-right:5px;"></span> Abrigos temporários
+            <span style="font-size:9px;color:#94a3b8;margin-left:6px;">
+                <span style="color:#34d399;">Operacional</span> ·
+                <span style="color:#f59e0b;">Preparado</span>
+            </span>
+        </div>
+        <div id="legCamsSinfra" class="leg-row" style="display:none;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#38bdf8;display:inline-block;margin-right:5px;"></span> Câmeras SINFRA — Obras ao Vivo
+            <span style="font-size:9px;color:#94a3b8;margin-left:6px;">
+                <span style="color:#38bdf8;">ao vivo</span> ·
+                <span style="color:#64748b;">offline</span>
+            </span>
         </div>
     </div>
 
@@ -2338,15 +2365,26 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
         let sipamData = [];
 let wmsFocos48hLayer = null;
 let reportsLayer = null, reportsLoaded = false, reportsLoading = false;
+let reportSeenIds = new Set(), reportMarkerIds = new Map(), reportsTimer = null;
+/* Limites aproximados do território de Mato Grosso (malha IBGE) */
+const MT_LAT_MIN = -18.1, MT_LAT_MAX = -7.3, MT_LON_MIN = -62.0, MT_LON_MAX = -50.0;
+function dentroMT(lat, lng) {
+    return isFinite(lat) && isFinite(lng) && lat >= MT_LAT_MIN && lat <= MT_LAT_MAX && lng >= MT_LON_MIN && lng <= MT_LON_MAX;
+}
 let vigiaMaisLayer = null;
+let abrigosLayer = null, abrigosLoaded = false, abrigosLoading = false;
+let camSinfraLayer = null, camSinfraLoaded = false, camSinfraLoading = false;
+let camSinfraData = [], camSinfraTimer = null;
+/* Câmeras abertas — fontes atuais e futuras de videomonitoramento */
+const CAMERA_BASE = 'https://obrasaovivo.sinfra.mt.gov.br';
 
 function setCheck(key, val) {
     checkState[key] = val;
@@ -2357,6 +2395,8 @@ function setCheck(key, val) {
     if (key === 'inmetStations' && val && !inmetLoaded && !inmetLoading) loadInmetStations();
     if (key === 'sipam' && val && !sipamLoaded && !sipamLoading) loadSIPAM();
     if (key === 'reports' && val && !reportsLoaded && !reportsLoading) loadReports();
+    if (key === 'abrigos' && val && !abrigosLoaded && !abrigosLoading) loadAbrigos();
+    if (key === 'camsSinfra' && val && !camSinfraLoaded && !camSinfraLoading) loadCamerasSinfra();
     applyChecks();
 }
 function applyChecks() {
@@ -2382,6 +2422,8 @@ function applyChecks() {
     if (wmsFocos48hLayer) checkState.wmsFocos48h ? wmsFocos48hLayer.addTo(map) : map.removeLayer(wmsFocos48hLayer);
     if (reportsLayer) checkState.reports ? reportsLayer.addTo(map) : map.removeLayer(reportsLayer);
     if (vigiaMaisLayer) checkState.vigiaMais ? vigiaMaisLayer.addTo(map) : map.removeLayer(vigiaMaisLayer);
+    if (abrigosLayer) checkState.abrigos ? abrigosLayer.addTo(map) : map.removeLayer(abrigosLayer);
+    if (camSinfraLayer) checkState.camsSinfra ? camSinfraLayer.addTo(map) : map.removeLayer(camSinfraLayer);
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
@@ -2400,7 +2442,9 @@ function refreshLegend() {
     document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
     document.getElementById('legFocosWms').style.display = checkState.wmsFocos48h && wmsFocos48hLayer ? '' : 'none';
     document.getElementById('legVigiaMais').style.display = checkState.vigiaMais && vigiaMaisLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais;
+    document.getElementById('legAbrigos').style.display = checkState.abrigos && abrigosLayer ? '' : 'none';
+    document.getElementById('legCamsSinfra').style.display = checkState.camsSinfra && camSinfraLayer ? '' : 'none';
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -2419,6 +2463,7 @@ const MARKER_SVG = {
     'radio-tower': '<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/><path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/><path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
     cctv: '<path d="M16.75 12h3.632a1 1 0 0 1 .894 1.447l-2.034 4.069a1 1 0 0 1-1.708.134l-2.124-2.97"/><path d="M17.106 9.053a1 1 0 0 1 .447 1.341l-3.106 6.211a1 1 0 0 1-1.342.447L3.61 12.3a2.92 2.92 0 0 1-1.3-3.91L3.69 5.6a2.92 2.92 0 0 1 3.92-1.3z"/><path d="M2 19h3.76a2 2 0 0 0 1.8-1.1L9 15"/><path d="M2 21v-4"/><path d="M7 9h.01"/>',
     dam: '<path d="M8 8h8v13H8z"/><path d="M6.5 8h11"/><path d="M2 13q1.2 1 2.4 0t2.4 0"/><path d="M2 9.5c1.2 0 1.2 2 2.4 2s1.2-2 2.4-2"/>',
+    camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
 };
 function iconDivMarker(iconKey, color, size) {
     size = size || 26;
@@ -2456,7 +2501,7 @@ function fmtDataISO(iso) { if (!iso) return ''; const p = iso.slice(0, 10).split
 // Marcador de foco (detectado por satélite): chip glass com chama, cor por risco, escala por FRP
 function focoFlameIcon(risco, frp, nome) {
     const cor = focoRiscoCor(risco);
-    const fs = Math.round(20 + Math.min(10, Math.sqrt(frp || 0) * 1.1));
+    const fs = Math.round(14 + Math.min(10, Math.sqrt(frp || 0) * 1.1));
     const host = nome ? nome.replace(/"/g, '&quot;') : '';
     return L.divIcon({
         className: '',
@@ -2512,7 +2557,7 @@ function buildFocosLayer(rows, dataEst) {
             L.circleMarker([f.lat, f.lon], {
                 renderer: canvasRenderer,
                 radius: focoRaio(f.frp),
-                color: '#ffb08a', weight: .5, fillColor: '#ff4d00', fillOpacity: .85
+                color: '#ffb08a', weight: .4, fillColor: '#ff4d00', fillOpacity: .45
             }).bindPopup(popup).addTo(focosLayer);
         }
     });
@@ -2704,6 +2749,168 @@ async function loadBarragens() {
         barragensLoading = false;
         meta.textContent = 'Erro ao carregar barragens';
     }
+}
+
+/* ================= Abrigos temporários (Defesa Civil MT) ================= */
+const ABRIGO_TIPO_LBL = { ginasio: 'Ginásio Poliesportivo', escola: 'Escola', centro: 'Centro comunitário' };
+async function loadAbrigos() {
+    if (abrigosLoading) return;
+    abrigosLoading = true;
+    const meta = document.getElementById('metaAbrigos');
+    if (meta && !abrigosLoaded) meta.innerHTML = 'Abrigos temporários · <b>carregando...</b>';
+    try {
+        const res = await fetch('js/abrigos_mt.json');
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error('formato inválido');
+        abrigosLayer = L.layerGroup();
+        data.forEach(a => {
+            const lat = Number(a.lat), lng = Number(a.lng);
+            if (!isFinite(lat) || !isFinite(lng)) return;
+            const statusCor = a.status === 'operacional' ? '#34d399' : '#f59e0b';
+            const statusLbl = a.status === 'operacional' ? 'Operacional' : 'Preparado';
+            L.marker([lat, lng], {
+                icon: iconDivMarker('home', '#34d399', 30),
+                title: a.nome,
+                riseOnHover: true
+            }).bindPopup(`
+                <div style="min-width:220px;">
+                    <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
+                        <i data-lucide="home" style="color:#34d399;"></i>${a.nome}
+                    </div>
+                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${a.municipio} · MT</div>
+                    <div style="font-size:11px;line-height:1.75;">
+                        <div><b>Tipo:</b> ${ABRIGO_TIPO_LBL[a.tipo] || a.tipo}</div>
+                        <div><b>Endereço:</b> ${a.endereco || '—'}${a.bairro ? ' — Bairro ' + a.bairro : ''}</div>
+                        <div><b>Capacidade:</b> ${a.capacidade || '—'}</div>
+                        <div><b>Vagas atuais:</b> ${a.vagasAtuais || '—'}</div>
+                        <div><b>Coordenador:</b> ${a.coordenador || '—'}</div>
+                        <div><b>Contato:</b> ${a.contato || '—'}</div>
+                        <div><b>Status:</b> <span style="color:${statusCor};">${statusLbl}</span></div>
+                        ${a.observacoes ? '<div style="margin-top:4px;color:#cbd5e1;"><b>Obs.:</b> ' + a.observacoes + '</div>' : ''}
+                        <div style="margin-top:4px;color:#94a3b8;font-size:9.5px;">Fonte: ${a.fonte || 'Defesa Civil MT'}</div>
+                    </div>
+                    ${reportMarkerBtn(lat, lng)}
+                </div>`).addTo(abrigosLayer);
+        });
+        abrigosLayer.addTo(map);
+        abrigosLoaded = true;
+        abrigosLoading = false;
+        if (meta) meta.innerHTML = `Abrigos temporários · <b>${data.length.toLocaleString('pt-BR')}</b> cadastrados em MT`;
+        if (window.lucide) lucide.createIcons();
+        refreshLegend();
+    } catch (e) {
+        abrigosLoading = false;
+        if (meta) meta.textContent = 'Abrigos temporários · erro ao carregar';
+    }
+}
+
+/* ================= Monitoramento por câmera — SINFRA Obras ao Vivo =================
+   Fonte: ArcGIS FeatureServer do portal SINFRA-MT (mapas.sinfra.mt.gov.br), camada
+   "Vídeo Monitoramento Obras". Cada câmera aponta para uma página web em
+   obrasaovivo.sinfra.mt.gov.br que reproduz o stream HLS ((streams/<slug>/index.m3u8).
+   Snapshot de contingência local: js/cameras_sinfra.json (mesmo formato).        */
+function cameraSlug(link) {
+    if (!link) return '';
+    try { const u = new URL(link); return u.pathname.split('/').pop().replace(/\.html?$/i, ''); }
+    catch { return ''; }
+}
+function cameraStatusBase(slug) { return CAMERA_BASE + '/streams/' + slug + '/index.m3u8'; }
+async function probeCamerasStatus(data) {
+    await Promise.allSettled(data.map(async cam => {
+        try {
+            const r = await dcProxyFetch(cameraStatusBase(cam.slug));
+            cam.online = !!r.ok;
+        } catch (e) { cam.online = false; }
+    }));
+}
+function camStatusBadge(on) {
+    return on
+        ? '<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.45);color:#34d399;"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;animation:damPulse 1.6s infinite;"></span> AO VIVO</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;background:rgba(148,163,184,.14);border:1px solid rgba(148,163,184,.4);color:#94a3b8;">OFFLINE</span>';
+}
+function cameraPopupHTML(cam) {
+    const endereco = [cam.endereco, cam.municipio].filter(Boolean).join(' · ') || '—';
+    const titulo = cam.localizacao || cam.slug || 'Câmera';
+    return `
+        <div style="min-width:300px;width:450px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;">
+                <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;"><i data-lucide="camera" style="color:#38bdf8;"></i>${titulo}</div>
+                ${camStatusBadge(cam.online === true)}
+            </div>
+            <div style="color:#94a3b8;font-size:10px;margin-bottom:8px;">${cam.obra ? 'Obra: ' + cam.obra : 'SINFRA-MT'}${cam.municipio ? ' · ' + cam.municipio : ''}</div>
+            <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.09);background:#000;box-shadow:0 6px 24px rgba(0,0,0,.35);">
+                <iframe src="${cam.link}" title="${titulo}" style="display:block;width:430px;height:300px;border:0;background:transparent;" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>
+                <div style="position:absolute;left:0;bottom:0;right:0;padding:4px 9px;font-size:9px;color:rgba(255,255,255,.7);background:linear-gradient(transparent, rgba(0,0,0,.6));">SINFRA-MT · obrasaovivo.sinfra.mt.gov.br</div>
+            </div>
+            <div style="font-size:10.5px;line-height:1.7;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;">
+                <div><b>Local:</b> ${cam.localizacao || '—'}</div>
+                <div><b>Município:</b> ${cam.municipio || '—'}</div>
+                <div style="grid-column:1/-1;"><b>Endereço:</b> ${endereco}</div>
+                <div><b>Placa/Ref.:</b> ${cam.slug || '—'}</div>
+                <div><b>Código:</b> ${cam.codigo || '—'}</div>
+            </div>
+            <div style="margin-top:7px;display:flex;gap:6px;">
+                <a href="${cam.link}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 10px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';"><i data-lucide="monitor-play"></i> Abrir monitor</a>
+                ${reportMarkerBtn(cam.lat, cam.lng)}
+            </div>
+        </div>`;
+}
+async function fetchCamerasSinfraApi() {
+    const url = 'https://mapas.sinfra.mt.gov.br/server/rest/services/monitoramento_cameras/FeatureServer/0/query?where=1%3D1&outFields=codigo,n_placa,tipoobra,municipio,endereco,localizacao,latitude,longitude,linkvideomonitoramento&returnGeometry=false&orderByFields=n_placa&f=pjson';
+    const r = await dcProxyFetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (!j || !Array.isArray(j.features)) throw new Error('resposta sem features');
+    return j.features.map(f => {
+        const a = f.attributes || {};
+        return {
+            id: a.objectid, codigo: a.codigo, placa: a.n_placa,
+            obra: String(a.tipoobra || '').trim(), municipio: String(a.municipio || '').trim(),
+            endereco: String(a.endereco || '').trim(), localizacao: String(a.localizacao || '').trim(),
+            lat: Number(a.latitude), lng: Number(a.longitude),
+            link: String(a.linkvideomonitoramento || '').trim() || null
+        };
+    }).filter(c => isFinite(c.lat) && isFinite(c.lng) && c.link && c.link !== 'null');
+}
+async function loadCamerasSinfra() {
+    if (camSinfraLoading) return;
+    camSinfraLoading = true;
+    const meta = document.getElementById('metaCamsSinfra');
+    if (meta && !camSinfraLoaded) meta.innerHTML = 'SINFRA MT · <b>carregando câmeras...</b>';
+    try {
+        let data = null;
+        try { data = await fetchCamerasSinfraApi(); } catch (e) { data = null; }
+        if (!data || !data.length) {
+            const res = await fetch('js/cameras_sinfra.json');
+            data = await res.json();
+        }
+        data = data.map(c => ({ ...c, slug: cameraSlug(c.link) }))
+            .filter(c => c.slug && isFinite(Number(c.lat)) && isFinite(Number(c.lng)));
+        camSinfraData = data;
+        await probeCamerasStatus(data);
+        if (!camSinfraLayer) camSinfraLayer = L.layerGroup();
+        camSinfraLayer.clearLayers();
+        data.forEach(cam => {
+            const cor = cam.online === true ? '#38bdf8' : '#64748b';
+            L.marker([cam.lat, cam.lng], {
+                icon: iconDivMarker('camera', cor, 26),
+                title: (cam.localizacao || cam.slug) + ' — ' + cam.municipio,
+                riseOnHover: true
+            }).bindPopup(cameraPopupHTML(cam), { maxWidth: 520 }).addTo(camSinfraLayer);
+        });
+        if (checkState.camsSinfra) camSinfraLayer.addTo(map);
+        camSinfraLoaded = true;
+        camSinfraLoading = false;
+        const live = data.filter(c => c.online).length;
+        if (meta) meta.innerHTML = `SINFRA MT · <b>${data.length.toLocaleString('pt-BR')}</b> câmeras · <b style="color:#34d399;">${live} ao vivo</b> · <b style="color:#94a3b8;">${data.length - live} offline</b>`;
+        if (window.lucide) lucide.createIcons();
+        refreshLegend();
+    } catch (e) {
+        camSinfraLoading = false;
+        if (meta) meta.textContent = 'Câmeras SINFRA · erro ao carregar';
+    }
+    clearTimeout(camSinfraTimer);
+    camSinfraTimer = setTimeout(loadCamerasSinfra, 5 * 60 * 1000);
 }
 
 /* ================= CPTEC/INPE — Previsão 6 dias ================= */
@@ -3343,34 +3550,77 @@ async function loadSIPAM() {
 
 /* ================= Ocorrências / Acontecimentos (reports da API) ================= */
 const REPORT_ICONS = {
-    acidente: 'car', engarrafamento: 'traffic-cone', evento: 'calendar', clima: 'cloud-lightning',
-    chuva: 'cloud-rain', vento: 'wind', fogo: 'flame', alagamento: 'waves',
-    arvore: 'tree-deciduous', deslizamento: 'triangle-alert', rachadura: 'triangle-alert',
-    perigo: 'triangle-alert', obra: 'construction', interdicao: 'traffic-cone'
+    acidente: 'car', engarrafamento: 'traffic-cone', evento: 'calendar',
+    clima: 'cloud-lightning', tempestade: 'cloud-lightning', temporal: 'cloud-lightning',
+    tornado: 'tornado', vendaval: 'wind', vento: 'wind', ventania: 'wind',
+    raio: 'zap', raios: 'zap', trovoada: 'cloud-lightning',
+    chuva: 'cloud-rain', 'chuva forte': 'cloud-rain-wind', 'chuva intensa': 'cloud-rain-wind',
+    granizo: 'cloud-hail', neve: 'cloud-snow', gelo: 'snowflake', geada: 'snowflake',
+    nevoeiro: 'cloud-fog', neblina: 'cloud-fog', bruma: 'cloud-fog',
+    alagamento: 'waves', enchente: 'waves', inundacao: 'waves', inundação: 'waves',
+    'transbordamento': 'waves', onda: 'waves', swell: 'waves',
+    fogo: 'flame', queimada: 'flame', incendio: 'flame', incêndio: 'flame',
+    fumaça: 'smoke', fumaca: 'smoke', fuma: 'smoke',
+    arvore: 'tree-deciduous', 'queda de arvore': 'tree-deciduous', 'queda de árvore': 'tree-deciduous',
+    deslizamento: 'mountain', desmoronamento: 'mountain', desabamento: 'mountain',
+    rachadura: 'triangle-alert', perigo: 'triangle-alert',
+    obra: 'construction', interdicao: 'traffic-cone', interdição: 'traffic-cone',
+    'calor': 'thermometer-sun', 'onda de calor': 'thermometer-sun', 'seca': 'sun-dim',
+    'seca extrema': 'sun-dim', 'estiagem': 'sun-dim',
+    'frio': 'thermometer', 'friagem': 'thermometer-snowflake'
 };
 const REPORT_SEV_COLOR = { urgent: '#ef4444', warning: '#f97316', alto: '#ef4444', medio: '#f97316', info: '#00d2ff', critica: '#ef4444', alta: '#f97316', media: '#fbbf24', baixa: '#00d2ff' };
+const REPORT_CLIMA_COR = {
+    tempestade: '#a855f7', temporal: '#a855f7', tornado: '#a855f7',
+    chuva: '#38bdf8', granizo: '#60a5fa', neve: '#93c5fd', gelo: '#93c5fd', geada: '#93c5fd',
+    alagamento: '#0ea5e9', enchente: '#0ea5e9', inundacao: '#0ea5e9', inundação: '#0ea5e9',
+    vento: '#f59e0b', vendaval: '#f97316', ventania: '#f59e0b',
+    raio: '#facc15', raios: '#facc15', trovoada: '#facc15',
+    nevoeiro: '#94a3b8', neblina: '#94a3b8', bruma: '#94a3b8',
+    fogo: '#ef4444', queimada: '#ef4444', incendio: '#ef4444', incêndio: '#ef4444',
+    fumaça: '#64748b', fumaca: '#64748b',
+    deslizamento: '#b45309', desmoronamento: '#b45309', desabamento: '#b45309',
+    arvore: '#22c55e', calor: '#f97316', 'onda de calor': '#f97316', seca: '#eab308', estiagem: '#eab308',
+    frio: '#38bdf8', friagem: '#7dd3fc'
+};
 
 function reportIcon(type) {
     const t = String(type || '').toLowerCase();
     if (REPORT_ICONS[t]) return REPORT_ICONS[t];
-    if (t.includes('alag') || t.includes('chuva') || t.includes('inund')) return 'cloud-rain';
-    if (t.includes('vent')) return 'wind';
-    if (t.includes('fogo') || t.includes('queim')) return 'flame';
-    if (t.includes('arvor') || t.includes('queda')) return 'tree-deciduous';
+    if (t.includes('tempest') || t.includes('temporal') || t.includes('clima')) return 'cloud-lightning';
+    if (t.includes('raio') || t.includes('trovoada')) return 'zap';
+    if (t.includes('alag') || t.includes('inund') || t.includes('enchent') || t.includes('transbord') || t.includes('água')) return 'waves';
+    if (t.includes('chuva') || t.includes('precipit')) return 'cloud-rain';
+    if (t.includes('granizo')) return 'cloud-hail';
+    if (t.includes('neve') || t.includes('gelo') || t.includes('geada')) return 'snowflake';
+    if (t.includes('neblina') || t.includes('nevoeiro') || t.includes('bruma')) return 'cloud-fog';
+    if (t.includes('vent') || t.includes('vendaval') || t.includes('tornado')) return 'wind';
+    if (t.includes('fogo') || t.includes('queimada') || t.includes('incêndio') || t.includes('incendio')) return 'flame';
+    if (t.includes('fum')) return 'smoke';
+    if (t.includes('árvore') || t.includes('arvor') || t.includes('queda') || t.includes('galho')) return 'tree-deciduous';
+    if (t.includes('desliz') || t.includes('desmoron') || t.includes('desab')) return 'mountain';
+    if (t.includes('calor') || t.includes('seca') || t.includes('estiag')) return 'thermometer-sun';
+    if (t.includes('frio') || t.includes('friag')) return 'thermometer';
     if (t.includes('acident')) return 'car';
     if (t.includes('trânsito') || t.includes('transito') || t.includes('engarraf')) return 'traffic-cone';
     return 'circle-alert';
 }
 function reportSevColor(sev) { return REPORT_SEV_COLOR[String(sev || 'info').toLowerCase()] || '#00d2ff'; }
 
+/* Ocorrência de natureza / ação climática (dispara popup em tempo real) */
+function isNaturezaClima(type) {
+    return reportIcon(type) !== 'circle-alert' && reportIcon(type) !== 'car' && reportIcon(type) !== 'traffic-cone' && reportIcon(type) !== 'calendar' && reportIcon(type) !== 'construction';
+}
+
 function reportMarkerBtn(lat, lng) {
     return `<a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px 12px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:11px;font-weight:700;border-radius:8px;text-decoration:none;" onmouseover="this.style.transform='scale(1.03)';this.style.boxShadow='0 4px 16px rgba(0,153,255,.4)';" onmouseout="this.style.transform='';this.style.boxShadow='';"><i data-lucide="navigation"></i> Navegar com Waze</a>`;
 }
 
 async function loadReports() {
+    if (reportsLoading) return;
     reportsLoading = true;
     const meta = document.getElementById('metaReports');
-    if (meta) meta.innerHTML = 'Ocorrências · <b>carregando...</b>';
+    if (meta && !reportsLoaded) meta.innerHTML = 'Ocorrências · <b>carregando...</b>';
     try {
         let points = [];
         // Fonte principal: ocorrências consolidadas (Waze/TOMTOM + manuais)
@@ -3390,50 +3640,76 @@ async function loadReports() {
                 description: x.description || ''
             }));
         }
-        if (reportsLayer) { try { map.removeLayer(reportsLayer); } catch {} }
-        reportsLayer = L.layerGroup();
-        let renderizados = 0;
+        // Limita às ocorrências dentro do território de Mato Grosso
+        points = (points || []).filter(p => dentroMT(Number(p.latitude), Number(p.longitude)));
+
+        if (!reportsLayer) reportsLayer = L.layerGroup();
+        let novos = 0, novosClimaticos = [];
         points.forEach(rep => {
             const lat = Number(rep.latitude), lng = Number(rep.longitude);
             if (!isFinite(lat) || !isFinite(lng)) return;
-            renderizados++;
-            const icon = reportIcon(rep.type);
-            const color = reportSevColor(rep.priority);
+            const k = String(rep.id) || (lat.toFixed(6) + ',' + lng.toFixed(6) + ':' + (rep.reportedAt || ''));
+            if (reportSeenIds.has(k)) return;
+            reportSeenIds.add(k);
+            novos++;
+            const iconeNovo = reportIcon(rep.type);
+            const color = REPORT_CLIMA_COR[iconeNovo] || reportSevColor(rep.priority);
             const titulo = (String(rep.type || 'acontecimento')).toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-            const iconeHTML = `<i data-lucide="${icon}" style="color:#fff;width:15px;height:15px;"></i>`;
+            const iconeHTML = `<i data-lucide="${iconeNovo}" style="color:#fff;width:15px;height:15px;"></i>`;
             const markerIcon = L.divIcon({
                 className: '',
                 html: `<div style="width:30px;height:30px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px ${color}55;border:2px solid #fff;">${iconeHTML}</div>`,
                 iconSize: [30, 30], iconAnchor: [15, 15]
             });
             const cidade = rep.city ? (rep.state && rep.state !== 'MT' ? rep.city + ' · ' + rep.state : rep.city + ' · MT') : 'Local não informado';
-            L.marker([lat, lng], { icon: markerIcon }).bindPopup(`
+            const marker = L.marker([lat, lng], { icon: markerIcon, wazeKey: k }).bindPopup(`
                 <div style="min-width:200px;">
                     <div style="font-weight:700;font-size:12.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-                        <i data-lucide="${icon}" style="color:${color};"></i>${titulo}
+                        <i data-lucide="${iconeNovo}" style="color:${color};"></i>${titulo}
                     </div>
                     <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${cidade}</div>
                     <div style="font-size:11px;line-height:1.7;">
                         ${rep.description ? '<div>' + rep.description + '</div>' : ''}
-                        <div style="margin-top:4px;"><b>Prioridade:</b> <span style="color:${color};">${String(rep.priority || 'info')}</span></div>
+                        <div style="margin-top:4px;"><b>Prioridade:</b> <span style="color:${reportSevColor(rep.priority)};">${String(rep.priority || 'info')}</span></div>
                         <div><b>Status:</b> ${String(rep.status || '—')}</div>
                         <div><b>Fonte:</b> ${String(rep.source || '—')}</div>
                         <div><b>Hora:</b> ${rep.reportedAt ? new Date(rep.reportedAt).toLocaleString('pt-BR') : '—'}</div>
                     </div>
                     ${reportMarkerBtn(lat, lng)}
                 </div>`).addTo(reportsLayer);
+            reportMarkerIds.set(k, marker);
+            // Ocorrência de natureza / ação climática → gera popup automático no mapa
+            if (isNaturezaClima(rep.type)) novosClimaticos.push({ marker, rep, titulo, color, icone: iconeNovo });
         });
+        // Remove marcadores de ocorrências que saíram do recorte MT / da API
+        const seenNow = new Set(points.map(p => String(p.id) || (String(p.latitude) + ',' + String(p.longitude) + ':' + (p.reportedAt || ''))));
+        reportMarkerIds.forEach((m, k) => { if (!seenNow.has(k)) { m.remove(); reportMarkerIds.delete(k); reportSeenIds.delete(k); } });
         reportsLoaded = true;
         reportsLoading = false;
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        if (meta) meta.innerHTML = `Ocorrências · <b>${renderizados.toLocaleString('pt-BR')}</b> acontecimento(s) · atualizado ${hora}`;
+        if (meta) meta.innerHTML = `Ocorrências · <b>${reportMarkerIds.size.toLocaleString('pt-BR')}</b> acontecimento(s) em MT · ao vivo ${hora}${novos ? ' · <b style="color:#38bdf8;">+' + novos + '</b> novo(s)' : ''}`;
         applyChecks();
         if (window.lucide) lucide.createIcons();
-        setTimeout(loadReports, 10 * 60 * 1000);
+        // Popup em tempo real da(s) ocorrência(s) climática(s) recém-chegadas (apenas em atualizações posteriores)
+        if (novosClimaticos.length) {
+            const jaTinhaDados = reportSeenIds.size > novos;
+            if (jaTinhaDados && window.toast) {
+                novosClimaticos.forEach(nc => {
+                    const coords = nc.marker.getLatLng();
+                    toast(`<b style="color:${nc.color};">${nc.icone === 'cloud-lightning' ? '⚡' : ''}${nc.icone === 'flame' ? '🔥' : ''}</b> ${nc.titulo} — ${nc.rep.city || 'MT'} <span style="opacity:.7;font-size:10px;">(${coords.lat.toFixed(3)},${coords.lng.toFixed(3)})</span>`, true);
+                });
+                const primeio = novosClimaticos[0];
+                try { map.flyTo(primeio.marker.getLatLng(), Math.max(map.getZoom(), 11)); } catch {}
+                setTimeout(() => { try { primeio.marker.openPopup(); } catch {} }, 450);
+            }
+        }
     } catch (e) {
         reportsLoading = false;
         if (meta) meta.textContent = 'Ocorrências · API indisponível';
     }
+    // Tempo real: atualização frequente (a cada 60s) para refletir novas ocorrências
+    clearTimeout(reportsTimer);
+    reportsTimer = setTimeout(loadReports, 60 * 1000);
 }
 
 /* ================= Áreas de interesse ================= */
@@ -3943,6 +4219,8 @@ loadUCs();
 loadTerritorio();
 loadWeather();
 loadFocos();
+loadAbrigos();
+loadCamerasSinfra();
 loadReports();
 renderAreas();
 applyChecks();
@@ -4171,7 +4449,7 @@ function renderFocosFiltered() {
             ? L.marker([f.lat, f.lon], { icon: focoFlameIcon(f.risco_fogo, f.frp, (f.satelite || 'Satélite') + ' · ' + (f.municipio || '')) })
             : L.circleMarker([f.lat, f.lon], {
                 renderer: canvasRenderer, radius: raio,
-                color: cor, weight: .6, fillColor: cor, fillOpacity: .82
+                color: cor, weight: .45, fillColor: cor, fillOpacity: .5
               });
         mk.bindPopup(popup).addTo(focosFilteredLayer);
     });
