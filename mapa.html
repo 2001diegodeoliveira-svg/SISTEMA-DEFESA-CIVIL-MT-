@@ -528,6 +528,58 @@
         .portal-item i, .portal-item svg[data-lucide] { color: var(--blue-glow); }
         .modal-close { margin-top: 8px; width: 100%; background: var(--bg-card-hover); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background .15s; }
 
+        /* ===== Popup central: alertas de chuva + câmeras próximas ===== */
+        #rainAlertModal { position: fixed; inset: 0; z-index: 2200; display: none; align-items: center; justify-content: center; padding: 18px; }
+        #rainAlertModal.open { display: flex; }
+        #rainAlertModal .rain-backdrop { position: absolute; inset: 0; background: rgba(8,12,22,.72); backdrop-filter: blur(7px); }
+        .rain-card {
+            position: relative; width: min(720px, 100%); max-height: 90vh; overflow-y: auto;
+            background: linear-gradient(160deg, #101c33, #0b1526);
+            border: 1px solid var(--glass-border); border-top: 3px solid var(--rain-c);
+            border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.03), 0 0 42px rgba(0,0,0,.4);
+            padding: 18px 20px 16px; font-family: 'Inter', sans-serif;
+            animation: rainIn .32s cubic-bezier(.22,1.2,.36,1);
+        }
+        @keyframes rainIn { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+        .rain-head { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.07); }
+        .rain-icon { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--rain-c); background: color-mix(in srgb, var(--rain-c) 18%, transparent); box-shadow: 0 0 22px color-mix(in srgb, var(--rain-c) 35%, transparent); }
+        .rain-titles { flex: 1; min-width: 0; }
+        .rain-kicker { font-size: 9px; font-weight: 800; letter-spacing: 1.4px; color: var(--rain-c); text-transform: uppercase; }
+        .rain-title { font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 2px; line-height: 1.25; }
+        .rain-sev { flex-shrink: 0; font-size: 9.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; color: var(--rain-c); background: color-mix(in srgb, var(--rain-c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--rain-c) 45%, transparent); }
+        .rain-body { padding: 12px 2px 4px; }
+        .rain-desc { font-size: 12.5px; line-height: 1.65; color: #cbd5e1; margin: 0 0 10px; }
+        .rain-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+        .rain-meta b { color: #e2e8f0; font-weight: 600; }
+        .rain-regioes { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; }
+        .rain-regioes b { color: var(--rain-c); }
+        .rain-cams { border-top: 1px dashed rgba(255,255,255,.1); padding-top: 12px; }
+        .rain-cams-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; }
+        .rain-cams-head svg[data-lucide] { color: #38bdf8; }
+        .rain-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 0 rgba(52,211,153,.6); animation: rainPulse 1.8s infinite; }
+        @keyframes rainPulse { 0% { box-shadow: 0 0 0 0 rgba(52,211,153,.55); } 70% { box-shadow: 0 0 0 7px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
+        .rain-cams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 10px; }
+        .rain-empty-cams { font-size: 11px; color: #94a3b8; background: rgba(148,163,184,.07); border: 1px dashed rgba(148,163,184,.25); border-radius: 10px; padding: 14px; text-align: center; }
+        .rain-cam { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; overflow: hidden; }
+        .rain-cam-video { position: relative; background: #000; }
+        .rain-cam-video iframe { display: block; width: 100%; height: 138px; border: 0; background: transparent; }
+        .rain-cam-tag { position: absolute; top: 7px; left: 7px; display: inline-flex; align-items: center; gap: 4px; font-size: 8.5px; font-weight: 800; letter-spacing: .4px; padding: 3px 7px; border-radius: 999px; background: rgba(6,38,25,.75); color: #34d399; border: 1px solid rgba(52,211,153,.5); }
+        .rain-cam-cap { padding: 8px 10px; }
+        .rain-cam-cap b { font-size: 11px; color: #f1f5f9; display: block; }
+        .rain-cam-cap span { font-size: 9.5px; color: #94a3b8; display: block; margin-top: 1px; }
+        .rain-cam-dist { font-size: 8.5px; color: #38bdf8; margin-top: 3px; }
+        .rain-cam-actions { display: flex; gap: 6px; padding: 0 10px 10px; }
+        .rain-cam-actions a, .rain-cam-actions button { flex: 1; font-size: 9.5px; font-weight: 700; text-align: center; padding: 6px 4px; border-radius: 7px; text-decoration: none; cursor: pointer; border: 1px solid var(--glass-border); background: rgba(255,255,255,.05); color: #e2e8f0; transition: background .15s; }
+        .rain-cam-actions a:hover, .rain-cam-actions button:hover { background: rgba(255,255,255,.1); }
+        .rain-cam-actions a { color: #38bdf8; }
+        .rain-foot { display: flex; gap: 9px; margin-top: 14px; }
+        .rain-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--glass-border); transition: all .15s; }
+        .rain-btn svg[data-lucide] { width: 15px; height: 15px; }
+        .rain-btn.ghost { background: rgba(255,255,255,.04); color: var(--text-muted); }
+        .rain-btn.ghost:hover { background: rgba(255,255,255,.08); color: var(--text-main); }
+        .rain-btn.primary { background: linear-gradient(135deg, var(--rain-c), color-mix(in srgb, var(--rain-c) 62%, #000)); color: #fff; border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--rain-c) 38%, transparent); }
+        .rain-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 26px color-mix(in srgb, var(--rain-c) 48%, transparent); }
+
         /* ===== Toast ===== */
         #toast {
             position: absolute; top: 72px; left: 50%; transform: translateX(-50%) translateY(-8px);
@@ -1808,6 +1860,34 @@
     </div>
 </div>
 
+<!-- Popup central: alertas de chuva (INMET) + câmeras SINFRA próximas -->
+<div id="rainAlertModal" role="alertdialog" aria-modal="true">
+    <div class="rain-backdrop" id="rainBackdrop"></div>
+    <div class="rain-card" id="rainCard">
+        <div class="rain-head">
+            <div class="rain-icon" id="rainIcon"></div>
+            <div class="rain-titles">
+                <div class="rain-kicker" id="rainKicker">Alerta meteorológico · INMET</div>
+                <div class="rain-title" id="rainTitle">Aviso de chuvas intensas</div>
+            </div>
+            <span class="rain-sev" id="rainSev">Perigo</span>
+        </div>
+        <div class="rain-body">
+            <p class="rain-desc" id="rainDesc"></p>
+            <div class="rain-meta" id="rainMeta"></div>
+            <div class="rain-regioes" id="rainRegioes"></div>
+            <div class="rain-cams">
+                <div class="rain-cams-head"><i data-lucide="cctv"></i> Câmeras SINFRA na proximidade <span class="rain-live-dot"></span></div>
+                <div class="rain-cams-grid" id="rainCamsGrid"></div>
+            </div>
+        </div>
+        <div class="rain-foot">
+            <button class="rain-btn ghost" id="rainClose" type="button">Fechar</button>
+            <button class="rain-btn primary" id="rainCenter" type="button"><i data-lucide="map-pin"></i> Ver área no mapa</button>
+        </div>
+    </div>
+</div>
+
 <script src="js/data.js"></script>
 <script src="js/proxy.js"></script>
 <script src="js/api.js"></script>
@@ -2912,6 +2992,162 @@ async function loadCamerasSinfra() {
     }
     clearTimeout(camSinfraTimer);
     camSinfraTimer = setTimeout(loadCamerasSinfra, 5 * 60 * 1000);
+}
+
+/* ================= Popup central: alertas de chuva + câmeras próximas =================
+   Varre os avisos vigentes do INMET (apiprevmet3.inmet.gov.br/avisos/rss) filtrando
+   eventos de chuva/tempestade que cobrem Mato Grosso. Ao detectar um aviso ainda não
+   exibido nesta sessão, abre um modal central com o aviso e, se houver câmeras SINFRA
+   online nas proximidades da área afetada, embute o vídeo ao vivo.                  */
+const RAIN_RSS_URL = 'https://apiprevmet3.inmet.gov.br/avisos/rss';
+const RAIN_MESO_CENTROID = {
+    'Centro-Sul Mato-grossense': [-15.60, -55.80],
+    'Norte Mato-grossense': [-11.20, -55.50],
+    'Nordeste Mato-grossense': [-12.60, -52.30],
+    'Sudeste Mato-grossense': [-15.60, -53.60],
+    'Centro-Oeste de Mato Grosso': [-14.20, -57.70],
+    'Sudoeste Mato-grossense': [-15.70, -58.90],
+};
+const RAIN_AVISO_KEYWORDS = /chuvas?\s+intensas|acumulado\s+de\s+chuva|tempestade|granizo|vendaval/i;
+const RAIN_SEV_INFO = {
+    'Grande Perigo': { lbl: 'Grande Perigo', cor: '#ef4444', peso: 0, icon: 'cloud-lightning' },
+    'Perigo': { lbl: 'Perigo', cor: '#f97316', peso: 1, icon: 'cloud-rain' },
+    'Perigo Potencial': { lbl: 'Atenção', cor: '#eab308', peso: 2, icon: 'cloud-drizzle' },
+};
+let rainAlertQueue = [];
+let rainAlertShown = {};
+let rainAlertShowing = false;
+let rainCurAlert = null;
+
+function rainCampo(html, rotulo) {
+    const re = new RegExp('<th[^>]*>' + rotulo + '</th>[\\s\\S]*?<td>([\\s\\S]*?)</td>', 'i');
+    const m = html.match(re);
+    return m ? m[1].replace(/<[^>]+>/g, '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/\s+/g, ' ').trim() : '';
+}
+function rainFmtDh(str) {
+    const d = new Date(String(str).replace(' ', 'T'));
+    if (isNaN(d)) return '—';
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).replace('.', '');
+}
+function haversineKm(aLat, aLng, bLat, bLng) {
+    const R = 6371;
+    const dLat = (bLat - aLat) * Math.PI / 180, dLng = (bLng - aLng) * Math.PI / 180;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * Math.PI / 180) * Math.cos(bLat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+}
+function rainCamsProximas(lat, lng, n) {
+    const cands = (camSinfraData || []).filter(c => c.online === true)
+        .map(c => ({ ...c, km: haversineKm(lat, lng, Number(c.lat), Number(c.lng)) }))
+        .sort((a, b) => a.km - b.km);
+    return cands.slice(0, n || 3);
+}
+async function checkRainAlerts() {
+    try {
+        const r = await dcProxyFetch(RAIN_RSS_URL);
+        if (!r.ok) return;
+        const xml = await r.text();
+        const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+        const alerts = [];
+        for (const item of items) {
+            const descMat = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/);
+            if (!descMat) continue;
+            const html = descMat[1];
+            const area = String(rainCampo(html, 'Área') || '').replace(/^Aviso para as Áreas:\s*/i, '');
+            const mesos = area.split(/\s*,\s*/).map(s => s.trim()).filter(s => RAIN_MESO_CENTROID[s]);
+            if (!mesos.length) continue;
+            const fim = rainCampo(html, 'Fim');
+            const fimDate = new Date(String(fim).replace(' ', 'T'));
+            if (isNaN(fimDate) || fimDate.getTime() < Date.now()) continue;
+            const evento = rainCampo(html, 'Evento');
+            if (!RAIN_AVISO_KEYWORDS.test(evento)) continue;
+            const severidade = rainCampo(html, 'Severidade');
+            const descricao = rainCampo(html, 'Descrição');
+            const link = (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '';
+            const id = (link.match(/rss\/(\d+)/) || [])[1] || 'e' + Math.abs([...html].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7));
+            let la = 0, lo = 0;
+            mesos.forEach(m => { const c = RAIN_MESO_CENTROID[m]; la += c[0]; lo += c[1]; });
+            alerts.push({
+                id, evento, severidade,
+                inicio: rainCampo(html, 'Início'), fim, descricao, link, mesos,
+                centro: { lat: la / mesos.length, lng: lo / mesos.length },
+                sev: RAIN_SEV_INFO[severidade] || { peso: 2, cor: '#eab308', lbl: 'Atenção', icon: 'cloud-drizzle' },
+            });
+        }
+        alerts.sort((a, b) => a.sev.peso - b.sev.peso || new Date(b.inicio.replace(' ', 'T')) - new Date(a.inicio.replace(' ', 'T')));
+        const novos = alerts.filter(a => !(a.id in rainAlertShown));
+        if (!novos.length) return;
+        novos.forEach(a => { rainAlertShown[a.id] = Date.now(); rainAlertQueue.push(a); });
+        rainAlertShowNext();
+    } catch (e) {}
+}
+function rainAlertShowNext() {
+    if (rainAlertShowing || !rainAlertQueue.length) return;
+    const alert = rainAlertQueue.shift();
+    rainAlertShowing = true;
+    rainCurAlert = alert;
+    const modal = document.getElementById('rainAlertModal');
+    const card = document.getElementById('rainCard');
+    card.style.setProperty('--rain-c', alert.sev.cor);
+    document.getElementById('rainIcon').innerHTML = `<i data-lucide="${alert.sev.icon}"></i>`;
+    document.getElementById('rainTitle').textContent = 'Aviso de ' + alert.evento;
+    document.getElementById('rainSev').textContent = alert.sev.lbl;
+    document.getElementById('rainKicker').textContent = 'Alerta meteorológico · INMET · ' + alturaSeveridade(alert.sev);
+    document.getElementById('rainDesc').textContent = alert.descricao || 'Previsão de chuvas intensas para Mato Grosso. Defesa Civil recomenda atenção e acompanhamento.';
+    document.getElementById('rainMeta').innerHTML = `
+        <span><b>Início:</b> ${rainFmtDh(alert.inicio)}</span>
+        <span><b>Válido até:</b> ${rainFmtDh(alert.fim)}</span>
+        <span><b>ID:</b> ${alert.id}</span>`;
+    document.getElementById('rainRegioes').innerHTML = `<b>Regiões afetadas (MT):</b> ${alert.mesos.join(', ')}`;
+    const cams = rainCamsProximas(alert.centro.lat, alert.centro.lng, 3);
+    const grid = document.getElementById('rainCamsGrid');
+    if (!cams.length) {
+        grid.innerHTML = '<div class="rain-empty-cams">Sem câmeras SINFRA ao vivo nas proximidades desta área no momento.</div>';
+    } else {
+        grid.innerHTML = cams.map(cam => `
+            <div class="rain-cam">
+                <div class="rain-cam-video">
+                    <iframe src="${cam.link}" title="${cam.localizacao || cam.slug}" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>
+                    <span class="rain-cam-tag">AO VIVO</span>
+                </div>
+                <div class="rain-cam-cap">
+                    <b>${cam.localizacao || cam.slug}</b>
+                    <span>${[cam.obra, cam.municipio].filter(Boolean).join(' · ') || 'SINFRA-MT'}</span>
+                    <div class="rain-cam-dist">≈ ${Math.round(cam.km).toLocaleString('pt-BR')} km do centro do aviso</div>
+                </div>
+                <div class="rain-cam-actions">
+                    <a href="${cam.link}" target="_blank" rel="noopener">Abrir monitor</a>
+                    <button type="button" onclick="rainFlyToCam(${cam.lat}, ${cam.lng})">Ver no mapa</button>
+                </div>
+            </div>`).join('');
+    }
+    if (window.lucide) lucide.createIcons();
+    modal.classList.add('open');
+}
+function alturaSeveridade(sev) { return { 'Grande Perigo': 'Perigo extremo', 'Perigo': 'Atenção alta', 'Perigo Potencial': 'Nível de atenção' }[sev.lbl] || 'Atenção'; }
+function rainCloseModal() {
+    document.getElementById('rainAlertModal').classList.remove('open');
+    rainAlertShowing = false;
+    rainCurAlert = null;
+    setTimeout(rainAlertShowNext, 250);
+}
+function rainCenterMap() {
+    if (rainCurAlert) {
+        map.setView([rainCurAlert.centro.lat, rainCurAlert.centro.lng], 7);
+        if (camSinfraLayer && checkState.camsSinfra) { try { camSinfraLayer.addTo(map); } catch (e) {} }
+    }
+    rainCloseModal();
+}
+function rainFlyToCam(lat, lng) {
+    map.setView([lat, lng], 14);
+    if (camSinfraLayer && checkState.camsSinfra) { try { camSinfraLayer.addTo(map); } catch (e) {} }
+    rainCloseModal();
+}
+function rainBindModal() {
+    document.getElementById('rainClose').addEventListener('click', rainCloseModal);
+    document.getElementById('rainCenter').addEventListener('click', rainCenterMap);
+    document.getElementById('rainBackdrop').addEventListener('click', rainCloseModal);
+    const modal = document.getElementById('rainAlertModal');
+    modal.addEventListener('keydown', e => { if (e.key === 'Escape') rainCloseModal(); });
 }
 
 /* ================= CPTEC/INPE — Previsão 6 dias ================= */
@@ -4222,6 +4458,9 @@ loadWeather();
 loadFocos();
 loadAbrigos();
 loadCamerasSinfra();
+rainBindModal();
+checkRainAlerts();
+setInterval(checkRainAlerts, 10 * 60 * 1000);
 loadReports();
 renderAreas();
 applyChecks();
