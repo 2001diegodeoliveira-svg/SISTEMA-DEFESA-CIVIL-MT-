@@ -16,9 +16,11 @@ const DEFAULT_SEED = [
   { usuario: 'operador', senha: 'mt199',   nome: 'Operador',    perfil: 'avancado',  municipio: 'Cuiabá' },
   { usuario: 'comum',  senha: 'comum123',  nome: 'Cidadão',     perfil: 'comum',     municipio: '' },
   { usuario: 'gestor', senha: 'mt199',     nome: 'Gestor',      perfil: 'municipal', municipio: 'Sinop' },
+  { usuario: 'coordenador_caceres', senha: 'mt199', nome: 'Coord. Cáceres', perfil: 'municipal', municipio: 'Cáceres' },
+  { usuario: 'gestor_rondonopolis', senha: 'mt199', nome: 'Gestor Rondonópolis', perfil: 'municipal', municipio: 'Rondonópolis' },
+  { usuario: 'coordenadora_vg', senha: 'mt199', nome: 'Coord. Várzea Grande', perfil: 'municipal', municipio: 'Várzea Grande' },
+  { usuario: 'gestor_barra', senha: 'mt199', nome: 'Gestor Barra do Garças', perfil: 'municipal', municipio: 'Barra do Garças' },
   { usuario: 'Dev@2026', senha: 'Dev@2026', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
-  // Credencial padrão de acesso (fase atual): usada por todos os coordenadores
-  { usuario: 'adm',   senha: 'dev123',  nome: 'Coordenador', perfil: 'municipal', municipio: '', forceSenha: true },
 ];
 
 function seedUsers() {
@@ -30,33 +32,22 @@ function seedUsers() {
 
 async function ensureSeededUsers() {
   let users = await readCollection('users');
-  if (!Array.isArray(users)) users = [];
+  if (users && users.length) return users;
 
-  // Upsert: garante que os usuários de seed existem e que a credencial padrão
-  // "adm/dev123" tem sempre a senha correta (mesmo em bases já populadas).
-  let changed = false;
-  const porUsuario = new Map(users.map(u => [u.usuario, u]));
-  for (const s of seedUsers()) {
-    const existente = porUsuario.get(s.usuario);
-    if (!existente) {
-      users.push({
-        id: 'U' + (users.length + 1),
-        usuario: s.usuario,
-        senhaHash: bcrypt.hashSync(s.senha, 10),
-        nome: s.nome,
-        perfil: s.perfil,
-        municipio: s.municipio || '',
-        criadoEm: new Date().toISOString(),
-      });
-      changed = true;
-    } else if (s.forceSenha) {
-      if (!bcrypt.compareSync(s.senha, existente.senhaHash)) {
-        existente.senhaHash = bcrypt.hashSync(s.senha, 10);
-        changed = true;
-      }
-    }
+  const seed = seedUsers();
+  users = [];
+  for (const u of seed) {
+    users.push({
+      id: 'U' + (users.length + 1),
+      usuario: u.usuario,
+      senhaHash: bcrypt.hashSync(u.senha, 10),
+      nome: u.nome,
+      perfil: u.perfil,
+      municipio: u.municipio || '',
+      criadoEm: new Date().toISOString(),
+    });
   }
-  if (changed) await writeCollection('users', users);
+  await writeCollection('users', users);
   return users;
 }
 

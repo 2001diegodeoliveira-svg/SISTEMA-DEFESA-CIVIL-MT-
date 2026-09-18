@@ -1333,22 +1333,6 @@
         </div>
         <div class="meta-line">Consulta por clique: nome, código e área</div>
 
-        <div class="group-title"><i data-lucide="building-2"></i> Coordenação municipal <span class="meta-line" style="display:inline;">· área restrita</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px;padding:2px 8px;">
-            <select id="munRestrictInput" class="filter-select" style="width:100%;margin:0;">
-                <option value="">— Selecione seu município —</option>
-            </select>
-            <div style="display:flex;gap:6px;">
-                <button id="munRestrictBtn" onclick="restricaoMunicipalAplicar()" style="flex:1.5;background:linear-gradient(135deg,#f9731c,#ea580c);border:none;color:#fff;font-size:10.5px;font-weight:700;padding:7px;border-radius:6px;cursor:pointer;">
-                    <i data-lucide="shield-check"></i> Restringir mapa
-                </button>
-                <button id="munReleaseBtn" onclick="liberarRestricaoMunicipal()" hidden style="flex:1;background:rgba(255,255,255,.06);border:1px solid var(--glass-border);color:#94a3b8;font-size:10.5px;font-weight:700;padding:7px;border-radius:6px;cursor:pointer;">
-                    <i data-lucide="shield-off"></i> Liberar
-                </button>
-            </div>
-        </div>
-        <div class="meta-line" id="metaRestricao"><i data-lucide="shield"></i> <b>Área restrita:</b> coordene selecionando seu município</div>
-
         <div class="group-title"><i data-lucide="sprout"></i> Ambiente</div>
         <div class="check-row" data-check="ucs">
             <label><span class="swatch" style="background:#34d399;"></span><i data-lucide="trees"></i>Unidades de Conservação</label>
@@ -1946,12 +1930,6 @@ const centroidByCod = {};
 const codByNomeNormalizado = {};
 let munNomeByCod = {};
 let ibgeLoadedAt = null;
-/* Coordenação municipal — dados geométricos dos municípios para o modo restrito */
-const municipioGeomByCod = {};
-const municipioBoundsByCod = {};
-const municipioLyrByCod = {};
-let restricaoMunicipal = null;      // { cod, nome, bounds, geom }
-let restricaoMask = null;
 
 function normalizarNome(s) {
     return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -2181,10 +2159,6 @@ async function loadTerritorio() {
                 const centro = lyr.getBounds().getCenter();
                 centroidByCod[cod] = { lat: centro.lat, lng: centro.lng };
                 codByNomeNormalizado[normalizarNome(nome)] = cod;
-                municipioGeomByCod[cod] = f.geometry;
-                municipioBoundsByCod[cod] = lyr.getBounds();
-                municipioLyrByCod[cod] = lyr;
-                munRestrictAddOption(cod, nome);
                 lyr.bindTooltip(nome, {
                     permanent: false, direction: 'center',
                     className: 'mun-tooltip'
@@ -2228,9 +2202,8 @@ async function loadTerritorio() {
                 });
             }
         }).addTo(map);
-        populateMunRestrictSelect();
-        updateRestricaoUI();
         focarMunicipioInicial();
+        aplicarRestricaoMunicipio();
         buildVigiaMaisLayer(nomeByCod);
         populateMsnCity();
     } catch (e) {
@@ -2452,145 +2425,13 @@ function focarMunicipio(alvo) {
 function focarMunicipioInicial() {
     if (focarMunicipioFeito) return;
     const porUrl = new URLSearchParams(location.search).get('municipio');
-    if (porUrl) {
-        focarMunicipioFeito = focarMunicipio(porUrl);
-        ativarRestricaoMunicipal(porUrl, true);
-        return;
-    }
+    if (porUrl) { focarMunicipioFeito = focarMunicipio(porUrl); return; }
     try {
         const sessao = JSON.parse(localStorage.getItem('dcmt_session') || 'null');
-        if (sessao && sessao.perfil === 'municipal') {
-            if (sessao.municipio) {
-                focarMunicipioFeito = focarMunicipio(sessao.municipio);
-                ativarRestricaoMunicipal(sessao.municipio, true);
-            }
-            return; // coordenador sem município ainda: deixa escolher no painel
+        if (sessao && sessao.perfil === 'municipal' && sessao.municipio) {
+            focarMunicipioFeito = focarMunicipio(sessao.municipio);
         }
     } catch (e) {}
-    // Restaura a restrição persistida (ex.: coordenador que já escolheu a cidade)
-    try {
-        const guardado = localStorage.getItem('dcmt_municipio_restrito');
-        if (guardado && !restricaoMunicipal) {
-            const info = JSON.parse(guardado);
-            if (info && info.cod) ativarRestricaoMunicipal(info.cod, true);
-        }
-    } catch (e) {}
-}
-
-/* ================= Coordenação municipal — modo restrito =================
-   Quando o coordenador seleciona seu município, o mapa fica limitado a ele:
-   - máscara escura esconde todo o estado exceto o município (pane 680);
-   - maxBounds + zoom mínimo impedem navegar para fora da área;
-   - o município ativo é destacado em laranja na malha.                 */
-function restricaoPaneEnsure() {
-    if (!map.getPane('restrictPane')) {
-        map.createPane('restrictPane');
-        map.getPane('restrictPane').style.zIndex = 680;
-        map.getPane('restrictPane').style.pointerEvents = 'none';
-    }
-}
-function buildMaskPolygon(geom) {
-    const pad = 4;
-    const outer = [
-        [MT_LAT_MIN - pad, MT_LON_MIN - pad],
-        [MT_LAT_MAX + pad, MT_LON_MIN - pad],
-        [MT_LAT_MAX + pad, MT_LON_MAX + pad],
-        [MT_LAT_MIN - pad, MT_LON_MAX + pad],
-        [MT_LAT_MIN - pad, MT_LON_MIN - pad],
-    ];
-    const rings = [outer];
-    const polys = geom.type === 'Polygon' ? [geom.coordinates] : (geom.coordinates || []);
-    polys.forEach(p => {
-        if (p && p[0] && Array.isArray(p[0][0])) rings.push(p[0].map(c => [c[1], c[0]]));
-    });
-    return rings;
-}
-function restricaoResolve(alvo) {
-    if (!alvo) return null;
-    const s = String(alvo);
-    const cod = /^\d+$/.test(s) && municipioGeomByCod[s] ? s : codByNomeNormalizado[normalizarNome(s)];
-    if (!cod || !municipioGeomByCod[cod]) return null;
-    return cod;
-}
-function munRestrictAddOption(cod, nome) {
-    const sel = document.getElementById('munRestrictInput');
-    if (!sel) return;
-    const opt = document.createElement('option');
-    opt.value = cod; opt.textContent = nome;
-    sel.appendChild(opt);
-}
-function populateMunRestrictSelect() {
-    const sel = document.getElementById('munRestrictInput');
-    if (!sel || sel.options.length > 1) return;
-    Object.keys(centroidByCod).forEach(cod => munRestrictAddOption(cod, munNomeByCod[cod] || cod));
-}
-function ativarRestricaoMunicipal(alvo, silencioso = false) {
-    const cod = restricaoResolve(alvo);
-    if (!cod) { if (!silencioso) toast('Município não encontrado: ' + alvo); return false; }
-    const geom = municipioGeomByCod[cod], b = municipioBoundsByCod[cod];
-    const nome = munNomeByCod[cod] || cod;
-    restricaoPaneEnsure();
-    if (restricaoMask) map.removeLayer(restricaoMask);
-    restricaoMask = L.polygon(buildMaskPolygon(geom), {
-        pane: 'restrictPane',
-        color: 'rgba(2,6,16,0)', weight: 0,
-        fillColor: '#040914', fillOpacity: .86,
-        interactive: false
-    }).addTo(map);
-    // Destaque do município ativo
-    munLayer.eachLayer(l => {
-        munLayer.resetStyle(l);
-        if (String(l.feature && l.feature.properties && l.feature.properties.codarea) === cod) {
-            l.setStyle({ color: '#f9731c', weight: 2.5, opacity: .95, fillColor: '#f9731c', fillOpacity: .12 });
-            l.bringToFront();
-        }
-    });
-    restricaoMunicipal = { cod, nome, bounds: b, geom };
-    const padBounds = b.pad(0.12);
-    map.setMaxBounds(padBounds);
-    const zoomMin = Math.max(7, map.getBoundsZoom(b, false, [40, 40]));
-    map.setMinZoom(zoomMin);
-    map.fitBounds(b, { padding: [36, 36], maxZoom: 12 }); // z13+ permite biometria/radar
-    // Persistência + contexto da sessão
-    localStorage.setItem('dcmt_municipio_restrito', JSON.stringify({ cod, nome, ts: Date.now() }));
-    try {
-        const sessao = JSON.parse(localStorage.getItem('dcmt_session') || 'null');
-        if (sessao) { sessao.municipio = nome; localStorage.setItem('dcmt_session', JSON.stringify(sessao)); }
-    } catch (e) {}
-    const sel = document.getElementById('munRestrictInput');
-    if (sel) sel.value = cod;
-    updateRestricaoUI();
-    if (!silencioso) toast('Modo restrito: <b>' + nome + '</b>', true);
-    return true;
-}
-function liberarRestricaoMunicipal() {
-    if (restricaoMask) { map.removeLayer(restricaoMask); restricaoMask = null; }
-    map.setMaxBounds(null);
-    map.setMinZoom(3);
-    if (munLayer) munLayer.eachLayer(l => munLayer.resetStyle(l));
-    restricaoMunicipal = null;
-    localStorage.removeItem('dcmt_municipio_restrito');
-    updateRestricaoUI();
-    if (MT_BBOX) map.fitBounds(MT_BBOX);
-    toast('Modo restrito <b>desativado</b>', true);
-}
-function updateRestricaoUI() {
-    const sel = document.getElementById('munRestrictInput');
-    const meta = document.getElementById('metaRestricao');
-    const btn = document.getElementById('munReleaseBtn');
-    if (sel) sel.value = restricaoMunicipal ? restricaoMunicipal.cod : '';
-    if (btn) btn.hidden = !restricaoMunicipal;
-    if (meta) {
-        meta.innerHTML = restricaoMunicipal
-            ? `<i data-lucide="shield-check"></i> <b>Mapa restrito</b> a <b style="color:#f9731c;">${restricaoMunicipal.nome}</b>`
-            : '<i data-lucide="shield"></i> <b>Área restrita:</b> coordene selecionando seu município';
-    }
-    if (window.lucide) lucide.createIcons();
-}
-function restricaoMunicipalAplicar() {
-    const sel = document.getElementById('munRestrictInput');
-    if (!sel || !sel.value) { toast('Selecione um município primeiro.'); return; }
-    ativarRestricaoMunicipal(sel.value);
 }
 
 /* ================= Ambiente: UCs via WMS CNUC ================= */
@@ -3216,8 +3057,20 @@ async function checkRainAlerts() {
             const mesos = area.split(/\s*,\s*/).map(s => s.trim()).filter(s => RAIN_MESO_CENTROID[s]);
             if (!mesos.length) continue;
             const fim = rainCampo(html, 'Fim');
+            const inicio = rainCampo(html, 'Início');
+            /* Filtro de DATA ATUAL: só gera alerta quando o aviso está valendo AGORA
+               e suas datas inicial/final caem dentro do intervalo de hoje (±1 dia).
+               Avisos antigos ou futuros (datas longe da data atual) são ignorados —
+               "mais ou menos" da data atual o sistema não dispara alerta.        */
+            const DAY_MS = 86400000;
+            const diaHoje = Math.floor(Date.now() / DAY_MS);
+            const inicioDate = new Date(String(inicio).replace(' ', 'T'));
             const fimDate = new Date(String(fim).replace(' ', 'T'));
-            if (isNaN(fimDate) || fimDate.getTime() < Date.now()) continue;
+            if (isNaN(inicioDate) || isNaN(fimDate)) continue;
+            if (inicioDate.getTime() > Date.now()) continue;            // ainda não começou
+            if (fimDate.getTime() < Date.now()) continue;               // já terminou
+            if (Math.abs(Math.floor(inicioDate.getTime() / DAY_MS) - diaHoje) > 1) continue;
+            if (Math.abs(Math.floor(fimDate.getTime() / DAY_MS) - diaHoje) > 1) continue;
             const evento = rainCampo(html, 'Evento');
             if (!RAIN_AVISO_KEYWORDS.test(evento)) continue;
             const severidade = rainCampo(html, 'Severidade');
@@ -3228,7 +3081,7 @@ async function checkRainAlerts() {
             mesos.forEach(m => { const c = RAIN_MESO_CENTROID[m]; la += c[0]; lo += c[1]; });
             alerts.push({
                 id, evento, severidade,
-                inicio: rainCampo(html, 'Início'), fim, descricao, link, mesos,
+                inicio, fim, descricao, link, mesos,
                 centro: { lat: la / mesos.length, lng: lo / mesos.length },
                 sev: RAIN_SEV_INFO[severidade] || { peso: 2, cor: '#eab308', lbl: 'Atenção', icon: 'cloud-drizzle' },
             });
@@ -4612,6 +4465,39 @@ document.getElementById('mpClose').addEventListener('click', () =>
     document.getElementById('munPanel').classList.remove('open'));
 
 /* ================= Inicialização ================= */
+/* Controle de acesso por perfil:
+   - comum → sem mapa (apenas alertas e orientações)
+   - municipal → restrição de navegação ao próprio município */
+const sessaoAtual = dcGetSession();
+if (sessaoAtual && sessaoAtual.perfil === 'comum') {
+    location.replace('alertas.html');
+}
+let restricaoMun = null;
+function aplicarRestricaoMunicipio() {
+    const s = dcGetSession();
+    if (!s || s.perfil !== 'municipal' || !s.municipio) return;
+    const cod = codByNomeNormalizado[normalizarNome(s.municipio)];
+    if (!cod) return;
+    const alvo = (munLayer.getLayers() || []).find(l =>
+        String(l.feature && l.feature.properties && l.feature.properties.codarea) === cod);
+    if (!alvo) return;
+    const b = alvo.getBounds();
+    restricaoMun = { cod, nome: s.municipio, layer: alvo };
+    alvo.setStyle({ weight: 3.2, opacity: 1, color: '#f9731c', fillColor: '#f9731c', fillOpacity: .28 });
+    alvo.bringToFront();
+    map.setMaxBounds(b.pad(0.22));
+    map.setMinZoom(9);
+    map.fitBounds(b.pad(-0.03), { maxZoom: 11 });
+    window.__dcRestricao = { cod, nome: s.municipio, minZoom: map.getMinZoom(), maxBounds: !!(map.options && map.options.maxBounds), zoom: map.getZoom() };
+    if (!document.getElementById('restricaoMunChip')) {
+        const chip = document.createElement('div');
+        chip.id = 'restricaoMunChip';
+        chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>Visão restrita a <b>${s.municipio}</b></span>`;
+        chip.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:9px;background:rgba(11,19,41,.94);border:1px solid rgba(249,115,22,.6);color:#f1f5f9;font-size:12px;font-weight:600;padding:10px 15px;border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 10px 26px rgba(0,0,0,.5);';
+        document.body.appendChild(chip);
+        if (window.lucide) lucide.createIcons();
+    }
+}
 loadUCs();
 loadTerritorio();
 loadWeather();

@@ -55,6 +55,15 @@
         createArea: function (data) { return request('areas', { method: 'POST', body: data }); },
         deleteArea: function (id) { return request('areas/' + id, { method: 'DELETE' }); },
 
+        // Gestão por município
+        gestao: function (municipio) { return request('gestao?municipio=' + encodeURIComponent(municipio)); },
+        gestaoSalvar: function (municipio, secao, item) {
+            return request('gestao', { method: 'POST', body: { municipio: municipio, secao: secao, item: item } });
+        },
+        gestaoRemover: function (municipio, secao, id) {
+            return request('gestao?municipio=' + encodeURIComponent(municipio) + '&secao=' + encodeURIComponent(secao) + '&id=' + encodeURIComponent(id), { method: 'DELETE' });
+        },
+
         // Utilidades
         getToken: token,
     };

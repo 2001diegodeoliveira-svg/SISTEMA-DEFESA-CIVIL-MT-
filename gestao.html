@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="imagens/logo.png">
+    <title>Gestão por Município | Defesa Civil MT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #293548;
+            --accent-orange: #f9731c;
+            --accent-orange-hover: #ea580c;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.12);
+            --blue-glow: #00d2ff;
+            --green: #22c55e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        html { background: var(--bg-dark); }
+        body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; }
+        [data-lucide] { width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 4%; background: linear-gradient(180deg, rgba(11,19,41,.97), rgba(11,19,41,.85));
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .logo-area { display: flex; align-items: center; gap: 13px; }
+        .logo-area img { height: 44px; }
+        .logo-text h1 { font-size: 16px; font-weight: 700; letter-spacing: .4px; }
+        .logo-text span { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; }
+        nav ul { display: flex; list-style: none; gap: 26px; }
+        nav ul li a { text-decoration: none; color: var(--text-muted); font-size: 13.5px; font-weight: 500; transition: color .2s; padding-bottom: 5px; position: relative; }
+        nav ul li a:hover, nav ul li a.active { color: var(--text-main); }
+        nav ul li a.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background: var(--accent-orange); }
+        @media (max-width: 900px) { nav ul { display: none; } }
+
+        .page-wrap { display: grid; grid-template-columns: 300px 1fr; gap: 0; min-height: calc(100vh - 70px); }
+        @media (max-width: 960px) { .page-wrap { grid-template-columns: 1fr; } }
+
+        .side {
+            background: linear-gradient(180deg, rgba(30,41,59,.35), rgba(15,23,42,.6));
+            border-right: 1px solid var(--border-color);
+            padding: 18px 14px 26px;
+        }
+        @media (max-width: 960px) { .side { border-right: none; border-bottom: 1px solid var(--border-color); } }
+
+        .mun-box { padding: 14px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 16px; }
+        .mun-box label { display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .7px; font-weight: 700; margin-bottom: 7px; }
+        .mun-box select {
+            width: 100%; background: var(--bg-dark); color: var(--text-main); border: 1px solid var(--border-color);
+            border-radius: 7px; padding: 9px 10px; font-size: 13px; font-weight: 600; outline: none;
+        }
+        .mun-box select:focus { border-color: rgba(249,115,22,.5); }
+        .mun-fixed { display: flex; align-items: center; gap: 10px; }
+        .mun-fixed i { color: var(--accent-orange); width: 18px; height: 18px; }
+        .mun-fixed b { display: block; font-size: 14px; }
+        .mun-fixed span { font-size: 10.5px; color: var(--text-muted); }
+        .banner { font-size: 11.5px; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; line-height: 1.45; }
+        .banner.warn { background: rgba(234,179,8,.12); border: 1px solid rgba(234,179,8,.35); color: #fde68a; }
+
+        .tabs-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; font-weight: 700; margin: 0 6px 8px; }
+        .tab {
+            display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+            background: none; border: 1px solid transparent; color: var(--text-muted);
+            padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s;
+        }
+        .tab i { color: var(--text-muted); width: 16px; height: 16px; transition: color .15s; }
+        .tab:hover { background: rgba(255,255,255,.04); color: var(--text-main); }
+        .tab.active { background: linear-gradient(135deg, rgba(249,115,22,.18), rgba(249,115,22,.05)); border-color: rgba(249,115,22,.35); color: var(--text-main); }
+        .tab.active i { color: var(--accent-orange); }
+        .tab em { margin-left: auto; background: rgba(148,163,184,.15); color: var(--text-main); font-style: normal; font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
+        .tab.active em { background: rgba(249,115,22,.25); }
+
+        main { padding: 22px 26px 60px; max-width: 1100px; }
+        .p-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+        .p-head h2 { font-size: 21px; font-weight: 800; }
+        .p-head p { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; max-width: 720px; line-height: 1.5; }
+        .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+        .p-grid-single { grid-template-columns: 1fr; }
+        @media (max-width: 960px) { .p-grid { grid-template-columns: 1fr; } }
+
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; }
+        .card-ttl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .7px; font-weight: 700; margin-bottom: 14px; border-left: 3px solid var(--accent-orange); padding-left: 10px; }
+        .form-card .card-ttl { margin-top: 0; }
+
+        .fld { display: block; margin-bottom: 12px; }
+        .fld > span { display: block; font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; }
+        .fld input, .fld select, .fld textarea {
+            width: 100%; background: var(--bg-dark); color: var(--text-main);
+            border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 11px; font-size: 13px; outline: none; transition: border-color .15s;
+        }
+        .fld input:focus, .fld select:focus, .fld textarea:focus { border-color: rgba(249,115,22,.5); }
+        .fld textarea { resize: vertical; min-height: 58px; }
+        .fld select { appearance: auto; cursor: pointer; }
+
+        .coord-field { display: flex; gap: 8px; }
+        .coord-field input { flex: 1; }
+        .btn-mini {
+            display: inline-flex; align-items: center; gap: 5px; background: rgba(249,115,22,.14);
+            border: 1px solid rgba(249,115,22,.35); color: var(--accent-orange); font-weight: 700; font-size: 11.5px;
+            padding: 7px 12px; border-radius: 7px; cursor: pointer; transition: background .15s; white-space: nowrap;
+        }
+        .btn-mini:hover { background: rgba(249,115,22,.25); }
+        .btn-mini.ghost { background: rgba(255,255,255,.05); border-color: var(--border-color); color: var(--text-muted); }
+        .btn-mini.ghost:hover { background: rgba(255,255,255,.1); color: var(--text-main); }
+        .form-actions { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-save {
+            display: inline-flex; align-items: center; gap: 7px; background: var(--accent-orange); color: #fff;
+            border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all .15s;
+        }
+        .btn-save:hover { background: var(--accent-orange-hover); transform: translateY(-1px); }
+        .btn-del { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid rgba(239,68,68,.4); color: #f87171; padding: 9px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all .15s; }
+        .btn-del:hover { background: rgba(239,68,68,.12); }
+
+        .empty { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 12.5px; }
+        .empty i { width: 18px; height: 18px; }
+
+        .row { display: flex; align-items: center; gap: 12px; padding: 11px 6px; border-bottom: 1px solid rgba(255,255,255,.04); }
+        .row:last-child { border-bottom: none; }
+        .row .r-main { flex: 1; min-width: 0; }
+        .row .r-main b { display: block; font-size: 13.5px; font-weight: 600; }
+        .row .r-main span { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row .r-act { display: flex; gap: 7px; }
+        .chip { font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 9px; background: rgba(0,210,255,.12); color: var(--blue-glow); white-space: nowrap; }
+
+        .mm-wrap { margin-top: 10px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; height: 260px; }
+        .mm-wrap .leaflet-container { background: #0d1526; font-family: 'Inter', sans-serif; }
+
+        .toast {
+            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-orange);
+            color: var(--text-main); font-size: 13px; font-weight: 600; padding: 12px 20px; border-radius: 9px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.5); opacity: 0; transition: all .25s; z-index: 5000; pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.ok { border-left-color: var(--green); }
+
+        .loading { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; padding: 30px 6px; }
+        .loading i { animation: luSpin 1s linear infinite; color: var(--accent-orange); }
+        @keyframes luSpin { to { transform: rotate(360deg); } }
+
+        footer { border-top: 1px solid var(--border-color); padding: 18px 4%; font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <img src="imagens/logo.png" alt="Defesa Civil MT">
+            <div class="logo-text">
+                <h1>DEFESA CIVIL</h1>
+                <span>ESTADO DE MATO GROSSO</span>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li><a href="mapa.html">Mapa</a></li>
+                <li><a href="alertas.html">Alertas</a></li>
+                <li><a href="painel.html">Painel</a></li>
+                <li><a href="gestao.html" class="active">Gestão</a></li>
+            </ul>
+        </nav>
+        <div id="userArea"></div>
+    </header>
+
+    <div class="page-wrap">
+        <aside class="side">
+            <div class="mun-box">
+                <div id="munLockNotice"></div>
+                <div id="munSelWrap">
+                    <label>Município</label>
+                    <select id="munSel" onchange="GESTAO.onMun()">
+                        <option value="">Carregando municípios…</option>
+                    </select>
+                </div>
+                <div id="munFixed"></div>
+            </div>
+            <div class="tabs-title">Seções de Gestão</div>
+            <nav id="tabsNav"></nav>
+        </aside>
+        <main>
+            <div id="panelArea">
+                <div class="loading"><i data-lucide="loader"></i> Carregando dados do município…</div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <span><strong>DEFESA CIVIL DO ESTADO DE MATO GROSSO</strong> · Gestão por Município</span>
+        <span>Todos os direitos reservados © 2026</span>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/gestao.js"></script>
+    <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>
