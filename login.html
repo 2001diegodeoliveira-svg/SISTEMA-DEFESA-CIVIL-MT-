@@ -171,6 +171,7 @@
     </footer>
 
     <script src="js/data.js"></script>
+    <script src="js/municipios.js"></script>
     <script src="js/proxy.js"></script>
     <script src="js/api.js"></script>
     <script src="js/session.js"></script>
@@ -210,22 +211,31 @@
             municipios = [];
             munSelect.disabled = true;
             munSelect.innerHTML = '<option value="">Carregando municípios...</option>';
+            let lista = null;
             try {
                 const r = await fetch('api/municipios');
                 const j = await r.json();
-                municipios = (j && j.municipios) || [];
-                munSelect.disabled = false;
-                munSelect.innerHTML = '<option value="">Selecione o município...</option>';
-                municipios.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.usuario;
-                    opt.textContent = m.municipio;
-                    munSelect.appendChild(opt);
+                if (j && Array.isArray(j.municipios) && j.municipios.length) lista = j.municipios;
+            } catch (e) { /* segue para fallback local */ }
+            if (!lista && Array.isArray(window.DC_MUNICIPIOS)) {
+                lista = window.DC_MUNICIPIOS.map(function (nome) {
+                    return { municipio: nome, usuario: dcNormUsuario(nome) };
                 });
-            } catch (e) {
+            }
+            if (!lista || !lista.length) {
                 munSelect.disabled = true;
                 munSelect.innerHTML = '<option value="">Falha ao carregar municípios</option>';
+                return;
             }
+            municipios = lista;
+            munSelect.disabled = false;
+            munSelect.innerHTML = '<option value="">Selecione o município de Mato Grosso...</option>';
+            municipios.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.usuario;
+                opt.textContent = m.municipio;
+                munSelect.appendChild(opt);
+            });
         }
 
         munSelect.addEventListener('change', function () {
