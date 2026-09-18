@@ -5,6 +5,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
+const { MUNICIPIOS_SEED } = require('./municipios');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
 const JWT_EXP = process.env.JWT_EXP || '12h';
@@ -22,6 +23,7 @@ const DEFAULT_SEED = [
   { usuario: 'coordenadora_vg', senha: 'defesa123', nome: 'Coord. Várzea Grande', perfil: 'municipal', municipio: 'Várzea Grande' },
   { usuario: 'gestor_barra', senha: 'defesa123', nome: 'Gestor Barra do Garças', perfil: 'municipal', municipio: 'Barra do Garças' },
   { usuario: 'Dev@2026', senha: 'defesa123', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
+  ...MUNICIPIOS_SEED,
 ];
 
 function seedUsers() {
