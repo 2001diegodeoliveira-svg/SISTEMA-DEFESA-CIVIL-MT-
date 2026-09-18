@@ -12,15 +12,16 @@ const JWT_EXP = process.env.JWT_EXP || '12h';
 /* Usuários padrão de demonstração (credenciais abaixo — só para dev).
    Em produção, defina SEED_USERS e JWT_SECRET no ambiente. */
 const DEFAULT_SEED = [
-  { usuario: 'admin',  senha: 'admin123',  nome: 'Coordenador', perfil: 'admin',     municipio: 'Cuiabá' },
-  { usuario: 'operador', senha: 'mt199',   nome: 'Operador',    perfil: 'avancado',  municipio: 'Cuiabá' },
-  { usuario: 'comum',  senha: 'comum123',  nome: 'Cidadão',     perfil: 'comum',     municipio: '' },
-  { usuario: 'gestor', senha: 'mt199',     nome: 'Gestor',      perfil: 'municipal', municipio: 'Sinop' },
-  { usuario: 'coordenador_caceres', senha: 'mt199', nome: 'Coord. Cáceres', perfil: 'municipal', municipio: 'Cáceres' },
-  { usuario: 'gestor_rondonopolis', senha: 'mt199', nome: 'Gestor Rondonópolis', perfil: 'municipal', municipio: 'Rondonópolis' },
-  { usuario: 'coordenadora_vg', senha: 'mt199', nome: 'Coord. Várzea Grande', perfil: 'municipal', municipio: 'Várzea Grande' },
-  { usuario: 'gestor_barra', senha: 'mt199', nome: 'Gestor Barra do Garças', perfil: 'municipal', municipio: 'Barra do Garças' },
-  { usuario: 'Dev@2026', senha: 'Dev@2026', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
+  { usuario: 'defesa', senha: 'defesa123', nome: 'Defesa Civil', perfil: 'admin',     municipio: 'Cuiabá' },
+  { usuario: 'admin',  senha: 'defesa123', nome: 'Coordenador', perfil: 'admin',     municipio: 'Cuiabá' },
+  { usuario: 'operador', senha: 'defesa123', nome: 'Operador',   perfil: 'avancado',  municipio: 'Cuiabá' },
+  { usuario: 'comum',  senha: 'defesa123', nome: 'Cidadão',     perfil: 'comum',     municipio: '' },
+  { usuario: 'gestor', senha: 'defesa123', nome: 'Gestor',      perfil: 'municipal', municipio: 'Sinop' },
+  { usuario: 'coordenador_caceres', senha: 'defesa123', nome: 'Coord. Cáceres', perfil: 'municipal', municipio: 'Cáceres' },
+  { usuario: 'gestor_rondonopolis', senha: 'defesa123', nome: 'Gestor Rondonópolis', perfil: 'municipal', municipio: 'Rondonópolis' },
+  { usuario: 'coordenadora_vg', senha: 'defesa123', nome: 'Coord. Várzea Grande', perfil: 'municipal', municipio: 'Várzea Grande' },
+  { usuario: 'gestor_barra', senha: 'defesa123', nome: 'Gestor Barra do Garças', perfil: 'municipal', municipio: 'Barra do Garças' },
+  { usuario: 'Dev@2026', senha: 'defesa123', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
 ];
 
 function seedUsers() {
