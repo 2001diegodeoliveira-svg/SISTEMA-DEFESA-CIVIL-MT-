@@ -57,6 +57,7 @@
 
         // Gestão por município
         gestao: function (municipio) { return request('gestao?municipio=' + encodeURIComponent(municipio)); },
+        gestaoVisaoGeral: function () { return request('gestao?visao=geral'); },
         gestaoSalvar: function (municipio, secao, item) {
             return request('gestao', { method: 'POST', body: { municipio: municipio, secao: secao, item: item } });
         },

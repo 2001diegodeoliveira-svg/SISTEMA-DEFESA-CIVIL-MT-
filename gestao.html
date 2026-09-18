@@ -148,6 +148,55 @@
         @keyframes luSpin { to { transform: rotate(360deg); } }
 
         footer { border-top: 1px solid var(--border-color); padding: 18px 4%; font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+        .ve-bar { margin-bottom: 14px; }
+        .ve-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+        .ve-kicker { font-size: 10px; color: var(--accent-orange); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; margin-bottom: 4px; }
+        .ve-top h2 { font-size: 21px; font-weight: 800; }
+        .ve-top p { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; max-width: 780px; line-height: 1.5; }
+        .btn-refresh { display: inline-flex; align-items: center; gap: 7px; background: rgba(249,115,22,.14); border: 1px solid rgba(249,115,22,.35); color: var(--accent-orange); font-weight: 700; font-size: 12.5px; padding: 9px 15px; border-radius: 8px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+        .btn-refresh:hover { background: rgba(249,115,22,.25); }
+
+        .ve-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+        .ve-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 18px; }
+        .ve-card i { width: 20px; height: 20px; opacity: .9; }
+        .ve-card b { display: block; font-size: 25px; font-weight: 800; margin: 7px 0 2px; }
+        .ve-card span { font-size: 10.5px; color: var(--text-muted); line-height: 1.35; display: block; }
+
+        .ve-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; align-items: start; }
+        .ve-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+        .ve-bar-label { width: 158px; font-size: 11px; color: var(--text-muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ve-bar-track { flex: 1; height: 9px; background: rgba(148,163,184,.14); border-radius: 6px; overflow: hidden; }
+        .ve-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-orange), var(--blue-glow)); border-radius: 6px; }
+        .ve-bar-n { width: 40px; font-size: 11px; font-weight: 700; text-align: right; }
+
+        .ve-legend { display: flex; gap: 9px; margin-bottom: 11px; flex-wrap: wrap; }
+        .ve-lg { font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 9px; color: var(--text-main); }
+        .ve-lg-0 { background: #1e293b; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .ve-lg-1 { background: #fb923c; }
+        .ve-lg-2 { background: #fbbf24; }
+        .ve-lg-3 { background: #65a30d; }
+        .ve-lg-4 { background: #16a34a; }
+
+        .ve-map { height: 330px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); z-index: 1; }
+        .ve-map .leaflet-container { background: #0d1526; font-family: 'Inter', sans-serif; z-index: 1; }
+
+        .ve-busca { width: 100%; background: var(--bg-dark); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; outline: none; }
+        .ve-busca:focus { border-color: rgba(249,115,22,.5); }
+        .ve-table-wrap { max-height: 430px; overflow: auto; border: 1px solid var(--border-color); border-radius: 10px; }
+        .ve-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .ve-table th { position: sticky; top: 0; background: var(--bg-card); text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border-color); z-index: 3; }
+        .ve-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+        .ve-table tr:last-child td { border-bottom: none; }
+        .ve-table tbody tr:hover { background: rgba(255,255,255,.03); }
+        .ve-td-num { text-align: center; color: var(--text-muted); width: 40px; }
+        .ve-td-date { color: var(--text-muted); white-space: nowrap; }
+        .ve-td-mun { display: block; font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+        .ve-prog { display: inline-block; width: 118px; height: 7px; background: rgba(148,163,184,.15); border-radius: 5px; overflow: hidden; vertical-align: middle; margin-right: 8px; }
+        .ve-prog-fill { height: 100%; border-radius: 5px; }
+        .ve-prog-txt { font-size: 11px; font-weight: 700; }
+
+        @media (max-width: 960px) { .ve-cards { grid-template-columns: 1fr 1fr; } .ve-grid { grid-template-columns: 1fr; } .ve-bar-label { width: 112px; } }
     </style>
 </head>
 <body>
@@ -184,10 +233,13 @@
                 </div>
                 <div id="munFixed"></div>
             </div>
-            <div class="tabs-title">Seções de Gestão</div>
+            <div class="tabs-title" id="tabsTitle">Seções de Gestão</div>
             <nav id="tabsNav"></nav>
         </aside>
         <main>
+            <div id="veBar" class="ve-bar" style="display:none;">
+                <button class="btn-mini ghost" onclick="GESTAO.voltarVisao()"><i data-lucide="arrow-left"></i> Voltar à visão estadual</button>
+            </div>
             <div id="panelArea">
                 <div class="loading"><i data-lucide="loader"></i> Carregando dados do município…</div>
             </div>

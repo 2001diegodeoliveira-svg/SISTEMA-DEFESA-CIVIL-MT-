@@ -3,19 +3,24 @@
    Persistência: um documento JSON por município (gestao_<nome>.json).
 
    GET    /api/gestao?municipio=<nome>   → documento completo (seções)
+   GET    /api/gestao?visao=geral        → panorama agregado dos 142 municípios
    POST   /api/gestao                     → upsert de item { municipio, secao, item }
    DELETE /api/gestao?municipio=&secao=&id= → remove item
 
    Permissões:
-     admin      → leitura/escrita em qualquer município
+     admin      → leitura de qualquer município + panorama estadual (dashboard)
+     avancado   → leitura de qualquer município + panorama estadual
      municipal  → leitura/escrita SOMENTE no próprio município
-     avancado   → somente leitura
      comum      → sem acesso
    ============================================================ */
+const fs = require('fs');
+const path = require('path');
+
 const { jsonResponse, readJson, bearerToken } = require('./_lib/http');
 const { verifyToken } = require('./_lib/auth');
-const { readCollection, writeCollection } = require('./_lib/store');
+const { readCollection, writeCollection, driver } = require('./_lib/store');
 const { serve } = require('./_lib/serverless');
+const { MUNICIPIOS_MT, normUsuario } = require('./_lib/municipios');
 
 const SECOES = [
   'areasDeRisco', 'plancon', 'coordenadores', 'voluntarios',
@@ -38,6 +43,18 @@ async function userForPayload(payload) {
   const users = await readCollection('users');
   return users.find(u => String(u.id) === String(payload && payload.sub)) || null;
 }
+function listarDocsGestao() {
+  if (driver() !== 'file') return [];
+  try {
+    const dir = path.join(__dirname, '..', 'data');
+    return fs.readdirSync(dir)
+      .filter(f => /^gestao_[a-z0-9_]+\.json$/.test(f))
+      .map(f => {
+        try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); } catch { return null; }
+      })
+      .filter(d => d && d.secoes);
+  } catch { return []; }
+}
 
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
@@ -52,11 +69,57 @@ module.exports = serve(async function handler(req) {
   const payload = token && verifyToken(token);
 
   if (method === 'GET') {
-    const municipio = qp('municipio');
     if (!payload) return jsonResponse(401, { erro: 'Autenticação necessária.' }, origin);
     if (payload.perfil === 'comum') {
       return jsonResponse(403, { erro: 'Seu perfil não pode visualizar a gestão.' }, origin);
     }
+
+    if (qp('visao') === 'geral') {
+      if (payload.perfil === 'municipal') {
+        return jsonResponse(403, { erro: 'O panorama estadual é exclusivo dos gestores estaduais.' }, origin);
+      }
+      const porMun = {};
+      (await listarDocsGestao()).forEach(d => {
+        const chave = norm(d.nome || '');
+        if (!chave) return;
+        let itens = 0, preenchidas = 0;
+        const secRaw = {};
+        for (const s of SECOES) {
+          const n = Array.isArray(d.secoes[s]) ? d.secoes[s].length : 0;
+          secRaw[s] = n;
+          itens += n;
+          if (n > 0) preenchidas++;
+        }
+        porMun[chave] = { nome: d.nome, totalItems: itens, preenchidas, completa: preenchidas === SECOES.length, atualizadoEm: d.updatedAt || null, secoes: secRaw };
+      });
+      const municipios = MUNICIPIOS_MT.map(nome => {
+        const e = porMun[norm(nome)];
+        return {
+          nome,
+          mun: normUsuario(nome),
+          totalItems: (e && e.totalItems) || 0,
+          preenchidas: (e && e.preenchidas) || 0,
+          completa: !!(e && e.completa),
+          atualizadoEm: (e && e.atualizadoEm) || null,
+          secoes: e ? e.secoes : Object.fromEntries(SECOES.map(s => [s, 0])),
+        };
+      });
+      let comCadastro = 0, itens = 0, completos = 0;
+      municipios.forEach(m => {
+        if (m.totalItems) comCadastro++;
+        itens += m.totalItems;
+        if (m.completa) completos++;
+      });
+      return jsonResponse(200, {
+        ok: true, visao: 'geral',
+        totalMunicipios: municipios.length,
+        geradosEm: Date.now(),
+        totais: { comCadastro, pendentes: municipios.length - comCadastro, itens, completos },
+        municipios,
+      }, origin);
+    }
+
+    const municipio = qp('municipio');
     if (!municipio) return jsonResponse(400, { erro: 'Informe ?municipio=<nome>.' }, origin);
     if (payload.perfil === 'municipal') {
       const me = await userForPayload(payload);
@@ -73,8 +136,9 @@ module.exports = serve(async function handler(req) {
 
   const podeEscrever = async () => {
     if (!payload) return { ok: false, erro: 'Autenticação necessária.' };
-    if (payload.perfil === 'admin') return { ok: true };
-    if (payload.perfil !== 'municipal') return { ok: false, erro: 'Seu perfil não pode editar a gestão.' };
+    if (payload.perfil !== 'municipal') {
+      return { ok: false, erro: 'Somente o gestor municipal do próprio município pode editar a gestão.' };
+    }
     const me = await userForPayload(payload);
     if (!me || !me.municipio) return { ok: false, erro: 'Seu perfil não está vinculado a um município.' };
     return { ok: true, munVinculado: norm(me.municipio) };

@@ -96,6 +96,7 @@
     var SESSION = null;
     var CAN_EDIT = false;
     var IS_MUNICIPAL = false;
+    var IS_ESTADUAL = false;
     var MUN = '';
     var DOC = { secoes: {} };
     var curSec = 'areasDeRisco';
@@ -113,14 +114,24 @@
         for (var i = 0; i < SECOES.length; i++) if (SECOES[i].id === id) return SECOES[i];
         return null;
     }
+    function norm(s) {
+        return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    }
+    function fmtData(ms) {
+        if (!ms) return '—';
+        var d = new Date(ms);
+        function p(n) { return (n < 10 ? '0' : '') + n; }
+        return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+    }
 
     /* ============ inicialização ============ */
     function init() {
         SESSION = dcGetSession();
         if (!SESSION) { location.href = 'login.html'; return; }
         if (SESSION.perfil === 'comum') { location.href = 'alertas.html'; return; }
-        CAN_EDIT = SESSION.perfil === 'admin' || SESSION.perfil === 'municipal';
+        CAN_EDIT = SESSION.perfil === 'municipal';
         IS_MUNICIPAL = SESSION.perfil === 'municipal';
+        IS_ESTADUAL = SESSION.perfil === 'admin';
         dcRenderUserArea();
 
         if (IS_MUNICIPAL) {
@@ -136,6 +147,16 @@
             if (window.lucide) lucide.createIcons();
             if (MUN) loadDoc();
             else loadingErro('Perfil gestor sem município vinculado.');
+            return;
+        }
+
+        if (IS_ESTADUAL) {
+            $('munSelWrap').style.display = 'none';
+            $('tabsTitle').style.display = 'none';
+            $('tabsNav').style.display = 'none';
+            $('munFixed').innerHTML = '<div class="mun-fixed"><i data-lucide="bar-chart-3"></i><div><b>Visão Estadual</b><span>gestor estadual · somente leitura</span></div></div>';
+            if (window.lucide) lucide.createIcons();
+            carregarVisaoEstadual();
             return;
         }
 
@@ -424,6 +445,169 @@
         renderPanel(id, editId);
     }
 
+    /* ============ visão estadual (dashboard) ============ */
+    function carregarVisaoEstadual() {
+        var vb = $('veBar');
+        if (vb) vb.style.display = 'none';
+        var tt = $('tabsTitle');
+        var tn = $('tabsNav');
+        if (tt) tt.style.display = 'none';
+        if (tn) tn.style.display = 'none';
+        $('panelArea').innerHTML = '<div class="loading"><i data-lucide="loader"></i> Consolidando a gestão dos 142 municípios…</div>';
+        if (window.lucide) lucide.createIcons();
+        dcApi.gestaoVisaoGeral().then(function (r) {
+            if (!r.ok || !r.data || !r.data.ok || !r.data.municipios) throw new Error('falha');
+            renderVisaoEstadual(r.data);
+        }).catch(function () {
+            loadingErro('Falha ao carregar o panorama estadual. Verifique a conexão com o servidor.');
+        });
+    }
+
+    function renderVisaoEstadual(dado) {
+        curSec = 'areasDeRisco';
+        var tot = dado.totais || { comCadastro: 0, pendentes: 0, itens: 0, completos: 0 };
+
+        var secTotais = SECOES.map(function (s) {
+            var n = 0;
+            (dado.municipios || []).forEach(function (m) { n += (m.secoes && m.secoes[s.id]) || 0; });
+            return { label: s.label, n: n };
+        });
+        var maxSec = Math.max(1, secTotais.reduce(function (a, b) { return Math.max(a, b.n); }, 0));
+        var bars = secTotais.map(function (s) {
+            var w = Math.round((s.n / maxSec) * 100);
+            return '<div class="ve-bar-row"><span class="ve-bar-label">' + esc(s.label) + '</span>' +
+                '<div class="ve-bar-track"><div class="ve-bar-fill" style="width:' + w + '%"></div></div>' +
+                '<span class="ve-bar-n">' + s.n + '</span></div>';
+        }).join('');
+
+        var ord = (dado.municipios || []).slice().sort(function (a, b) {
+            if (b.preenchidas !== a.preenchidas) return b.preenchidas - a.preenchidas;
+            return b.totalItems - a.totalItems;
+        });
+        var rows = ord.map(function (m, i) {
+            var pct = Math.round((m.preenchidas / 11) * 100);
+            var cor = m.completa ? '#16a34a' : (pct >= 50 ? '#fbbf24' : 'var(--accent-orange)');
+            return '<tr data-search="' + esc(String(m.nome + ' ' + m.mun).toLowerCase()) + '">' +
+                '<td class="ve-td-num">' + (i + 1) + '</td>' +
+                '<td><b>' + esc(m.nome) + '</b><span class="ve-td-mun">@' + esc(m.mun) + '</span></td>' +
+                '<td><div class="ve-prog"><div class="ve-prog-fill" style="width:' + pct + '%;background:' + cor + '"></div></div><span class="ve-prog-txt">' + m.preenchidas + '/11</span></td>' +
+                '<td class="ve-td-num">' + m.totalItems + '</td>' +
+                '<td class="ve-td-date">' + fmtData(m.atualizadoEm) + '</td>' +
+                '<td><button class="btn-mini" data-mun="' + encodeURIComponent(m.nome) + '" onclick="GESTAO.verMunicipio(decodeURIComponent(this.getAttribute(\'data-mun\')))"><i data-lucide="eye"></i> Ver</button></td>' +
+                '</tr>';
+        }).join('');
+
+        var html = '<div class="ve-top"><div>' +
+            '<div class="ve-kicker">Painel do gestor estadual</div>' +
+            '<h2>Visão Estadual — Gestão por Município</h2>' +
+            '<p>Panorama do cadastro operacional dos ' + dado.totalMunicipios + ' municípios de Mato Grosso. Acesso somente leitura.</p>' +
+            '</div>' +
+            '<button class="btn-refresh" onclick="GESTAO.atualizarVisao()"><i data-lucide="rotate-cw"></i> Atualizar</button>' +
+            '</div>';
+
+        html += '<div class="ve-cards">' +
+            '<div class="ve-card"><i data-lucide="building-2" style="color:var(--green)"></i><b>' + tot.comCadastro + '</b><span>municípios com cadastro</span></div>' +
+            '<div class="ve-card"><i data-lucide="database" style="color:var(--blue-glow)"></i><b>' + tot.itens + '</b><span>registros no total</span></div>' +
+            '<div class="ve-card"><i data-lucide="badge-check" style="color:var(--green)"></i><b>' + tot.completos + '</b><span>municípios 11/11</span></div>' +
+            '<div class="ve-card"><i data-lucide="alert-triangle" style="color:var(--accent-orange)"></i><b>' + tot.pendentes + '</b><span>sem cadastro ainda</span></div>' +
+            '</div>';
+
+        html += '<div class="ve-grid">' +
+            '<div class="card"><div class="card-ttl">Registros por seção (todos os municípios)</div>' + bars + '</div>' +
+            '<div class="card"><div class="card-ttl">Mapa de preenchimento</div>' +
+            '<div class="ve-legend">' +
+            '<span class="ve-lg ve-lg-0">Vazio</span>' +
+            '<span class="ve-lg ve-lg-1">1–3</span>' +
+            '<span class="ve-lg ve-lg-2">4–7</span>' +
+            '<span class="ve-lg ve-lg-3">8–10</span>' +
+            '<span class="ve-lg ve-lg-4">11/11</span>' +
+            '</div>' +
+            '<div id="veMap" class="ve-map"></div>' +
+            '</div>' +
+            '</div>';
+
+        html += '<div class="card">' +
+            '<div class="card-ttl">Preenchimento por município</div>' +
+            '<input type="text" id="veFiltro" class="ve-busca" placeholder="Filtrar município… (ex.: sinop, cáceres, várzea)" oninput="GESTAO.filtrarVisao()">' +
+            '<div class="ve-table-wrap"><table class="ve-table"><thead><tr>' +
+            '<th>#</th><th>Município</th><th>Preenchimento</th><th>Itens</th><th>Atualização</th><th></th>' +
+            '</tr></thead><tbody id="veTbody">' + rows + '</tbody></table></div>' +
+            '</div>';
+
+        $('panelArea').innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+        montarMapaVisao(dado);
+    }
+
+    function corMapa(pre) {
+        if (pre >= 11) return '#16a34a';
+        if (pre >= 8) return '#65a30d';
+        if (pre >= 4) return '#fbbf24';
+        if (pre >= 1) return '#fb923c';
+        return '#1e293b';
+    }
+
+    function montarMapaVisao(dado) {
+        var el = $('veMap');
+        if (!el) return;
+        if (window.veMapInst) { window.veMapInst.remove(); window.veMapInst = null; }
+        var m = L.map(el, { zoomControl: true, scrollWheelZoom: false }).setView([-12.8, -55.5], 5);
+        window.veMapInst = m;
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap · © CARTO',
+        }).addTo(m);
+        var porNorm = {};
+        (dado.municipios || []).forEach(function (x) { porNorm[norm(x.nome)] = x; });
+        dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima')
+            .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); })
+            .then(function (geo) {
+                var features = (geo && geo.features) ? geo.features : [];
+                features.forEach(function (f) {
+                    var nome = f.properties && (f.properties.nome || f.properties.name || '');
+                    var info = porNorm[norm(nome)] || null;
+                    var pre = info ? info.preenchidas : 0;
+                    L.geoJSON(f, {
+                        style: { color: 'rgba(255,255,255,.25)', weight: .7, fillColor: corMapa(pre), fillOpacity: .85 },
+                    }).bindTooltip('<b>' + esc(nome) + '</b><br>' + pre + '/11 seções · ' + (info ? info.totalItems : 0) + ' itens', { sticky: true })
+                        .on('click', function () { if (info) GESTAO.verMunicipio(info.nome); })
+                        .addTo(m);
+                });
+                try { m.fitBounds(L.geoJSON(geo).getBounds()); } catch (e) {}
+            })
+            .catch(function () {
+                el.innerHTML = '<div class="empty" style="padding:14px 6px;"><i data-lucide="map-off"></i> Mapa indisponível (malhas IBGE).</div>';
+                if (window.lucide) lucide.createIcons();
+            });
+    }
+
+    function verMunicipio(nome) {
+        MUN = nome;
+        var vb = $('veBar');
+        if (vb) vb.style.display = '';
+        $('munSelWrap').style.display = 'none';
+        $('munFixed').innerHTML = '<div class="mun-fixed"><i data-lucide="pin"></i><div><b>' + esc(nome) + '</b><span>visualização estadual · somente leitura</span></div></div>';
+        var tt = $('tabsTitle');
+        var tn = $('tabsNav');
+        if (tt) tt.style.display = '';
+        if (tn) tn.style.display = '';
+        if (window.lucide) lucide.createIcons();
+        loadDoc();
+    }
+
+    function voltarVisao() {
+        var vb = $('veBar');
+        if (vb) vb.style.display = 'none';
+        carregarVisaoEstadual();
+    }
+
+    function filtrarVisao() {
+        var q = norm($('veFiltro').value);
+        var rows = document.querySelectorAll('#veTbody tr');
+        for (var i = 0; i < rows.length; i++) {
+            rows[i].style.display = (rows[i].getAttribute('data-search') || '').indexOf(q) >= 0 ? '' : 'none';
+        }
+    }
+
     /* ============ toast ============ */
     function toast(msg, ok) {
         var t = $('toast');
@@ -441,6 +625,10 @@
         render: render,
         openMap: openMap,
         clearMap: clearMap,
+        atualizarVisao: carregarVisaoEstadual,
+        voltarVisao: voltarVisao,
+        verMunicipio: verMunicipio,
+        filtrarVisao: filtrarVisao,
     };
 
     if (document.readyState === 'loading') {
