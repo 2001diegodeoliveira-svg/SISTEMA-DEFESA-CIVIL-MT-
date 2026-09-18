@@ -28,7 +28,6 @@ const handlers = {
   waze: require('./api/waze'),
   tomtom: require('./api/tomtom'),
   gestao: require('./api/gestao'),
-  municipios: require('./api/municipios'),
 };
 
 /* Empacota handler de serverless (fetch Request/Response) para Express */
@@ -81,7 +80,6 @@ app.get('/api/tomtom', wrap(handlers.tomtom));
 app.post('/api/tomtom', wrap(handlers.tomtom));
 app.options('/api/tomtom', wrap(handlers.tomtom));
 app.all('/api/gestao', wrap(handlers.gestao));
-app.get('/api/municipios', wrap(handlers.municipios));
 
 // Job de sincronização Waze/TomTom (mock por padrão) — só roda no server.js
 // standalone (processo Node persistente); em serverless (Vercel) use

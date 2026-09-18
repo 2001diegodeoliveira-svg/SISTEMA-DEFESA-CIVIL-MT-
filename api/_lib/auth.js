@@ -17,11 +17,6 @@ const DEFAULT_SEED = [
   { usuario: 'admin',  senha: 'defesa123', nome: 'Coordenador', perfil: 'admin',     municipio: 'Cuiabá' },
   { usuario: 'operador', senha: 'defesa123', nome: 'Operador',   perfil: 'avancado',  municipio: 'Cuiabá' },
   { usuario: 'comum',  senha: 'defesa123', nome: 'Cidadão',     perfil: 'comum',     municipio: '' },
-  { usuario: 'gestor', senha: 'defesa123', nome: 'Gestor',      perfil: 'municipal', municipio: 'Sinop' },
-  { usuario: 'coordenador_caceres', senha: 'defesa123', nome: 'Coord. Cáceres', perfil: 'municipal', municipio: 'Cáceres' },
-  { usuario: 'gestor_rondonopolis', senha: 'defesa123', nome: 'Gestor Rondonópolis', perfil: 'municipal', municipio: 'Rondonópolis' },
-  { usuario: 'coordenadora_vg', senha: 'defesa123', nome: 'Coord. Várzea Grande', perfil: 'municipal', municipio: 'Várzea Grande' },
-  { usuario: 'gestor_barra', senha: 'defesa123', nome: 'Gestor Barra do Garças', perfil: 'municipal', municipio: 'Barra do Garças' },
   { usuario: 'Dev@2026', senha: 'defesa123', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
   ...MUNICIPIOS_SEED,
 ];
