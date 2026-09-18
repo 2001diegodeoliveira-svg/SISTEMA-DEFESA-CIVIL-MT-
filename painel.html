@@ -284,6 +284,13 @@
     <span>Atualização automática a cada 5 min</span>
 </div>
 
+<script src="js/session.js"></script>
+<script>
+    (function () {
+        var s = dcGetSession();
+        if (s && s.perfil === 'comum') location.replace('alertas.html');
+    })();
+</script>
 <script src="js/proxy.js"></script>
 <script src="js/monitor.js"></script>
 

@@ -361,7 +361,13 @@
 <script src="js/session.js"></script>
 <script src="js/proxy.js"></script>
 <script src="js/api.js"></script>
-<script>dcRenderUserArea();</script>
+<script>
+    (function () {
+        var s = dcGetSession();
+        if (s && s.perfil === 'comum') location.replace('alertas.html');
+        dcRenderUserArea();
+    })();
+</script>
 <script src="js/monitor.js"></script>
 <script>
 (function() {

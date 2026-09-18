@@ -53,7 +53,20 @@ module.exports = serve(async function handler(req) {
 
   if (method === 'GET') {
     const municipio = qp('municipio');
+    if (!payload) return jsonResponse(401, { erro: 'Autenticação necessária.' }, origin);
+    if (payload.perfil === 'comum') {
+      return jsonResponse(403, { erro: 'Seu perfil não pode visualizar a gestão.' }, origin);
+    }
     if (!municipio) return jsonResponse(400, { erro: 'Informe ?municipio=<nome>.' }, origin);
+    if (payload.perfil === 'municipal') {
+      const me = await userForPayload(payload);
+      if (!me || !me.municipio) {
+        return jsonResponse(403, { erro: 'Seu perfil não está vinculado a um município.' }, origin);
+      }
+      if (norm(municipio) !== norm(me.municipio)) {
+        return jsonResponse(403, { erro: 'Acesso limitado ao seu município.' }, origin);
+      }
+    }
     const doc = await loadDoc(municipio);
     return jsonResponse(200, { ok: true, municipio: doc.nome, secoes: doc.secoes }, origin);
   }

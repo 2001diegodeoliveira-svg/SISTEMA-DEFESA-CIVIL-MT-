@@ -177,7 +177,7 @@ const ESTACOES_DC = [
 const PERFIS = {
     comum:     { label: 'Usuário comum',          desc: 'Camadas públicas, áreas de interesse e alertas da sua região', icone: 'user' },
     avancado:  { label: 'Usuário avançado',       desc: 'Painéis analíticos, validação de ocorrências e relatórios',    icone: 'user-cog' },
-    admin:     { label: 'Administrador estadual', desc: 'Fontes/camadas, regras de alerta, perfis e auditoria',         icone: 'user-shield' },
+    admin:     { label: 'Gestor estadual',           desc: 'Mapa completo e gestão de todos os municípios, perfis e auditoria', icone: 'user-shield' },
     municipal: { label: 'Gestor municipal',       desc: 'Acesso restrito ao seu território, confirmação e evidências',  icone: 'building-2' },
 };
 

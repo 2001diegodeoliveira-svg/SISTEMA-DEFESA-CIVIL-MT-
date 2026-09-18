@@ -156,11 +156,11 @@
             </button>
 
             <div class="demo-note">
-                <b>Acesso:</b> o login é validado no backend. Credencial padrão —
-                <code>defesa</code>/<code>defesa123</code>. Cada município tem login próprio
-                com o nome normalizado + senha <code>defesa123</code> (ex.: <code>sinop</code>,
-                <code>varzea_grande</code>, <code>cuiaba</code>). Demais contas usam a mesma
-                senha <code>defesa123</code>. Em produção, defina usuários via <code>SEED_USERS</code>.
+                <b>Acesso:</b> o login é validado no backend e o perfil define o que cada um vê.
+                <code>defesa</code>/<code>defesa123</code> = gestor estadual (mapa completo e gestão de
+                todos os municípios). Cada município tem conta própria com nome normalizado + senha
+                <code>defesa123</code> (ex.: <code>sinop</code>) e fica limitado ao seu município.
+                <code>comum</code>/<code>defesa123</code> = somente alertas e orientações.
             </div>
         </div>
     </main>
@@ -187,26 +187,13 @@
                 document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
                 btn.classList.add('selected');
                 perfilSelecionado = key;
-                document.getElementById('munField').style.display = key === 'municipal' ? '' : 'none';
             });
             grid.appendChild(btn);
         });
         if (window.lucide) lucide.createIcons();
-
-        // Municípios para o perfil gestor municipal
-        let munCodigoPorNome = {};
-        (window.dcProxyJson || function (u) { return fetch(u).then(function (r) { return r.json(); }); })
-            ('https://servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios')
-            .then(list => {
-                const sel = document.getElementById('munSelect');
-                sel.innerHTML = '<option value="">Selecione o município...</option>' +
-                    list.map(m => `<option>${m.nome}</option>`).join('');
-                munCodigoPorNome = Object.fromEntries(list.map(m => [m.nome, m.id]));
-            })
-            .catch(() => {
-                const sel = document.getElementById('munSelect');
-                sel.innerHTML = '<option value="">(lista indisponível — digite depois)</option>';
-            });
+        // O vínculo de município vem do backend (cada conta municipal é exclusiva
+        // do próprio município) — o seletor de município no formulário não é usado.
+        document.getElementById('munField').style.display = 'none';
 
         document.getElementById('entrarBtn').addEventListener('click', async () => {
             const usuario = document.getElementById('usuarioInput').value.trim();
@@ -241,19 +228,15 @@
             if (nome && s && (!s.nome || s.nome === 'Cidadão')) {
                 s.nome = nome;
             }
-            // Gestor municipal: aplica o município escolhido no formulário — é isso
-            // que faz o mapa e os painéis abrirem já focados na cidade dele.
-            let munCodigoSelecionado = '';
-            const munNome = document.getElementById('munSelect').value;
-            if (s && s.perfil === 'municipal' && munNome) {
-                s.municipio = munNome;
-                munCodigoSelecionado = munCodigoPorNome[munNome] || '';
-            }
+            // O município do gestor municipal vem do vínculo da conta no backend —
+            // nunca do formulário. Gestão e mapa já abrem restritos ao próprio município.
             if (s) localStorage.setItem('dcmt_session', JSON.stringify(s));
 
-            location.href = munCodigoSelecionado
-                ? 'mapa.html?municipio=' + encodeURIComponent(munCodigoSelecionado)
-                : 'index.html';
+            if (s && s.perfil === 'municipal') {
+                location.href = 'gestao.html';
+                return;
+            }
+            location.href = 'index.html';
         });
     </script>
 </body>
