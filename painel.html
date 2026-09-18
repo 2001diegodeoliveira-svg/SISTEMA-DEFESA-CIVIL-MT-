@@ -288,7 +288,8 @@
 <script>
     (function () {
         var s = dcGetSession();
-        if (s && s.perfil === 'comum') location.replace('alertas.html');
+        if (!s) location.replace('login.html');
+        else if (s.perfil === 'comum') location.replace('alertas.html');
     })();
 </script>
 <script src="js/proxy.js"></script>

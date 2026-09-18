@@ -69,19 +69,21 @@ function dcRenderUserArea() {
     if (window.lucide) lucide.createIcons();
 }
 
-/* Esconde, para o perfil "comum" (usuário sem acesso), os links de páginas
-   que ele não pode usar. Demais perfis enxergam a navegação completa. */
+/* Esconde os módulos restritos (mapa, painel, gestão, waze) quando o
+   usuário não está logado ou quando o perfil "comum" (sem acesso) ativo.
+   Quando logado nos demais perfis, a navegação completa aparece. */
 function dcAplicarNav() {
     try {
         const s = dcGetSession();
-        if (!s || s.perfil !== 'comum') return;
+        const ocultar = !s || s.perfil === 'comum';
         const proibidos = ['mapa.html', 'painel.html', 'gestao.html', 'waze.html'];
         const as = document.querySelectorAll('a[href]');
         for (let i = 0; i < as.length; i++) {
             const a = as[i];
             const href = String(a.getAttribute('href') || '').split('?')[0].split('#')[0].toLowerCase().trim();
             if (proibidos.indexOf(href) === -1) continue;
-            const alvo = a.closest('li, .icon-btn, .hdr-btn, .quick-card') || a;
+            if (!ocultar) continue;
+            const alvo = a.closest('li, .icon-btn, .hdr-btn, .quick-card, .btn-map, .hm-open') || a;
             alvo.style.display = 'none';
         }
     } catch (e) { /* não estoura a página */ }

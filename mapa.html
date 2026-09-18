@@ -4469,7 +4469,9 @@ document.getElementById('mpClose').addEventListener('click', () =>
    - comum → sem mapa (apenas alertas e orientações)
    - municipal → restrição de navegação ao próprio município */
 const sessaoAtual = dcGetSession();
-if (sessaoAtual && sessaoAtual.perfil === 'comum') {
+if (!sessaoAtual) {
+    location.replace('login.html');
+} else if (sessaoAtual.perfil === 'comum') {
     location.replace('alertas.html');
 }
 let restricaoMun = null;
