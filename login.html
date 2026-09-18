@@ -134,7 +134,7 @@
                 </div>
                 <div class="field" id="munField" style="display:none;">
                     <label for="munSelect">Município de atuação</label>
-                    <select id="munSelect"><option value="">Carregando municípios...</option></select>
+                    <select id="munSelect" disabled><option value="">Selecione o perfil Gestor Municipal...</option></select>
                 </div>
             </div>
 
@@ -157,10 +157,11 @@
 
             <div class="demo-note">
                 <b>Acesso:</b> o login é validado no backend e o perfil define o que cada um vê.
-                <code>defesa</code>/<code>defesa123</code> = gestor estadual (mapa completo e gestão de
-                todos os municípios). Cada município tem conta própria com nome normalizado + senha
-                <code>defesa123</code> (ex.: <code>sinop</code>) e fica limitado ao seu município.
-                <code>comum</code>/<code>defesa123</code> = somente alertas e orientações.
+                <code>defesa</code>/<code>defesa123</code> = gestor estadual (controle geral de
+                Mato Grosso: mapa completo, visão estadual e gestão de todos os municípios).
+                Gestor municipal: escolha o município na lista (todos os 142, inclusive o de
+                Cuiabá) e informe a senha <code>defesa123</code> — o acesso fica restrito ao
+                seu município. <code>comum</code>/<code>defesa123</code> = somente alertas e orientações.
             </div>
         </div>
     </main>
@@ -175,6 +176,7 @@
     <script src="js/session.js"></script>
     <script>
         let perfilSelecionado = null;
+        let municipios = [];
 
         const grid = document.getElementById('perfisGrid');
         Object.entries(PERFIS).forEach(([key, p]) => {
@@ -187,13 +189,49 @@
                 document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('selected'));
                 btn.classList.add('selected');
                 perfilSelecionado = key;
+                atualizarSeletorMunicipio();
             });
             grid.appendChild(btn);
         });
         if (window.lucide) lucide.createIcons();
-        // O vínculo de município vem do backend (cada conta municipal é exclusiva
-        // do próprio município) — o seletor de município no formulário não é usado.
-        document.getElementById('munField').style.display = 'none';
+
+        // Gestor municipal: mostra o seletor de município, que preenche o
+        // campo de usuário com a conta daquele município (ex.: Cuiabá → cuiaba).
+        const munField = document.getElementById('munField');
+        const munSelect = document.getElementById('munSelect');
+        function atualizarSeletorMunicipio() {
+            const precisaMuni = perfilSelecionado === 'municipal';
+            munField.style.display = precisaMuni ? 'block' : 'none';
+            if (!precisaMuni) return;
+            if (municipios.length === 0) carregarMunicipios();
+        }
+
+        async function carregarMunicipios() {
+            municipios = [];
+            munSelect.disabled = true;
+            munSelect.innerHTML = '<option value="">Carregando municípios...</option>';
+            try {
+                const r = await fetch('api/municipios');
+                const j = await r.json();
+                municipios = (j && j.municipios) || [];
+                munSelect.disabled = false;
+                munSelect.innerHTML = '<option value="">Selecione o município...</option>';
+                municipios.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.usuario;
+                    opt.textContent = m.municipio;
+                    munSelect.appendChild(opt);
+                });
+            } catch (e) {
+                munSelect.disabled = true;
+                munSelect.innerHTML = '<option value="">Falha ao carregar municípios</option>';
+            }
+        }
+
+        munSelect.addEventListener('change', function () {
+            const achado = municipios.find(m => m.usuario === this.value);
+            document.getElementById('usuarioInput').value = achado ? achado.usuario : '';
+        });
 
         document.getElementById('entrarBtn').addEventListener('click', async () => {
             const usuario = document.getElementById('usuarioInput').value.trim();
