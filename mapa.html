@@ -1333,6 +1333,22 @@
         </div>
         <div class="meta-line">Consulta por clique: nome, código e área</div>
 
+        <div class="group-title"><i data-lucide="building-2"></i> Coordenação municipal <span class="meta-line" style="display:inline;">· área restrita</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding:2px 8px;">
+            <select id="munRestrictInput" class="filter-select" style="width:100%;margin:0;">
+                <option value="">— Selecione seu município —</option>
+            </select>
+            <div style="display:flex;gap:6px;">
+                <button id="munRestrictBtn" onclick="restricaoMunicipalAplicar()" style="flex:1.5;background:linear-gradient(135deg,#f9731c,#ea580c);border:none;color:#fff;font-size:10.5px;font-weight:700;padding:7px;border-radius:6px;cursor:pointer;">
+                    <i data-lucide="shield-check"></i> Restringir mapa
+                </button>
+                <button id="munReleaseBtn" onclick="liberarRestricaoMunicipal()" hidden style="flex:1;background:rgba(255,255,255,.06);border:1px solid var(--glass-border);color:#94a3b8;font-size:10.5px;font-weight:700;padding:7px;border-radius:6px;cursor:pointer;">
+                    <i data-lucide="shield-off"></i> Liberar
+                </button>
+            </div>
+        </div>
+        <div class="meta-line" id="metaRestricao"><i data-lucide="shield"></i> <b>Área restrita:</b> coordene selecionando seu município</div>
+
         <div class="group-title"><i data-lucide="sprout"></i> Ambiente</div>
         <div class="check-row" data-check="ucs">
             <label><span class="swatch" style="background:#34d399;"></span><i data-lucide="trees"></i>Unidades de Conservação</label>
@@ -1930,6 +1946,12 @@ const centroidByCod = {};
 const codByNomeNormalizado = {};
 let munNomeByCod = {};
 let ibgeLoadedAt = null;
+/* Coordenação municipal — dados geométricos dos municípios para o modo restrito */
+const municipioGeomByCod = {};
+const municipioBoundsByCod = {};
+const municipioLyrByCod = {};
+let restricaoMunicipal = null;      // { cod, nome, bounds, geom }
+let restricaoMask = null;
 
 function normalizarNome(s) {
     return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -2159,6 +2181,10 @@ async function loadTerritorio() {
                 const centro = lyr.getBounds().getCenter();
                 centroidByCod[cod] = { lat: centro.lat, lng: centro.lng };
                 codByNomeNormalizado[normalizarNome(nome)] = cod;
+                municipioGeomByCod[cod] = f.geometry;
+                municipioBoundsByCod[cod] = lyr.getBounds();
+                municipioLyrByCod[cod] = lyr;
+                munRestrictAddOption(cod, nome);
                 lyr.bindTooltip(nome, {
                     permanent: false, direction: 'center',
                     className: 'mun-tooltip'
@@ -2202,6 +2228,8 @@ async function loadTerritorio() {
                 });
             }
         }).addTo(map);
+        populateMunRestrictSelect();
+        updateRestricaoUI();
         focarMunicipioInicial();
         buildVigiaMaisLayer(nomeByCod);
         populateMsnCity();
@@ -2424,13 +2452,145 @@ function focarMunicipio(alvo) {
 function focarMunicipioInicial() {
     if (focarMunicipioFeito) return;
     const porUrl = new URLSearchParams(location.search).get('municipio');
-    if (porUrl) { focarMunicipioFeito = focarMunicipio(porUrl); return; }
+    if (porUrl) {
+        focarMunicipioFeito = focarMunicipio(porUrl);
+        ativarRestricaoMunicipal(porUrl, true);
+        return;
+    }
     try {
         const sessao = JSON.parse(localStorage.getItem('dcmt_session') || 'null');
-        if (sessao && sessao.perfil === 'municipal' && sessao.municipio) {
-            focarMunicipioFeito = focarMunicipio(sessao.municipio);
+        if (sessao && sessao.perfil === 'municipal') {
+            if (sessao.municipio) {
+                focarMunicipioFeito = focarMunicipio(sessao.municipio);
+                ativarRestricaoMunicipal(sessao.municipio, true);
+            }
+            return; // coordenador sem município ainda: deixa escolher no painel
         }
     } catch (e) {}
+    // Restaura a restrição persistida (ex.: coordenador que já escolheu a cidade)
+    try {
+        const guardado = localStorage.getItem('dcmt_municipio_restrito');
+        if (guardado && !restricaoMunicipal) {
+            const info = JSON.parse(guardado);
+            if (info && info.cod) ativarRestricaoMunicipal(info.cod, true);
+        }
+    } catch (e) {}
+}
+
+/* ================= Coordenação municipal — modo restrito =================
+   Quando o coordenador seleciona seu município, o mapa fica limitado a ele:
+   - máscara escura esconde todo o estado exceto o município (pane 680);
+   - maxBounds + zoom mínimo impedem navegar para fora da área;
+   - o município ativo é destacado em laranja na malha.                 */
+function restricaoPaneEnsure() {
+    if (!map.getPane('restrictPane')) {
+        map.createPane('restrictPane');
+        map.getPane('restrictPane').style.zIndex = 680;
+        map.getPane('restrictPane').style.pointerEvents = 'none';
+    }
+}
+function buildMaskPolygon(geom) {
+    const pad = 4;
+    const outer = [
+        [MT_LAT_MIN - pad, MT_LON_MIN - pad],
+        [MT_LAT_MAX + pad, MT_LON_MIN - pad],
+        [MT_LAT_MAX + pad, MT_LON_MAX + pad],
+        [MT_LAT_MIN - pad, MT_LON_MAX + pad],
+        [MT_LAT_MIN - pad, MT_LON_MIN - pad],
+    ];
+    const rings = [outer];
+    const polys = geom.type === 'Polygon' ? [geom.coordinates] : (geom.coordinates || []);
+    polys.forEach(p => {
+        if (p && p[0] && Array.isArray(p[0][0])) rings.push(p[0].map(c => [c[1], c[0]]));
+    });
+    return rings;
+}
+function restricaoResolve(alvo) {
+    if (!alvo) return null;
+    const s = String(alvo);
+    const cod = /^\d+$/.test(s) && municipioGeomByCod[s] ? s : codByNomeNormalizado[normalizarNome(s)];
+    if (!cod || !municipioGeomByCod[cod]) return null;
+    return cod;
+}
+function munRestrictAddOption(cod, nome) {
+    const sel = document.getElementById('munRestrictInput');
+    if (!sel) return;
+    const opt = document.createElement('option');
+    opt.value = cod; opt.textContent = nome;
+    sel.appendChild(opt);
+}
+function populateMunRestrictSelect() {
+    const sel = document.getElementById('munRestrictInput');
+    if (!sel || sel.options.length > 1) return;
+    Object.keys(centroidByCod).forEach(cod => munRestrictAddOption(cod, munNomeByCod[cod] || cod));
+}
+function ativarRestricaoMunicipal(alvo, silencioso = false) {
+    const cod = restricaoResolve(alvo);
+    if (!cod) { if (!silencioso) toast('Município não encontrado: ' + alvo); return false; }
+    const geom = municipioGeomByCod[cod], b = municipioBoundsByCod[cod];
+    const nome = munNomeByCod[cod] || cod;
+    restricaoPaneEnsure();
+    if (restricaoMask) map.removeLayer(restricaoMask);
+    restricaoMask = L.polygon(buildMaskPolygon(geom), {
+        pane: 'restrictPane',
+        color: 'rgba(2,6,16,0)', weight: 0,
+        fillColor: '#040914', fillOpacity: .86,
+        interactive: false
+    }).addTo(map);
+    // Destaque do município ativo
+    munLayer.eachLayer(l => {
+        munLayer.resetStyle(l);
+        if (String(l.feature && l.feature.properties && l.feature.properties.codarea) === cod) {
+            l.setStyle({ color: '#f9731c', weight: 2.5, opacity: .95, fillColor: '#f9731c', fillOpacity: .12 });
+            l.bringToFront();
+        }
+    });
+    restricaoMunicipal = { cod, nome, bounds: b, geom };
+    const padBounds = b.pad(0.12);
+    map.setMaxBounds(padBounds);
+    const zoomMin = Math.max(7, map.getBoundsZoom(b, false, [40, 40]));
+    map.setMinZoom(zoomMin);
+    map.fitBounds(b, { padding: [36, 36], maxZoom: 12 }); // z13+ permite biometria/radar
+    // Persistência + contexto da sessão
+    localStorage.setItem('dcmt_municipio_restrito', JSON.stringify({ cod, nome, ts: Date.now() }));
+    try {
+        const sessao = JSON.parse(localStorage.getItem('dcmt_session') || 'null');
+        if (sessao) { sessao.municipio = nome; localStorage.setItem('dcmt_session', JSON.stringify(sessao)); }
+    } catch (e) {}
+    const sel = document.getElementById('munRestrictInput');
+    if (sel) sel.value = cod;
+    updateRestricaoUI();
+    if (!silencioso) toast('Modo restrito: <b>' + nome + '</b>', true);
+    return true;
+}
+function liberarRestricaoMunicipal() {
+    if (restricaoMask) { map.removeLayer(restricaoMask); restricaoMask = null; }
+    map.setMaxBounds(null);
+    map.setMinZoom(3);
+    if (munLayer) munLayer.eachLayer(l => munLayer.resetStyle(l));
+    restricaoMunicipal = null;
+    localStorage.removeItem('dcmt_municipio_restrito');
+    updateRestricaoUI();
+    if (MT_BBOX) map.fitBounds(MT_BBOX);
+    toast('Modo restrito <b>desativado</b>', true);
+}
+function updateRestricaoUI() {
+    const sel = document.getElementById('munRestrictInput');
+    const meta = document.getElementById('metaRestricao');
+    const btn = document.getElementById('munReleaseBtn');
+    if (sel) sel.value = restricaoMunicipal ? restricaoMunicipal.cod : '';
+    if (btn) btn.hidden = !restricaoMunicipal;
+    if (meta) {
+        meta.innerHTML = restricaoMunicipal
+            ? `<i data-lucide="shield-check"></i> <b>Mapa restrito</b> a <b style="color:#f9731c;">${restricaoMunicipal.nome}</b>`
+            : '<i data-lucide="shield"></i> <b>Área restrita:</b> coordene selecionando seu município';
+    }
+    if (window.lucide) lucide.createIcons();
+}
+function restricaoMunicipalAplicar() {
+    const sel = document.getElementById('munRestrictInput');
+    if (!sel || !sel.value) { toast('Selecione um município primeiro.'); return; }
+    ativarRestricaoMunicipal(sel.value);
 }
 
 /* ================= Ambiente: UCs via WMS CNUC ================= */

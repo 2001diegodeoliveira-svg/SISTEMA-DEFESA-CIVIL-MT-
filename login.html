@@ -156,8 +156,9 @@
             </button>
 
             <div class="demo-note">
-                <b>Acesso:</b> o login é validado no backend. Perfis iniciais de demonstração —
-                <code>admin</code>/<code>admin123</code>, <code>operador</code>/<code>mt199</code>,
+                <b>Acesso padrão (fase atual):</b> usuário <code>adm</code> · senha <code>dev123</code> para todos os coordenadores.
+                Selecione o perfil <b>Gestor municipal</b>, escolha seu município e o mapa abrirá restrito a ele.
+                Demais contas de demonstração: <code>admin</code>/<code>admin123</code>, <code>operador</code>/<code>mt199</code>,
                 <code>comum</code>/<code>comum123</code>, <code>gestor</code>/<code>mt199</code>.
                 Em produção, defina usuários via <code>SEED_USERS</code>.
             </div>
@@ -174,12 +175,13 @@
     <script src="js/session.js"></script>
     <script>
         let perfilSelecionado = null;
+        const sessaoAnterior = (function () { try { return JSON.parse(localStorage.getItem('dcmt_session') || 'null'); } catch (e) { return null; } })();
 
         const grid = document.getElementById('perfisGrid');
         Object.entries(PERFIS).forEach(([key, p]) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'profile-card';
+            btn.className = 'profile-card' + (sessaoAnterior && sessaoAnterior.perfil === key ? ' selected' : '');
             btn.dataset.perfil = key;
             btn.innerHTML = `<i data-lucide="${p.icone}"></i><b>${p.label}</b><span>${p.desc}</span>`;
             btn.addEventListener('click', () => {
@@ -190,6 +192,9 @@
             });
             grid.appendChild(btn);
         });
+        if (sessaoAnterior && sessaoAnterior.perfil === 'municipal') {
+            document.getElementById('munField').style.display = '';
+        }
         if (window.lucide) lucide.createIcons();
 
         // Municípios para o perfil gestor municipal
@@ -201,6 +206,10 @@
                 sel.innerHTML = '<option value="">Selecione o município...</option>' +
                     list.map(m => `<option>${m.nome}</option>`).join('');
                 munCodigoPorNome = Object.fromEntries(list.map(m => [m.nome, m.id]));
+                // Reaplica o município já escolhido na sessão anterior (mesma cidade)
+                if (sessaoAnterior && sessaoAnterior.perfil === 'municipal' && sessaoAnterior.municipio) {
+                    sel.value = sessaoAnterior.municipio;
+                }
             })
             .catch(() => {
                 const sel = document.getElementById('munSelect');
