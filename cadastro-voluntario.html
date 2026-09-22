@@ -189,6 +189,8 @@
   @media (prefers-reduced-motion: reduce){
     .panel{ animation:none; }
     .step-dot, .home-link, .btn-primary, .btn-ghost, .area-card{ transition:none; }
+    .confirm-badge svg path{ animation:none; stroke-dashoffset:0; }
+    .lucide-spin{ animation:none; }
   }
   .panel-head{
     position:relative;
@@ -354,7 +356,21 @@
     text-align:center; color:var(--slate); font-size:12px;
     padding: 18px 20px 40px;
   }
+
+  [data-lucide] {
+    width:1em; height:1em; vertical-align:-0.125em; stroke-width:2;
+  }
+  .lucide-spin{ animation:luSpin 1s linear infinite; }
+  @keyframes luSpin{ to{ transform:rotate(360deg); } }
+  .step-dot [data-lucide]{ width:14px; height:14px; }
+  .confirm-badge svg{ width:30px; height:30px; stroke-width:3; }
+  .confirm-badge svg path{
+    stroke-dasharray:48; stroke-dashoffset:48;
+    animation:luDraw .55s ease-out forwards .15s;
+  }
+  @keyframes luDraw{ to{ stroke-dashoffset:0; } }
 </style>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -369,7 +385,7 @@
   </div>
   <div class="top-right">
     <a class="home-link" href="index.html" title="Voltar ao início">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      <i data-lucide="home" aria-hidden="true"></i>
       Home
     </a>
     <div class="status-pill" id="topStatus">Etapa 1 de 7</div>
@@ -415,7 +431,7 @@ function renderNav(){
     let cls = 'step-item';
     if(i === current) cls += ' active';
     else if(i < current || submitted) cls += ' done';
-    const icon = (i < current || submitted) ? '✓' : (i+1);
+    const icon = (i < current || submitted) ? '<i data-lucide="check" aria-hidden="true"></i>' : (i+1);
     return `<div class="${cls}">
       <div class="step-dot">${icon}</div>
       <div class="step-label"><div class="t">${s.t}</div><div class="d">${s.d}</div></div>
@@ -627,7 +643,7 @@ function renderConfirm(panel){
   const protocolo = 'DC-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random()*899999);
   panel.innerHTML = `
     <div class="confirm-screen">
-      <div class="confirm-badge">✓</div>
+      <div class="confirm-badge"><i data-lucide="check" aria-hidden="true"></i></div>
       <h2>Cadastro recebido</h2>
       <p>Obrigado, ${state.nome ? state.nome.split(' ')[0] : 'voluntário'}. Sua ficha foi registrada. A coordenação entrará em contato para agendar a capacitação inicial.</p>
       <div class="protocol">Protocolo ${protocolo}</div>
@@ -705,7 +721,7 @@ function validateStep(s){
   return ok;
 }
 
-function renderAll(){ renderNav(); renderPanel(); }
+function renderAll(){ renderNav(); renderPanel(); if(window.lucide) lucide.createIcons(); }
 
 /* Busca automática de CEP (ViaCEP): preenche endereço, bairro e cidade. */
 function buscarCep(){
@@ -715,7 +731,10 @@ function buscarCep(){
   const cep = input.value.replace(/\D/g,'');
   if(status){
     status.className = 'hint';
-    status.textContent = cep.length === 8 ? 'Buscando endereço...' : '';
+    status.innerHTML = cep.length === 8
+      ? '<i data-lucide="loader" class="lucide-spin" aria-hidden="true"></i> Buscando endereço...'
+      : '';
+    if(window.lucide) lucide.createIcons();
   }
   if(cep.length !== 8) return;
   fetch(`https://viacep.com.br/ws/${cep}/json/`)
@@ -736,7 +755,7 @@ function buscarCep(){
       preencher('endereco', d.logradouro);
       preencher('bairro',  d.bairro);
       preencher('cidade',  d.localidade);
-      if(status){ status.className = 'hint ok'; status.textContent = 'Endereço preenchido automaticamente.'; }
+      if(status){ status.className = 'hint ok'; status.innerHTML = '<i data-lucide="check" aria-hidden="true"></i> Endereço preenchido automaticamente.'; if(window.lucide) lucide.createIcons(); }
     });
 }
 
