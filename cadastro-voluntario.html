@@ -4,33 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cadastro de Voluntário — Defesa Civil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy: #10233d;
+    --navy: #0f2a47;
     --navy-2: #16304f;
-    --orange: #e8590c;
-    --orange-dark: #b8440a;
-    --paper: #f5f2ec;
+    --orange: #f57c1f;
+    --orange-dark: #c85f0c;
+    --paper: #f4f0e6;
     --card: #ffffff;
-    --ink: #1a1f26;
-    --slate: #5b6472;
-    --line: #dcd6c9;
+    --ink: #1b2028;
+    --slate: #5a6270;
+    --line: #d8d1c2;
     --ok: #2f7a4d;
     --danger: #b3261e;
-    --radius: 3px;
+    --radius: 2px;
   }
   *{box-sizing:border-box;}
+  ::selection{ background:rgba(245,124,31,.28); }
+  input[type=checkbox], input[type=radio]{ accent-color: var(--orange); }
   html,body{
     margin:0; padding:0; height:100%;
     background:var(--paper);
     color:var(--ink);
-    font-family: "Source Sans Pro", "Segoe UI", Arial, sans-serif;
+    font-family: "Source Sans 3", "Source Sans Pro", "Segoe UI", Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
   }
   h1,h2,h3, .step-num{
     font-family: "Oswald", "Arial Narrow", sans-serif;
     font-weight:600;
-    letter-spacing:.01em;
+    letter-spacing:.02em;
   }
   .hazard-bar{
     height:8px;
@@ -175,20 +180,40 @@
     min-height: 420px;
     display:flex;
     flex-direction:column;
+    animation:dc-rise .28s ease-out;
+  }
+  @keyframes dc-rise{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:none; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .panel{ animation:none; }
+    .step-dot, .home-link, .btn-primary, .btn-ghost, .area-card{ transition:none; }
   }
   .panel-head{
+    position:relative;
     border-bottom:1px solid var(--line);
-    padding-bottom:14px;
+    padding:6px 0 14px;
     margin-bottom:22px;
+  }
+  .panel-head::before{
+    content:"";
+    position:absolute;
+    top:0; left:0;
+    width:46px; height:3px;
+    background:var(--orange);
   }
   .panel-head .eyebrow{
     color:var(--orange-dark);
-    font-size:12.5px;
-    font-weight:700;
+    font-family:"Oswald",sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:.12em;
   }
   .panel-head h2{
-    margin:4px 0 6px;
-    font-size:22px;
+    margin:5px 0 6px;
+    font-size:clamp(21px, 3vw, 27px);
+    line-height:1.12;
     color:var(--navy);
   }
   .panel-head p{
@@ -217,9 +242,12 @@
     color:var(--ink);
   }
   .field textarea{ resize:vertical; min-height:64px; }
-  .field input:focus, .field select:focus, .field textarea:focus{
+  .field input:focus, .field select:focus, .field textarea:focus,
+  button:focus-visible, .home-link:focus-visible, .area-card:focus-visible{
     outline:2px solid var(--orange);
-    outline-offset:1px;
+    outline-offset:2px;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
     border-color:var(--orange);
   }
   .field.invalid input, .field.invalid select{
