@@ -59,15 +59,11 @@
     display:flex; align-items:center; gap:14px;
   }
   header.top .mark{
-    width:42px; height:42px;
-    border-radius:50%;
-    background:var(--orange);
-    display:flex; align-items:center; justify-content:center;
-    font-family:"Oswald",sans-serif;
-    font-weight:700;
-    color:var(--navy);
-    font-size:18px;
+    height:44px;
+    width:auto;
     flex-shrink:0;
+    object-fit:contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
   }
   header.top h1{
     margin:0;
@@ -377,7 +373,7 @@
 <div class="hazard-bar"></div>
 <header class="top">
   <div class="brand">
-    <div class="mark">DC</div>
+    <img class="mark" src="imagens/logo.png" alt="Defesa Civil MT" onerror="this.style.display='none'">
     <div>
       <h1>Cadastro de Voluntário</h1>
       <p>Coordenadoria Municipal de Defesa Civil</p>
