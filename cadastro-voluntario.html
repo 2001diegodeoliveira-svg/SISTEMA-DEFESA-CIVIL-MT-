@@ -83,6 +83,28 @@
     border-radius:20px;
     white-space:nowrap;
   }
+  header.top .top-right{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  header.top .home-link{
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--orange);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:700;
+    padding:7px 14px;
+    border-radius:20px;
+    border:1px solid var(--orange-dark);
+    transition:background .15s;
+  }
+  header.top .home-link:hover{ background:var(--orange-dark); }
 
   .layout{
     max-width:1040px;
@@ -205,6 +227,11 @@
   }
   .field .err{ display:none; color:var(--danger); font-size:12px; }
   .field.invalid .err{ display:block; }
+  .field .hint.ok{ color:#1a7f37; font-weight:600; }
+  .field .hint.err{ color:var(--danger); font-weight:600; }
+  .field input.autofill{
+    background:#eef7ee; border-color:#9bc39b; color:var(--ink);
+  }
 
   fieldset{ border:none; padding:0; margin:0 0 16px; }
   legend{ font-size:13px; font-weight:600; color:var(--navy); margin-bottom:8px; padding:0;}
@@ -312,7 +339,13 @@
       <p>Coordenadoria Municipal de Defesa Civil</p>
     </div>
   </div>
-  <div class="status-pill" id="topStatus">Etapa 1 de 7</div>
+  <div class="top-right">
+    <a class="home-link" href="index.html" title="Voltar ao início">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      Home
+    </a>
+    <div class="status-pill" id="topStatus">Etapa 1 de 7</div>
+  </div>
 </header>
 
 <div class="layout">
@@ -418,7 +451,7 @@ function renderPanel(){
       <div class="grid3">
         ${fieldHtml('bairro','Bairro',{required:true})}
         ${fieldHtml('cidade','Cidade',{required:true})}
-        ${fieldHtml('cep','CEP',{placeholder:'00000-000'})}
+        ${fieldHtml('cep','CEP',{placeholder:'00000-000',hint:'Preencha o CEP para preencher o endereço automaticamente.'})}
       </div>
       <div class="grid2">
         ${fieldHtml('telefone','Telefone / WhatsApp',{type:'tel',required:true,hint:'Usado para convocação em emergências.'})}
@@ -583,10 +616,30 @@ function attachHandlers(s){
     });
   });
 
-  document.querySelectorAll('.field input, .field select, .field textarea').forEach(el=>{
+  document.querySelectorAll('.field input, .field textarea').forEach(el=>{
     el.addEventListener('input', ()=>{ state[el.id] = el.value; });
+  });
+  document.querySelectorAll('.field select').forEach(el=>{
     el.addEventListener('change', ()=>{ state[el.id] = el.value; });
   });
+
+  if(s === 'contato'){
+    const cepInput = document.getElementById('cep');
+    if(cepInput){
+      cepInput.addEventListener('input', ()=>{
+        let v = cepInput.value.replace(/\D/g,'').slice(0,8);
+        if(v.length > 5) v = v.slice(0,5) + '-' + v.slice(5);
+        cepInput.value = v;
+        state.cep = v;
+        buscarCep();
+      });
+      const st = document.createElement('div');
+      st.id = 'cepStatus';
+      st.className = 'hint';
+      const cepField = document.querySelector('.field[data-field="cep"]');
+      if(cepField) cepField.appendChild(st);
+    }
+  }
 
   document.getElementById('btnBack').addEventListener('click', ()=>{
     if(current > 0){ current--; renderAll(); window.scrollTo({top:0, behavior:'smooth'}); }
@@ -625,6 +678,40 @@ function validateStep(s){
 }
 
 function renderAll(){ renderNav(); renderPanel(); }
+
+/* Busca automática de CEP (ViaCEP): preenche endereço, bairro e cidade. */
+function buscarCep(){
+  const input = document.getElementById('cep');
+  const status = document.getElementById('cepStatus');
+  if(!input) return;
+  const cep = input.value.replace(/\D/g,'');
+  if(status){
+    status.className = 'hint';
+    status.textContent = cep.length === 8 ? 'Buscando endereço...' : '';
+  }
+  if(cep.length !== 8) return;
+  fetch(`https://viacep.com.br/ws/${cep}/json/`)
+    .then(r => r.json())
+    .catch(() => null)
+    .then(d => {
+      if(!d || d.erro){
+        if(status){ status.className = 'hint err'; status.textContent = 'CEP não encontrado. Preencha os dados manualmente.'; }
+        return;
+      }
+      const preencher = (id, val) => {
+        const el = document.getElementById(id);
+        if(!el || !val) return;
+        el.value = val;
+        state[id] = val;
+        el.classList.add('autofill');
+      };
+      preencher('endereco', d.logradouro);
+      preencher('bairro',  d.bairro);
+      preencher('cidade',  d.localidade);
+      if(status){ status.className = 'hint ok'; status.textContent = 'Endereço preenchido automaticamente.'; }
+    });
+}
+
 renderAll();
 </script>
 </body>
