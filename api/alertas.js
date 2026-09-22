@@ -96,8 +96,21 @@ module.exports = serve(async function handler(req) {
   });
 
   let comInmet = true;
+  let munFilter = '';
   const ru = reqUrl(req);
-  try { comInmet = ru ? ru.searchParams.get('inmet') !== '0' : true; } catch {}
+  try {
+    comInmet = ru ? ru.searchParams.get('inmet') !== '0' : true;
+    munFilter = ru ? (ru.searchParams.get('municipio') || '') : '';
+  } catch {}
+
+  // Filtro por município (gestor municipal): apenas alertas curados do próprio
+  // município. Avisos INMET (seção inmet) permanecem estaduais por decisão.
+  if (munFilter) {
+    const nm = String(munFilter).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    alertas = alertas.filter(a =>
+      String(a.municipio || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === nm);
+  }
+
   const inmet = comInmet ? await fetchInmetAvisos() : [];
 
   return jsonResponse(200, {

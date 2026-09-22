@@ -201,11 +201,11 @@
             <div class="stat-grid" id="statGrid">
                 <div class="stat-card fire"><div class="ico">🔥</div><div class="val" id="sFocos">—</div><div class="lbl">Focos Hoje</div><div class="badge" id="sFocosBadge">—</div></div>
                 <div class="stat-card alert"><div class="ico">⚠️</div><div class="val" id="sSipam">—</div><div class="lbl">Eventos SIPAM</div><div class="badge" id="sSipamBadge">—</div></div>
-                <div class="stat-card city"><div class="ico">📡</div><div class="val" id="sCidades">—</div><div class="lbl">Cidades Ativas</div><div class="badge">de 8</div></div>
+                <div class="stat-card city"><div class="ico">📡</div><div class="val" id="sCidades">—</div><div class="lbl">Cidades Ativas</div><div class="badge" id="sCidadesBadge">de 8</div></div>
                 <div class="stat-card ok"><div class="ico">🛰️</div><div class="val" id="sSats">—</div><div class="lbl">Satélites</div><div class="badge" id="sSatsBadge">INPE</div></div>
             </div>
 
-            <div class="sec-title"><i data-lucide="building-2" style="color:var(--blue);"></i> Clima das 8 Cidades</div>
+            <div class="sec-title"><i data-lucide="building-2" style="color:var(--blue);"></i><span id="citiesTitle">Clima das 8 Cidades</span></div>
             <div class="city-grid" id="cityGrid">
                 <div class="loading" style="grid-column:1/-1;"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>
             </div>
@@ -316,6 +316,12 @@ const CITIES = [
     { nome:'Barra do Garças', lat:-15.891, lon:-52.258 },
 ];
 
+// Gestor municipal: painel delimitado ao próprio município (decisão de acesso).
+const muniRest = (window.dcMuniRestricao) ? dcMuniRestricao() : null;
+const CITIES_VISIVEIS = muniRest
+    ? CITIES.filter(c => dcNorm(c.nome) === muniRest.norm)
+    : CITIES;
+
 const ICONE_CPTEC = { 'Chuva':'🌧️','Chuvoso':'🌧️','Ensolarado':'☀️','Parcialmente nublado':'⛅','Nublado':'☁️','Sol com nuvens':'🌤️','Tempestades':'⛈️','Nevoeiro':'🌫️','Neve':'❄️' };
 
 // ===== API FETCHERS =====
@@ -330,7 +336,7 @@ async function fetchCity(c) {
     } catch { return null; }
 }
 
-async function fetchFocos() {
+async function fetchFocos(munNorm) {
     try {
         // Tenta o CSV do dia atual; se ainda não publicado, volta até 3 dias
         let txt = null;
@@ -349,7 +355,8 @@ async function fetchFocos() {
         const hdr = lines[0].split(',').map(h=>h.trim());
         const iUF = hdr.indexOf('estado'), iSat = hdr.indexOf('satelite'), iRisco = hdr.indexOf('risco_fogo');
         const iMun = hdr.indexOf('municipio'), iBioma = hdr.indexOf('bioma'), iLat = hdr.indexOf('lat'), iLon = hdr.indexOf('lon');
-        const mt = lines.slice(1).filter(l => { const c=l.split(','); return (c[iUF]||'').trim().toUpperCase()==='MATO GROSSO'; });
+        let mt = lines.slice(1).filter(l => { const c=l.split(','); return (c[iUF]||'').trim().toUpperCase()==='MATO GROSSO'; });
+        if (munNorm) mt = mt.filter(l => dcNorm(l.split(',')[iMun]) === munNorm);
         const sats = [...new Set(mt.map(l=>l.split(',')[iSat]?.trim()).filter(Boolean))];
         const high = mt.filter(l => parseFloat(l.split(',')[iRisco]) >= 0.6).length;
         const byBioma = {};
@@ -363,12 +370,13 @@ async function fetchFocos() {
     } catch { return { today:0, high:0, sats:[], topBioma:[], topMun:[], all:[] }; }
 }
 
-async function fetchSipam() {
+async function fetchSipam(munNorm) {
     try {
         const r = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
         if (!r.ok) return [];
         const d = await r.json();
-        return Array.isArray(d) ? d : [];
+        const lista = Array.isArray(d) ? d : [];
+        return munNorm ? lista.filter(ev => dcNorm(ev.municipio) === munNorm) : lista;
     } catch { return []; }
 }
 
@@ -389,8 +397,8 @@ async function fetchCptec() {
 // ===== RENDER =====
 async function renderPainel() {
     const [cityRes, focos, sipam, cptec] = await Promise.all([
-        Promise.all(CITIES.map(c=>fetchCity(c))),
-        fetchFocos(), fetchSipam(), fetchCptec()
+        Promise.all(CITIES_VISIVEIS.map(c=>fetchCity(c))),
+        fetchFocos(muniRest ? muniRest.norm : null), fetchSipam(muniRest ? muniRest.norm : null), fetchCptec()
     ]);
 
     // --- Stats ---
@@ -401,12 +409,16 @@ async function renderPainel() {
     document.getElementById('sSipamBadge').textContent = ativos > 0 ? `${ativos} ativos` : 'todos controlados';
     const okCities = cityRes.filter(Boolean).length;
     document.getElementById('sCidades').textContent = okCities;
+    const badCid = document.getElementById('sCidadesBadge');
+    if (badCid) badCid.textContent = 'de ' + CITIES_VISIVEIS.length;
     document.getElementById('sSats').textContent = focos.sats.length;
     document.getElementById('sSatsBadge').textContent = focos.sats.join(', ') || '—';
+    const citiesTitle = document.getElementById('citiesTitle');
+    if (citiesTitle) citiesTitle.textContent = 'Clima — ' + CITIES_VISIVEIS.map(c=>c.nome).join(', ');
 
     // --- Cities ---
     const cg = document.getElementById('cityGrid');
-    cg.innerHTML = CITIES.map((c,i) => {
+    cg.innerHTML = CITIES_VISIVEIS.map((c,i) => {
         const d = cityRes[i];
         if (!d) return `<div class="city-card"><div class="cn">${c.nome}</div><div class="ct" style="color:var(--muted);">—°C</div></div>`;
         const tc = d.temp>=38?'var(--red)':d.temp>=32?'var(--accent)':d.temp>=22?'var(--amber)':'var(--blue)';
@@ -646,7 +658,7 @@ function updateMap(focosData, sipamData, cityResults) {
     });
 
     // Render cities
-    CITIES.forEach((c, i) => {
+    CITIES_VISIVEIS.forEach((c, i) => {
         const d = cityResults[i];
         if (!d) return;
         const temp = d.temp;
@@ -681,6 +693,13 @@ window.addEventListener('load', () => {
 pMap.on('popupopen', () => { if (window.lucide) lucide.createIcons(); });
 
 // Bootstrap: agora que updateMap está definido, iniciar o painel
+if (muniRest) {
+    const chip = document.createElement('div');
+    chip.id = 'painelMunChip';
+    chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>Visão restrita a <b>${muniRest.municipio}</b></span>`;
+    chip.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:9px;background:rgba(11,19,41,.94);border:1px solid rgba(249,115,22,.6);color:#f1f5f9;font-size:12px;font-weight:600;padding:10px 15px;border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 10px 26px rgba(0,0,0,.5);';
+    document.body.appendChild(chip);
+}
 if (window.lucide) lucide.createIcons();
 renderPainel();
 setInterval(renderPainel, 5*60*1000);

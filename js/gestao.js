@@ -99,7 +99,7 @@
     var IS_ESTADUAL = false;
     var MUN = '';
     var DOC = { secoes: {} };
-    var curSec = 'areasDeRisco';
+    var curSec = 'visao';
     var editingId = null;
     var buf = { coords: {}, latlng: {}, dirty: {} };
     var toastTimer = null;
@@ -205,17 +205,77 @@
         });
     }
 
+    /* ============ visão geral de um município ============ */
+    function renderVisaoGeral() {
+        curSec = 'visao';
+        renderTabs();
+        var preenchidas = 0, itens = 0, geos = 0;
+        var cards = SECOES.map(function (s) {
+            var n = Array.isArray(DOC.secoes[s.id]) ? DOC.secoes[s.id].length : 0;
+            itens += n;
+            if (n > 0) preenchidas++;
+            var temGeo = false;
+            if (n > 0) {
+                try {
+                    temGeo = DOC.secoes[s.id].some(function (x) {
+                        return (Array.isArray(x.coords) && x.coords.length) || (Array.isArray(x.latlng) && x.latlng.length === 2);
+                    });
+                } catch (e) {}
+            }
+            if (temGeo) geos++;
+            var ok = n > 0
+                ? (s.kind === 'single' ? 'Cadastrado' : n + (n === 1 ? ' registro' : ' registros'))
+                : (s.kind === 'single' ? 'Não cadastrado' : 'Sem registros');
+            var cor = n > 0 ? 'var(--green)' : 'var(--accent-orange)';
+            return '<div class="ov-card" data-sec="' + s.id + '" onclick="GESTAO.renderSecao(\'' + s.id + '\')">' +
+                '<i data-lucide="' + s.icone + '" style="color:' + cor + '"></i>' +
+                '<div class="ov-info"><b>' + esc(s.label) + '</b><span>' + ok + (temGeo ? ' · com mapa' : '') + '</span></div>' +
+                '<em>' + (n ? n : '—') + '</em>' +
+                '</div>';
+        }).join('');
+        var pct = Math.round((preenchidas / SECOES.length) * 100);
+        var fato = preenchidas === SECOES.length;
+
+        var html = '<div class="ve-top"><div>' +
+            '<div class="ve-kicker">' + (IS_MUNICIPAL ? 'Sua gestão' : 'Município em visualização') + '</div>' +
+            '<h2>Visão Geral — ' + esc(MUN) + '</h2>' +
+            '<p>Situação do cadastro operacional: <b>' + preenchidas + ' de ' + SECOES.length + '</b> seções com informações registradas' +
+            (IS_MUNICIPAL ? '. Toque em cada card para abrir e preencher a seção.' : '. Acesso somente leitura para o gestor estadual.') + '</p>' +
+            '</div>' +
+            (IS_MUNICIPAL
+                ? '<button class="btn-refresh" onclick="GESTAO.atualizar()"><i data-lucide="rotate-cw"></i> Atualizar</button>'
+                : '') + '</div>';
+
+        html += '<div class="ve-cards">' +
+            '<div class="ve-card"><i data-lucide="clipboard-check" style="color:var(--green)"></i><b>' + preenchidas + '/' + SECOES.length + '</b><span>seções preenchidas</span></div>' +
+            '<div class="ve-card"><i data-lucide="database" style="color:var(--blue-glow)"></i><b>' + itens + '</b><span>registros cadastrados</span></div>' +
+            '<div class="ve-card"><i data-lucide="map-pinned" style="color:var(--blue-glow)"></i><b>' + geos + '</b><span>seções com mapa/ponto</span></div>' +
+            '<div class="ve-card"><i data-lucide="' + (fato ? 'badge-check' : 'triangle-alert') + '" style="color:' + (fato ? 'var(--green)' : 'var(--accent-orange)') + '"></i><b>' + (fato ? 'Completo' : SECOES.length - preenchidas) + '</b><span>' + (fato ? '11/11 — pronto' : 'seção(ões) pendente(s)') + '</span></div>' +
+            '</div>';
+
+        html += '<div class="card" style="margin-bottom:18px;"><div class="card-ttl">Progresso de cadastro</div>' +
+            '<div class="ov-prog"><div class="ov-prog-fill" style="width:' + pct + '%;' + (fato ? 'background:var(--green)' : '') + '"></div></div>' +
+            '<span style="font-size:11px;color:var(--text-muted);">' + pct + '% das seções com informação — clique nos cards abaixo para ver cada seção.</span></div>';
+
+        html += '<div class="ov-grid">' + cards + '</div>';
+
+        $('panelArea').innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+    }
+
     /* ============ abas ============ */
     function renderTabs() {
         var nav = $('tabsNav');
-        nav.innerHTML = SECOES.map(function (s) {
+        var visaoBtn = '<button class="tab' + (curSec === 'visao' ? ' active' : '') + '" data-sec="visao">' +
+            '<i data-lucide="layout-dashboard"></i><span>Visão Geral</span></button>';
+        nav.innerHTML = visaoBtn + SECOES.map(function (s) {
             var n = Array.isArray(DOC.secoes[s.id]) ? DOC.secoes[s.id].length : 0;
             var badge = s.kind === 'single' ? (n ? '<em>OK</em>' : '') : (n ? '<em>' + n + '</em>' : '');
             return '<button class="tab' + (s.id === curSec ? ' active' : '') + '" data-sec="' + s.id + '">' +
                 '<i data-lucide="' + s.icone + '"></i><span>' + s.label + '</span>' + badge + '</button>';
         }).join('');
         Array.prototype.forEach.call(nav.querySelectorAll('.tab'), function (b) {
-            b.addEventListener('click', function () { curSec = b.getAttribute('data-sec'); renderTabs(); switchTab(curSec); });
+            b.addEventListener('click', function () { var id = b.getAttribute('data-sec'); switchTabConciliado(id); });
         });
         if (window.lucide) lucide.createIcons();
     }
@@ -223,7 +283,12 @@
     function switchTab(id) {
         curSec = id;
         renderTabs();
+        if (id === 'visao') { renderVisaoGeral(); return; }
         renderPanel(id, null);
+    }
+
+    function switchTabConciliado(id) {
+        switchTab(id);
     }
 
     /* ============ painel ============ */
@@ -582,6 +647,7 @@
 
     function verMunicipio(nome) {
         MUN = nome;
+        curSec = 'visao';
         var vb = $('veBar');
         if (vb) vb.style.display = '';
         $('munSelWrap').style.display = 'none';
@@ -625,6 +691,8 @@
         render: render,
         openMap: openMap,
         clearMap: clearMap,
+        renderSecao: switchTab,
+        atualizar: function () { loadDoc(); },
         atualizarVisao: carregarVisaoEstadual,
         voltarVisao: voltarVisao,
         verMunicipio: verMunicipio,

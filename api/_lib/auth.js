@@ -57,6 +57,33 @@ async function findByCredentials(usuario, senha) {
   return u;
 }
 
+/* Login com auto-provisão: se a conta não existe no store persistido mas as
+   credenciais batem com o seed padrão (ex.: store antiga/corrompida que só
+   tinha as contas de demonstração), cria a conta e autentica. Garante que
+   os 142 municípios SEMPRE consigam entrar como gestor municipal. */
+async function findOrProvisionUser(usuario, senha) {
+  const users = await ensureSeededUsers();
+  const u = users.find(x => x.usuario === usuario);
+  if (u) {
+    if (!bcrypt.compareSync(senha, u.senhaHash)) return null;
+    return u;
+  }
+  const seed = seedUsers().find(x => x.usuario === usuario && x.senha === senha && x.perfil === 'municipal');
+  if (!seed) return null;
+  const novo = {
+    id: 'U' + (users.length + 1),
+    usuario: seed.usuario,
+    senhaHash: bcrypt.hashSync(seed.senha, 10),
+    nome: seed.nome,
+    perfil: seed.perfil,
+    municipio: seed.municipio || '',
+    criadoEm: new Date().toISOString(),
+  };
+  users.push(novo);
+  try { await writeCollection('users', users); } catch (e) { /* store somente leitura: autentica em memória */ }
+  return novo;
+}
+
 function signToken(user) {
   return jwt.sign(
     { sub: user.id, usuario: user.usuario, perfil: user.perfil },
@@ -87,6 +114,7 @@ module.exports = {
   JWT_SECRET,
   ensureSeededUsers,
   findByCredentials,
+  findOrProvisionUser,
   signToken,
   verifyToken,
   publicUser,

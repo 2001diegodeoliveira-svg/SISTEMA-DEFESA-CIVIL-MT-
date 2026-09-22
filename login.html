@@ -249,6 +249,18 @@
             const nome = document.getElementById('nomeInput').value.trim();
             const msg = document.getElementById('loginMsg');
 
+            // Ao escolher "Gestor municipal", a conta usada precisa ser do município
+            // selecionado — sem isso o sistema poderia autenticar outra conta (ex.:
+            // "defesa") e "entrar como estadual" por engano.
+            if (perfilSelecionado === 'municipal') {
+                const achado = municipios.find(m => m.usuario === usuario);
+                if (!munSelect.value || !achado) {
+                    msg.style.display = 'block';
+                    msg.textContent = 'Gestor municipal: selecione o município na lista para preencher a conta de acesso.';
+                    return;
+                }
+            }
+
             if (!usuario || !senha) {
                 msg.style.display = 'block';
                 msg.textContent = 'Informe usuário e senha.';
@@ -273,6 +285,14 @@
 
             // Se o usuário digitou um nome e o backend não retornou, usamos o nome local
             const s = dcGetSession();
+            // Segurança: perfil "Gestor municipal" selecionado exige conta municipal.
+            if (perfilSelecionado === 'municipal' && (!s || s.perfil !== 'municipal')) {
+                localStorage.removeItem('dcmt_token');
+                localStorage.removeItem('dcmt_session');
+                msg.style.display = 'block';
+                msg.textContent = 'A conta "' + usuario + '" não é um gestor municipal. Escolha o município correto na lista (usuário e senha: ' + usuario + ' / defesa123).';
+                return;
+            }
             if (nome && s && (!s.nome || s.nome === 'Cidadão')) {
                 s.nome = nome;
             }

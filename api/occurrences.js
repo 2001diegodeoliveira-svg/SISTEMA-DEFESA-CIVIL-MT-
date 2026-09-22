@@ -20,13 +20,19 @@ function withinPeriod(o, period) {
   return Date.now() - (o.reportedAt || o.receivedAt || 0) <= hours * 3600 * 1000;
 }
 
+function normTxt(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
 function applyFilters(list, q) {
+  const munFilter = q.get('municipio');
   return list.filter((o) => {
     if (q.get('source') && o.source !== q.get('source').toUpperCase()) return false;
     if (q.get('type') && o.type !== q.get('type').toUpperCase()) return false;
     if (q.get('priority') && o.priority !== q.get('priority').toUpperCase()) return false;
     if (q.get('status') && o.status !== q.get('status').toUpperCase()) return false;
     if (!withinPeriod(o, q.get('period'))) return false;
+    if (munFilter && normTxt(o.city) !== normTxt(munFilter)) return false;
     return true;
   });
 }
@@ -47,25 +53,29 @@ module.exports = serve(async function handler(req) {
 
   const url = reqUrl(req);
   const view = url ? url.searchParams.get('view') : null;
+  const munFilter = url ? url.searchParams.get('municipio') : null;
   const all = await readCollection('occurrences');
+  const scoped = (munFilter && normTxt(munFilter))
+    ? all.filter(o => normTxt(o.city) === normTxt(munFilter))
+    : all;
 
   if (view === 'stats') {
-    const last24h = all.filter((o) => Date.now() - (o.reportedAt || 0) <= 24 * 3600 * 1000);
-    const active = all.filter((o) => !['RESOLVIDA', 'ENCERRADA'].includes(o.status));
+    const last24h = scoped.filter((o) => Date.now() - (o.reportedAt || 0) <= 24 * 3600 * 1000);
+    const active = scoped.filter((o) => !['RESOLVIDA', 'ENCERRADA'].includes(o.status));
     return jsonResponse(200, {
-      total: all.length,
-      criticas: all.filter((o) => o.priority === 'CRITICA').length,
-      altas: all.filter((o) => o.priority === 'ALTA').length,
+      total: scoped.length,
+      criticas: scoped.filter((o) => o.priority === 'CRITICA').length,
+      altas: scoped.filter((o) => o.priority === 'ALTA').length,
       ativas: active.length,
       ultimas24h: last24h.length,
-      waze: all.filter((o) => o.source === 'WAZE').length,
-      porTipo: countBy(all, 'type'),
-      porPrioridade: countBy(all, 'priority'),
-      porMunicipio: countBy(all, 'city'),
+      waze: scoped.filter((o) => o.source === 'WAZE').length,
+      porTipo: countBy(scoped, 'type'),
+      porPrioridade: countBy(scoped, 'priority'),
+      porMunicipio: countBy(scoped, 'city'),
     }, origin);
   }
 
-  const filtered = applyFilters(view === 'waze' ? all.filter((o) => o.source === 'WAZE') : all, url.searchParams)
+  const filtered = applyFilters(view === 'waze' ? scoped.filter((o) => o.source === 'WAZE') : scoped, url.searchParams)
     .sort((a, b) => (b.reportedAt || 0) - (a.reportedAt || 0));
 
   if (view === 'map') {

@@ -197,6 +197,22 @@
         .ve-prog-txt { font-size: 11px; font-weight: 700; }
 
         @media (max-width: 960px) { .ve-cards { grid-template-columns: 1fr 1fr; } .ve-grid { grid-template-columns: 1fr; } .ve-bar-label { width: 112px; } }
+
+        .ov-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .ov-card {
+            display: flex; align-items: center; gap: 11px; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 11px; padding: 13px 14px;
+            cursor: pointer; transition: border-color .15s, background .15s;
+        }
+        .ov-card:hover { border-color: rgba(249,115,22,.45); background: var(--bg-card-hover); }
+        .ov-card > i { width: 20px; height: 20px; flex: none; }
+        .ov-info { flex: 1; min-width: 0; }
+        .ov-info b { display: block; font-size: 13px; font-weight: 700; }
+        .ov-info span { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ov-card em { font-style: normal; font-weight: 800; font-size: 16px; color: var(--text-main); background: rgba(148,163,184,.12); padding: 3px 10px; border-radius: 10px; }
+        .ov-prog { height: 12px; background: rgba(148,163,184,.14); border-radius: 7px; overflow: hidden; margin-bottom: 8px; }
+        .ov-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent-orange), var(--blue-glow)); border-radius: 7px; transition: width .4s; }
+        @media (max-width: 640px) { .ov-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>

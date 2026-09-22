@@ -225,6 +225,7 @@
 <script>
     /* Painel da Integração Waze — consome /api/waze e /api/occurrences.
        Atualiza sozinho a cada 30s (mesmo ritmo de loadReports). */
+    let muniRest = null;
     const PRIORITY_CLASS = { CRITICA: 'urgent', ALTA: 'urgent', MEDIA: 'warning', BAIXA: 'info' };
     const TYPE_LABEL = { ACIDENTE: 'Acidente', ENGARRAFAMENTO: 'Engarrafamento', PERIGO: 'Perigo', CLIMA: 'Clima', INTERDICAO: 'Interdição', OBRA: 'Obra', OUTROS: 'Outros' };
 
@@ -241,7 +242,9 @@
             renderStatusPill('wazeIntStatusPill', wazeStatus, 'Waze');
             renderStatusPill('tomtomIntStatusPill', tomtomStatus, 'TomTom');
             document.getElementById('wazeIntMensagem').textContent = `Waze: ${wazeStatus.mensagem} · TomTom: ${tomtomStatus.mensagem}`;
-            renderWazeIntegrationList(occ.occurrences || []);
+            let ocorrencias = occ.occurrences || [];
+            if (muniRest) ocorrencias = ocorrencias.filter(o => dcNorm(o.city || '') === muniRest.norm);
+            renderWazeIntegrationList(ocorrencias);
         } catch (e) {
             document.getElementById('wazeIntMensagem').textContent = 'Falha ao consultar a integração (backend indisponível).';
         }
@@ -367,6 +370,9 @@
         if (!s) location.replace('login.html');
         else if (s.perfil === 'comum') location.replace('alertas.html');
         dcRenderUserArea();
+        // session.js carregou agora: popula a restrição municipal usada pelos
+        // blocos de exibição (declarada como `let muniRest` no primeiro script).
+        if (window.dcMuniRestricao && typeof muniRest !== 'undefined') muniRest = dcMuniRestricao();
     })();
 </script>
 <script src="js/monitor.js"></script>
@@ -374,6 +380,15 @@
 (function() {
     const map = L.map('wazeMap', { zoomControl:false }).setView([-13.5, -55.5], 5);
     L.control.zoom({ position:'topright' }).addTo(map);
+
+    // Gestor municipal: módulo delimitado ao próprio município.
+    if (muniRest) {
+        const chip = document.createElement('div');
+        chip.id = 'wazeMunChip';
+        chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>Visão restrita a <b>${muniRest.municipio}</b></span>`;
+        chip.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:9px;background:rgba(11,19,41,.94);border:1px solid rgba(249,115,22,.6);color:#f1f5f9;font-size:12px;font-weight:600;padding:10px 15px;border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 10px 26px rgba(0,0,0,.5);';
+        document.body.appendChild(chip);
+    }
 
     // CARTO exige API key nos tiles gratuitos (vinha com marca d'água "API key
     // required"); usamos o Esri "World Dark Gray", gratuito e sem chave.
@@ -417,7 +432,9 @@
     function userReportsAtuais() {
         const base = backendOk ? apiReports : DEMO_REPORTS;
         const extras = localOnlyReports.filter(l => !base.some(b => String(b.id) === String(l.id)));
-        return extras.concat(base);
+        const tudo = extras.concat(base);
+        if (!muniRest || !muniPoly) return tudo;
+        return tudo.filter(r => dentroDoMunicipio(Number(r.lng), Number(r.lat)));
     }
 
     // Busca ocorrências do backend (compartilhadas em tempo real entre usuários);
@@ -452,6 +469,45 @@
 
     let placingReport = false;
     let reportLatLng = null;
+
+    // Geofence municipal: carrega a malha IBGE do município e testa se um ponto
+    // (lng, lat) está dentro do território. Enquanto o polígono não carrega,
+    // mantém os itens visíveis para não esconder dados por falha de rede.
+    let muniPoly = null;
+    async function carregarMalhaMunicipio() {
+        if (!muniRest) return;
+        try {
+            const r = await dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima');
+            if (!r.ok) throw 0;
+            const gj = await r.json();
+            const feat = (gj.features || []).find(f =>
+                dcNorm((f.properties && (f.properties.nome || f.properties.name)) || '') === muniRest.norm);
+            if (!feat || !feat.geometry || !feat.geometry.coordinates) throw 0;
+            const primeiroAnel = function (coords) {
+                if (Array.isArray(coords[0]) && typeof coords[0][0] === 'number') return coords;
+                for (const c of coords) { const a = primeiroAnel(c); if (a) return a; }
+                return null;
+            };
+            const poly = primeiroAnel(feat.geometry.coordinates);
+            if (!poly || poly.length < 3) throw 0;
+            if (!poly.every(p => isFinite(p[0]) && isFinite(p[1]))) throw 0;
+            muniPoly = poly;
+            try { map.fitBounds(L.latLngBounds(poly.map(p => [p[1], p[0]])), { maxZoom: 12 }); } catch {}
+            renderUserReports();
+            renderReportCards();
+        } catch {}
+    }
+    function dentroDoMunicipio(lng, lat) {
+        if (!muniPoly || !muniPoly.length) return !muniPoly;
+        if (!isFinite(lng) || !isFinite(lat)) return false;
+        let dentro = false;
+        for (let i = 0, j = muniPoly.length - 1; i < muniPoly.length; j = i++) {
+            const xi = muniPoly[i][0], yi = muniPoly[i][1];
+            const xj = muniPoly[j][0], yj = muniPoly[j][1];
+            if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) dentro = !dentro;
+        }
+        return dentro;
+    }
 
     function fmtTime(ts) {
         const d = Date.now() - ts;
@@ -544,6 +600,7 @@
             if (!r.ok) throw 0;
             sipamEvents = await r.json();
             if (!Array.isArray(sipamEvents)) sipamEvents = [];
+            if (muniRest) sipamEvents = sipamEvents.filter(ev => dcNorm(ev.municipio) === muniRest.norm);
         } catch { sipamEvents = []; }
         document.getElementById('statSipam').textContent = sipamEvents.length;
         renderSIPAM();
@@ -602,6 +659,7 @@
             const c = lines[i].split(',');
             if (c.length < hdr.length-2) continue;
             if ((c[hdr.indexOf('estado')]||'').trim().toUpperCase() !== 'MATO GROSSO') continue;
+            if (muniRest && dcNorm((c[iMun]||'').trim()) !== muniRest.norm) continue;
             const lat = parseFloat(c[iLat]), lng = parseFloat(c[iLon]);
             if (!isFinite(lat) || !isFinite(lng)) continue;
             const risco = parseFloat(c[iRisco]);
@@ -726,6 +784,7 @@
     loadReports();
     loadSIPAM();
     loadINPE();
+    carregarMalhaMunicipio();
 
     setInterval(loadReports, 30*1000);                 // reportes de outros usuários — tempo real
     setInterval(() => { loadSIPAM(); loadINPE(); }, 10*60*1000);

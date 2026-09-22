@@ -8,6 +8,20 @@
 function dcGetSession() {
     try { return JSON.parse(localStorage.getItem('dcmt_session')); } catch (e) { return null; }
 }
+
+/* Normaliza nomes (remove acentos, minúsculas) para comparações permissivas. */
+function dcNorm(s) {
+    return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
+/* Restrição de gestor municipal: devolve { municipio, norm } quando a sessão é
+   de um gestor municipal vinculado a um município, ou null caso contrário.
+   Usada para delimitar painel/waze/alertas ao próprio município. */
+function dcMuniRestricao() {
+    const s = dcGetSession();
+    if (!s || s.perfil !== 'municipal' || !s.municipio) return null;
+    return { perfil: s.perfil, municipio: String(s.municipio).trim(), norm: dcNorm(s.municipio) };
+}
 function dcGetToken() {
     try { return localStorage.getItem('dcmt_token'); } catch (e) { return null; }
 }
