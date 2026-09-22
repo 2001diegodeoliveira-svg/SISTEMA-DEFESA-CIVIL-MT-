@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cadastro de Voluntário — Defesa Civil</title>
+<style>
+  :root{
+    --navy: #10233d;
+    --navy-2: #16304f;
+    --orange: #e8590c;
+    --orange-dark: #b8440a;
+    --paper: #f5f2ec;
+    --card: #ffffff;
+    --ink: #1a1f26;
+    --slate: #5b6472;
+    --line: #dcd6c9;
+    --ok: #2f7a4d;
+    --danger: #b3261e;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: "Source Sans Pro", "Segoe UI", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3, .step-num{
+    font-family: "Oswald", "Arial Narrow", sans-serif;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+  .hazard-bar{
+    height:8px;
+    width:100%;
+    background: repeating-linear-gradient(
+      135deg,
+      var(--orange), var(--orange) 18px,
+      var(--navy) 18px, var(--navy) 36px
+    );
+  }
+  header.top{
+    background:var(--navy);
+    color:#fff;
+    padding: 22px 28px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  header.top .brand{
+    display:flex; align-items:center; gap:14px;
+  }
+  header.top .mark{
+    width:42px; height:42px;
+    border-radius:50%;
+    background:var(--orange);
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Oswald",sans-serif;
+    font-weight:700;
+    color:var(--navy);
+    font-size:18px;
+    flex-shrink:0;
+  }
+  header.top h1{
+    margin:0;
+    font-size: clamp(18px, 3vw, 24px);
+    color:#fff;
+  }
+  header.top p{
+    margin:2px 0 0;
+    color:#c7d2e0;
+    font-size:13px;
+  }
+  header.top .status-pill{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.25);
+    color:#e9edf3;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+
+  .layout{
+    max-width:1040px;
+    margin:0 auto;
+    padding: 32px 20px 80px;
+    display:grid;
+    grid-template-columns: 230px 1fr;
+    gap: 32px;
+    align-items:start;
+  }
+  @media (max-width: 760px){
+    .layout{ grid-template-columns: 1fr; padding-top:20px; }
+    nav.steps{ order:2; }
+    .panel{ order:1; }
+  }
+
+  nav.steps{
+    position:sticky;
+    top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+  nav.steps .step-item{
+    display:flex;
+    gap:12px;
+    padding: 10px 0;
+    position:relative;
+    cursor:default;
+    opacity:.55;
+  }
+  nav.steps .step-item.active,
+  nav.steps .step-item.done{ opacity:1; }
+  nav.steps .step-item:not(:last-child)::after{
+    content:"";
+    position:absolute;
+    left:13px; top:34px;
+    width:2px; height:calc(100% - 8px);
+    background:var(--line);
+  }
+  nav.steps .step-item.done:not(:last-child)::after{ background:var(--ok); }
+  .step-dot{
+    width:28px; height:28px; flex-shrink:0;
+    border-radius:50%;
+    border:2px solid var(--slate);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:var(--slate);
+    background:var(--paper);
+    z-index:1;
+  }
+  .step-item.active .step-dot{
+    border-color:var(--orange); color:#fff; background:var(--orange);
+  }
+  .step-item.done .step-dot{
+    border-color:var(--ok); color:#fff; background:var(--ok);
+  }
+  .step-label{
+    display:flex; flex-direction:column; justify-content:center;
+  }
+  .step-label .t{ font-size:14px; font-weight:600; }
+  .step-label .d{ font-size:12px; color:var(--slate); }
+
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding: 30px 32px 26px;
+    min-height: 420px;
+    display:flex;
+    flex-direction:column;
+  }
+  .panel-head{
+    border-bottom:1px solid var(--line);
+    padding-bottom:14px;
+    margin-bottom:22px;
+  }
+  .panel-head .eyebrow{
+    color:var(--orange-dark);
+    font-size:12.5px;
+    font-weight:700;
+  }
+  .panel-head h2{
+    margin:4px 0 6px;
+    font-size:22px;
+    color:var(--navy);
+  }
+  .panel-head p{
+    margin:0; color:var(--slate); font-size:14px; max-width:60ch;
+  }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px 18px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px 18px; }
+  @media (max-width:600px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .field label{ font-size:13px; font-weight:600; color:var(--navy); }
+  .field .hint{ font-size:12px; color:var(--slate); margin-top:-2px; }
+  .field input[type=text],
+  .field input[type=tel],
+  .field input[type=email],
+  .field input[type=date],
+  .field select,
+  .field textarea{
+    border:1px solid #c7c1b3;
+    border-radius:2px;
+    padding:10px 11px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fffefb;
+    color:var(--ink);
+  }
+  .field textarea{ resize:vertical; min-height:64px; }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:2px solid var(--orange);
+    outline-offset:1px;
+    border-color:var(--orange);
+  }
+  .field.invalid input, .field.invalid select{
+    border-color:var(--danger);
+  }
+  .field .err{ display:none; color:var(--danger); font-size:12px; }
+  .field.invalid .err{ display:block; }
+
+  fieldset{ border:none; padding:0; margin:0 0 16px; }
+  legend{ font-size:13px; font-weight:600; color:var(--navy); margin-bottom:8px; padding:0;}
+
+  .check-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; }
+  @media (max-width:600px){ .check-grid{ grid-template-columns:1fr; } }
+  .check-row{
+    display:flex; align-items:flex-start; gap:9px;
+    font-size:14px; color:var(--ink);
+    border:1px solid var(--line);
+    padding:9px 11px;
+    border-radius:2px;
+    background:#fffefb;
+  }
+  .check-row input{ margin-top:3px; }
+
+  .area-cards{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:600px){ .area-cards{ grid-template-columns:1fr; } }
+  .area-card{
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:14px;
+    cursor:pointer;
+    background:#fffefb;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .area-card:has(input:checked){
+    border-color:var(--orange);
+    background:#fff5ee;
+  }
+  .area-card input{ margin-top:3px; }
+  .area-card .t{ font-weight:700; font-size:14px; color:var(--navy); }
+  .area-card .d{ font-size:12.5px; color:var(--slate); margin-top:2px; }
+
+  .actions{
+    margin-top:auto;
+    padding-top:22px;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    border-top:1px solid var(--line);
+  }
+  button{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    border-radius:2px;
+    padding:11px 22px;
+    cursor:pointer;
+    border:1px solid transparent;
+  }
+  .btn-primary{ background:var(--orange); color:#fff; border-color:var(--orange-dark); }
+  .btn-primary:hover{ background:var(--orange-dark); }
+  .btn-ghost{ background:transparent; color:var(--navy); border-color:var(--line); }
+  .btn-ghost:hover{ border-color:var(--navy); }
+  .btn-ghost:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .review-block{ margin-bottom:18px; }
+  .review-block h3{
+    font-size:14px; color:var(--orange-dark); margin:0 0 8px;
+    border-bottom:1px solid var(--line); padding-bottom:6px;
+  }
+  .review-row{ display:flex; font-size:14px; padding:3px 0; gap:8px; }
+  .review-row .k{ color:var(--slate); min-width:190px; flex-shrink:0; }
+  .review-row .v{ color:var(--ink); font-weight:600; }
+  .review-row .v.empty{ color:#a9a297; font-weight:400; font-style:italic; }
+
+  .confirm-screen{
+    text-align:center;
+    padding: 40px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  .confirm-badge{
+    width:64px; height:64px; border-radius:50%;
+    background:var(--ok); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:30px;
+  }
+  .confirm-screen h2{ color:var(--navy); margin:0; }
+  .confirm-screen p{ color:var(--slate); max-width:46ch; margin:0; }
+  .protocol{
+    font-family:"Oswald",sans-serif;
+    letter-spacing:.04em;
+    background:var(--navy);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:2px;
+    font-size:15px;
+  }
+
+  footer.foot{
+    text-align:center; color:var(--slate); font-size:12px;
+    padding: 18px 20px 40px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hazard-bar"></div>
+<header class="top">
+  <div class="brand">
+    <div class="mark">DC</div>
+    <div>
+      <h1>Cadastro de Voluntário</h1>
+      <p>Coordenadoria Municipal de Defesa Civil</p>
+    </div>
+  </div>
+  <div class="status-pill" id="topStatus">Etapa 1 de 7</div>
+</header>
+
+<div class="layout">
+  <nav class="steps" id="stepsNav"></nav>
+
+  <div class="panel" id="panel">
+    <!-- injected by JS -->
+  </div>
+</div>
+
+<footer class="foot">Protótipo de formulário — nenhum dado é enviado a um servidor. Uso apenas para demonstração.</footer>
+
+<script>
+const steps = [
+  { key:'pessoal', t:'Dados pessoais', d:'Identificação' },
+  { key:'contato', t:'Endereço e contato', d:'Onde encontrar você' },
+  { key:'disponibilidade', t:'Disponibilidade', d:'Quando pode atuar' },
+  { key:'qualificacao', t:'Qualificações', d:'Formação e cursos' },
+  { key:'saude', t:'Saúde e emergência', d:'Contato e restrições' },
+  { key:'area', t:'Área de interesse', d:'Onde quer atuar' },
+  { key:'revisao', t:'Revisão e envio', d:'Confirme os dados' },
+];
+
+const state = {
+  nome:'', cpf:'', rg:'', nascimento:'', profissao:'',
+  endereco:'', bairro:'', cidade:'', cep:'', telefone:'', whatsappIgual:true, whatsapp:'', email:'',
+  dias:[], turno:'', emergencia:'', veiculo:'nao', cnh:'nenhuma',
+  cursos:[], outroCurso:'', experiencia:'',
+  tipoSanguineo:'', restricoes:'', contatoNome:'', contatoTelefone:'',
+  areas:[],
+};
+
+let current = 0;
+let submitted = false;
+
+function renderNav(){
+  const nav = document.getElementById('stepsNav');
+  nav.innerHTML = steps.map((s,i)=>{
+    let cls = 'step-item';
+    if(i === current) cls += ' active';
+    else if(i < current || submitted) cls += ' done';
+    const icon = (i < current || submitted) ? '✓' : (i+1);
+    return `<div class="${cls}">
+      <div class="step-dot">${icon}</div>
+      <div class="step-label"><div class="t">${s.t}</div><div class="d">${s.d}</div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('topStatus').textContent = submitted ? 'Cadastro enviado' : `Etapa ${current+1} de ${steps.length}`;
+}
+
+function fieldHtml(id, label, opts={}){
+  const val = state[id] ?? '';
+  const type = opts.type || 'text';
+  const req = opts.required ? '<span style="color:var(--orange-dark)"> *</span>' : '';
+  let input;
+  if(type === 'select'){
+    input = `<select id="${id}">${opts.options.map(o=>`<option value="${o.v}" ${o.v===val?'selected':''}>${o.l}</option>`).join('')}</select>`;
+  } else if(type === 'textarea'){
+    input = `<textarea id="${id}" placeholder="${opts.placeholder||''}">${val}</textarea>`;
+  } else {
+    input = `<input type="${type}" id="${id}" value="${val}" placeholder="${opts.placeholder||''}">`;
+  }
+  return `<div class="field" data-field="${id}">
+    <label for="${id}">${label}${req}</label>
+    ${input}
+    ${opts.hint ? `<div class="hint">${opts.hint}</div>` : ''}
+    <div class="err">Preencha este campo para continuar.</div>
+  </div>`;
+}
+
+function panelHead(eyebrow, title, desc){
+  return `<div class="panel-head">
+    <div class="eyebrow">${eyebrow}</div>
+    <h2>${title}</h2>
+    <p>${desc}</p>
+  </div>`;
+}
+
+function renderPanel(){
+  const panel = document.getElementById('panel');
+  if(submitted){ renderConfirm(panel); return; }
+
+  const s = steps[current].key;
+  let body = '';
+
+  if(s === 'pessoal'){
+    body = panelHead('Passo 1', 'Quem é você', 'Precisamos confirmar sua identidade antes de qualquer atuação em campo.') + `
+      <div class="grid2">
+        ${fieldHtml('nome','Nome completo',{required:true})}
+        ${fieldHtml('nascimento','Data de nascimento',{type:'date',required:true})}
+      </div>
+      <div class="grid2">
+        ${fieldHtml('cpf','CPF',{placeholder:'000.000.000-00',required:true})}
+        ${fieldHtml('rg','RG',{placeholder:'00.000.000-0'})}
+      </div>
+      ${fieldHtml('profissao','Profissão / ocupação',{hint:'Profissões como saúde, engenharia ou logística são muito úteis em emergências.'})}
+    `;
+  }
+
+  if(s === 'contato'){
+    body = panelHead('Passo 2', 'Onde encontrar você', 'Seu endereço ajuda a definir a região em que você pode atuar.') + `
+      ${fieldHtml('endereco','Endereço (rua e número)',{required:true})}
+      <div class="grid3">
+        ${fieldHtml('bairro','Bairro',{required:true})}
+        ${fieldHtml('cidade','Cidade',{required:true})}
+        ${fieldHtml('cep','CEP',{placeholder:'00000-000'})}
+      </div>
+      <div class="grid2">
+        ${fieldHtml('telefone','Telefone / WhatsApp',{type:'tel',required:true,hint:'Usado para convocação em emergências.'})}
+        ${fieldHtml('email','E-mail',{type:'email'})}
+      </div>
+    `;
+  }
+
+  if(s === 'disponibilidade'){
+    const dias = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+    body = panelHead('Passo 3', 'Quando você pode atuar', 'Isso define sua escala e prioridade de convocação.') + `
+      <fieldset>
+        <legend>Dias disponíveis</legend>
+        <div class="check-grid">
+          ${dias.map(d=>`<label class="check-row"><input type="checkbox" value="${d}" data-group="dias" ${state.dias.includes(d)?'checked':''}> ${d}</label>`).join('')}
+        </div>
+      </fieldset>
+      <div class="grid2">
+        ${fieldHtml('turno','Turno preferencial',{type:'select',options:[
+          {v:'',l:'Selecione'},{v:'manha',l:'Manhã'},{v:'tarde',l:'Tarde'},{v:'noite',l:'Noite'},{v:'qualquer',l:'Qualquer horário'}
+        ]})}
+        ${fieldHtml('emergencia','Disponível para acionamento emergencial (24h)?',{type:'select',options:[
+          {v:'',l:'Selecione'},{v:'sim',l:'Sim'},{v:'parcial',l:'Somente em alguns dias'},{v:'nao',l:'Não'}
+        ]})}
+      </div>
+      <div class="grid2">
+        ${fieldHtml('veiculo','Possui veículo próprio?',{type:'select',options:[
+          {v:'nao',l:'Não'},{v:'carro',l:'Sim, carro'},{v:'moto',l:'Sim, moto'},{v:'ambos',l:'Sim, carro e moto'}
+        ]})}
+        ${fieldHtml('cnh','Categoria da CNH',{type:'select',options:[
+          {v:'nenhuma',l:'Não possuo'},{v:'a',l:'A'},{v:'b',l:'B'},{v:'ab',l:'AB'},{v:'cde',l:'C, D ou E'}
+        ]})}
+      </div>
+    `;
+  }
+
+  if(s === 'qualificacao'){
+    const cursos = ['Primeiros socorros','Combate a incêndio / brigada','Resgate e salvamento','Uso de rádio comunicador','Operação de motosserra','Libras'];
+    body = panelHead('Passo 4', 'Formação e cursos', 'Cursos e experiências prévias ajudam a definir sua função em campo.') + `
+      <fieldset>
+        <legend>Cursos ou treinamentos concluídos</legend>
+        <div class="check-grid">
+          ${cursos.map(c=>`<label class="check-row"><input type="checkbox" value="${c}" data-group="cursos" ${state.cursos.includes(c)?'checked':''}> ${c}</label>`).join('')}
+        </div>
+      </fieldset>
+      ${fieldHtml('outroCurso','Outro curso não listado')}
+      ${fieldHtml('experiencia','Experiência anterior em voluntariado ou defesa civil',{type:'textarea',placeholder:'Descreva brevemente, se houver.'})}
+    `;
+  }
+
+  if(s === 'saude'){
+    body = panelHead('Passo 5', 'Saúde e contato de emergência', 'Essas informações só são usadas em caso de necessidade durante uma atuação.') + `
+      <div class="grid2">
+        ${fieldHtml('tipoSanguineo','Tipo sanguíneo',{type:'select',options:[
+          {v:'',l:'Não sei / prefiro não informar'},{v:'a+',l:'A+'},{v:'a-',l:'A-'},{v:'b+',l:'B+'},{v:'b-',l:'B-'},
+          {v:'ab+',l:'AB+'},{v:'ab-',l:'AB-'},{v:'o+',l:'O+'},{v:'o-',l:'O-'}
+        ]})}
+        <div></div>
+      </div>
+      ${fieldHtml('restricoes','Restrições de saúde relevantes para atividades de campo',{type:'textarea',placeholder:'Ex: limitações de mobilidade, condições que exigem atenção. Deixe em branco se não houver.'})}
+      <div class="grid2">
+        ${fieldHtml('contatoNome','Nome de contato de emergência',{required:true})}
+        ${fieldHtml('contatoTelefone','Telefone do contato de emergência',{type:'tel',required:true})}
+      </div>
+    `;
+  }
+
+  if(s === 'area'){
+    const areas = [
+      {v:'resgate', t:'Resgate e busca', d:'Atuação direta em campo durante ocorrências.'},
+      {v:'logistica', t:'Apoio logístico', d:'Distribuição de doações e montagem de abrigos.'},
+      {v:'comunicacao', t:'Comunicação e alerta', d:'Aviso e orientação à população.'},
+      {v:'vistoria', t:'Vistoria pós-desastre', d:'Cadastro de danos em imóveis e áreas afetadas.'},
+      {v:'administrativo', t:'Apoio administrativo', d:'Cadastro, escalas e organização interna.'},
+      {v:'saude', t:'Apoio à saúde', d:'Primeiros socorros e triagem em abrigos.'},
+    ];
+    body = panelHead('Passo 6', 'Onde você quer atuar', 'Selecione uma ou mais áreas. Isso não é definitivo — pode mudar após o treinamento inicial.') + `
+      <div class="area-cards">
+        ${areas.map(a=>`<label class="area-card">
+          <input type="checkbox" value="${a.v}" data-group="areas" ${state.areas.includes(a.v)?'checked':''}>
+          <div><div class="t">${a.t}</div><div class="d">${a.d}</div></div>
+        </label>`).join('')}
+      </div>
+    `;
+  }
+
+  if(s === 'revisao'){
+    body = panelHead('Passo 7', 'Confira antes de enviar', 'Revise seus dados. Você pode voltar a qualquer etapa para corrigir.') + reviewHtml();
+  }
+
+  panel.innerHTML = body + `
+    <div class="actions">
+      <button class="btn-ghost" id="btnBack" ${current===0?'disabled':''}>Voltar</button>
+      <button class="btn-primary" id="btnNext">${s==='revisao' ? 'Confirmar e enviar cadastro' : 'Continuar'}</button>
+    </div>
+  `;
+
+  attachHandlers(s);
+}
+
+function reviewHtml(){
+  const v = (x, fallback='Não informado') => x && x.length ? x : `<span class="empty">${fallback}</span>`;
+  const dias = state.dias.length ? state.dias.join(', ') : null;
+  const cursos = state.cursos.length ? state.cursos.join(', ') : null;
+  const areas = state.areas.length ? state.areas.join(', ') : null;
+  return `
+    <div class="review-block">
+      <h3>Dados pessoais</h3>
+      <div class="review-row"><div class="k">Nome</div><div class="v">${v(state.nome)}</div></div>
+      <div class="review-row"><div class="k">Nascimento</div><div class="v">${v(state.nascimento)}</div></div>
+      <div class="review-row"><div class="k">CPF</div><div class="v">${v(state.cpf)}</div></div>
+      <div class="review-row"><div class="k">Profissão</div><div class="v">${v(state.profissao)}</div></div>
+    </div>
+    <div class="review-block">
+      <h3>Endereço e contato</h3>
+      <div class="review-row"><div class="k">Endereço</div><div class="v">${v(state.endereco)}, ${v(state.bairro,'')} ${v(state.cidade,'')}</div></div>
+      <div class="review-row"><div class="k">Telefone</div><div class="v">${v(state.telefone)}</div></div>
+      <div class="review-row"><div class="k">E-mail</div><div class="v">${v(state.email)}</div></div>
+    </div>
+    <div class="review-block">
+      <h3>Disponibilidade</h3>
+      <div class="review-row"><div class="k">Dias</div><div class="v">${v(dias)}</div></div>
+      <div class="review-row"><div class="k">Turno</div><div class="v">${v(state.turno)}</div></div>
+      <div class="review-row"><div class="k">Emergencial 24h</div><div class="v">${v(state.emergencia)}</div></div>
+      <div class="review-row"><div class="k">Veículo / CNH</div><div class="v">${v(state.veiculo)} — ${v(state.cnh)}</div></div>
+    </div>
+    <div class="review-block">
+      <h3>Qualificações</h3>
+      <div class="review-row"><div class="k">Cursos</div><div class="v">${v(cursos)}</div></div>
+      <div class="review-row"><div class="k">Experiência</div><div class="v">${v(state.experiencia)}</div></div>
+    </div>
+    <div class="review-block">
+      <h3>Saúde e emergência</h3>
+      <div class="review-row"><div class="k">Tipo sanguíneo</div><div class="v">${v(state.tipoSanguineo)}</div></div>
+      <div class="review-row"><div class="k">Contato de emergência</div><div class="v">${v(state.contatoNome)} — ${v(state.contatoTelefone,'')}</div></div>
+    </div>
+    <div class="review-block">
+      <h3>Área de interesse</h3>
+      <div class="review-row"><div class="k">Áreas selecionadas</div><div class="v">${v(areas)}</div></div>
+    </div>
+  `;
+}
+
+function renderConfirm(panel){
+  const protocolo = 'DC-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random()*899999);
+  panel.innerHTML = `
+    <div class="confirm-screen">
+      <div class="confirm-badge">✓</div>
+      <h2>Cadastro recebido</h2>
+      <p>Obrigado, ${state.nome ? state.nome.split(' ')[0] : 'voluntário'}. Sua ficha foi registrada. A coordenação entrará em contato para agendar a capacitação inicial.</p>
+      <div class="protocol">Protocolo ${protocolo}</div>
+    </div>
+  `;
+}
+
+function attachHandlers(s){
+  document.querySelectorAll('input[type=checkbox][data-group]').forEach(el=>{
+    el.addEventListener('change', ()=>{
+      const group = el.dataset.group;
+      if(el.checked){ if(!state[group].includes(el.value)) state[group].push(el.value); }
+      else { state[group] = state[group].filter(v=>v!==el.value); }
+    });
+  });
+
+  document.querySelectorAll('.field input, .field select, .field textarea').forEach(el=>{
+    el.addEventListener('input', ()=>{ state[el.id] = el.value; });
+    el.addEventListener('change', ()=>{ state[el.id] = el.value; });
+  });
+
+  document.getElementById('btnBack').addEventListener('click', ()=>{
+    if(current > 0){ current--; renderAll(); window.scrollTo({top:0, behavior:'smooth'}); }
+  });
+
+  document.getElementById('btnNext').addEventListener('click', ()=>{
+    if(!validateStep(s)) return;
+    if(s === 'revisao'){ submitted = true; renderAll(); window.scrollTo({top:0, behavior:'smooth'}); return; }
+    current++;
+    renderAll();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
+
+const requiredByStep = {
+  pessoal: ['nome','nascimento','cpf'],
+  contato: ['endereco','bairro','cidade','telefone'],
+  disponibilidade: [],
+  qualificacao: [],
+  saude: ['contatoNome','contatoTelefone'],
+  area: [],
+  revisao: [],
+};
+
+function validateStep(s){
+  const req = requiredByStep[s] || [];
+  let ok = true;
+  req.forEach(id=>{
+    const wrap = document.querySelector(`.field[data-field="${id}"]`);
+    const input = document.getElementById(id);
+    const empty = !input.value || !input.value.trim();
+    if(wrap){ wrap.classList.toggle('invalid', empty); }
+    if(empty) ok = false;
+  });
+  return ok;
+}
+
+function renderAll(){ renderNav(); renderPanel(); }
+renderAll();
+</script>
+</body>
+</html>
