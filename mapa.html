@@ -1441,6 +1441,11 @@
             <div class="toggle" id="inmetBadge"></div>
         </div>
         <div class="meta-line" id="metaInmet">INMET · carregando estações...</div>
+        <div class="check-row" data-check="chuvaInmet">
+            <label><span class="swatch" style="background:#0ea5e9;border-radius:50%;"></span><i data-lucide="cloud-rain"></i>Chuva INMET 24h/7d (BDMEP)</label>
+            <div class="toggle" id="chuvaInmetBadge"></div>
+        </div>
+        <div class="meta-line" id="metaChuvaInmet">INMET BDMEP · carregando acumulados...</div>
         <div class="check-row" data-check="sipam">
             <label><span class="swatch" style="background:#dc2626;border-radius:50%;"></span><i data-lucide="flame"></i>Painel do Fogo (SIPAM)</label>
             <div class="toggle on" id="sipamBadge"></div>
@@ -1680,6 +1685,18 @@
         </div>
         <div id="legInmet" class="leg-row" style="display:none;">
             <span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;border:2px solid #fff;display:inline-block;margin-right:5px;"></span> Estações INMET (EAM)
+        </div>
+        <div id="legChuvaInmet" class="leg-row" style="display:none;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span>Chuva INMET 24h/7d</span>
+                <span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#94a3b8;">
+                    <span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;display:inline-block;"></span>0
+                    <span style="width:10px;height:10px;border-radius:50%;background:#34d399;display:inline-block;"></span>0–2
+                    <span style="width:10px;height:10px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>2–10
+                    <span style="width:10px;height:10px;border-radius:50%;background:#f97316;display:inline-block;"></span>10–25
+                    <span style="width:10px;height:10px;border-radius:50%;background:#dc2626;display:inline-block;"></span>+25 mm
+                </span>
+            </div>
         </div>
         <div id="legSipam" class="leg-row" style="display:none;">
             <span style="width:10px;height:10px;border-radius:50%;background:#dc2626;display:inline-block;margin-right:5px;"></span> SIPAM Painel do Fogo
@@ -2448,10 +2465,11 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: true, stations: true, barragens: false, inmetStations: false, sipam: true, wmsFocos48h: true, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: true, stations: true, barragens: false, inmetStations: false, sipam: true, wmsFocos48h: true, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
+let chuvaInmetLayer = null, chuvaInmetLoaded = false, chuvaInmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
         let sipamData = [];
 let wmsFocos48hLayer = null;
@@ -2480,6 +2498,7 @@ function setCheck(key, val) {
     if (key === 'focos' && val && !focosLoaded && !focosLoading) loadFocos();
     if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
     if (key === 'inmetStations' && val && !inmetLoaded && !inmetLoading) loadInmetStations();
+    if (key === 'chuvaInmet' && val && !chuvaInmetLoaded && !chuvaInmetLoading) loadChuvaInmet();
     if (key === 'sipam' && val && !sipamLoaded && !sipamLoading) loadSIPAM();
     if (key === 'reports' && val && !reportsLoaded && !reportsLoading) loadReports();
     if (key === 'abrigos' && val && !abrigosLoaded && !abrigosLoading) loadAbrigos();
@@ -2505,6 +2524,7 @@ function applyChecks() {
     checkState.stations ? stationsLayer.addTo(map) : map.removeLayer(stationsLayer);
     if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
     if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
+    if (chuvaInmetLayer) checkState.chuvaInmet ? chuvaInmetLayer.addTo(map) : map.removeLayer(chuvaInmetLayer);
     if (sipamLayer) checkState.sipam ? sipamLayer.addTo(map) : map.removeLayer(sipamLayer);
     if (wmsFocos48hLayer) checkState.wmsFocos48h ? wmsFocos48hLayer.addTo(map) : map.removeLayer(wmsFocos48hLayer);
     if (wmsFocoDetalheLayer) checkState.wmsFocos48h ? wmsFocoDetalheLayer.addTo(map) : map.removeLayer(wmsFocoDetalheLayer);
@@ -2527,12 +2547,13 @@ function refreshLegend() {
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
     document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
+    document.getElementById('legChuvaInmet').style.display = checkState.chuvaInmet && chuvaInmetLayer ? '' : 'none';
     document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
     document.getElementById('legFocosWms').style.display = checkState.wmsFocos48h && wmsFocos48hLayer ? '' : 'none';
     document.getElementById('legVigiaMais').style.display = checkState.vigiaMais && vigiaMaisLayer ? '' : 'none';
     document.getElementById('legAbrigos').style.display = checkState.abrigos && abrigosLayer ? '' : 'none';
     document.getElementById('legCamsSinfra').style.display = checkState.camsSinfra && camSinfraLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.chuvaInmet || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -3285,6 +3306,71 @@ async function loadInmetStations() {
     } catch (e) {
         inmetLoading = false;
         meta.textContent = 'INMET · indisponível';
+    }
+}
+
+/* ================= Chuva INMET 24h/7d — BDMEP (zip oficial anual) =================
+   Consome o endpoint próprio /api/inmet-chuva, que baixa o zip de dados
+   históricos do INMET, extrai as estações automáticas de MT e calcula os
+   acumulados das últimas 24h e 7 dias por estação. */
+async function loadChuvaInmet() {
+    if (chuvaInmetLoading) return;
+    chuvaInmetLoading = true;
+    const meta = document.getElementById('metaChuvaInmet');
+    meta.innerHTML = 'INMET BDMEP · <b>carregando acumulados...</b>';
+    try {
+        const apiBase = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
+        const ano = new Date().getUTCFullYear();
+        const res = await fetch(apiBase + '/api/inmet-chuva?ano=' + ano);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (!Array.isArray(data.estacoes)) throw new Error('Resposta inválida');
+        if (chuvaInmetLayer) { try { map.removeLayer(chuvaInmetLayer); } catch {} }
+        chuvaInmetLayer = L.layerGroup();
+        data.estacoes.forEach(s => {
+            if (!s.lat || !s.lon) return;
+            const cor = RAIN_COR(s.chuva24h || 0);
+            const r24 = 8 + Math.min(18, Math.sqrt(s.chuva24h || 0) * 4);
+            const mk = L.circleMarker([s.lat, s.lon], {
+                radius: r24,
+                color: '#fff',
+                weight: 1.5,
+                fillColor: cor,
+                fillOpacity: .75,
+                title: s.nome + ' · ' + s.codigo + ' · 24h: ' + (s.chuva24h ?? 0) + ' mm'
+            });
+            mk.bindTooltip(`${s.nome} <span style="color:#22d3ee;">(${s.codigo})</span> · 24h <b>${pluvChip(s.chuva24h)}</b> mm · 7d <b>${pluvChip(s.chuva7d)}</b> mm`, { direction: 'top', offset: [0, -8], className: 'inmet-tooltip' });
+            const serie = (s.serie7d || []).map(d => `<div style="display:flex;justify-content:space-between;gap:12px;"><span style="color:#94a3b8;">${d.dia}</span><b>${d.mm}</b></div>`).join('');
+            mk.bindPopup(`
+                <div style="min-width:210px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(160deg,rgba(14,165,233,.25),rgba(14,165,233,.08));border:1px solid rgba(14,165,233,.5);display:flex;align-items:center;justify-content:center;"><i data-lucide="cloud-rain" style="color:#0ea5e9;width:16px;height:16px;"></i></span>
+                        <div>
+                            <div style="font-weight:700;font-size:13px;color:#fff;line-height:1.2;">${s.nome}</div>
+                            <div style="color:#94a3b8;font-size:9.5px;">${s.codigo} · INMET BDMEP · MT</div>
+                        </div>
+                    </div>
+                    <div class="bar-grid" style="grid-template-columns:repeat(2,1fr);margin-top:4px;">
+                        <div><span>Chuva 24h</span><b style="color:${RAIN_COR(s.chuva24h || 0)};">${pluvChip(s.chuva24h)} mm</b></div>
+                        <div><span>Chuva 7 dias</span><b style="color:${RAIN_COR(s.chuva7d || 0)};">${pluvChip(s.chuva7d)} mm</b></div>
+                    </div>
+                    ${serie ? `<div style="margin-top:8px;font-size:10px;line-height:1.6;border-top:1px solid rgba(148,163,184,.15);padding-top:6px;">
+                        <div style="color:#94a3b8;font-size:9px;margin-bottom:2px;">Acumulado diário (7d)</div>${serie}</div>` : ''}
+                    <div style="margin-top:6px;font-size:9px;color:#94a3b8;line-height:1.5;">
+                        Cobertura zip INMET: <b>${data.cobertura ? data.cobertura.slice(0, 10) : '—'}</b> · dados observados.
+                    </div>
+                </div>`);
+            mk.addTo(chuvaInmetLayer);
+        });
+        chuvaInmetLayer.addTo(map);
+        chuvaInmetLoaded = true;
+        const topS = data.estacoes[0];
+        meta.innerHTML = `INMET BDMEP · <b>${data.totalEstacoes}</b> estações · máx 24h <b style="color:#dc2626;">${pluvChip(topS && topS.chuva24h)} mm</b> · cobertura ${data.cobertura ? data.cobertura.slice(0, 10) : '—'}`;
+        if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        meta.textContent = 'INMET BDMEP · indisponível';
+    } finally {
+        chuvaInmetLoading = false;
     }
 }
 
