@@ -1341,7 +1341,7 @@
         <div class="meta-line">CNUC/MMA via INDE · versão 03/2026</div>
         <div class="check-row" data-check="focos">
             <label><span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor 24h</label>
-            <div class="toggle" id="focosToggleBadge"></div>
+            <div class="toggle on" id="focosToggleBadge"></div>
         </div>
         <div class="meta-line" id="metaFocos">INPE BDQueimadas · carregando...</div>
         <div class="check-row" data-check="barragens">
@@ -1409,7 +1409,7 @@
         <div class="group-title"><i data-lucide="layers"></i> Camadas INPE</div>
         <div class="check-row" data-check="wmsFocos48h">
             <label><span class="swatch" style="background:#ff4d00;"></span><i data-lucide="satellite"></i>Focos 48h (WMS)</label>
-            <div class="toggle"></div>
+            <div class="toggle on"></div>
         </div>
         <div class="meta-line">TerraBrasilis · raster de todos os satélites</div>
 
@@ -1443,7 +1443,7 @@
         <div class="meta-line" id="metaInmet">INMET · carregando estações...</div>
         <div class="check-row" data-check="sipam">
             <label><span class="swatch" style="background:#dc2626;border-radius:50%;"></span><i data-lucide="flame"></i>Painel do Fogo (SIPAM)</label>
-            <div class="toggle" id="sipamBadge"></div>
+            <div class="toggle on" id="sipamBadge"></div>
         </div>
         <div class="meta-line" id="metaSipam">CENSIPAM · carregando eventos...</div>
         <div class="check-row" data-check="vigiaMais">
@@ -2448,7 +2448,7 @@ function loadUCs() {
 
 /* ================= Toggles de camadas (checkbox) ================= */
 const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: true, stations: true, barragens: false, inmetStations: false, sipam: true, wmsFocos48h: true, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
@@ -4504,6 +4504,8 @@ loadUCs();
 loadTerritorio();
 loadWeather();
 loadFocos();
+loadSIPAM();
+setTimeout(() => { if (checkState.wmsFocos48h) loadWmsFocos48h(); }, 1200);
 loadAbrigos();
 loadCamerasSinfra();
 rainBindModal();
@@ -4875,6 +4877,13 @@ document.querySelectorAll('.ov-btn').forEach(btn => {
         handleOverlaySwitch();
     });
 });
+
+// Auto-ativa as camadas de fogo (INPE + SIPAM + WMS + risco) quando o mapa abre —
+// mesmo comportamento da camada Wildfires do Google Maps, para todo o MT.
+setTimeout(() => {
+    const fireBtn = document.querySelector('.ov-btn[data-ov="fire"]');
+    if (fireBtn && !fireBtn.classList.contains('active')) fireBtn.click();
+}, 3500);
 
 // Keyboard shortcuts for overlay bar
 const ovKeyMap = { w: 'wind', r: 'rain', c: 'clouds', t: 'temp', f: 'fire' };
