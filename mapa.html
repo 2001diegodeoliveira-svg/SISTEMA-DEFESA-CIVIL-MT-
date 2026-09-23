@@ -2454,6 +2454,10 @@ let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
         let sipamData = [];
 let wmsFocos48hLayer = null;
+let wmsFocoDetalheLayer = null;
+let wmsFocoDetalheData = [];
+let wmsFocoDetalheLoading = false;
+let wmsFocoDetalheTimer = null;
 let reportsLayer = null, reportsLoaded = false, reportsLoading = false;
 let reportSeenIds = new Set(), reportMarkerIds = new Map(), reportsTimer = null;
 /* Limites aproximados do território de Mato Grosso (malha IBGE) */
@@ -4636,11 +4640,6 @@ function loadWmsFocos48h() {
 }
 
 /* ================= Focos 48h — Camada vetorial de detalhe (WFS TerraBrasilis) ================= */
-let wmsFocoDetalheLayer = null;
-let wmsFocoDetalheData = [];
-let wmsFocoDetalheLoading = false;
-let wmsFocoDetalheTimer = null;
-
 // Limite de ícones de satélite: acima disso usa círculos canvas coloridos por
 // risco (clique continua abrindo o popup detalhado) para preservar performance.
 const FOCO_SAT_LIMIT = 1200;
