@@ -365,10 +365,10 @@
 
         <div style="display:flex;align-items:center;gap:16px;">
             <div id="userArea"></div>
-            <button class="emergency-btn">
+            <a href="ocorrencia.html" class="emergency-btn">
                 <i data-lucide="triangle-alert"></i>
-                EMERGÊNCIA LIGUE 199
-            </button>
+                Registre sua ocorrência
+            </a>
         </div>
     </header>
 
@@ -603,10 +603,6 @@
         });
 
         document.getElementById('buscaMunicipio').addEventListener('input', () => { renderAlerts(); filtrarOmega(); });
-
-        document.querySelector('.emergency-btn').addEventListener('click', () => {
-            alert('Ligando para a central de emergência da Defesa Civil: 199');
-        });
 
         // ================= Avisos INMET em tempo real =================
         // Fonte oficial: https://apiprevmet3.inmet.gov.br/avisos/rss
