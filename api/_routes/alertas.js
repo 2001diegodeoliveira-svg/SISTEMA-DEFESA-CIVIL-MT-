@@ -1,7 +1,7 @@
 /* GET /api/alertas → { alertas:[...], atualizadoEm }  (curados + avisos INMET ao vivo) */
-const { jsonResponse, reqUrl } = require('./_lib/http');
-const { ALERTAS_SEED } = require('./_lib/seed');
-const { serve } = require('./_lib/serverless');
+const { jsonResponse, reqUrl } = require('../_lib/http');
+const { ALERTAS_SEED } = require('../_lib/seed');
+const { serve } = require('../_lib/serverless');
 
 const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
 const MESO_MT = ['Centro-Sul Mato-grossense', 'Norte Mato-grossense', 'Nordeste Mato-grossense', 'Sudeste Mato-grossense', 'Centro-Oeste de Mato Grosso', 'Sudoeste Mato-grossense'];
@@ -88,7 +88,7 @@ module.exports = serve(async function handler(req) {
   }
 
   // Alertas curados são recalculados a cada requisição (datas sempre relativas
-  // a "agora"), nunca persistidos — evita servir alertas com validade expirada.
+  // a "agora"), nunca persistidos ” evita servir alertas com validade expirada.
   let alertas = ALERTAS_SEED.map((a, i) => ({ ...datasAtuais(a, i), ...a }));
   alertas = alertas.filter((a) => {
     const v = new Date(a.validoAte).getTime();

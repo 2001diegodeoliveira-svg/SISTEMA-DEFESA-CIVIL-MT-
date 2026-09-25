@@ -1,5 +1,5 @@
 /* ============================================================
-   Gestão por município — CRUD das seções operacionais.
+   Gestão por município ” CRUD das seções operacionais.
    Persistência: um documento JSON por município (gestao_<nome>.json).
 
    GET    /api/gestao?municipio=<nome>   → documento completo (seções)
@@ -16,11 +16,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const { jsonResponse, readJson, bearerToken } = require('./_lib/http');
-const { verifyToken } = require('./_lib/auth');
-const { readCollection, writeCollection, driver } = require('./_lib/store');
-const { serve } = require('./_lib/serverless');
-const { MUNICIPIOS_MT, normUsuario } = require('./_lib/municipios');
+const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
+const { verifyToken } = require('../_lib/auth');
+const { readCollection, writeCollection, driver } = require('../_lib/store');
+const { serve } = require('../_lib/serverless');
+const { MUNICIPIOS_MT, normUsuario } = require('../_lib/municipios');
 
 const SECOES = [
   'areasDeRisco', 'plancon', 'coordenadores', 'voluntarios',

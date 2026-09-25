@@ -4,12 +4,12 @@
    GET /api/occurrences?view=stats  -> indicadores para o dashboard
    GET /api/occurrences?view=waze   -> só ocorrências source=WAZE
    Rota única (Vercel/serverless não tem sub-rotas dinâmicas fáceis
-   sem arquivos extra) — usamos ?view= para as variações, e
+   sem arquivos extra) ” usamos ?view= para as variações, e
    frontend/api/occurrences/[id].js para o detalhe/patch por id.
 */
-const { jsonResponse, reqUrl } = require('./_lib/http');
-const { readCollection } = require('./_lib/store');
-const { serve } = require('./_lib/serverless');
+const { jsonResponse, reqUrl } = require('../_lib/http');
+const { readCollection } = require('../_lib/store');
+const { serve } = require('../_lib/serverless');
 
 const STATUSES = ['NOVA', 'EM_ANALISE', 'EM_ATENDIMENTO', 'ENCAMINHADA', 'RESOLVIDA', 'ENCERRADA'];
 

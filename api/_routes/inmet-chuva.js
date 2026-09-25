@@ -14,8 +14,8 @@
             estacoes: [{ codigo, nome, lat, lon,
                          chuva24h, chuva7d, ultima, serie7d }] }
    ============================================================ */
-const { jsonResponse, reqUrl } = require('./_lib/http');
-const { serve } = require('./_lib/serverless');
+const { jsonResponse, reqUrl } = require('../_lib/http');
+const { serve } = require('../_lib/serverless');
 const zlib = require('zlib');
 
 const ZIP_BASE = 'https://portal.inmet.gov.br/uploads/dadoshistoricos/';

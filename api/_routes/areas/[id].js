@@ -1,8 +1,8 @@
 /* DELETE /api/areas/:id → remove (autenticado, dono ou admin) */
-const { jsonResponse, bearerToken, reqUrl } = require('../_lib/http');
-const { verifyToken } = require('../_lib/auth');
-const { readCollection, writeCollection } = require('../_lib/store');
-const { serve } = require('../_lib/serverless');
+const { jsonResponse, bearerToken, reqUrl } = require('../../_lib/http');
+const { verifyToken } = require('../../_lib/auth');
+const { readCollection, writeCollection } = require('../../_lib/store');
+const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;

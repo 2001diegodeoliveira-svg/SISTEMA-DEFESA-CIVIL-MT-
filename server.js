@@ -15,21 +15,7 @@ const cors = require('cors');
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 
-const handlers = {
-  login: require('./api/auth/login'),
-  logout: require('./api/auth/logout'),
-  me: require('./api/auth/me'),
-  alertas: require('./api/alertas'),
-  reports: require('./api/reports'),
-  areas: require('./api/areas'),
-  areaId: require('./api/areas/[id]'),
-  proxy: require('./api/proxy'),
-  occurrences: require('./api/occurrences'),
-  waze: require('./api/waze'),
-  tomtom: require('./api/tomtom'),
-  gestao: require('./api/gestao'),
-  inmetChuva: require('./api/inmet-chuva'),
-};
+const apiRouter = require('./api/index');
 
 /* Empacota handler de serverless (fetch Request/Response) para Express */
 function wrap(fn) {
@@ -49,11 +35,15 @@ function wrap(fn) {
         get: name => req.get(name),
         authorization: req.get('authorization'),
       },
+      on: undefined,
       text: async () => JSON.stringify(req.body || {}),
     };
     try {
       const nres = await fn(nreq);
-      for (const [k, v] of nres.headers.entries()) res.setHeader(k, v);
+      if (!nres) return res.status(404).json({ erro: 'Rota não encontrada.' });
+      if (typeof nres.headers?.entries === 'function') {
+        for (const [k, v] of nres.headers.entries()) res.setHeader(k, v);
+      }
       const body = await nres.text();
       res.status(nres.status).send(body === '' ? null : body);
     } catch (e) {
@@ -62,26 +52,8 @@ function wrap(fn) {
   };
 }
 
-app.post('/api/auth/login', wrap(handlers.login));
-app.post('/api/auth/logout', wrap(handlers.logout));
-app.get('/api/auth/me', wrap(handlers.me));
-app.get('/api/alertas', wrap(handlers.alertas));
-app.get('/api/reports', wrap(handlers.reports));
-app.post('/api/reports', wrap(handlers.reports));
-app.get('/api/areas', wrap(handlers.areas));
-app.post('/api/areas', wrap(handlers.areas));
-app.delete('/api/areas/:id', wrap(handlers.areaId));
-app.get('/api/proxy', wrap(handlers.proxy));
-app.options('/api/proxy', wrap(handlers.proxy));
-app.get('/api/occurrences', wrap(handlers.occurrences));
-app.get('/api/waze', wrap(handlers.waze));
-app.post('/api/waze', wrap(handlers.waze));
-app.options('/api/waze', wrap(handlers.waze));
-app.get('/api/tomtom', wrap(handlers.tomtom));
-app.post('/api/tomtom', wrap(handlers.tomtom));
-app.options('/api/tomtom', wrap(handlers.tomtom));
-app.all('/api/gestao', wrap(handlers.gestao));
-app.get('/api/inmet-chuva', wrap(handlers.inmetChuva));
+/* Todas as rotas /api/* → roteador único (igual ao deploy na Vercel). */
+app.all('/api/*', wrap(apiRouter));
 
 // Job de sincronização Waze/TomTom (mock por padrão) — só roda no server.js
 // standalone (processo Node persistente); em serverless (Vercel) use

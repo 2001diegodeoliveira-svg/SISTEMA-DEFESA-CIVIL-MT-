@@ -1,7 +1,7 @@
 /* GET /api/auth/me → { user } (valida token) */
-const { jsonResponse, bearerToken } = require('../_lib/http');
-const { verifyToken, ensureSeededUsers, publicUser } = require('../_lib/auth');
-const { serve } = require('../_lib/serverless');
+const { jsonResponse, bearerToken } = require('../../_lib/http');
+const { verifyToken, ensureSeededUsers, publicUser } = require('../../_lib/auth');
+const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;

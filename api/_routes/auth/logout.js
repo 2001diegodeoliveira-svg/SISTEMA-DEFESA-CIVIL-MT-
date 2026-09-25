@@ -1,6 +1,6 @@
 /* POST /api/auth/logout → { ok } (cliente descarta o token) */
-const { jsonResponse } = require('../_lib/http');
-const { serve } = require('../_lib/serverless');
+const { jsonResponse } = require('../../_lib/http');
+const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;

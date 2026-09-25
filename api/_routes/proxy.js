@@ -1,5 +1,5 @@
 /* ============================================================
-   Proxy CORS — resolve chamadas a APIs externas que não enviam
+   Proxy CORS ” resolve chamadas a APIs externas que não enviam
    cabeçalhos CORS para o navegador.
    GET /api/proxy?url=<encodada>&raw=1
    - Busca a URL no servidor (sem restrição de CORS) e devolve
@@ -7,8 +7,8 @@
    - raw=1 devolve o corpo como está (CSV/XML/imagem).
    Uso no frontend:  dcProxyFetch('https://api.externa.com/...')
    ============================================================ */
-const { corsHeaders, reqUrl } = require('./_lib/http');
-const { serve } = require('./_lib/serverless');
+const { corsHeaders, reqUrl } = require('../_lib/http');
+const { serve } = require('../_lib/serverless');
 
 const ALLOWED_HOSTS = (process.env.PROXY_HOSTS || '')
     .split(',')
