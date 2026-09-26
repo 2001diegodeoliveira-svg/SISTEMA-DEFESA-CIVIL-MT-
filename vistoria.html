@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="imagens/logo.png">
+    <title>Solicitar Vistoria — Defesa Civil Digital</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="css/animated-icons.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="imagens/logo.png" alt="Defesa Civil MT" class="h-10 w-auto" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                <span class="font-bold text-lg tracking-wide">DEFESA CIVIL ESTADUAL</span>
+            </div>
+            <a href="index.html" class="inline-flex items-center space-x-2 bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-full text-sm font-semibold transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10" /></svg>
+                <span>Home</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="bg-blue-950">
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <span class="inline-block w-fit bg-orange-500/20 text-orange-300 text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Vistoria Técnica</span>
+            <h1 class="text-3xl md:text-4xl font-bold text-white mb-3">Solicitar Vistoria</h1>
+            <p class="text-blue-200 text-lg max-w-3xl leading-relaxed">Avaliação de áreas de risco e imóveis afetados. Preencha as informações abaixo para que a equipe técnica da Defesa Civil do Estado possa analisar o caso.</p>
+        </div>
+    </section>
+
+    <!-- Boas-vindas -->
+    <section class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div id="userBanner" class="flex flex-wrap items-center gap-3 text-sm text-gray-700">
+                <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
+                    <i data-lucide="shield-check"></i> Situação da solicitação
+                </span>
+                <span id="authStatus" class="text-xs text-gray-500"></span>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-4 my-10">
+        <!-- Formulário -->
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-md border-t-4 border-orange-500">
+            <h2 class="text-xl font-bold text-gray-800 mb-1">Formulário de Avaliação</h2>
+            <p class="text-gray-500 text-sm mb-6">Os campos marcados com <span class="text-red-500">*</span> são obrigatórios.</p>
+
+            <form id="vistoriaForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Dados do solicitante -->
+                <div class="md:col-span-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-blue-800 border-b border-blue-100 pb-2 mb-4 flex items-center gap-2">
+                        <i data-lucide="id-card"></i> Dados do Solicitante
+                    </h3>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Nome Completo <span class="text-red-500">*</span></label>
+                    <input type="text" id="fNome" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="Seu nome completo">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Telefone / WhatsApp <span class="text-red-500">*</span></label>
+                    <input type="tel" id="fTelefone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="(66) 99999-9999">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">E-mail</label>
+                    <input type="email" id="fEmail" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="voce@email.com">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Vínculo com a área <span class="text-red-500">*</span></label>
+                    <select id="fVinculo" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="">Selecione...</option>
+                        <option>Proprietário(a)</option>
+                        <option>Morador(a) / Responsável pelo imóvel</option>
+                        <option>Inquilino(a)</option>
+                        <option>Vizinho(a) / Testemunha</option>
+                        <option>Servidor público / Agente comunitário</option>
+                        <option>Outro</option>
+                    </select>
+                </div>
+
+                <!-- Localização -->
+                <div class="md:col-span-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-blue-800 border-b border-blue-100 pb-2 mb-4 flex items-center gap-2">
+                        <i data-lucide="map-pin"></i> Localização da Área / Imóvel
+                    </h3>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Município <span class="text-red-500">*</span></label>
+                    <input type="text" id="fMunicipio" required list="municipiosMT" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="Selecione ou digite o município">
+                    <datalist id="municipiosMT"></datalist>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Endereço / Referência do local <span class="text-red-500">*</span></label>
+                    <input type="text" id="fEndereco" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="Rua, número, bairro ou ponto de referência">
+                </div>
+                <div class="md:col-span-2">
+                    <button type="button" id="btnGeo" class="inline-flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-4 py-2 rounded-lg transition">
+                        <i data-lucide="crosshair"></i> Usar minha localização (GPS)
+                    </button>
+                    <span id="geoStatus" class="text-xs text-gray-400 ml-2 hidden"></span>
+                </div>
+
+                <!-- Tipo da vistoria -->
+                <div class="md:col-span-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-blue-800 border-b border-blue-100 pb-2 mb-4 flex items-center gap-2">
+                        <i data-lucide="triangle-alert"></i> Tipo da Avaliação
+                    </h3>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">O que deseja solicitar? <span class="text-red-500">*</span></label>
+                    <select id="fTipo" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="">Selecione o tipo...</option>
+                        <option value="risco-inundacao">Área de risco de inundação / alagamento</option>
+                        <option value="risco-deslizamento">Área de risco de deslizamento / erosão</option>
+                        <option value="imovel-afetado">Imóvel afetado por evento (chuva, vento, granizo)</option>
+                        <option value="danos-estruturais">Imóvel com danos estruturais (trincas, rachaduras)</option>
+                        <option value="incendio-queimada">Área atingida por incêndio / queimada</option>
+                        <option value="estabilidade-obra">Avaliação de estabilidade / obra de contenção</option>
+                        <option value="outro">Outro tipo de vistoria</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Nível de Urgência <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="urgencia" value="baixa" class="hidden peer">
+                            <div class="rounded-xl border border-gray-200 p-4 text-center peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:ring-2 peer-checked:ring-green-500/20 transition">
+                                <i data-lucide="info" class="text-green-600 mb-1"></i>
+                                <p class="text-xs font-bold text-gray-700">Rotina</p>
+                                <p class="text-[10px] text-gray-500">Pode aguardar avaliação programada</p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="urgencia" value="media" class="hidden peer">
+                            <div class="rounded-xl border border-gray-200 p-4 text-center peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-2 peer-checked:ring-amber-500/20 transition">
+                                <i data-lucide="triangle-alert" class="text-amber-600 mb-1"></i>
+                                <p class="text-xs font-bold text-gray-700">Urgente</p>
+                                <p class="text-[10px] text-gray-500">Risco eminente à segurança</p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="urgencia" value="alta" class="hidden peer">
+                            <div class="rounded-xl border border-gray-200 p-4 text-center peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:ring-2 peer-checked:ring-red-500/20 transition">
+                                <i data-lucide="octagon-alert" class="text-red-600 mb-1"></i>
+                                <p class="text-xs font-bold text-gray-700">Crítico</p>
+                                <p class="text-[10px] text-gray-500">Risco imediato de vida</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Descrição detalhada da situação <span class="text-red-500">*</span></label>
+                    <textarea id="fDescricao" rows="5" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" placeholder="Descreva com o máximo de detalhes: quando começou, o que está acontecendo, quantas pessoas estão expostas, danos visíveis, etc."></textarea>
+                </div>
+
+                <div class="md:col-span-2 flex flex-col sm:flex-row gap-3 pt-2">
+                    <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg shadow-orange-600/20">
+                        <i data-lucide="send"></i> Enviar Solicitação de Vistoria
+                    </button>
+                    <button type="reset" class="inline-flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition">
+                        Limpar
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Meus pedidos -->
+        <section class="mt-10 bg-white p-6 md:p-8 rounded-xl shadow-md">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i data-lucide="clipboard-list"></i> Meus Pedidos de Vistoria</h2>
+                <button id="btnRefresh" class="inline-flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-4 py-2 rounded-lg transition">
+                    <i data-lucide="refresh-cw"></i> Atualizar
+                </button>
+            </div>
+            <div id="pedidosList" class="space-y-3">
+                <p class="text-gray-400 text-sm py-6 text-center">Carregando solicitações...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 mt-10">
+        <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row justify-between gap-4 text-xs">
+            <div>
+                <strong class="text-gray-200">DEFESA CIVIL DO ESTADO DE MATO GROSSO</strong>
+                <p class="mt-1">Em situação de emergência ligue <span class="text-orange-400 font-bold">199</span>.</p>
+            </div>
+            <div class="text-right">
+                <p>Portal de Vistorias &amp; Avaliação de Risco</p>
+                <a href="index.html" class="text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 mt-1"><i data-lucide="home"></i> Voltar ao início</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal de confirmação -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 text-center">
+            <div class="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-4">
+                <i data-lucide="check-check" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Solicitação Registrada!</h3>
+            <p id="confirmMsg" class="text-gray-600 text-sm mb-6">Sua solicitação de vistoria foi enviada com sucesso. A equipe da Defesa Civil irá analisar o caso.</p>
+            <button onclick="fecharConfirm()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition">Entendi</button>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        window.DCMUNICIPIOS = ["Acorizal","Água Boa","Alta Floresta","Alto Araguaia","Alto Boa Vista","Alto Garças","Alto Paraguai","Alto Taquari","Apiacás","Araguaiana","Araguainha","Araputanga","Arenápolis","Aripuanã","Barão de Melgaço","Barra do Bugres","Barra do Garças","Boa Esperança do Norte","Bom Jesus do Araguaia","Brasnorte","Cáceres","Campinápolis","Campo Novo do Parecis","Campo Verde","Campos de Júlio","Canabrava do Norte","Canarana","Carlinda","Castanheira","Chapada dos Guimarães","Cláudia","Cocalinho","Colíder","Colniza","Comodoro","Confresa","Conquista D'Oeste","Cotriguaçu","Cuiabá","Curvelândia","Denise","Diamantino","Dom Aquino","Feliz Natal","Figueirópolis D'Oeste","Gaúcha do Norte","General Carneiro","Glória D'Oeste","Guarantã do Norte","Guiratinga","Indiavaí","Ipiranga do Norte","Itanhangá","Itaúba","Itiquira","Jaciara","Jangada","Jauru","Juara","Juína","Juruena","Juscimeira","Lambari D'Oeste","Lucas do Rio Verde","Luciara","Marcelândia","Matupá","Mirassol d'Oeste","Nobres","Nortelândia","Nossa Senhora do Livramento","Nova Bandeirantes","Nova Brasilândia","Nova Canaã do Norte","Nova Guarita","Nova Lacerda","Nova Marilândia","Nova Maringá","Nova Monte Verde","Nova Mutum","Nova Nazaré","Nova Olímpia","Nova Santa Helena","Nova Ubiratã","Nova Xavantina","Novo Horizonte do Norte","Novo Mundo","Novo Santo Antônio","Novo São Joaquim","Paranaíta","Paranatinga","Pedra Preta","Peixoto de Azevedo","Planalto da Serra","Poconé","Pontal do Araguaia","Ponte Branca","Pontes e Lacerda","Porto Alegre do Norte","Porto dos Gaúchos","Porto Esperidião","Porto Estrela","Poxoréu","Primavera do Leste","Querência","Reserva do Cabaçal","Ribeirão Cascalheira","Ribeirãozinho","Rio Branco","Rondolândia","Rondonópolis","Rosário Oeste","Salto do Céu","Santa Carmem","Santa Cruz do Xingu","Santa Rita do Trivelato","Santa Terezinha","Santo Afonso","Santo Antônio de Leverger","Santo Antônio do Leste","São Félix do Araguaia","São José do Povo","São José do Rio Claro","São José do Xingu","São José dos Quatro Marcos","São Pedro da Cipa","Sapezal","Serra Nova Dourada","Sinop","Sorriso","Tabaporã","Tangará da Serra","Tapurah","Terra Nova do Norte","Tesouro","Torixoréu","União do Sul","Vale de São Domingos","Várzea Grande","Vera","Vila Bela da Santíssima Trindade","Vila Rica"];
+    </script>
+    <script>
+        (function () {
+            const datalist = document.getElementById('municipiosMT');
+            if (window.DCMUNICIPIOS && Array.isArray(window.DCMUNICIPIOS)) {
+                datalist.innerHTML = window.DCMUNICIPIOS.map(function (m) { return '<option value="' + m + '">'; }).join('');
+            } else {
+                // fallback: municípios principais
+                ['Cuiabá','Várzea Grande','Rondonópolis','Sinop','Tangará da Serra','Cáceres','Sorriso','Lucas do Rio Verde','Barra do Garças','Juína','Primavera do Leste','Alta Floresta'].forEach(function (m) {
+                    datalist.innerHTML += '<option value="' + m + '">';
+                });
+            }
+
+            // sessão do usuário
+            const s = window.dcGetSession ? dcGetSession() : null;
+            const authEl = document.getElementById('authStatus');
+            if (s) {
+                authEl.innerHTML = 'Enviado como <b class="text-gray-700">' + (s.nome || s.usuario || 'usuário') + '</b>';
+                if (document.getElementById('fNome') && !document.getElementById('fNome').value && s.nome) {
+                    document.getElementById('fNome').value = s.nome;
+                }
+            } else {
+                authEl.innerHTML = 'Você não está logado. A solicitação será salva localmente neste navegador. <a href="login.html" class="text-blue-600 underline font-semibold">Entrar / Criar conta</a>';
+            }
+
+            // campos lat/lng (opcional via GPS)
+            let geo = null;
+            document.getElementById('btnGeo').addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    document.getElementById('geoStatus').textContent = 'GPS indisponível neste navegador.';
+                    document.getElementById('geoStatus').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('geoStatus').textContent = 'Obtendo coordenadas...';
+                document.getElementById('geoStatus').classList.remove('hidden');
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    geo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    document.getElementById('geoStatus').textContent = 'Localização capturada (lat: ' + geo.lat.toFixed(5) + ', lng: ' + geo.lng.toFixed(5) + ')';
+                }, function () {
+                    document.getElementById('geoStatus').textContent = 'Não foi possível obter a localização. Envie sem GPS.';
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            });
+
+            // Lista de pedidos (local + backend quando logado)
+            function lerPedidos() {
+                try { return JSON.parse(localStorage.getItem('dcmt_vistorias') || '[]'); } catch (e) { return []; }
+            }
+            function salvarPedidos(arr) {
+                try { localStorage.setItem('dcmt_vistorias', JSON.stringify(arr)); } catch (e) {}
+            }
+
+            const CLASSE_URG = {
+                baixa: { label: 'Rotina', cor: 'bg-green-100 text-green-800' },
+                media: { label: 'Urgente', cor: 'bg-amber-100 text-amber-800' },
+                alta: { label: 'Crítico', cor: 'bg-red-100 text-red-800' }
+            };
+
+            function renderPedidos() {
+                const box = document.getElementById('pedidosList');
+                const locais = lerPedidos();
+                if (!locais.length) {
+                    box.innerHTML = '<p class="text-gray-400 text-sm py-6 text-center">Nenhuma solicitação de vistoria registrada ainda.</p>';
+                    return;
+                }
+                box.innerHTML = locais.slice().reverse().map(function (p) {
+                    const u = CLASSE_URG[p.urgencia] || CLASSE_URG.baixa;
+                    const quando = new Date(p.ts || Date.now()).toLocaleString('pt-BR');
+                    return `
+                        <div class="border border-gray-200 rounded-xl p-4 hover:border-orange-300 transition">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full ${u.cor}"><i data-lucide="triangle-alert"></i> ${u.label}</span>
+                                <span class="text-[11px] text-gray-400"><i data-lucide="clock"></i> ${quando}</span>
+                            </div>
+                            <p class="text-sm font-bold text-gray-800">${p.tipoLeg || 'Vistoria'}</p>
+                            <p class="text-xs text-gray-500 mt-1 truncate"><i data-lucide="map-pin"></i> ${p.municipio} — ${p.endereco}</p>
+                            <p class="text-xs text-gray-600 mt-1 line-clamp-2">${p.descricao}</p>
+                            <p class="text-[11px] text-gray-400 mt-2"><i data-lucide="user"></i> ${p.nome}</p>
+                        </div>`;
+                }).join('');
+                if (window.lucide) lucide.createIcons();
+            }
+
+            // Envio do formulário
+            document.getElementById('vistoriaForm').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const urgSel = document.querySelector('input[name="urgencia"]:checked');
+                const payload = {
+                    nome: document.getElementById('fNome').value.trim(),
+                    telefone: document.getElementById('fTelefone').value.trim(),
+                    email: document.getElementById('fEmail').value.trim(),
+                    vinculo: document.getElementById('fVinculo').value,
+                    municipio: document.getElementById('fMunicipio').value.trim(),
+                    endereco: document.getElementById('fEndereco').value.trim(),
+                    tipo: document.getElementById('fTipo').value,
+                    urgencia: urgSel ? urgSel.value : 'media',
+                    descricao: document.getElementById('fDescricao').value.trim(),
+                    ts: Date.now()
+                };
+                if (!payload.nome || !payload.telefone || !payload.municipio || !payload.endereco || !payload.tipo || !payload.descricao) {
+                    document.getElementById('confirmMsg').innerText = 'Preencha todos os campos obrigatórios antes de enviar.';
+                    document.getElementById('confirmModal').classList.remove('hidden');
+                    document.getElementById('confirmModal').classList.add('flex');
+                    return;
+                }
+
+                const TIPOS = {
+                    'risco-inundacao': 'Área de risco de inundação / alagamento',
+                    'risco-deslizamento': 'Área de risco de deslizamento / erosão',
+                    'imovel-afetado': 'Imóvel afetado por evento (chuva, vento, granizo)',
+                    'danos-estruturais': 'Imóvel com danos estruturais (trincas, rachaduras)',
+                    'incendio-queimada': 'Área atingida por incêndio / queimada',
+                    'estabilidade-obra': 'Avaliação de estabilidade / obra de contenção',
+                    'outro': 'Outro tipo de vistoria'
+                };
+
+                let sincronizado = false;
+                const received = { ...payload, tipoLeg: TIPOS[payload.tipo] || payload.tipo };
+                if (window.dcApi && window.dcGetToken && dcGetToken()) {
+                    try {
+                        const r = await dcApi.createReport({
+                            type: 'vistoria:' + payload.tipo,
+                            severity: payload.urgencia,
+                            location: payload.municipio + ' — ' + payload.endereco,
+                            description: payload.descricao + ' | Solicitante: ' + payload.nome + ' | Tel: ' + payload.telefone,
+                            reporter: payload.nome,
+                            lat: geo ? geo.lat : -15.6014,
+                            lng: geo ? geo.lng : -56.0979
+                        });
+                        if (r.ok && r.data && r.data.report) {
+                            sincronizado = true;
+                            received.id = r.data.report.id;
+                            received.sync = true;
+                        }
+                    } catch (e) { /* mantém local */ }
+                }
+
+                if (!sincronizado) { received.sync = false; }
+                const lista = lerPedidos();
+                lista.push(received);
+                salvarPedidos(lista);
+
+                document.getElementById('confirmMsg').innerHTML = sincronizado
+                    ? 'Sua solicitação de vistoria foi enviada e compartilhada com a equipe técnica. Guarde seu número: <b>#' + (received.id || 'local') + '</b>.'
+                    : 'Sua solicitação foi salva neste navegador. Para enviar diretamente à equipe técnica, faça login antes de solicitar.';
+                document.getElementById('confirmModal').classList.remove('hidden');
+                document.getElementById('confirmModal').classList.add('flex');
+
+                this.reset();
+                if (window.lucide) lucide.createIcons();
+                renderPedidos();
+            });
+
+            function fecharConfirm() {
+                document.getElementById('confirmModal').classList.add('hidden');
+                document.getElementById('confirmModal').classList.remove('flex');
+            }
+            window.fecharConfirm = fecharConfirm;
+
+            document.getElementById('btnRefresh').addEventListener('click', renderPedidos);
+            renderPedidos();
+            if (window.lucide) lucide.createIcons();
+        })();
+    </script>
+</body>
+</html>

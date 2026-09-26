@@ -174,7 +174,7 @@
                     <span>Condutores</span>
                 </button>
 
-                <button onclick="switchTab('arquitetura')" data-tab="arquitetura" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800/40 pt-4 mt-2">
+                <button onclick="switchTab('arquitetura')" data-tab="arquitetura" class="nav-item hidden flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800/40 pt-4 mt-2">
                     <i data-lucide="database" class="w-5 text-center"></i>
                     <span>Banco de Dados</span>
                 </button>
@@ -199,6 +199,10 @@
         <!-- HEADER DO APP (Top Bar) -->
         <header class="bg-white border-b border-slate-200 py-4 px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
             <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition">
+                    <i data-lucide="home" class="text-lg"></i>
+                    <span class="hidden sm:inline">Home</span>
+                </a>
                 <h2 id="page-title" class="text-xl font-extrabold text-slate-800">Dashboard de Viaturas</h2>
             </div>
             <div class="flex items-center gap-3">
