@@ -6,18 +6,110 @@
     <title>Defesa Civil MT - Controle de Viaturas</title>
     <!-- Tailwind CSS para estilização rápida e moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Lucide para ícones -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+        [data-lucide] {
+            width: 1em;
+            height: 1em;
+            vertical-align: -0.125em;
+            stroke-width: 2;
         }
-        /* Esconder barras de rolagem mas manter funcionalidade */
+        :root {
+            --navy-950: #0a1b33;
+            --signal-orange: #f97316;
+            --signal-amber: #fbbf24;
+            --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            background:
+                radial-gradient(1200px 520px at 85% -10%, rgba(37, 99, 235, 0.10), transparent 60%),
+                radial-gradient(900px 420px at -10% 108%, rgba(249, 115, 22, 0.09), transparent 55%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+            background-attachment: fixed;
+            color-scheme: light;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            letter-spacing: -0.02em;
+        }
+
+        label, .uppercase {
+            letter-spacing: 0.06em;
+        }
+
+        .font-mono {
+            font-family: var(--font-mono);
+            font-feature-settings: "tnum" 1;
+            letter-spacing: 0;
+        }
+
+        ::selection {
+            background: rgba(249, 115, 22, 0.25);
+            color: var(--navy-950);
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        *::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 99px;
+        }
+        *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--signal-orange);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        @keyframes dcTabIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-content {
+            animation: dcTabIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        tbody tr {
+            transition: background-color 0.18s ease;
+        }
+
+        aside {
+            position: relative;
+        }
+        aside::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #f97316, #fbbf24);
+        }
+
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -45,7 +137,7 @@
                 </div>
                 <div class="md:hidden">
                     <button id="mobile-menu-btn" class="p-2 text-slate-400 hover:text-white focus:outline-none">
-                        <i class="fa-solid fa-bars text-xl"></i>
+                        <i data-lucide="menu" class="text-xl"></i>
                     </button>
                 </div>
             </div>
@@ -53,37 +145,37 @@
             <!-- Navegação Principal -->
             <nav id="sidebar-nav" class="hidden md:flex flex-col gap-1.5">
                 <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/10">
-                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <i data-lucide="pie-chart" class="w-5 text-center"></i>
                     <span>Dashboard</span>
                 </button>
                 
                 <button onclick="switchTab('viagens')" data-tab="viagens" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i class="fa-solid fa-route w-5 text-center"></i>
+                    <i data-lucide="route" class="w-5 text-center"></i>
                     <span>Viagens</span>
                 </button>
 
                 <button onclick="switchTab('checklist')" data-tab="checklist" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i class="fa-solid fa-clipboard-check w-5 text-center"></i>
+                    <i data-lucide="clipboard-check" class="w-5 text-center"></i>
                     <span>Checklists</span>
                 </button>
 
                 <button onclick="switchTab('manutencao')" data-tab="manutencao" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i class="fa-solid fa-wrench w-5 text-center"></i>
+                    <i data-lucide="wrench" class="w-5 text-center"></i>
                     <span>Manutenção</span>
                 </button>
 
                 <button onclick="switchTab('veiculos')" data-tab="veiculos" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800/40 pt-4 mt-2">
-                    <i class="fa-solid fa-car w-5 text-center"></i>
+                    <i data-lucide="car" class="w-5 text-center"></i>
                     <span>Veículos</span>
                 </button>
 
                 <button onclick="switchTab('condutores')" data-tab="condutores" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                    <i class="fa-solid fa-id-card w-5 text-center"></i>
+                    <i data-lucide="id-card" class="w-5 text-center"></i>
                     <span>Condutores</span>
                 </button>
 
                 <button onclick="switchTab('arquitetura')" data-tab="arquitetura" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800/40 pt-4 mt-2">
-                    <i class="fa-solid fa-database w-5 text-center"></i>
+                    <i data-lucide="database" class="w-5 text-center"></i>
                     <span>Banco de Dados</span>
                 </button>
             </nav>
@@ -112,7 +204,7 @@
             <div class="flex items-center gap-3">
                 <!-- Alertas Rápidos -->
                 <button onclick="switchTab('manutencao')" class="relative p-2 text-slate-500 hover:text-red-500 transition-colors">
-                    <i class="fa-regular fa-bell text-xl"></i>
+                    <i data-lucide="bell" class="text-xl"></i>
                     <span id="alerts-count" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
                 </button>
                 <div class="h-6 w-px bg-slate-200"></div>
@@ -137,7 +229,7 @@
                             <h3 id="stat-total-veiculos" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
                         </div>
                         <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 group-hover:bg-slate-200 transition-colors">
-                            <i class="fa-solid fa-car text-xl"></i>
+                            <i data-lucide="car" class="text-xl"></i>
                         </div>
                     </div>
                     <div onclick="filterStatus('Disponível')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-green-500/30 transition-all group">
@@ -146,7 +238,7 @@
                             <h3 id="stat-dispo-veiculos" class="text-2xl font-extrabold text-green-600 mt-1">0</h3>
                         </div>
                         <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 group-hover:bg-green-100 transition-colors">
-                            <i class="fa-solid fa-circle-check text-xl"></i>
+                            <i data-lucide="circle-check" class="text-xl"></i>
                         </div>
                     </div>
                     <div onclick="filterStatus('Em Viagem')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-blue-500/30 transition-all group">
@@ -155,7 +247,7 @@
                             <h3 id="stat-viagem-veiculos" class="text-2xl font-extrabold text-blue-600 mt-1">0</h3>
                         </div>
                         <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-100 transition-colors">
-                            <i class="fa-solid fa-route text-xl"></i>
+                            <i data-lucide="route" class="text-xl"></i>
                         </div>
                     </div>
                     <div onclick="filterStatus('Em Manutenção')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-amber-500/30 transition-all group">
@@ -164,7 +256,7 @@
                             <h3 id="stat-manut-veiculos" class="text-2xl font-extrabold text-amber-600 mt-1">0</h3>
                         </div>
                         <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
-                            <i class="fa-solid fa-screwdriver-wrench text-xl"></i>
+                            <i data-lucide="wrench" class="text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -270,10 +362,10 @@
                         <!-- Abas internas para Saída ou Retorno -->
                         <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
                             <button id="btn-sub-saida" onclick="toggleViagemSubTab('saida')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all">
-                                <i class="fa-solid fa-sign-out mr-1"></i> Saída (Ida)
+                                <i data-lucide="log-out" class="mr-1"></i> Saída (Ida)
                             </button>
                             <button id="btn-sub-retorno" onclick="toggleViagemSubTab('retorno')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
-                                <i class="fa-solid fa-sign-in mr-1"></i> Retorno (Volta)
+                                <i data-lucide="log-in" class="mr-1"></i> Retorno (Volta)
                             </button>
                         </div>
 
@@ -302,7 +394,7 @@
                             
                             <!-- Banner Checklist Obrigatório -->
                             <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-3 flex gap-3 text-amber-800">
-                                <i class="fa-solid fa-circle-exclamation mt-0.5 text-base text-amber-600"></i>
+                                <i data-lucide="circle-alert" class="mt-0.5 text-base text-amber-600"></i>
                                 <div class="text-xs">
                                     <p class="font-bold">Vistoria Pré-Saída Requerida!</p>
                                     <p class="opacity-90">Ao salvar, você será direcionado para o checklist obrigatório da viatura.</p>
@@ -330,7 +422,7 @@
                             
                             <!-- Banner Checklist Obrigatório -->
                             <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-3 flex gap-3 text-amber-800">
-                                <i class="fa-solid fa-circle-exclamation mt-0.5 text-base text-amber-600"></i>
+                                <i data-lucide="circle-alert" class="mt-0.5 text-base text-amber-600"></i>
                                 <div class="text-xs">
                                     <p class="font-bold">Vistoria de Recebimento Requerida!</p>
                                     <p class="opacity-90">Após salvar, será disparado o checklist de encerramento de chamado e controle de danos.</p>
@@ -380,7 +472,7 @@
                             <span id="wizard-type-badge" class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-amber-100 text-amber-800">Pré-Viagem (Ida)</span>
                             <h3 class="font-extrabold text-slate-800 text-lg mt-2">Checklist de Prontidão de Viatura</h3>
                         </div>
-                        <i class="fa-solid fa-clipboard-list text-3xl text-amber-500"></i>
+                        <i data-lucide="clipboard-list" class="text-3xl text-amber-500"></i>
                     </div>
 
                     <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center justify-between mb-6">
@@ -467,10 +559,10 @@
                             <!-- Sub-abas internas de Oficina: Registrar Entrada ou Concluir Saída -->
                             <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
                                 <button id="btn-maint-entrada" onclick="toggleMaintSubTab('entrada')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all">
-                                    <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Entrada (Enviar)
+                                    <i data-lucide="log-in" class="mr-1"></i> Entrada (Enviar)
                                 </button>
                                 <button id="btn-maint-saida" onclick="toggleMaintSubTab('saida')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
-                                    <i class="fa-solid fa-check-double mr-1"></i> Saída (Concluir)
+                                    <i data-lucide="check-check" class="mr-1"></i> Saída (Concluir)
                                 </button>
                             </div>
 
@@ -556,7 +648,7 @@
                         <div class="bg-blue-50 border border-blue-200 p-6 rounded-2xl space-y-4">
                             <div class="border-b border-blue-100 pb-3">
                                 <h3 class="font-bold text-blue-900 text-base flex items-center gap-1.5">
-                                    <i class="fa-solid fa-clock-rotate-left"></i> Agendar Próxima Revisão
+                                    <i data-lucide="history"></i> Agendar Próxima Revisão
                                 </h3>
                                 <p class="text-[11px] text-blue-700 leading-tight">Programe alertas automáticos baseados em quilometragem limite ou data calendário (o que ocorrer primeiro).</p>
                             </div>
@@ -797,7 +889,7 @@
                 <!-- Botão de Voltar ao Dashboard -->
                 <div class="flex items-center justify-between">
                     <button onclick="switchTab('dashboard')" class="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold text-sm bg-white border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm">
-                        <i class="fa-solid fa-arrow-left"></i> Voltar ao Dashboard
+                        <i data-lucide="arrow-left"></i> Voltar ao Dashboard
                     </button>
                     <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Identificação Oficial do Estado</span>
                 </div>
@@ -805,14 +897,14 @@
                 <!-- Painel Superior (Emblema de Caminhonete e Status) -->
                 <div class="bg-gradient-to-r from-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 relative overflow-hidden">
                     <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl">
-                        <i class="fa-solid fa-truck-pickup"></i>
+                        <i data-lucide="truck"></i>
                     </div>
                     
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 z-10 relative">
                         <div class="flex items-center gap-4">
                             <!-- Emblema Caminhonete Estilizado -->
                             <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-orange-500/20">
-                                <i class="fa-solid fa-truck-pickup"></i>
+                                <i data-lucide="truck"></i>
                             </div>
                             <div>
                                 <div class="flex items-center gap-2.5">
@@ -843,7 +935,7 @@
                     <div class="space-y-6">
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                             <h4 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
-                                <i class="fa-solid fa-circle-info text-blue-600"></i> Informações Técnicas
+                                <i data-lucide="circle-info" class="text-blue-600"></i> Informações Técnicas
                             </h4>
                             <div class="space-y-3 text-xs font-semibold">
                                 <div class="flex justify-between py-2 border-b border-slate-50 text-slate-600">
@@ -872,7 +964,7 @@
                         <!-- Alertas e Revisões do Veículo -->
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                             <h4 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
-                                <i class="fa-solid fa-bell text-orange-500"></i> Alertas e Revisões Ativas
+                                <i data-lucide="bell" class="text-orange-500"></i> Alertas e Revisões Ativas
                             </h4>
                             <div id="ficha-alertas-container" class="space-y-3">
                                 <!-- Injetado dinamicamente -->
@@ -884,7 +976,7 @@
                     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2 flex flex-col justify-between">
                         <div>
                             <h4 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center gap-2 mb-4">
-                                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i> Histórico de Atividade da Viatura
+                                <i data-lucide="history" class="text-blue-600"></i> Histórico de Atividade da Viatura
                             </h4>
 
                             <!-- Abas de histórico interno da viatura -->
@@ -924,7 +1016,7 @@
                         <!-- Relacionamentos e Tabelas -->
                         <div class="space-y-4">
                             <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                                <i class="fa-solid fa-database text-blue-600"></i> Modelagem Relacional (Entidades)
+                                <i data-lucide="database" class="text-blue-600"></i> Modelagem Relacional (Entidades)
                             </h4>
                             <div class="space-y-3">
                                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
@@ -963,7 +1055,7 @@
                         <!-- Stack Tecnológica Sugerida -->
                         <div class="space-y-4">
                             <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                                <i class="fa-solid fa-layer-group text-blue-600"></i> Stack Recomendada (Escala & Time-to-Market)
+                                <i data-lucide="layers" class="text-blue-600"></i> Stack Recomendada (Escala & Time-to-Market)
                             </h4>
                             
                             <div class="border border-emerald-100 bg-emerald-50/50 p-5 rounded-2xl space-y-3">
@@ -991,23 +1083,23 @@
         <!-- FOOTER / NAV BAR MOBILE (Apenas telas pequenas) -->
         <div class="md:hidden sticky bottom-0 bg-slate-900 border-t border-slate-800 flex justify-around py-3 z-30">
             <button onclick="switchTab('dashboard')" class="mobile-nav-item flex flex-col items-center text-orange-400">
-                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <i data-lucide="pie-chart" class="text-lg"></i>
                 <span class="text-[10px] mt-1 font-medium">Home</span>
             </button>
             <button onclick="switchTab('viagens')" class="mobile-nav-item flex flex-col items-center text-slate-500">
-                <i class="fa-solid fa-route text-lg"></i>
+                <i data-lucide="route" class="text-lg"></i>
                 <span class="text-[10px] mt-1 font-medium">Viagens</span>
             </button>
             <button onclick="switchTab('checklist')" class="mobile-nav-item flex flex-col items-center text-slate-500">
-                <i class="fa-solid fa-clipboard-check text-lg"></i>
+                <i data-lucide="clipboard-check" class="text-lg"></i>
                 <span class="text-[10px] mt-1 font-medium">Vistorias</span>
             </button>
             <button onclick="switchTab('veiculos')" class="mobile-nav-item flex flex-col items-center text-slate-500">
-                <i class="fa-solid fa-car text-lg"></i>
+                <i data-lucide="car" class="text-lg"></i>
                 <span class="text-[10px] mt-1 font-medium">Veículos</span>
             </button>
             <button onclick="switchTab('condutores')" class="mobile-nav-item flex flex-col items-center text-slate-500">
-                <i class="fa-solid fa-id-card text-lg"></i>
+                <i data-lucide="id-card" class="text-lg"></i>
                 <span class="text-[10px] mt-1 font-medium">Condutores</span>
             </button>
         </div>
@@ -1016,7 +1108,7 @@
     <!-- NOTIFICAÇÃO DO SISTEMA (TOAST) -->
     <div id="toast" class="fixed top-5 right-5 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl z-50 flex items-center gap-3 transition-transform translate-x-[400px] duration-300">
         <div id="toast-icon" class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs">
-            <i class="fa-solid fa-info"></i>
+            <i data-lucide="info"></i>
         </div>
         <p id="toast-message" class="text-xs font-semibold"></p>
     </div>
@@ -1031,7 +1123,7 @@
                     <p id="modal-subtitle" class="text-xs text-slate-400"></p>
                 </div>
                 <button onclick="closeGlobalEditModal()" class="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800/50">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+                    <i data-lucide="x" class="text-lg"></i>
                 </button>
             </div>
             <!-- Conteúdo / Campos de Entrada -->
@@ -1157,10 +1249,10 @@
             msgEl.innerText = message;
             if (type === 'error') {
                 iconEl.className = "w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-xs text-white";
-                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                iconEl.innerHTML = '<i data-lucide="triangle-alert"></i>';
             } else {
                 iconEl.className = "w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs text-white";
-                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                iconEl.innerHTML = '<i data-lucide="circle-check"></i>';
             }
 
             toast.classList.remove('translate-x-[400px]');
@@ -1260,6 +1352,8 @@
             if (document.getElementById('maint-saida-data')) {
                 document.getElementById('maint-saida-data').value = nowStr;
             }
+
+            if (window.lucide) lucide.createIcons();
         }
 
         function renderStats() {
@@ -1317,7 +1411,7 @@
                         totalAlerts++;
                         alertsList.innerHTML += `
                             <div class="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5">
-                                <i class="fa-solid fa-triangle-exclamation text-red-600 mt-1 text-sm"></i>
+                                <i data-lucide="triangle-alert" class="text-red-600 mt-1 text-sm"></i>
                                 <div>
                                     <p class="text-xs font-bold text-red-900">[${v.prefixo}] ${v.marca} ${v.modelo} (${v.placa})</p>
                                     <p class="text-[11px] text-red-700 leading-tight mt-0.5">${descAlerta}</p>
@@ -1357,7 +1451,7 @@
                 if (v.status_dispo === 'Em Manutenção') statusClass = "bg-amber-100 text-amber-800";
 
                 const alertCount = alertas.filter(al => al.veiculo_id === v.id).length;
-                const revText = alertCount > 0 ? `<span class="text-xs text-amber-600 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${alertCount} alerta(s)</span>` : '<span class="text-xs text-slate-400">Em dia</span>';
+                const revText = alertCount > 0 ? `<span class="text-xs text-amber-600 font-bold"><i data-lucide="triangle-alert" class="mr-1"></i> ${alertCount} alerta(s)</span>` : '<span class="text-xs text-slate-400">Em dia</span>';
 
                 table.innerHTML += `
                     <tr class="hover:bg-slate-50/60 transition-colors">
@@ -1368,7 +1462,7 @@
                         <td class="py-4 px-6">${revText}</td>
                         <td class="py-4 px-6 text-center"><span class="px-3 py-1.5 rounded-full text-xs font-bold ${statusClass}">${statusTxt}</span></td>
                         <td class="py-4 px-6 text-right">
-                            <button onclick="mostrarFichaVeiculo('${v.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100">Gerenciar <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                            <button onclick="mostrarFichaVeiculo('${v.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100">Gerenciar <i data-lucide="chevron-right" class="ml-1"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1497,7 +1591,7 @@
             if (alertasVeic.length === 0) {
                 container.innerHTML = `
                     <div class="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center text-[11px] text-slate-400">
-                        <i class="fa-solid fa-circle-check text-green-500 text-lg mb-1.5 block"></i>
+                        <i data-lucide="circle-check" class="text-green-500 text-lg mb-1.5 block"></i>
                         Viatura sem alertas de manutenção. Operação segura e revisões em dia!
                     </div>
                 `;
@@ -1529,7 +1623,7 @@
                             </div>
                         </div>
                         <button onclick="resolverAlerta('${al.id}', '${veiculoId}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition-all shadow-sm">
-                            <i class="fa-solid fa-check"></i> Resolver / Concluir Alerta
+                            <i data-lucide="check"></i> Resolver / Concluir Alerta
                         </button>
                     </div>
                 `;
@@ -1613,8 +1707,8 @@
                         </td>
                         <td class="py-3 px-4 text-center">${statusBadge}</td>
                         <td class="py-3 px-4 text-right flex justify-end gap-2.5 mt-2">
-                            <button onclick="openGlobalEditModal('viagem', '${v.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100"><i class="fa-solid fa-pen"></i> Alterar</button>
-                            <button onclick="excluirViagem('${v.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            <button onclick="openGlobalEditModal('viagem', '${v.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100"><i data-lucide="pen"></i> Alterar</button>
+                            <button onclick="excluirViagem('${v.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded border border-red-100"><i data-lucide="trash-2"></i> Excluir</button>
                         </td>
                     </tr>
                 `;
@@ -1649,8 +1743,8 @@
                         <td class="py-3 px-4 font-medium text-slate-600">${c.avarias_desc}</td>
                         <td class="py-3 px-4 text-center"><span class="px-2.5 py-1 rounded-full font-bold ${statusColor}">${c.status_geral}</span></td>
                         <td class="py-3 px-4 text-right flex justify-end gap-2.5 mt-1.5">
-                            <button onclick="openGlobalEditModal('checklist', '${c.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100"><i class="fa-solid fa-pen"></i> Alterar</button>
-                            <button onclick="excluirChecklist('${c.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            <button onclick="openGlobalEditModal('checklist', '${c.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100"><i data-lucide="pen"></i> Alterar</button>
+                            <button onclick="excluirChecklist('${c.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded border border-red-100"><i data-lucide="trash-2"></i> Excluir</button>
                         </td>
                     </tr>
                 `;
@@ -1694,8 +1788,8 @@
                             ${m.status === 'Ativa' ? '<span class="text-slate-400 italic font-medium">Aguardando</span>' : `R$ ${m.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </td>
                         <td class="py-3 px-4 text-right flex justify-end gap-2.5 mt-2">
-                            <button onclick="openGlobalEditModal('manutencao', '${m.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100"><i class="fa-solid fa-pen"></i> Alterar</button>
-                            <button onclick="excluirManutencao('${m.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            <button onclick="openGlobalEditModal('manutencao', '${m.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-100"><i data-lucide="pen"></i> Alterar</button>
+                            <button onclick="excluirManutencao('${m.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold flex items-center gap-1 bg-red-50 px-2 py-1 rounded border border-red-100"><i data-lucide="trash-2"></i> Excluir</button>
                         </td>
                     </tr>
                 `;
@@ -1719,8 +1813,8 @@
                         <td class="py-3 px-4 font-medium text-slate-600">${v.km_atual.toLocaleString('pt-BR')} km</td>
                         <td class="py-3 px-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${statusClass}">${v.status_dispo}</span></td>
                         <td class="py-3 px-4 text-right flex justify-end gap-2">
-                            <button onclick="carregarEdicaoVeiculo('${v.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-all flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> Alterar</button>
-                            <button onclick="excluirVeiculo('${v.id}')" class="text-red-600 hover:text-red-800 font-bold text-xs transition-all flex items-center gap-1"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            <button onclick="carregarEdicaoVeiculo('${v.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-all flex items-center gap-1"><i data-lucide="square-pen"></i> Alterar</button>
+                            <button onclick="excluirVeiculo('${v.id}')" class="text-red-600 hover:text-red-800 font-bold text-xs transition-all flex items-center gap-1"><i data-lucide="trash-2"></i> Excluir</button>
                         </td>
                     </tr>
                 `;
@@ -1739,8 +1833,8 @@
                         <td class="py-3 px-4 font-medium text-slate-700">${m.cnh} <span class="px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded text-[10px] font-bold border border-orange-100">${m.categoria_cnh}</span></td>
                         <td class="py-3 px-4 text-slate-500">${m.telefone}</td>
                         <td class="py-3 px-4 text-right flex justify-end gap-2">
-                            <button onclick="carregarEdicaoCondutor('${m.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-all flex items-center gap-1"><i class="fa-solid fa-user-gear"></i> Editar</button>
-                            <button onclick="excluirCondutor('${m.id}')" class="text-red-600 hover:text-red-800 font-bold text-xs transition-all flex items-center gap-1"><i class="fa-solid fa-trash"></i> Excluir</button>
+                            <button onclick="carregarEdicaoCondutor('${m.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-all flex items-center gap-1"><i data-lucide="user-cog"></i> Editar</button>
+                            <button onclick="excluirCondutor('${m.id}')" class="text-red-600 hover:text-red-800 font-bold text-xs transition-all flex items-center gap-1"><i data-lucide="trash-2"></i> Excluir</button>
                         </td>
                     </tr>
                 `;
@@ -1897,6 +1991,7 @@
             }
 
             document.getElementById('global-edit-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         }
 
         function closeGlobalEditModal() {
@@ -2161,28 +2256,28 @@
                             <label class="cursor-pointer text-center">
                                 <input type="radio" name="item-${id}" value="cheio" class="hidden peer" required>
                                 <div class="py-2 rounded-lg border border-slate-200 flex flex-col items-center transition-all bg-slate-50 text-slate-400 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 shadow-sm">
-                                    <i class="fa-solid fa-battery-full -rotate-90 text-lg mb-1 mt-1"></i>
+                                    <i data-lucide="battery-full" class="-rotate-90 text-lg mb-1 mt-1"></i>
                                     <span class="text-[10px] font-bold uppercase mt-1">Cheio</span>
                                 </div>
                             </label>
                             <label class="cursor-pointer text-center">
                                 <input type="radio" name="item-${id}" value="3/4" class="hidden peer">
                                 <div class="py-2 rounded-lg border border-slate-200 flex flex-col items-center transition-all bg-slate-50 text-slate-400 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 shadow-sm">
-                                    <i class="fa-solid fa-battery-three-quarters -rotate-90 text-lg mb-1 mt-1"></i>
+                                    <i data-lucide="battery" class="-rotate-90 text-lg mb-1 mt-1"></i>
                                     <span class="text-[10px] font-bold uppercase mt-1">3/4</span>
                                 </div>
                             </label>
                             <label class="cursor-pointer text-center">
                                 <input type="radio" name="item-${id}" value="1/2" class="hidden peer">
                                 <div class="py-2 rounded-lg border border-slate-200 flex flex-col items-center transition-all bg-slate-50 text-slate-400 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 shadow-sm">
-                                    <i class="fa-solid fa-battery-half -rotate-90 text-lg mb-1 mt-1"></i>
+                                    <i data-lucide="battery-medium" class="-rotate-90 text-lg mb-1 mt-1"></i>
                                     <span class="text-[10px] font-bold uppercase mt-1">Meio</span>
                                 </div>
                             </label>
                             <label class="cursor-pointer text-center">
                                 <input type="radio" name="item-${id}" value="1/4" class="hidden peer">
                                 <div class="py-2 rounded-lg border border-slate-200 flex flex-col items-center transition-all bg-slate-50 text-slate-400 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 shadow-sm">
-                                    <i class="fa-solid fa-battery-quarter -rotate-90 text-lg mb-1 mt-1"></i>
+                                    <i data-lucide="battery-low" class="-rotate-90 text-lg mb-1 mt-1"></i>
                                     <span class="text-[10px] font-bold uppercase mt-1">1/4</span>
                                 </div>
                             </label>
@@ -2240,7 +2335,7 @@
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 6: Foto da Avaria (Obrigatório se a resposta anterior for 'V')</h4>
                     <div class="border-2 border-dashed border-slate-200 bg-white hover:border-blue-500 transition-colors p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer text-center" onclick="simularUploadFoto()">
-                        <i class="fa-solid fa-camera text-slate-400 text-2xl mb-1.5"></i>
+                        <i data-lucide="camera" class="text-slate-400 text-2xl mb-1.5"></i>
                         <span class="text-xs font-semibold text-slate-500 block">Fotografar / Registrar Avaria</span>
                         <span id="upload-status" class="text-[10px] text-slate-400 mt-1">Anexar imagens de novos danos</span>
                     </div>
@@ -2264,6 +2359,8 @@
                     </label>
                 </div>
             `;
+
+            if (window.lucide) lucide.createIcons();
         }
 
         function simularUploadFoto() {
@@ -2625,11 +2722,5 @@
             renderAll();
         };
     </script>
-</body>
-</html>, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
 </body>
 </html>
