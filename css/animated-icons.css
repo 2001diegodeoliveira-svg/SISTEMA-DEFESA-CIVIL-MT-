@@ -1,0 +1,229 @@
+/* ============================================================
+   Ícones animados — inspirado em animatedicons.co
+   Dá vida aos ícones Lucide já existentes no sistema via CSS.
+   Usa apenas transform/opacity (GPU-friendly).
+   ============================================================ */
+
+/* Respecto a preferência do usuário por menos animação */
+@media (prefers-reduced-motion: reduce) {
+  .lucide {
+    animation: none !important;
+  }
+}
+
+/* ============================ FLAME ============================ */
+@keyframes ai-flame {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  30% { transform: scale(1.15) rotate(-6deg); }
+  60% { transform: scale(0.95) rotate(4deg); }
+  80% { transform: scale(1.08) rotate(-2deg); }
+}
+.lucide-flame {
+  animation: ai-flame 1.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+/* ============================ DROPLET / CHUVA ============================ */
+@keyframes ai-drop {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-2px) scale(1.1); opacity: 0.8; }
+}
+.lucide-droplet, .lucide-droplets, .lucide-cloud-rain, .lucide-cloud-drizzle {
+  animation: ai-drop 1.8s ease-in-out infinite;
+}
+
+/* ============================ WIND ============================ */
+@keyframes ai-wind {
+  0%, 100% { transform: translateX(0); }
+  40% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+}
+.lucide-wind {
+  animation: ai-wind 2.2s ease-in-out infinite;
+}
+
+/* ============================ SATELLITE / ANTENA ============================ */
+@keyframes ai-dish {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-12deg); }
+  50% { transform: rotate(12deg); }
+  75% { transform: rotate(-6deg); }
+}
+.lucide-satellite-dish, .lucide-radio-tower {
+  animation: ai-dish 2.4s ease-in-out infinite;
+  transform-origin: 50% 85%;
+}
+@keyframes ai-orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.lucide-satellite, .lucide-orbit {
+  animation: ai-orbit 6s linear infinite;
+}
+
+/* ============================ MAP-PIN ============================ */
+@keyframes ai-pin {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.06); }
+}
+.lucide-map-pin, .lucide-map-pinned {
+  animation: ai-pin 1.9s ease-in-out infinite;
+}
+
+/* ============================ NAVEGAÇÃO (seta de rota) ============================ */
+@keyframes ai-nav {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(3px) rotate(-8deg); }
+}
+.lucide-navigation, .lucide-navigation-2, .lucide-compass {
+  animation: ai-nav 2s ease-in-out infinite;
+}
+
+/* ============================ ALERTAS ============================ */
+@keyframes ai-alert {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.16); }
+}
+.lucide-triangle-alert, .lucide-circle-alert, .lucide-alert-octagon,
+.lucide-alert-triangle, .lucide-alert-circle {
+  animation: ai-alert 1.5s ease-in-out infinite;
+}
+
+/* ============================ TERMÔMETRO ============================ */
+@keyframes ai-therm {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.lucide-thermometer, .lucide-thermometer-sun, .lucide-thermometer-snowflake {
+  animation: ai-therm 2.1s ease-in-out infinite;
+}
+
+/* ============================ NUVENS ============================ */
+@keyframes ai-cloud {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+.lucide-cloud, .lucide-cloud-sun, .lucide-cloud-sun-rain, .lucide-cloud-lightning,
+.lucide-cloudy, .lucide-cloud-fog, .lucide-cloud-moon {
+  animation: ai-cloud 3s ease-in-out infinite;
+}
+
+/* ============================ RELÂMPAGO ============================ */
+@keyframes ai-zap {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.lucide-zap, .lucide-zap-off {
+  animation: ai-zap 1.1s steps(2) infinite;
+}
+
+/* ============================ SOL ============================ */
+@keyframes ai-sun-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.lucide-sun {
+  animation: ai-sun-spin 12s linear infinite;
+}
+
+/* ============================ ATIVIDADE / PULSO ============================ */
+@keyframes ai-activity {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.3); }
+}
+.lucide-activity, .lucide-pulse, .lucide-heart-pulse {
+  animation: ai-activity 1.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* ============================ ROTATÓRIOS (refresh, sync) ============================ */
+@keyframes ai-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.lucide-refresh-cw, .lucide-refresh-ccw, .lucide-rotate-cw, .lucide-rotate-ccw,
+.lucide-sync, .lucide-loader-circle, .lucide-layers {
+  animation: ai-spin 2.2s linear infinite;
+}
+
+/* ============================ RÁDIO / TRANSMISSÃO ============================ */
+@keyframes ai-signal {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.lucide-signal, .lucide-signal-high, .lucide-signal-medium, .lucide-signal-low,
+.lucide-wifi, .lucide-cctv {
+  animation: ai-signal 1.6s ease-in-out infinite;
+}
+
+/* ============================ BATERIA / NÍVEL ============================ */
+@keyframes ai-wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.lucide-waves, .lucide-water-waves, .lucide-waves-ladder {
+  animation: ai-wave 2s ease-in-out infinite;
+}
+
+/* ============================ CERCA / SEGURANÇA ============================ */
+@keyframes ai-shield {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.lucide-shield-check, .lucide-shield-alert, .lucide-shield {
+  animation: ai-shield 2.4s ease-in-out infinite;
+}
+
+/* ============================ TELEFONE / FONE ============================ */
+@keyframes ai-phone {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-14deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(6deg); }
+}
+.lucide-phone, .lucide-phone-call, .lucide-phone-outgoing, .lucide-phone-incoming {
+  animation: ai-phone 2s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+/* ============================ CÂMERA ============================ */
+@keyframes ai-cam {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.lucide-camera, .lucide-video, .lucide-circle-dot {
+  animation: ai-cam 2.2s ease-in-out infinite;
+}
+
+/* ============================ BARCO / EVENTO ============================ */
+@keyframes ai-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(3deg); }
+}
+.lucide-ship, .lucide-anchor, .lucide-life-buoy {
+  animation: ai-bob 2.6s ease-in-out infinite;
+}
+@keyframes ai-sway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+.lucide-sailboat, .lucide-ship-wheel {
+  animation: ai-sway 2.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+/* ============================ CORAÇÃO ============================ */
+@keyframes ai-heart {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(0.92); }
+  60% { transform: scale(1.12); }
+}
+.lucide-heart {
+  animation: ai-heart 1.6s ease-in-out infinite;
+}
+
+/* ============================ SOBREPOSIÇÃO: pausa em hover (opcional) ============================ */
+.lucide:hover {
+  animation-play-state: paused;
+}
