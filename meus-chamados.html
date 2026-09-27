@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="imagens/logo.png">
+    <title>Meus Chamados — Defesa Civil Digital</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="css/animated-icons.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="imagens/logo.png" alt="Defesa Civil MT" class="h-10 w-auto" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                <span class="font-bold text-lg tracking-wide">DEFESA CIVIL ESTADUAL</span>
+            </div>
+            <a href="index.html" class="inline-flex items-center space-x-2 bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-full text-sm font-semibold transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10" /></svg>
+                <span>Home</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="bg-blue-950">
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <span class="inline-block w-fit bg-green-500/20 text-green-300 text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Acompanhamento</span>
+            <h1 class="text-3xl md:text-4xl font-bold text-white mb-3">Meus Chamados</h1>
+            <p class="text-blue-200 text-lg max-w-3xl leading-relaxed">Acompanhe o status das suas solicitações abertas junto à Defesa Civil do Estado.</p>
+        </div>
+    </section>
+
+    <!-- Barra de estado -->
+    <section class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-3 text-sm text-gray-700">
+                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
+                        <i data-lucide="inbox"></i> <span id="totChamados">0</span> chamados
+                    </span>
+                    <span class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">
+                        <i data-lucide="timer"></i> <span id="totEmAnalise">0</span> em análise
+                    </span>
+                    <span class="inline-flex items-center gap-2 bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                        <i data-lucide="cloud-lightning"></i> <span id="totReportes">0</span> reportes
+                    </span>
+                </div>
+                <button id="btnRefresh" class="inline-flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-4 py-2 rounded-lg transition">
+                    <i data-lucide="refresh-cw"></i> Atualizar
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-4 my-10">
+        <!-- Filtros -->
+        <div id="filtros" class="flex flex-wrap gap-2 mb-6">
+            <button data-filtro="todos" class="filtro-btn text-xs font-bold px-4 py-2 rounded-full border transition bg-blue-700 text-white border-blue-700">Todos</button>
+            <button data-filtro="vistoria" class="filtro-btn text-xs font-bold px-4 py-2 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 transition">Vistorias</button>
+            <button data-filtro="ocorrencia" class="filtro-btn text-xs font-bold px-4 py-2 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 transition">Ocorrências</button>
+            <button data-filtro="reporte" class="filtro-btn text-xs font-bold px-4 py-2 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 transition">Reportes de Eventos</button>
+        </div>
+
+        <!-- Lista -->
+        <div id="chamadosList" class="space-y-3">
+            <p class="text-gray-400 text-sm py-6 text-center">Carregando seus chamados...</p>
+        </div>
+
+        <!-- Estado vazio -->
+        <div id="vazioBox" class="hidden text-center py-16">
+            <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+            <p class="text-gray-500 font-semibold">Nenhum chamado encontrado</p>
+            <p class="text-gray-400 text-sm mt-1">Quando você solicitar uma vistoria ou reportar um evento, ele aparecerá aqui.</p>
+            <div class="flex flex-wrap justify-center gap-3 mt-6">
+                <a href="vistoria.html" class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">
+                    <i data-lucide="triangle-alert"></i> Solicitar Vistoria
+                </a>
+                <a href="registrar-ocorrencia.html" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">
+                    <i data-lucide="siren"></i> Registrar Ocorrência
+                </a>
+                <a href="waze.html" class="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">
+                    <i data-lucide="map"></i> Reportar Evento
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 mt-10">
+        <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row justify-between gap-4 text-xs">
+            <div>
+                <strong class="text-gray-200">DEFESA CIVIL DO ESTADO DE MATO GROSSO</strong>
+                <p class="mt-1">Em situação de emergência ligue <span class="text-orange-400 font-bold">199</span>.</p>
+            </div>
+            <div class="text-right">
+                <p>Portal de Chamados &amp; Acompanhamento</p>
+                <a href="index.html" class="text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 mt-1"><i data-lucide="home"></i> Voltar ao início</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        (function () {
+            const CLASSE_URG = {
+                baixa: { label: 'Rotina', cor: 'bg-green-100 text-green-800' },
+                media: { label: 'Urgente', cor: 'bg-amber-100 text-amber-800' },
+                alta: { label: 'Crítico', cor: 'bg-red-100 text-red-800' },
+                info: { label: 'Informativo', cor: 'bg-blue-100 text-blue-800' },
+                low: { label: 'Rotina', cor: 'bg-green-100 text-green-800' },
+                medium: { label: 'Urgente', cor: 'bg-amber-100 text-amber-800' },
+                high: { label: 'Crítico', cor: 'bg-red-100 text-red-800' }
+            };
+
+            const TIPOS = {
+                'risco-inundacao': 'Área de risco de inundação / alagamento',
+                'risco-deslizamento': 'Área de risco de deslizamento / erosão',
+                'imovel-afetado': 'Imóvel afetado por evento (chuva, vento, granizo)',
+                'danos-estruturais': 'Imóvel com danos estruturais (trincas, rachaduras)',
+                'incendio-queimada': 'Área atingida por incêndio / queimada',
+                'estabilidade-obra': 'Avaliação de estabilidade / obra de contenção',
+                'outro': 'Outro tipo de vistoria'
+            };
+
+            function lerVistorias() {
+                try { return JSON.parse(localStorage.getItem('dcmt_vistorias') || '[]'); } catch (e) { return []; }
+            }
+            function lerOcorrencias() {
+                try { return JSON.parse(localStorage.getItem('dcmt_ocorrencias') || '[]'); } catch (e) { return []; }
+            }
+            function lerReportesLocais() {
+                try { return JSON.parse(localStorage.getItem('wazeLocalReports') || '[]'); } catch (e) { return []; }
+            }
+
+            let chamados = [];
+            let filtroAtivo = 'todos';
+
+            function cardVistoria(p) {
+                const u = CLASSE_URG[p.urgencia] || CLASSE_URG.baixa;
+                const quando = new Date(p.ts || Date.now()).toLocaleString('pt-BR');
+                const status = p.processo === 'concluido'
+                    ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-green-600 text-white"><i data-lucide="check-check"></i> Concluído</span>'
+                    : p.urgencia === 'alta'
+                        ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-red-600 text-white animate-pulse"><i data-lucide="radio-tower"></i> Prioridade máxima</span>'
+                        : '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-600 text-white"><i data-lucide="clock"></i> Em análise</span>';
+                return `
+                    <div class="border border-gray-200 rounded-xl p-4 hover:border-orange-300 transition bg-white">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full ${u.cor}"><i data-lucide="triangle-alert"></i> ${u.label}</span>
+                                ${status}
+                                ${p.sync ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i data-lucide="cloud"></i> Compartilhado</span>' : '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200"><i data-lucide="hard-drive"></i> Salvo neste aparelho</span>'}
+                            </div>
+                            <span class="text-[11px] text-gray-400"><i data-lucide="clock"></i> ${quando}</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-800"><i data-lucide="clipboard-check" class="inline text-orange-600"></i> ${p.tipoLeg || TIPOS[p.tipo] || 'Vistoria'}</p>
+                        <p class="text-xs text-gray-500 mt-1 truncate"><i data-lucide="map-pin"></i> ${p.municipio || '-'} — ${p.endereco || ''}</p>
+                        <p class="text-xs text-gray-600 mt-1 line-clamp-2">${p.descricao || ''}</p>
+                        <p class="text-[11px] text-gray-400 mt-2"><i data-lucide="user"></i> ${p.nome || '-'} ${p.telefone ? '· ' + p.telefone : ''}</p>
+                        ${p.id ? '<p class="text-[10px] text-gray-400 mt-1 font-mono">#' + p.id + '</p>' : ''}
+                    </div>`;
+            }
+
+            function cardOcorrencia(p) {
+                const u = CLASSE_URG[p.gravidade] || CLASSE_URG[p.urgencia] || CLASSE_URG.media;
+                const quando = new Date(p.ts || Date.now()).toLocaleString('pt-BR');
+                const status = p.gravidade === 'critica'
+                    ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-red-600 text-white animate-pulse"><i data-lucide="radio-tower"></i> Prioridade máxima</span>'
+                    : '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-600 text-white"><i data-lucide="clock"></i> Em análise</span>';
+                return `
+                    <div class="border border-gray-200 rounded-xl p-4 hover:border-red-300 transition bg-white">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full ${u.cor}"><i data-lucide="siren"></i> ${u.label}</span>
+                                ${status}
+                                ${p.sync ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i data-lucide="cloud"></i> Compartilhado</span>' : '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200"><i data-lucide="hard-drive"></i> Salvo neste aparelho</span>'}
+                            </div>
+                            <span class="text-[11px] text-gray-400"><i data-lucide="clock"></i> ${quando}</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-800"><i data-lucide="triangle-alert" class="inline text-red-600"></i> ${p.tipoLeg || 'Ocorrência'}</p>
+                        <p class="text-xs text-gray-500 mt-1 truncate"><i data-lucide="map-pin"></i> ${p.municipio || '-'} — ${p.endereco || ''}</p>
+                        <p class="text-xs text-gray-600 mt-1 line-clamp-2">${p.descricao || ''}</p>
+                        ${p.pessoas ? '<p class="text-[11px] text-gray-500 mt-1"><i data-lucide="users"></i> ' + p.pessoas + ' pessoa(s) em risco · Feridos: ' + (p.feridos === 'sim' ? 'sim' : p.feridos === 'desconhecido' ? 'não sei' : 'não') + '</p>' : ''}
+                        <p class="text-[11px] text-gray-400 mt-2"><i data-lucide="user"></i> ${p.nome || '-'} ${p.telefone ? '· ' + p.telefone : ''}</p>
+                        ${p.id ? '<p class="text-[10px] text-gray-400 mt-1 font-mono">#' + p.id + '</p>' : ''}
+                    </div>`;
+            }
+
+            function cardReporte(r) {
+                const u = CLASSE_URG[r.severity] || CLASSE_URG.info;
+                const quando = new Date(r.ts || r.createdAt || Date.now()).toLocaleString('pt-BR');
+                const tipo = String(r.type || 'evento').replace(/^vistoria:/, '').replace(/-/g, ' ');
+                return `
+                    <div class="border border-gray-200 rounded-xl p-4 hover:border-blue-300 transition bg-white">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full ${u.cor}"><i data-lucide="radio-tower"></i> ${u.label}</span>
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200"><i data-lucide="cloud"></i> Reporte</span>
+                            </div>
+                            <span class="text-[11px] text-gray-400"><i data-lucide="clock"></i> ${quando}</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-800 capitalize"><i data-lucide="map" class="inline text-blue-600"></i> ${tipo}</p>
+                        <p class="text-xs text-gray-500 mt-1"><i data-lucide="map-pin"></i> ${r.location || 'Local não informado'}</p>
+                        <p class="text-xs text-gray-600 mt-1 line-clamp-2">${r.description || ''}</p>
+                        <p class="text-[11px] text-gray-400 mt-2"><i data-lucide="user"></i> ${r.reporter || '-'}</p>
+                        ${r.id ? '<p class="text-[10px] text-gray-400 mt-1 font-mono">#' + r.id + '</p>' : ''}
+                    </div>`;
+            }
+
+            async function carregar() {
+                const box = document.getElementById('chamadosList');
+                box.innerHTML = '<p class="text-gray-400 text-sm py-6 text-center">Carregando seus chamados...</p>';
+
+                chamados = [];
+
+                // Vistorias salvas localmente
+                lerVistorias().forEach(function (p) {
+                    chamados.push({ tipo: 'vistoria', data: p, ts: p.ts || 0 });
+                });
+
+                // Ocorrências de incidentes salvas localmente
+                lerOcorrencias().forEach(function (p) {
+                    chamados.push({ tipo: 'ocorrencia', data: p, ts: p.ts || 0 });
+                });
+
+                // Reportes sincronizados no backend (quando logado)
+                let backendCount = 0;
+                if (window.dcApi && window.dcGetToken && dcGetToken()) {
+                    try {
+                        const r = await window.dcApi.reports();
+                        const rep = (r && r.ok && r.data && r.data.reports) || [];
+                        const meu = (window.dcGetSession && dcGetSession()) || {};
+                        const ident = (meu.nome || meu.usuario || '').toLowerCase();
+                        rep.forEach(function (x) {
+                            let pertence = false;
+                            // incompleto: reportes criados por mim aparecem com authoredBy = meu id; guardamos vistorias com sync
+                            const vs = lerVistorias().find(function (v) { return v.id === x.id; });
+                            if (vs) pertence = true;
+                            if (!pertence && x.reporter && ident && String(x.reporter).toLowerCase().includes(ident)) pertence = true;
+                            if (pertence || vs) {
+                                chamados.push({ tipo: 'reporte', data: x, ts: x.ts || x.createdAt || 0, fromBackend: true });
+                                backendCount++;
+                            }
+                        });
+                    } catch (e) { /* ignora */ }
+                }
+
+                // Reportes locais (waze sem login)
+                lerReportesLocais().forEach(function (r) {
+                    if (!r.ts && r.id) r.ts = Date.now();
+                    chamados.push({ tipo: 'reporte', data: r, ts: r.ts || 0 });
+                });
+
+                renderizar();
+            }
+
+            function renderizar() {
+                const box = document.getElementById('chamadosList');
+                const vazio = document.getElementById('vazioBox');
+
+                if (!chamados.length) {
+                    box.innerHTML = '';
+                    vazio.classList.remove('hidden');
+                    document.getElementById('totChamados').innerText = '0';
+                    document.getElementById('totEmAnalise').innerText = '0';
+                    document.getElementById('totReportes').innerText = '0';
+                    return;
+                }
+                vazio.classList.add('hidden');
+
+                const emAnalise = chamados.filter(function (c) { return c.data.processo !== 'concluido' && !(c.tipo === 'reporte' && c.data.processo === 'concluido'); }).length;
+                const reportes = chamados.filter(function (c) { return c.tipo === 'reporte'; }).length;
+                document.getElementById('totChamados').innerText = String(chamados.length);
+                document.getElementById('totEmAnalise').innerText = String(emAnalise);
+                document.getElementById('totReportes').innerText = String(reportes);
+
+                const filtrados = chamados
+                    .filter(function (c) {
+                        if (filtroAtivo === 'todos') return true;
+                        return c.tipo === filtroAtivo;
+                    })
+                    .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+
+                if (!filtrados.length) {
+                    box.innerHTML = '<p class="text-gray-400 text-sm py-6 text-center">Nenhum chamado deste tipo.</p>';
+                } else {
+                    box.innerHTML = filtrados.map(function (c) {
+                        if (c.tipo === 'vistoria') return cardVistoria(c.data);
+                        if (c.tipo === 'ocorrencia') return cardOcorrencia(c.data);
+                        return cardReporte(c.data);
+                    }).join('');
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+
+            // Filtros
+            document.querySelectorAll('.filtro-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.filtro-btn').forEach(function (b) {
+                        b.className = 'filtro-btn text-xs font-bold px-4 py-2 rounded-full border transition bg-transparent text-gray-600 hover:bg-gray-100 border-gray-200';
+                    });
+                    btn.classList.add('bg-blue-700', 'text-white', 'border-blue-700');
+                    filtroAtivo = btn.getAttribute('data-filtro');
+                    renderizar();
+                });
+            });
+
+            document.getElementById('btnRefresh').addEventListener('click', carregar);
+            carregar();
+            if (window.lucide) lucide.createIcons();
+        })();
+    </script>
+</body>
+</html>

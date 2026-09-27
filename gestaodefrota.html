@@ -143,7 +143,7 @@
             </div>
 
             <!-- Navegação Principal -->
-            <nav id="sidebar-nav" class="hidden md:flex flex-col gap-1.5">
+            <nav id="sidebar-nav" class="hidden md:flex flex-col gap-2">
                 <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/10">
                     <i data-lucide="pie-chart" class="w-5 text-center"></i>
                     <span>Dashboard</span>
@@ -164,7 +164,7 @@
                     <span>Manutenção</span>
                 </button>
 
-                <button onclick="switchTab('veiculos')" data-tab="veiculos" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800/40 pt-4 mt-2">
+                <button onclick="switchTab('veiculos')" data-tab="veiculos" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="car" class="w-5 text-center"></i>
                     <span>Veículos</span>
                 </button>
@@ -174,7 +174,7 @@
                     <span>Condutores</span>
                 </button>
 
-                <button onclick="switchTab('arquitetura')" data-tab="arquitetura" class="nav-item hidden flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all border-t border-slate-800/40 pt-4 mt-2">
+                <button onclick="switchTab('arquitetura')" data-tab="arquitetura" class="nav-item hidden flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="database" class="w-5 text-center"></i>
                     <span>Banco de Dados</span>
                 </button>
@@ -336,13 +336,13 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
-                                    <th class="py-4 px-6">Viatura</th>
-                                    <th class="py-4 px-6">Prefixo</th>
-                                    <th class="py-4 px-6">Placa</th>
-                                    <th class="py-4 px-6">Quilometragem</th>
-                                    <th class="py-4 px-6">Próxima Revisão</th>
-                                    <th class="py-4 px-6 text-center">Status</th>
-                                    <th class="py-4 px-6 text-right">Ação</th>
+                                    <th class="py-3 px-4">Viatura</th>
+                                    <th class="py-3 px-4">Prefixo</th>
+                                    <th class="py-3 px-4">Placa</th>
+                                    <th class="py-3 px-4">Quilometragem</th>
+                                    <th class="py-3 px-4">Próxima Revisão</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-4 text-right">Ação</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboard-vehicles-table" class="divide-y divide-slate-100 text-sm">
@@ -471,7 +471,7 @@
             <section id="tab-checklist" class="tab-content hidden space-y-6">
                 <!-- Seção Ativa de Execução de Checklist -->
                 <div id="checklist-wizard-card" class="bg-white p-6 rounded-2xl shadow-md border border-amber-200 max-w-2xl mx-auto hidden">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                         <div>
                             <span id="wizard-type-badge" class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-amber-100 text-amber-800">Pré-Viagem (Ida)</span>
                             <h3 class="font-extrabold text-slate-800 text-lg mt-2">Checklist de Prontidão de Viatura</h3>
@@ -798,7 +798,7 @@
                                     <option value="Em Manutenção">Em Manutenção (Oficina)</option>
                                 </select>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-3">
                                 <button type="button" id="btn-cancelar-veiculo" onclick="cancelarEdicaoVeiculo()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all text-xs hidden">
                                     Cancelar
                                 </button>
@@ -875,7 +875,7 @@
                                     <input type="text" id="cond-matricula" placeholder="Ex: DC-2394" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-3">
                                 <button type="button" id="btn-cancelar-condutor" onclick="cancelarEdicaoCondutor()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all text-xs hidden">
                                     Cancelar
                                 </button>
@@ -1141,7 +1141,7 @@
                     </div>
                     
                     <!-- Ações Finais do Modal -->
-                    <div class="flex gap-3 pt-5 border-t border-slate-100 mt-6">
+                    <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
                         <button type="button" onclick="closeGlobalEditModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all text-xs">Cancelar</button>
                         <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all text-xs shadow-lg shadow-blue-600/15">Salvar Alterações</button>
                     </div>
@@ -1459,13 +1459,13 @@
 
                 table.innerHTML += `
                     <tr class="hover:bg-slate-50/60 transition-colors">
-                        <td class="py-4 px-6 font-semibold text-slate-900">${v.marca} ${v.modelo} <span class="text-xs text-slate-400 font-normal">(${v.ano})</span></td>
-                        <td class="py-4 px-6"><span class="px-2.5 py-1 bg-slate-200 text-slate-800 font-bold rounded-lg text-xs">${v.prefixo || 'N/D'}</span></td>
-                        <td class="py-4 px-6"><span class="font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs font-bold border border-slate-200">${v.placa}</span></td>
-                        <td class="py-4 px-6 font-medium text-slate-600">${v.km_atual.toLocaleString('pt-BR')} km</td>
-                        <td class="py-4 px-6">${revText}</td>
-                        <td class="py-4 px-6 text-center"><span class="px-3 py-1.5 rounded-full text-xs font-bold ${statusClass}">${statusTxt}</span></td>
-                        <td class="py-4 px-6 text-right">
+                        <td class="py-3 px-4 font-semibold text-slate-900">${v.marca} ${v.modelo} <span class="text-xs text-slate-400 font-normal">(${v.ano})</span></td>
+                        <td class="py-3 px-4"><span class="px-2.5 py-1 bg-slate-200 text-slate-800 font-bold rounded-lg text-xs">${v.prefixo || 'N/D'}</span></td>
+                        <td class="py-3 px-4"><span class="font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs font-bold border border-slate-200">${v.placa}</span></td>
+                        <td class="py-3 px-4 font-medium text-slate-600">${v.km_atual.toLocaleString('pt-BR')} km</td>
+                        <td class="py-3 px-4">${revText}</td>
+                        <td class="py-3 px-4 text-center"><span class="px-3 py-1.5 rounded-full text-xs font-bold ${statusClass}">${statusTxt}</span></td>
+                        <td class="py-3 px-4 text-right">
                             <button onclick="mostrarFichaVeiculo('${v.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100">Gerenciar <i data-lucide="chevron-right" class="ml-1"></i></button>
                         </td>
                     </tr>
