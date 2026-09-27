@@ -65,6 +65,16 @@
             return request('gestao?municipio=' + encodeURIComponent(municipio) + '&secao=' + encodeURIComponent(secao) + '&id=' + encodeURIComponent(id), { method: 'DELETE' });
         },
 
+        // Alerta de pluviômetro (limiar e ativação são do servidor)
+        pluvAlertaConfig: function () { return request('pluv-alerta'); },
+        pluvAlertaSalvar: function (cfg) {
+            return request('pluv-alerta', { method: 'POST', body: cfg });
+        },
+        pluvAlertaResetar: function () { return request('pluv-alerta', { method: 'DELETE' }); },
+        pluvAlertaAvaliar: function (estacoes) {
+            return request('pluv-alerta/avaliar', { method: 'POST', body: { estacoes: estacoes } });
+        },
+
         // Utilidades
         getToken: token,
     };

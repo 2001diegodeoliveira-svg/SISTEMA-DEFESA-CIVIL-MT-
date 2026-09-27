@@ -236,6 +236,51 @@
         .pluv-legend { display: flex; gap: 10px; padding: 8px 14px; font-size: 9.5px; color: var(--text-muted); border-top: 1px solid var(--glass-border); flex: none; flex-wrap: wrap; }
         .pluv-legend .lg { display: flex; align-items: center; gap: 4px; }
         .pluv-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 11.5px; }
+
+        /* ----- Limiar de alerta (servidor é a fonte da verdade) ----- */
+        .pluv-cfg {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 9px 14px; background: rgba(249,115,22,.06);
+            border-bottom: 1px solid var(--glass-border); flex: none;
+            font-size: 11px; color: var(--text-muted);
+        }
+        .pluv-cfg b { color: var(--text-main); font-weight: 700; }
+        .pluv-cfg .pcf-val { color: var(--accent-orange); font-weight: 800; }
+        .pluv-cfg input[type=number] {
+            width: 62px; background: var(--bg-card); border: 1px solid var(--glass-border);
+            border-radius: 6px; color: var(--text-main); padding: 5px 7px;
+            font-size: 11.5px; font-family: 'Inter', sans-serif;
+        }
+        .pluv-cfg input[type=number]:focus { outline: none; border-color: var(--accent-orange); }
+        .pluv-cfg .pcf-save {
+            background: var(--accent-orange); border: none; border-radius: 6px;
+            color: #fff; padding: 5px 11px; font-size: 10.5px; font-weight: 700; cursor: pointer;
+        }
+        .pluv-cfg .pcf-save:disabled { opacity: .5; cursor: not-allowed; }
+        .pluv-cfg .pcf-reset {
+            background: none; border: 1px solid var(--glass-border); border-radius: 6px;
+            color: var(--text-muted); padding: 5px 10px; font-size: 10.5px; cursor: pointer;
+        }
+        .pluv-cfg .pcf-reset:hover { color: var(--text-main); background: var(--bg-card-hover); }
+        .pluv-cfg .pcf-off {
+            display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+            color: var(--text-main); font-size: 10.5px; font-weight: 600; user-select: none;
+        }
+        .pluv-cfg .pcf-off input { accent-color: var(--accent-orange); cursor: pointer; }
+        .pluv-cfg .pcf-status { font-size: 10px; margin-left: auto; }
+        .pluv-cfg .pcf-err { color: #f87171; }
+        .pluv-cfg .pcf-ok { color: #4ade80; }
+
+        /* Linha da tabela que cruzou o limiar */
+        #pluvTable tr.pluv-alerta td { background: rgba(249,115,22,.09); }
+        #pluvTable tr.pluv-alerta td:first-child { box-shadow: inset 3px 0 0 var(--accent-orange); }
+        .pluv-flag {
+            display: inline-flex; align-items: center; gap: 3px; margin-left: 5px;
+            font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 4px;
+            background: rgba(249,115,22,.2); color: var(--accent-orange);
+            border: 1px solid rgba(249,115,22,.4); vertical-align: middle;
+        }
+        .pluv-acao-alerta { color: var(--accent-orange) !important; font-weight: 700; }
         @media (max-width: 640px) { #pluvSummary { grid-template-columns: repeat(2, 1fr); } #pluvPanel { width: calc(100vw - 24px); } }
 
         /* ------------- MSN Clima — Foreca (previsão 10 dias + alertas) ------------- */
@@ -1501,6 +1546,18 @@
             <div class="pluv-stat"><div class="pv green" id="psOper">—</div><div class="pl">Operantes</div></div>
             <div class="pluv-stat"><div class="pv red" id="psPane">—</div><div class="pl">Em pane</div></div>
             <div class="pluv-stat"><div class="pv amber" id="psTop">—</div><div class="pl">Chuva 24h m&aacute;x.</div></div>
+        </div>
+        <div class="pluv-cfg" id="pluvCfg">
+            <label class="pcf-off" title="Desliga o popup de alerta">
+                <input type="checkbox" id="pcfOn" checked> Alerta
+            </label>
+            <span>Alerta em <input type="number" id="pcfPct" min="1" max="100" step="1" value="30">% de
+                <input type="number" id="pcfLim" min="1" max="1000" step="1" value="100"> mm/24h
+                = <span class="pcf-val" id="pcfLimiar">30 mm</span>
+            </span>
+            <button class="pcf-save" id="pcfSave" type="button" title="Salvar no servidor">Salvar</button>
+            <button class="pcf-reset" id="pcfReset" type="button" title="Voltar ao padrão do servidor">Padrão</button>
+            <span class="pcf-status" id="pcfStatus"></span>
         </div>
         <div class="pluv-toolbar">
             <input class="pluv-search" id="pluvSearch" type="text" placeholder="Buscar esta&ccedil;&atilde;o ou munic&iacute;pio...">
@@ -3143,39 +3200,54 @@ function rainAlertShowNext() {
         <span><b>Válido até:</b> ${rainFmtDh(alert.fim)}</span>
         <span><b>ID:</b> ${alert.id}</span>`;
     document.getElementById('rainRegioes').innerHTML = `<b>Regiões afetadas (MT):</b> ${alert.mesos.join(', ')}`;
-    const cams = rainCamsProximas(alert.centro.lat, alert.centro.lng, 3);
-    const grid = document.getElementById('rainCamsGrid');
-    if (!cams.length) {
-        grid.innerHTML = '<div class="rain-empty-cams">Sem câmeras SINFRA ao vivo nas proximidades desta área no momento.</div>';
-    } else {
-        grid.innerHTML = cams.map(cam => `
-            <div class="rain-cam">
-                <div class="rain-cam-video">
-                    <iframe src="${cam.link}" title="${cam.localizacao || cam.slug}" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>
-                    <span class="rain-cam-tag">AO VIVO</span>
-                </div>
-                <div class="rain-cam-cap">
-                    <b>${cam.localizacao || cam.slug}</b>
-                    <span>${[cam.obra, cam.municipio].filter(Boolean).join(' · ') || 'SINFRA-MT'}</span>
-                    <div class="rain-cam-dist">≈ ${Math.round(cam.km).toLocaleString('pt-BR')} km do centro do aviso</div>
-                </div>
-                <div class="rain-cam-actions">
-                    <a href="${cam.link}" target="_blank" rel="noopener">Abrir monitor</a>
-                    <button type="button" onclick="rainFlyToCam(${cam.lat}, ${cam.lng})">Ver no mapa</button>
-                </div>
-            </div>`).join('');
-    }
+    rainPintarCams(alert.centro.lat, alert.centro.lng, 'do centro do aviso');
     if (window.lucide) lucide.createIcons();
     modal.classList.add('open');
 }
+
+/* Renderiza as câmeras SINFRA ao vivo mais próximas de um ponto.
+   Compartilhado entre o aviso INMET e o alerta de pluviômetro. */
+function rainPintarCams(lat, lng, rotuloDist) {
+    const grid = document.getElementById('rainCamsGrid');
+    if (!grid) return;
+    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
+        grid.innerHTML = '<div class="rain-empty-cams">Ponto sem coordenadas — sem câmeras próximas.</div>';
+        return;
+    }
+    const cams = rainCamsProximas(Number(lat), Number(lng), 3);
+    if (!cams.length) {
+        grid.innerHTML = '<div class="rain-empty-cams">Sem câmeras SINFRA ao vivo nas proximidades desta área no momento.</div>';
+        return;
+    }
+    grid.innerHTML = cams.map(cam => `
+        <div class="rain-cam">
+            <div class="rain-cam-video">
+                <iframe src="${cam.link}" title="${cam.localizacao || cam.slug}" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>
+                <span class="rain-cam-tag">AO VIVO</span>
+            </div>
+            <div class="rain-cam-cap">
+                <b>${cam.localizacao || cam.slug}</b>
+                <span>${[cam.obra, cam.municipio].filter(Boolean).join(' · ') || 'SINFRA-MT'}</span>
+                <div class="rain-cam-dist">≈ ${Math.round(cam.km).toLocaleString('pt-BR')} km ${rotuloDist || 'do ponto'}</div>
+            </div>
+            <div class="rain-cam-actions">
+                <a href="${cam.link}" target="_blank" rel="noopener">Abrir monitor</a>
+                <button type="button" onclick="rainFlyToCam(${cam.lat}, ${cam.lng})">Ver no mapa</button>
+            </div>
+        </div>`).join('');
+}
 function alturaSeveridade(sev) { return { 'Grande Perigo': 'Perigo extremo', 'Perigo': 'Atenção alta', 'Perigo Potencial': 'Nível de atenção' }[sev.lbl] || 'Atenção'; }
 function rainCloseModal() {
+    /* O modal serve a dois alertas: aviso INMET (RSS) e limiar de
+       pluviômetro. O popup de pluviômetro tem fila própria. */
+    if (pluvAlertaAtual) { pluvAlertaFechar(); return; }
     document.getElementById('rainAlertModal').classList.remove('open');
     rainAlertShowing = false;
     rainCurAlert = null;
     setTimeout(rainAlertShowNext, 250);
 }
 function rainCenterMap() {
+    if (pluvAlertaAtual) { pluvAlertaCentralizar(); return; }
     if (rainCurAlert) {
         map.setView([rainCurAlert.centro.lat, rainCurAlert.centro.lng], 7);
         if (camSinfraLayer && checkState.camsSinfra) { try { camSinfraLayer.addTo(map); } catch (e) {} }
@@ -3400,6 +3472,334 @@ function pluvChip(v, suffix) {
     return v.toFixed(v < 10 ? 1 : 0) + (suffix || '');
 }
 
+/* ================= Alerta de pluviômetro — 30% do limite =================
+   O SERVIDOR é a fonte da verdade do limiar: /api/pluv-alerta devolve
+   { limiteMm, percentual, limiarMm }. O front nunca calcula sozinho o
+   que dispara — ele lê limiarMm e só decide a quem mostrar o popup.
+
+   Dispara pelo acumulado de 24h (c24), não pela intensidade instantânea:
+   é o mesmo critério do aviso de chuva intensa do INMET e evita alarme
+   falso em pancada passageira.
+
+   Uma sessão = um aviso por estação. Ao fechar o popup a estação sai
+   do "já avisado"; se normalizar e cruzar o limiar de novo, avisa
+   outra vez.                                                       */
+const PLUV_CFG = {
+    limiteMm: 100,
+    percentual: 30,
+    limiarMm: 30,
+    metrica: 'c24',
+    carregado: false,
+    ativo: true,
+    origem: 'padrao',
+};
+const pluvJaAvisado = Object.create(null);   /* codigo -> {pct, c24, ts} */
+let pluvAlertaFila = [];
+let pluvAlertaAberto = false;
+let pluvAlertaAtual = null;
+/* Códigos que o SERVIDOR marcou como acima do limiar. A tabela usa
+   este set, não um cálculo próprio, para não divergir do popup. */
+let pluvAcimaSet = new Set();
+
+/* ---------- Config: sempre perguntando ao servidor ---------- */
+function pluvCfgAplicar(j, origemPadrao) {
+    PLUV_CFG.limiteMm = Number(j.limiteMm) || PLUV_CFG.limiteMm;
+    PLUV_CFG.percentual = Number(j.percentual) || PLUV_CFG.percentual;
+    PLUV_CFG.limiarMm = Number(j.limiarMm) || PLUV_CFG.limiteMm * (PLUV_CFG.percentual / 100);
+    PLUV_CFG.metrica = j.metrica || 'c24';
+    /* A ativação vem do servidor, não de um flag local. */
+    PLUV_CFG.ativo = j.ativo !== false;
+    PLUV_CFG.origem = j.origem || origemPadrao;
+    PLUV_CFG.carregado = true;
+    pluvCfgPintar();
+}
+
+async function pluvCfgCarregar() {
+    try {
+        if (!window.dcApi) throw new Error('cliente da API ausente');
+        const r = await window.dcApi.pluvAlertaConfig();
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        pluvCfgAplicar(r.data || {});
+    } catch (e) {
+        /* Sem servidor: mantém o padrão local. O aviso fica degradado
+           (limiar padrão 30 mm), nunca some de vez. */
+        PLUV_CFG.origem = 'offline';
+        pluvCfgPintar();
+    }
+    return PLUV_CFG;
+}
+
+function pluvCfgPintar() {
+    const pct = document.getElementById('pcfPct');
+    const lim = document.getElementById('pcfLim');
+    const limiar = document.getElementById('pcfLimiar');
+    const on = document.getElementById('pcfOn');
+    if (pct) pct.value = PLUV_CFG.percentual;
+    if (lim) lim.value = PLUV_CFG.limiteMm;
+    if (on) on.checked = PLUV_CFG.ativo;
+    if (limiar) {
+        const v = PLUV_CFG.limiarMm;
+        limiar.textContent = (v < 10 ? v.toFixed(1) : Math.round(v)) + ' mm';
+    }
+}
+
+function pluvCfgStatus(msg, tipo) {
+    const el = document.getElementById('pcfStatus');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = 'pcf-status' + (tipo ? ' pcf-' + tipo : '');
+}
+
+function pluvCfgNum(input, min, max, dflt) {
+    const n = Math.round(Number(input.value));
+    if (!Number.isFinite(n)) return dflt;
+    return Math.min(max, Math.max(min, n));
+}
+
+async function pluvCfgSalvar() {
+    const pct = pluvCfgNum(document.getElementById('pcfPct'), 1, 100, PLUV_CFG.percentual);
+    const lim = pluvCfgNum(document.getElementById('pcfLim'), 1, 1000, PLUV_CFG.limiteMm);
+    const btn = document.getElementById('pcfSave');
+    if (btn) btn.disabled = true;
+    pluvCfgStatus('Salvando...');
+    try {
+        if (!window.dcApi) throw new Error('cliente da API ausente');
+        /* dcApi envia o token de sessão; um fetch cru levaria 401. */
+        const r = await window.dcApi.pluvAlertaSalvar({ limiteMm: lim, percentual: pct });
+        if (!r.ok) {
+            pluvCfgStatus(r.status === 401 ? 'Faça login para alterar o alerta' : (r.data.erro || 'Falha ao salvar'), 'err');
+            return;
+        }
+        pluvCfgAplicar(r.data || {}, 'store');
+        pluvCfgStatus('Salvo no servidor', 'ok');
+        await pluvAlertaReavaliar();
+    } catch (e) {
+        pluvCfgStatus('Servidor indisponível', 'err');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function pluvCfgResetar() {
+    const btn = document.getElementById('pcfReset');
+    if (btn) btn.disabled = true;
+    pluvCfgStatus('Restaurando padrão...');
+    try {
+        if (!window.dcApi) throw new Error('cliente da API ausente');
+        const r = await window.dcApi.pluvAlertaResetar();
+        if (!r.ok) {
+            pluvCfgStatus(r.status === 401 ? 'Faça login para restaurar' : (r.data.erro || 'Falha ao restaurar'), 'err');
+            return;
+        }
+        pluvCfgAplicar(r.data || {}, 'env');
+        pluvCfgStatus('Padrão do servidor', 'ok');
+        await pluvAlertaReavaliar();
+    } catch (e) {
+        pluvCfgStatus('Servidor indisponível', 'err');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+/* ---------- Avaliação + fila ----------
+   O SERVIDOR decide o que cruzou o limiar. O front só transforma a
+   resposta em popup e fila. Existe um caminho local apenas para o
+   caso do servidor estar fora do ar — degradado, nunca mentindo:
+   ele usa o mesmo limiar que o servidor devolveu por último.       */
+
+/* Só o necessário para a avaliação — o resto da estação já está no
+   mapa e ir no corpo mantém a requisição pequena. */
+function pluvEstacaoCompacta(st) {
+    return {
+        codigo: st.codigo,
+        nome: st.nome,
+        lat: st.lat,
+        lon: st.lon,
+        c24: st.c24,
+    };
+}
+
+function pluvCruzarLocal(limiar) {
+    const saida = [];
+    for (const st of pluvStations) {
+        const c24 = Number(st.c24);
+        /* Estação sem leitura não entra: Number(null) seria 0 e geraria
+           alerta falso (ou esconderia uma estação que voltou a chover). */
+        if (!Number.isFinite(c24) || c24 <= 0) continue;
+        if (c24 < limiar) continue;
+        saida.push({
+            codigo: st.codigo, nome: st.nome, lat: st.lat, lon: st.lon,
+            c24, percentual: PLUV_CFG.limiteMm > 0 ? (c24 / PLUV_CFG.limiteMm) * 100 : 0,
+        });
+    }
+    return saida;
+}
+
+async function pluvAlertaReavaliar() {
+    if (!PLUV_CFG.ativo) { pluvAlertaLimpar(); return; }
+
+    let cruzadas = null;
+    let limiar = Number(PLUV_CFG.limiarMm) || 0;
+    let viaServidor = false;
+    try {
+        if (!window.dcApi) throw new Error('cliente da API ausente');
+        const r = await window.dcApi.pluvAlertaAvaliar(pluvStations.map(pluvEstacaoCompacta));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = r.data || {};
+        limiar = Number(j.limiarMm);
+        /* O limiar autoritativo é o do servidor, não o que está na tela. */
+        if (Number.isFinite(limiar) && limiar > 0 && limiar !== PLUV_CFG.limiarMm) {
+            PLUV_CFG.limiarMm = limiar;
+            pluvCfgPintar();
+        }
+        /* O servidor também decide se o alerta está ligado. Com ativo=false
+           ele devolve "acima" vazio, e o mapa respeita isso. */
+        PLUV_CFG.ativo = j.ativo !== false;
+        cruzadas = PLUV_CFG.ativo && Array.isArray(j.acima) ? j.acima : [];
+        viaServidor = true;
+    } catch (e) {
+        cruzadas = limiar > 0 && PLUV_CFG.ativo ? pluvCruzarLocal(limiar) : null;
+    }
+
+    if (limiar <= 0 || !cruzadas) { pluvAlertaLimpar(); return; }
+
+    const acimaCodigos = new Set(cruzadas.map(e => String(e.codigo || '')));
+    pluvAcimaSet = new Set(acimaCodigos);
+    PLUV_CFG.origem = viaServidor ? 'servidor' : 'cache local';
+
+    /* Libera quem NÃO está mais acima do limiar. Precisa ser um passo
+       separado: o servidor devolve só quem cruzou, então uma estação que
+       normalizou simplesmente desaparece da lista e nunca passaria pelo
+       laço abaixo — ficaria travada como "já avisada" para sempre. */
+    const conhecidos = Object.keys(pluvJaAvisado).concat(pluvAlertaFila.map(x => x.codigo));
+    for (const codigo of conhecidos) {
+        if (acimaCodigos.has(codigo)) continue;
+        delete pluvJaAvisado[codigo];
+        pluvAlertaFila = pluvAlertaFila.filter(x => x.codigo !== codigo);
+    }
+
+    for (const est of cruzadas) {
+        const c24 = Number(est.c24);
+        if (!Number.isFinite(c24) || c24 < limiar) continue;
+        const codigo = String(est.codigo || '');
+        if (pluvJaAvisado[codigo]) continue;   // já avisou nesta sessão
+
+        const fila = pluvAlertaFila.find(x => x.codigo === codigo);
+        if (fila) { fila.c24 = c24; fila.percent = est.percentual; continue; }
+        pluvAlertaFila.push({
+            codigo, nome: est.nome, lat: est.lat, lon: est.lon,
+            c24, percent: Number(est.percentual) || 0,
+        });
+    }
+    /* Pior primeiro: quem mais se aproximou do limite abre o popup primeiro. */
+    pluvAlertaFila.sort((a, b) => b.c24 - a.c24);
+    renderPluvTable();
+    pluvAlertaAbrirProximo();
+}
+
+function pluvAlertaLimpar() {
+    pluvAlertaFila = [];
+    pluvAcimaSet = new Set();
+    document.getElementById('rainAlertModal')?.classList.remove('open');
+    pluvAlertaAberto = false;
+    pluvAlertaAtual = null;
+}
+
+function pluvAlertaAbrirProximo() {
+    if (pluvAlertaAberto || !pluvAlertaFila.length) return;
+    const est = pluvAlertaFila.shift();
+    pluvJaAvisado[est.codigo] = { pct: +est.percent.toFixed(1), c24: est.c24, ts: Date.now() };
+    pluvAlertaMostrar(est);
+    return;
+}
+
+function pluvAlertaMostrar(est) {
+    const modal = document.getElementById('rainAlertModal');
+    const card = document.getElementById('rainCard');
+    if (!modal || !card) return;
+    pluvAlertaAberto = true;
+    pluvAlertaAtual = est;
+
+    const pct = Math.round(est.percent);
+    const cor = pct >= 100 ? '#dc2626' : pct >= 60 ? '#f97316' : '#eab308';
+    const nivel = pct >= 100 ? 'Crítico' : pct >= 60 ? 'Alto' : 'Atenção';
+
+    card.style.setProperty('--rain-c', cor);
+    const icone = document.getElementById('rainIcon');
+    if (icone) icone.innerHTML = `<i data-lucide="${pct >= 100 ? 'cloud-lightning' : 'cloud-rain'}"></i>`;
+    const kicker = document.getElementById('rainKicker');
+    if (kicker) kicker.textContent = 'Alerta de pluviômetro · INMET · ' + nivel;
+    const titulo = document.getElementById('rainTitle');
+    if (titulo) titulo.textContent = est.nome;
+    const sev = document.getElementById('rainSev');
+    if (sev) sev.textContent = pct + '% do limite';
+    const desc = document.getElementById('rainDesc');
+    if (desc) {
+        desc.innerHTML = `A estação <b>${est.nome}</b> (${est.codigo}) acumulou `
+            + `<b style="color:${cor};">${est.c24.toFixed(1)} mm em 24h</b>, equivalente a `
+            + `<b>${pct}%</b> do limite configurado de <b>${PLUV_CFG.limiteMm} mm</b> `
+            + `(dispara a partir de ${(+PLUV_CFG.limiarMm).toFixed(1)} mm). `
+            + `Avalie risco de alagamento e deslizamento na área e acione a equipe se necessário.`;
+    }
+    const meta = document.getElementById('rainMeta');
+    if (meta) {
+        meta.innerHTML = `
+            <span><b>Acumulado 24h:</b> ${est.c24.toFixed(1)} mm</span>
+            <span><b>Limiar:</b> ${(+PLUV_CFG.limiarMm).toFixed(1)} mm</span>
+            <span><b>Estação:</b> ${est.codigo}</span>
+            <span><b>Origem do limite:</b> ${PLUV_CFG.origem}</span>`;
+    }
+    const regioes = document.getElementById('rainRegioes');
+    if (regioes) {
+        regioes.innerHTML = `<b>Regra:</b> popup dispara quando o acumulado 24h atinge `
+            + `<b>${PLUV_CFG.percentual}%</b> de <b>${PLUV_CFG.limiteMm} mm</b>. `
+            + `Uma sessão = um aviso por estação.`;
+    }
+    pluvAlertaCams(est);
+    if (window.lucide) lucide.createIcons();
+    modal.classList.add('open');
+}
+
+/* Câmeras SINFRA ao vivo mais próximas da estação que disparou. */
+function pluvAlertaCams(est) {
+    rainPintarCams(est.lat, est.lon, 'da estação');
+}
+
+/* Fechar: libera a fila para o próximo aviso. */
+function pluvAlertaFechar() {
+    document.getElementById('rainAlertModal').classList.remove('open');
+    pluvAlertaAberto = false;
+    pluvAlertaAtual = null;
+    setTimeout(pluvAlertaAbrirProximo, 300);
+}
+
+/* Centraliza na estação que disparou. */
+function pluvAlertaCentralizar() {
+    const est = pluvAlertaAtual;
+    pluvAlertaFechar();
+    if (!est || !Number.isFinite(Number(est.lat)) || !Number.isFinite(Number(est.lon))) return;
+    map.setView([Number(est.lat), Number(est.lon)], 11);
+    if (camSinfraLayer && checkState.camsSinfra) { try { camSinfraLayer.addTo(map); } catch (e) {} }
+    setTimeout(() => {
+        if (pluvLayer) {
+            const alvo = pluvStations.find(s => s.codigo === est.codigo);
+            if (alvo) {
+                for (const layer of Object.values(pluvLayer._layers || {})) {
+                    const m = layer instanceof L.Marker ? layer : null;
+                    if (!m) continue;
+                    const p = m.getLatLng();
+                    if (Math.abs(p.lat - alvo.lat) < 1e-6 && Math.abs(p.lng - alvo.lon) < 1e-6) {
+                        m.openPopup();
+                        break;
+                    }
+                }
+            }
+        }
+    }, 400);
+}
+
+pluvCfgCarregar();
+
 async function loadInmetPluvio() {
     if (pluvLoading) return;
     pluvLoading = true;
@@ -3513,6 +3913,10 @@ async function loadInmetPluvio() {
         pluvLayer.addTo(map);
 
         renderPluvTable();
+        /* O limiar e o veredito vêm do servidor; só avaliamos depois que a
+           configuração chegou, para não decidir com o padrão local. */
+        if (!PLUV_CFG.carregado) await pluvCfgCarregar();
+        await pluvAlertaReavaliar();
         empty.style.display = 'none';
         tbl.style.display = 'table';
         if (window.lucide) lucide.createIcons();
@@ -3561,17 +3965,29 @@ function renderPluvTable() {
         body.innerHTML = `<tr><td colspan="8" class="pluv-empty">Nenhuma estação encontrada.</td></tr>`;
         return;
     }
-    body.innerHTML = rows.map(st => `
-        <tr class="${st.sit === 'Operante' ? 'op' : 'pane'}">
+    const limiar = Number(PLUV_CFG.limiarMm) || 0;
+    body.innerHTML = rows.map(st => {
+        /* O destaque vem do veredito do servidor (pluvAcimaSet), não de
+           uma conta feita aqui — a linha e o popup não podem divergir. */
+        const cruzou = pluvAcimaSet.has(String(st.codigo));
+        const pct = limiar > 0 && PLUV_CFG.limiteMm > 0 && Number.isFinite(Number(st.c24))
+            ? (Number(st.c24) / PLUV_CFG.limiteMm) * 100 : null;
+        const flag = cruzou
+            ? `<span class="pluv-flag" title="Acumulado 24h acima do limiar de ${(+PLUV_CFG.limiarMm).toFixed(1)} mm"><i data-lucide="triangle-alert"></i>${pct >= 0 && Number.isFinite(pct) ? Math.round(pct) + '%' : ''}</span>`
+            : '';
+        return `
+        <tr class="${st.sit === 'Operante' ? 'op' : 'pane'}${cruzou ? ' pluv-alerta' : ''}">
             <td style="font-weight:700;">${st.codigo}</td>
             <td>${st.nome}</td>
             <td><span class="pluv-rain-dot" style="background:${RAIN_COR(st.chuva)};"></span><b style="color:${RAIN_COR(st.chuva)};">${st.chuva}</b> mm/h</td>
-            <td>${pluvChip(st.c24)} mm</td>
+            <td style="${cruzou ? 'color:#f97316;font-weight:700;' : ''}">${pluvChip(st.c24)} mm${flag}</td>
             <td>${pluvChip(st.c7)} mm</td>
             <td>${st.umid != null ? st.umid + '%' : '—'}</td>
             <td>${st.temp != null ? st.temp.toFixed(1) + '°' : '—'}</td>
             <td><span class="pluv-badge ${st.sit === 'Operante' ? 'op' : 'pane'}">${st.sit === 'Operante' ? 'OPERANTE' : 'PANE'}</span></td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
 }
 
 document.querySelectorAll('#pluvTable th[data-sort]').forEach(th => {
@@ -3584,6 +4000,56 @@ document.querySelectorAll('#pluvTable th[data-sort]').forEach(th => {
 document.getElementById('pluvSearch')?.addEventListener('input', renderPluvTable);
 document.getElementById('pluvFilter')?.addEventListener('change', renderPluvTable);
 document.getElementById('pluvRefresh')?.addEventListener('click', loadInmetPluvio);
+
+/* --- Alerta de pluviômetro: config e liga/desliga --- */
+document.getElementById('pcfSave')?.addEventListener('click', pluvCfgSalvar);
+document.getElementById('pcfReset')?.addEventListener('click', pluvCfgResetar);
+document.getElementById('pcfPct')?.addEventListener('input', e => {
+    const p = pluvCfgNum(e.target, 1, 100, PLUV_CFG.percentual);
+    const l = pluvCfgNum(document.getElementById('pcfLim'), 1, 1000, PLUV_CFG.limiteMm);
+    const el = document.getElementById('pcfLimiar');
+    if (el) el.textContent = (l * p / 100 < 10 ? (l * p / 100).toFixed(1) : Math.round(l * p / 100)) + ' mm';
+});
+document.getElementById('pcfLim')?.addEventListener('input', e => {
+    const l = pluvCfgNum(e.target, 1, 1000, PLUV_CFG.limiteMm);
+    const p = pluvCfgNum(document.getElementById('pcfPct'), 1, 100, PLUV_CFG.percentual);
+    const el = document.getElementById('pcfLimiar');
+    if (el) el.textContent = (l * p / 100 < 10 ? (l * p / 100).toFixed(1) : Math.round(l * p / 100)) + ' mm';
+});
+/* Liga/desliga o alerta. A ativação é gravada NO SERVIDOR — o mapa não
+   decide sozinho o que fica ativo, e sim obedece ao que o servidor
+   responde no GET seguinte. */
+document.getElementById('pcfOn')?.addEventListener('change', async e => {
+    const desired = !!e.target.checked;
+    const cb = e.target;
+    cb.disabled = true;
+    try {
+        if (!window.dcApi) throw new Error('cliente da API ausente');
+        const r = await window.dcApi.pluvAlertaSalvar({ ativo: desired });
+        if (!r.ok) {
+            cb.checked = !desired;   // volta ao que o servidor manda
+            pluvCfgStatus(r.status === 401 ? 'Faça login para ativar/desativar' : (r.data.erro || 'Falha ao alterar'), 'err');
+            return;
+        }
+        pluvCfgAplicar(r.data || {}, 'store');
+        pluvCfgStatus(desired ? 'Alerta ativado' : 'Alerta desativado', 'ok');
+        if (PLUV_CFG.ativo) {
+            document.getElementById('rainAlertModal')?.classList.remove('open');
+            pluvAlertaAberto = false;
+            pluvAlertaAtual = null;
+            await pluvAlertaReavaliar();
+        } else {
+            pluvAlertaLimpar();
+            renderPluvTable();
+        }
+    } catch (e) {
+        cb.checked = !desired;
+        pluvCfgStatus('Servidor indisponível', 'err');
+    } finally {
+        cb.disabled = false;
+    }
+});
+
 document.getElementById('pluvClose')?.addEventListener('click', () => {
     document.getElementById('pluvPanel').classList.add('hidden-panel');
 });

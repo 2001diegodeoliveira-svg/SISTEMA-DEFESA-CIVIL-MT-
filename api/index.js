@@ -19,6 +19,8 @@ const handlers = {
   'tomtom': require('./_routes/tomtom'),
   'gestao': require('./_routes/gestao'),
   'inmet-chuva': require('./_routes/inmet-chuva'),
+  'pluv-alerta': require('./_routes/pluv-alerta'),
+  'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
 };
 
 const areasIdHandler = require('./_routes/areas/[id]');
