@@ -2,6 +2,12 @@
    Ícones animados — inspirado em animatedicons.co
    Dá vida aos ícones Lucide já existentes no sistema via CSS.
    Usa apenas transform/opacity (GPU-friendly).
+
+   Escopo: só ícones que carregam ESTADO ou SIGNIFICADO (sirene,
+   bateria, rádio, carregando, clima, frota...). Ícones de interface
+   pura — setas, chevrons, "x", lupa, lápis, download, marcas —
+   ficam parados de propósito: animá-los tornaria a UI barulhenta
+   sem acrescentar informação.
    ============================================================ */
 
 /* Respecto a preferência do usuário por menos animação */
@@ -226,4 +232,208 @@
 /* ============================ SOBREPOSIÇÃO: pausa em hover (opcional) ============================ */
 .lucide:hover {
   animation-play-state: paused;
+}
+
+/* ============================================================
+   EXTENSÃO — demais ícones em uso no sistema
+   ============================================================ */
+
+/* ============================ CARREGANDO ============================ */
+@keyframes ai-load {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.lucide-loader, .lucide-loader-2 {
+  animation: ai-load 1.1s linear infinite;
+}
+
+/* ============================ SIRENE / EMERGÊNCIA ============================ */
+@keyframes ai-siren {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.22); opacity: 0.55; }
+}
+.lucide-siren {
+  animation: ai-siren 1.1s ease-in-out infinite;
+  transform-origin: 50% 20%;
+}
+.lucide-octagon-alert, .lucide-pentagon {
+  animation: ai-alert 1.5s ease-in-out infinite;
+}
+.lucide-traffic-cone {
+  animation: ai-siren 2s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+/* ============================ SINO / NOTIFICAÇÃO ============================ */
+@keyframes ai-bell {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(12deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(7deg); }
+  60% { transform: rotate(-4deg); }
+  75% { transform: rotate(0deg); }
+}
+.lucide-bell {
+  animation: ai-bell 3.4s ease-in-out infinite;
+  transform-origin: 50% 15%;
+}
+.lucide-bell-off {
+  animation: ai-signal 2.6s ease-in-out infinite;
+}
+
+/* ============================ BATERIA / NÍVEL ============================ */
+@keyframes ai-batt-low {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.6; }
+}
+.lucide-battery-low {
+  animation: ai-batt-low 1.3s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+.lucide-battery-medium, .lucide-battery-full, .lucide-battery-charging {
+  animation: ai-wave 2.6s ease-in-out infinite;
+}
+.lucide-battery {
+  animation: ai-wave 3.4s ease-in-out infinite;
+}
+
+/* ============================ FROTA / VEÍCULOS ============================ */
+@keyframes ai-drive {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+}
+.lucide-car, .lucide-truck {
+  animation: ai-drive 2.6s ease-in-out infinite;
+}
+
+/* ============================ RÁDIO / TRANSMISSÃO ============================ */
+.lucide-radio {
+  animation: ai-signal 1.9s ease-in-out infinite;
+}
+.lucide-antenna, .lucide-radio-tower {
+  animation: ai-dish 3s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+/* ============================ RELÓGIO / TEMPO ============================ */
+@keyframes ai-clock {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.lucide-clock, .lucide-timer {
+  animation: ai-clock 24s linear infinite;
+}
+.lucide-history {
+  animation: ai-orbit 20s linear infinite reverse;
+}
+.lucide-gauge {
+  animation: ai-nav 3.4s ease-in-out infinite;
+  transform-origin: 50% 80%;
+}
+
+/* ============================ SERVIDOR / DADOS ============================ */
+@keyframes ai-server {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.07); opacity: 0.75; }
+}
+.lucide-database, .lucide-hard-drive, .lucide-cpu {
+  animation: ai-server 2.8s ease-in-out infinite;
+}
+
+/* ============================ TERRA ============================ */
+.lucide-earth {
+  animation: ai-orbit 30s linear infinite;
+}
+
+/* ============================ ROTAS / TRAJETO ============================ */
+@keyframes ai-route {
+  0% { transform: translateX(-2px); opacity: 0.8; }
+  50% { transform: translateX(2px); opacity: 1; }
+  100% { transform: translateX(-2px); opacity: 0.8; }
+}
+.lucide-road, .lucide-route {
+  animation: ai-route 3s ease-in-out infinite;
+}
+.lucide-crosshair {
+  animation: ai-pin 2.6s ease-in-out infinite;
+}
+
+/* ============================ NATUREZA ============================ */
+.lucide-sprout, .lucide-trees, .lucide-tree-pine, .lucide-tree-deciduous {
+  animation: ai-sway 3.2s ease-in-out infinite;
+  transform-origin: 50% 95%;
+}
+
+/* ============================ CONFIRMAÇÃO ============================ */
+@keyframes ai-ok {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.16); }
+}
+.lucide-check, .lucide-check-check, .lucide-check-circle,
+.lucide-circle-check, .lucide-list-checks, .lucide-clipboard-check {
+  animation: ai-ok 2.6s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+/* ============================ VISIBILIDADE ============================ */
+@keyframes ai-blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.12); }
+}
+.lucide-eye, .lucide-eye-off {
+  animation: ai-blink 3.4s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+/* ============================ PESSOAS ============================ */
+@keyframes ai-user {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.lucide-user, .lucide-users, .lucide-id-card, .lucide-user-cog {
+  animation: ai-user 3s ease-in-out infinite;
+}
+
+/* ============================ ACESSO / SEGURANÇA ============================ */
+.lucide-lock {
+  animation: ai-shield 3s ease-in-out infinite;
+}
+.lucide-log-in, .lucide-log-out {
+  animation: ai-nav 2.8s ease-in-out infinite;
+}
+
+/* ============================ ENVIO ============================ */
+@keyframes ai-send {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+.lucide-send {
+  animation: ai-send 1.6s ease-in-out infinite;
+}
+
+/* ============================ FERRAMENTA ============================ */
+@keyframes ai-wrench {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+}
+.lucide-wrench {
+  animation: ai-wrench 3s ease-in-out infinite;
+  transform-origin: 80% 80%;
+}
+
+/* ============================ INFORMAÇÃO ============================ */
+@keyframes ai-info {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+.lucide-info, .lucide-circle-info {
+  animation: ai-info 3.6s ease-in-out infinite;
+}
+
+/* ============================ MÍDIA ============================ */
+.lucide-play, .lucide-monitor-play {
+  animation: ai-drive 2.4s ease-in-out infinite;
+}
+.lucide-pause {
+  animation: ai-signal 2.8s ease-in-out infinite;
 }
