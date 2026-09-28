@@ -1393,9 +1393,9 @@
         <div class="meta-line">CNUC/MMA via INDE · versão 03/2026</div>
         <div class="check-row" data-check="focos">
             <label><span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor 24h</label>
-            <div class="toggle on" id="focosToggleBadge"></div>
+            <div class="toggle" id="focosToggleBadge"></div>
         </div>
-        <div class="meta-line" id="metaFocos">INPE BDQueimadas · carregando...</div>
+        <div class="meta-line" id="metaFocos">INPE BDQueimadas · ative para carregar</div>
         <div class="check-row" data-check="barragens">
             <label><span class="swatch" style="background:#eab308;"></span><i data-lucide="waves"></i>Barragens (SNISB)</label>
             <div class="toggle" id="barragensBadge"></div>
@@ -1461,9 +1461,9 @@
         <div class="group-title"><i data-lucide="layers"></i> Camadas INPE</div>
         <div class="check-row" data-check="wmsFocos48h">
             <label><span class="swatch" style="background:#ff4d00;"></span><i data-lucide="satellite"></i>Focos 48h (WMS)</label>
-            <div class="toggle on"></div>
+            <div class="toggle"></div>
         </div>
-        <div class="meta-line" id="metaWmsFocos48h">TerraBrasilis · raster + vetorial 48h · carregando...</div>
+        <div class="meta-line" id="metaWmsFocos48h">TerraBrasilis · raster + vetorial 48h · ative para carregar</div>
 
         <div class="group-title"><i data-lucide="table"></i> Tabela de dados</div>
         <div style="padding:2px 8px;">
@@ -1500,9 +1500,9 @@
         <div class="meta-line" id="metaChuvaInmet">INMET BDMEP · carregando acumulados...</div>
         <div class="check-row" data-check="sipam">
             <label><span class="swatch" style="background:#dc2626;border-radius:50%;"></span><i data-lucide="flame"></i>Painel do Fogo (SIPAM)</label>
-            <div class="toggle on" id="sipamBadge"></div>
+            <div class="toggle" id="sipamBadge"></div>
         </div>
-        <div class="meta-line" id="metaSipam">CENSIPAM · carregando eventos...</div>
+        <div class="meta-line" id="metaSipam">CENSIPAM · ative para carregar</div>
         <div class="check-row" data-check="vigiaMais">
             <label><span class="swatch" style="background:#7c3aed;border-radius:50%;"></span><i data-lucide="cctv"></i>Vigia Mais MT (câmeras)</label>
             <div class="toggle" id="vigiaMaisBadge"></div>
@@ -2225,7 +2225,7 @@ async function loadTerritorio() {
             const ativo = checkState.wmsFocos48h;
             map.removeLayer(wmsFocos48hLayer);
             wmsFocos48hLayer = null;
-            loadWmsFocos48h();
+            if (ativo) loadWmsFocos48h();
             if (ativo && wmsFocos48hLayer) wmsFocos48hLayer.addTo(map);
         }
 
@@ -2530,7 +2530,7 @@ function loadUCs() {
 
 /* ================= Toggles de camadas (checkbox) ================= */
 const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: true, stations: true, barragens: false, inmetStations: false, sipam: true, wmsFocos48h: true, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
 let chuvaInmetLayer = null, chuvaInmetLoaded = false, chuvaInmetLoading = false;
@@ -5068,9 +5068,6 @@ function aplicarRestricaoMunicipio() {
 loadUCs();
 loadTerritorio();
 loadWeather();
-loadFocos();
-loadSIPAM();
-setTimeout(() => { if (checkState.wmsFocos48h) loadWmsFocos48h(); }, 1200);
 loadAbrigos();
 loadCamerasSinfra();
 rainBindModal();
