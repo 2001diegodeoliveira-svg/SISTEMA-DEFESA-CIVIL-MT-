@@ -314,6 +314,27 @@
         });
     }
 
+    /* ---------- Retry de tiles (404/falhas esporádicas de rede) ---------- */
+    const tileRetries = new Map();      // url -> tentativas
+    const TILE_MAX_RETRIES = 3;
+    function watchTiles(layer) {
+        layer.on('tileload', (e) => { if (e.tile) tileRetries.delete(e.tile.src); });
+        layer.on('tileerror', (e) => {
+            const tile = e.tile;
+            if (!tile) return;
+            const url = tile.src || '';
+            if (!url) return;
+            const n = (tileRetries.get(url) || 0) + 1;
+            if (n > TILE_MAX_RETRIES) return;
+            tileRetries.set(url, n);
+            setTimeout(() => {
+                // Só refaz a requisição se o tile ainda for o mesmo (não foi
+                // reaproveitado para outra coordenada durante o zoom/pan).
+                if (tile.isConnected && tile.src === url) tile.src = url;
+            }, 500 * n);
+        });
+    }
+
     /* ---------- Carregar frames (por camada) ---------- */
     async function loadRadarFrames() {
         setLoading(true, 'Buscando radar RainViewer...');
@@ -349,6 +370,7 @@
         frames.forEach((f, i) => {
             const lay = layer === 'radar' ? makeRadarLayer(f) : makeSatLayer(layer, f);
             lay.addTo(map);
+            watchTiles(lay);
             tileLayers.push(lay);
             lay.on('tileload', () => { if (!f._ok) f._ok = 1; });
         });
