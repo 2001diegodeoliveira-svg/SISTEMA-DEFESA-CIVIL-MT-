@@ -1478,11 +1478,6 @@
         </div>
 
         <div class="group-title"><i data-lucide="radio-tower"></i> Painel DC</div>
-        <div class="check-row" data-check="stations">
-            <label><span class="swatch" style="background:#f9631c;border-radius:50%;"></span><i data-lucide="radio-tower"></i>Estações</label>
-            <div class="toggle on"></div>
-        </div>
-        <div class="meta-line">Rede estadual ilustrativa (dados simulados)</div>
         <div class="check-row" data-check="reports">
             <label><span class="swatch" style="background:#00d2ff;border-radius:50%;"></span><i data-lucide="circle-alert"></i>Ocorrências (acontecimentos)</label>
             <div class="toggle" id="reportsBadge"></div>
@@ -2529,8 +2524,8 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, stations: () => stationsLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, stations: true, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
 let chuvaInmetLayer = null, chuvaInmetLoaded = false, chuvaInmetLoading = false;
@@ -2585,7 +2580,6 @@ function applyChecks() {
         if (focosLayer) map.removeLayer(focosLayer);
         if (focosFilteredLayer) map.removeLayer(focosFilteredLayer);
     }
-    checkState.stations ? stationsLayer.addTo(map) : map.removeLayer(stationsLayer);
     if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
     if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
     if (chuvaInmetLayer) checkState.chuvaInmet ? chuvaInmetLayer.addTo(map) : map.removeLayer(chuvaInmetLayer);
@@ -2621,9 +2615,8 @@ function refreshLegend() {
     box.classList.toggle('show', anyVisible);
 }
 
-/* ================= Estações DC (compartilhadas via data.js) ================= */
+/* ================= Estações DC (para contagem em áreas) ================= */
 const dcStations = ESTACOES_DC;
-const typeStyle = Object.fromEntries(Object.entries(TIPO_ESTACAO).map(([k, v]) => [k, { color: v.cor, icon: v.icone }]));
 
 // Ícones inline (paths do Lucide) para marcadores do mapa — evita depender do
 // timing de lucide.createIcons() em markers que só entram no DOM quando a
@@ -2647,20 +2640,6 @@ function iconDivMarker(iconKey, color, size) {
         iconSize: [size, size], iconAnchor: [size / 2, size / 2]
     });
 }
-
-const stationsLayer = L.layerGroup();
-dcStations.forEach(s => {
-    const st = typeStyle[s.type];
-    L.marker([s.lat, s.lng], { icon: iconDivMarker(st.icon, st.color) }).bindPopup(`
-        <div style="min-width:190px;">
-            <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;">${s.name}</div>
-            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:8px;">${s.city} · MT</div>
-            <div style="font-size:11.5px;display:flex;align-items:center;gap:7px;">
-                <i data-lucide="${st.icon}" style="color:${st.color};"></i>
-                ${s.val} — <b>${s.status}</b>
-            </div>
-        </div>`).addTo(stationsLayer);
-});
 
 /* ================= Focos de calor reais — INPE BDQueimadas ================= */
 const canvasRenderer = L.canvas({ padding: 0.3 });
@@ -2824,7 +2803,6 @@ async function loadFocosPeriodo(dias) {
         if (focosFiltrosAtivos()) renderFocosFiltered();
         else focosLayer.addTo(map);
     }
-    if (checkState.stations) { /* mantém estações visíveis acima */ }
     clearTimeout(focosReloadTimer);
     focosReloadTimer = setTimeout(loadFocos, 10 * 60 * 1000);
 }
