@@ -786,13 +786,14 @@
             #legendBox { display: none !important; }
             #techNotice { display: none; }
             .brand .txt { display: none; }
-            #climatePanel { bottom: 92px; right: 8px; width: 200px; }
+            #climatePanel { top: 50%; bottom: auto; right: 8px; width: 200px; transform: translateY(-50%); }
             #dataTablePanel { left: 8px; right: 8px; bottom: 80px; }
             #toggleTableBtn { left: 8px; }
         }
 
         #climatePanel {
-            position: absolute; bottom: 68px; right: 12px; z-index: 800;
+            position: absolute; top: 50%; right: 12px; z-index: 800;
+            transform: translateY(-50%);
             width: 240px;
             background: var(--glass-bg); backdrop-filter: blur(14px);
             border: 1px solid rgba(56,189,248,.18); border-radius: 12px;
@@ -804,7 +805,8 @@
             margin-right: -258px; opacity: 0; pointer-events: none;
         }
         .climate-toggle {
-            position: absolute; bottom: 238px; right: 12px; z-index: 801;
+            position: absolute; top: 50%; right: 12px; z-index: 801;
+            transform: translateY(-50%);
             width: 34px; height: 34px; border-radius: 8px;
             background: var(--glass-bg); backdrop-filter: blur(14px);
             border: 1px solid rgba(56,189,248,.18); cursor: pointer;
