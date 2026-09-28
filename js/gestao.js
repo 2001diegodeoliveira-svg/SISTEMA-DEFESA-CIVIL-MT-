@@ -168,6 +168,19 @@
         if (window.lucide) lucide.createIcons();
     }
 
+    /* Sessão expirada/inválida: limpa armazenamento local e volta ao login. */
+    function voltarLogin() {
+        try { localStorage.removeItem('dcmt_token'); localStorage.removeItem('dcmt_session'); } catch (e) {}
+        location.href = 'login.html';
+    }
+
+    /* Trata falha de API: 401 = sessão expirada/inválida → volta ao login;
+       caso contrário mostra a mensagem do servidor (se houver) ou msgRede. */
+    function erroApi(r, msgRede) {
+        if (r && r.status === 401) { voltarLogin(); return; }
+        loadingErro((r && r.data && r.data.erro) || msgRede);
+    }
+
     function loadMunis() {
         var sel = $('munSel');
         var saved = sessionStorage.getItem('dcm_gestao_mun') || '';
@@ -197,7 +210,8 @@
         $('panelArea').innerHTML = '<div class="loading"><i data-lucide="loader"></i> Carregando dados de ' + esc(MUN) + '…</div>';
         if (window.lucide) lucide.createIcons();
         dcApi.gestao(MUN).then(function (r) {
-            DOC = (r.ok && r.data && r.data.secoes) ? r.data : { secoes: {} };
+            if (!r.ok || !r.data || !r.data.secoes) { erroApi(r, 'Falha ao carregar os dados. Verifique a conexão com o servidor.'); return; }
+            DOC = r.data;
             renderTabs();
             switchTab(curSec);
         }).catch(function () {
@@ -478,6 +492,7 @@
         if (meta.kind === 'single' && meta.fixedId) item.id = meta.fixedId;
 
         dcApi.gestaoSalvar(MUN, curSec, item).then(function (r) {
+            if (r && r.status === 401) { voltarLogin(); return; }
             if (r.ok && r.data && r.data.ok) {
                 toast('Registro salvo com sucesso.', true);
                 DOC.secoes[curSec] = r.data.items || [];
@@ -495,6 +510,7 @@
         var label = itemId ? 'Excluir este registro?' : 'Excluir o registro desta seção?';
         if (!confirm(label)) return;
         dcApi.gestaoRemover(MUN, id, itemId || metaSec(id).fixedId || '').then(function (r) {
+            if (r && r.status === 401) { voltarLogin(); return; }
             if (r.ok && r.data && r.data.ok) {
                 toast('Registro excluído.', true);
                 DOC.secoes[id] = r.data.items || [];
@@ -521,7 +537,7 @@
         $('panelArea').innerHTML = '<div class="loading"><i data-lucide="loader"></i> Consolidando a gestão dos 142 municípios…</div>';
         if (window.lucide) lucide.createIcons();
         dcApi.gestaoVisaoGeral().then(function (r) {
-            if (!r.ok || !r.data || !r.data.ok || !r.data.municipios) throw new Error('falha');
+            if (!r.ok || !r.data || !r.data.ok || !r.data.municipios) { erroApi(r, 'Falha ao carregar o panorama estadual. Verifique a conexão com o servidor.'); return; }
             renderVisaoEstadual(r.data);
         }).catch(function () {
             loadingErro('Falha ao carregar o panorama estadual. Verifique a conexão com o servidor.');

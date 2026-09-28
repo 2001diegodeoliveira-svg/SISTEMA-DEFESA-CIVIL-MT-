@@ -18,6 +18,7 @@ const handlers = {
   'waze': require('./_routes/waze'),
   'tomtom': require('./_routes/tomtom'),
   'gestao': require('./_routes/gestao'),
+  'noticias': require('./_routes/noticias'),
   'inmet-chuva': require('./_routes/inmet-chuva'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
