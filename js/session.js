@@ -90,7 +90,7 @@ function dcAplicarNav() {
     try {
         const s = dcGetSession();
         const ocultar = !s || s.perfil === 'comum';
-        const proibidos = ['mapa.html', 'painel.html', 'gestao.html', 'waze.html'];
+        const proibidos = ['mapa.html', 'painel.html', 'gestao.html', 'waze.html', 'gestaodefrota.html'];
         const as = document.querySelectorAll('a[href]');
         for (let i = 0; i < as.length; i++) {
             const a = as[i];

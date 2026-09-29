@@ -123,6 +123,15 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col md:flex-row">
 
+    <!-- Área restrita: sem sessão ativa (ou perfil "comum") redireciona para o login -->
+    <script>
+        (function () {
+            var s = null;
+            try { s = JSON.parse(localStorage.getItem('dcmt_session')); } catch (e) { s = null; }
+            if (!s || s.perfil === 'comum') { location.href = 'login.html'; }
+        })();
+    </script>
+
     <!-- SIDEBAR (Desktop) / TOPBAR (Mobile) -->
     <aside class="bg-slate-900 text-white w-full md:w-64 md:min-h-screen flex flex-col justify-between p-4 z-30 shadow-lg md:sticky md:top-0 md:h-screen">
         <div>
