@@ -16,7 +16,7 @@ function bool(v, dflt) {
 function config() {
   return {
     enabled: bool(process.env.WAZE_ENABLED, false),
-    mockEnabled: bool(process.env.WAZE_MOCK_ENABLED, true),
+    mockEnabled: bool(process.env.WAZE_MOCK_ENABLED, false),
     feedUrl: process.env.WAZE_FEED_URL || '',
     apiKey: process.env.WAZE_API_KEY || '',
     pollingInterval: Number(process.env.WAZE_POLLING_INTERVAL) || 120000,
@@ -190,7 +190,7 @@ async function fetchOfficialAlerts() {
 }
 
 /* ---------- estado + sync ---------- */
-const state = { lastError: null, lastSyncAt: null, nextSyncAt: null, totalReceived: 0, lastSyncDurationMs: null, usingMock: true };
+const state = { lastError: null, lastSyncAt: null, nextSyncAt: null, totalReceived: 0, lastSyncDurationMs: null, usingMock: false };
 
 function computeStatus(cfg) {
   if (!cfg.enabled && !cfg.mockEnabled) return 'AGUARDANDO_CONFIGURACAO';

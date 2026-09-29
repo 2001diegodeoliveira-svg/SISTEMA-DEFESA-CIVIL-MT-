@@ -1,14 +1,19 @@
 /* Helpers compartilhados para servidor local (Express) e Vercel serverless. */
 
 function corsHeaders(origin) {
-  const allowed = process.env.CORS_ORIGIN || '*';
-  return {
-    'Access-Control-Allow-Origin': allowed,
+  const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  const allowedOrigins = (process.env.CORS_ORIGIN || (production ? '' : '*')).split(',').map((item) => item.trim()).filter(Boolean);
+  const allowAll = allowedOrigins.includes('*');
+  const allowedOrigin = allowAll ? '*' : (origin && allowedOrigins.includes(origin) ? origin : null);
+  const headers = {
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
     'Cache-Control': 'no-store',
   };
+  if (allowedOrigin) headers['Access-Control-Allow-Origin'] = allowedOrigin;
+  if (!allowAll) headers.Vary = 'Origin';
+  return headers;
 }
 
 /* Resposta JSON padrão com CORS */

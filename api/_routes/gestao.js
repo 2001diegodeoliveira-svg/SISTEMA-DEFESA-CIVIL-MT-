@@ -18,7 +18,7 @@ const path = require('path');
 
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
 const { verifyToken } = require('../_lib/auth');
-const { readCollection, writeCollection, driver } = require('../_lib/store');
+const { readCollection, writeCollection, driver, resumoGestao } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 const { MUNICIPIOS_MT, normUsuario } = require('../_lib/municipios');
 
@@ -43,7 +43,16 @@ async function userForPayload(payload) {
   const users = await readCollection('users');
   return users.find(u => String(u.id) === String(payload && payload.sub)) || null;
 }
-function listarDocsGestao() {
+async function listarDocsGestao() {
+  if (driver() === 'pg') {
+    /* Panorama direto do Postgres: contagens por seção + updatedAt do doc. */
+    const docs = await resumoGestao();
+    return docs.map(d => ({
+      nome: d.nome,
+      secoes: Object.fromEntries(SECOES.map(s => [s, d.secoes[s] || 0])),
+      updatedAt: d.updatedAt,
+    }));
+  }
   if (driver() !== 'file') return [];
   try {
     const dir = path.join(__dirname, '..', 'data');

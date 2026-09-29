@@ -1,0 +1,256 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { validateProductionConfig } = require('../api/_lib/runtime-config');
+const { corsHeaders } = require('../api/_lib/http');
+const apiHandler = require('../api/index');
+const { readCollection } = require('../api/_lib/store');
+const { writeCollection } = require('../api/_lib/store');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+function validProductionEnv(overrides = {}) {
+  return {
+    NODE_ENV: 'production',
+    VERCEL: '1',
+    VERCEL_ENV: 'production',
+    JWT_SECRET: 'a-secure-production-secret-with-more-than-32-bytes',
+    CORS_ORIGIN: 'https://defesacivil.mt.gov.br',
+    PROXY_HOSTS: 'apiprevmet3.inmet.gov.br,panorama.sipam.gov.br',
+    SEED_USERS: JSON.stringify([{ usuario: 'admin', senha: 'uma-senha-segura-com-12-caracteres', perfil: 'admin' }]),
+    DATABASE_URL: 'postgresql://user:password@db.example.test/app',
+    FILE_STORE: '0',
+    WAZE_MOCK_ENABLED: '0',
+    TOMTOM_MOCK_ENABLED: '0',
+    ...overrides,
+  };
+}
+
+test('produção aceita ambiente com segredo, origens, proxy, seed e banco explícitos', () => {
+  assert.deepEqual(validateProductionConfig(validProductionEnv()), []);
+});
+
+test('Vercel em produção recusa padrões demo e sem persistência', () => {
+  const problems = validateProductionConfig(validProductionEnv({
+    JWT_SECRET: 'dc-mt-dev-secret-change-me',
+    CORS_ORIGIN: '*',
+    PROXY_HOSTS: '',
+    SEED_USERS: '',
+    DATABASE_URL: '',
+  }));
+
+  assert.ok(problems.some((problem) => problem.includes('JWT_SECRET')));
+  assert.ok(problems.some((problem) => problem.includes('CORS_ORIGIN')));
+  assert.ok(problems.some((problem) => problem.includes('PROXY_HOSTS')));
+  assert.ok(problems.some((problem) => problem.includes('SEED_USERS')));
+  assert.ok(problems.some((problem) => problem.includes('DATABASE_URL')));
+});
+
+test('produção recusa mocks ativos e integração sem credencial', () => {
+  const problems = validateProductionConfig(validProductionEnv({
+    TOMTOM_MOCK_ENABLED: 'true',
+    WAZE_ENABLED: 'true',
+    WAZE_FEED_URL: '',
+  }));
+
+  assert.ok(problems.some((problem) => problem.includes('TOMTOM_MOCK_ENABLED')));
+  assert.ok(problems.some((problem) => problem.includes('WAZE_FEED_URL')));
+});
+
+test('desenvolvimento mantém os padrões locais', () => {
+  assert.deepEqual(validateProductionConfig({ NODE_ENV: 'development' }), []);
+});
+
+test('handler da API falha fechado com HTTP 503 se produção está incompleta', async () => {
+  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'JWT_SECRET', 'CORS_ORIGIN', 'PROXY_HOSTS', 'SEED_USERS', 'DATABASE_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN'];
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  try {
+    process.env.NODE_ENV = 'production';
+    process.env.VERCEL = '1';
+    process.env.VERCEL_ENV = 'production';
+    for (const key of keys.slice(3)) delete process.env[key];
+
+    const response = await apiHandler(new Request('https://example.test/api/alertas'));
+    assert.equal(response.status, 503);
+    assert.match((await response.json()).erro, /não configurado para produção/i);
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('handler Vercel aceita headers do Node e aplica a origem CORS permitida', async () => {
+  const env = validProductionEnv();
+  const keys = new Set([...Object.keys(env), 'NODE_ENV', 'VERCEL', 'VERCEL_ENV']);
+  const previous = new Map([...keys].map((key) => [key, process.env[key]]));
+  try {
+    for (const [key, value] of Object.entries(env)) process.env[key] = value;
+    const response = await apiHandler({
+      method: 'OPTIONS',
+      url: '/api/alertas',
+      headers: { origin: 'https://defesacivil.mt.gov.br' },
+    });
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://defesacivil.mt.gov.br');
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('rota serverless propaga CORS com headers Node e serve alertas sem fetch externo', async () => {
+  const env = validProductionEnv();
+  const keys = new Set([...Object.keys(env), 'NODE_ENV', 'VERCEL', 'VERCEL_ENV']);
+  const previous = new Map([...keys].map((key) => [key, process.env[key]]));
+  try {
+    for (const [key, value] of Object.entries(env)) process.env[key] = value;
+    const response = await apiHandler({
+      method: 'GET',
+      url: '/api/alertas?inmet=0',
+      headers: { origin: 'https://defesacivil.mt.gov.br' },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://defesacivil.mt.gov.br');
+    assert.ok(Array.isArray((await response.json()).alertas));
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('CORS reflete apenas origens explicitamente autorizadas', () => {
+  const previous = process.env.CORS_ORIGIN;
+  process.env.CORS_ORIGIN = 'https://dc.example,https://admin.example';
+  try {
+    assert.equal(corsHeaders('https://dc.example')['Access-Control-Allow-Origin'], 'https://dc.example');
+    assert.equal(corsHeaders('https://outside.example')['Access-Control-Allow-Origin'], undefined);
+  } finally {
+    if (previous === undefined) delete process.env.CORS_ORIGIN;
+    else process.env.CORS_ORIGIN = previous;
+  }
+});
+
+test('store não transforma indisponibilidade do KV em coleção vazia', async () => {
+  const keys = ['DATABASE_URL', 'FILE_STORE', 'VERCEL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN'];
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  const previousFetch = global.fetch;
+  try {
+    delete process.env.DATABASE_URL;
+    delete process.env.FILE_STORE;
+    delete process.env.VERCEL;
+    process.env.KV_REST_API_URL = 'https://kv.example.test';
+    process.env.KV_REST_API_TOKEN = 'test-token';
+    global.fetch = async () => ({ ok: false, status: 503 });
+    await assert.rejects(readCollection('runtime-config-test'), /kv get:503/);
+  } finally {
+    global.fetch = previousFetch;
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('solicitação pública fica pendente e só cria conta após aprovação administrativa', async () => {
+  const keys = ['DATABASE_URL', 'FILE_STORE', 'VERCEL', 'VERCEL_ENV', 'NODE_ENV', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'JWT_SECRET', 'SEED_USERS'];
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  try {
+    delete process.env.DATABASE_URL;
+    delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    process.env.NODE_ENV = 'test';
+    process.env.FILE_STORE = '0';
+    process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
+    process.env.SEED_USERS = '';
+
+    const pendingUsername = `solicitante${Date.now()}`;
+    const request = (path, method, body, token) => {
+      const headers = {
+        origin: 'https://example.test',
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      };
+      return apiHandler({
+        method,
+        url: `https://example.test/api/${path}`,
+        headers: { ...headers, get: (name) => headers[name.toLowerCase()] || null },
+        text: async () => body ? JSON.stringify(body) : '',
+      });
+    };
+    await writeCollection('users', [{
+      id: 'legacy-defense', usuario: 'defesa', senhaHash: bcrypt.hashSync('defesa123', 4),
+      nome: 'Conta demo', perfil: 'admin', ativo: false, cadastroId: null,
+    }]);
+    const demoLogin = await request('auth/login', 'POST', { usuario: 'defesa', senha: 'defesa123' });
+    assert.equal(demoLogin.status, 401);
+    const legacyToken = jwt.sign({ sub: 'legacy-defense', perfil: 'admin', usuario: 'defesa' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const revokedSession = await request('auth/me', 'GET', null, legacyToken);
+    assert.equal(revokedSession.status, 401);
+
+    process.env.SEED_USERS = JSON.stringify([{
+      usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin', nome: 'Administrador de Testes', perfil: 'admin',
+    }]);
+    const loginAdmin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
+    const adminPayload = await loginAdmin.json();
+    assert.equal(loginAdmin.status, 200);
+
+    const registrationResponse = await request('user-registrations', 'POST', {
+      usuario: pendingUsername,
+      senha: 'senha-segura-com-12',
+      nome: 'Solicitante Teste',
+      email: `${pendingUsername}@example.test`,
+      cpf: '529.982.247-25',
+      perfil: 'Estadual',
+      estado: 'MT',
+      nivel: 'Gestao',
+      orgao: 'Defesa Civil Teste',
+      declaracao: true,
+      role: 'admin',
+      perfilSistema: 'admin',
+      status: 'Aprovado',
+      senhaHash: 'hash-forjado-pelo-cliente',
+      parecer: 'Aprovado sem análise',
+    });
+    const registrationPayload = await registrationResponse.json();
+    assert.equal(registrationResponse.status, 201);
+    assert.equal(registrationPayload.registration.status, 'Pendente');
+    assert.equal(registrationPayload.registration.perfilSistema, undefined);
+    assert.equal(registrationPayload.registration.parecer, '');
+    assert.equal('senhaHash' in registrationPayload.registration, false);
+
+    const edited = await request(`user-registrations/${encodeURIComponent(registrationPayload.registration.id)}`, 'PUT', {
+      nome: 'Solicitante Atualizado', email: `${pendingUsername}@example.test`, cpf: '529.982.247-25',
+      perfil: 'Estadual', estado: 'MT', nivel: 'Gestao', orgao: 'Defesa Civil Teste', declaracao: true,
+    }, adminPayload.token);
+    assert.equal(edited.status, 200);
+    assert.equal((await edited.json()).registration.nome, 'Solicitante Atualizado');
+
+    const pendingLogin = await request('auth/login', 'POST', { usuario: pendingUsername, senha: 'senha-segura-com-12' });
+    assert.equal(pendingLogin.status, 401);
+
+    const listDenied = await request('user-registrations', 'GET');
+    assert.equal(listDenied.status, 401);
+    const approval = await request(`user-registrations/${encodeURIComponent(registrationPayload.registration.id)}`, 'PATCH', {
+      status: 'Aprovado', nivel: 'Consulta', parecer: 'Acesso aprovado para o teste.',
+    }, adminPayload.token);
+    assert.equal(approval.status, 200);
+
+    const approvedLogin = await request('auth/login', 'POST', { usuario: pendingUsername, senha: 'senha-segura-com-12' });
+    const approvedPayload = await approvedLogin.json();
+    assert.equal(approvedLogin.status, 200);
+    assert.equal(approvedPayload.user.perfil, 'comum');
+    assert.notEqual(approvedPayload.user.perfil, 'admin');
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});

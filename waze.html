@@ -199,102 +199,102 @@
 
         <div id="reportsList" style="display:flex;flex-direction:column;gap:8px;"></div>
 
-        <!-- INTEGRAÇÃO DE TRÂNSITO — ocorrências ingeridas via WazeSyncService
-             (feed oficial do Waze quando WAZE_ENABLED=true) e TomTomSyncService
-             (API aberta/self-service, alternativa ao Waze CCP, quando
-             TOMTOM_ENABLED=true) — dados simulados enquanto aguardam
-             credenciais. Ver /docs/WAZE_INTEGRATION.md -->
         <div class="filter-section" style="margin-top:4px;">
             <div class="filter-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-                <span><i data-lucide="database" style="color:#33ccff;"></i> Integração de Trânsito</span>
-                <span style="display:flex;gap:4px;">
-                    <span id="wazeIntStatusPill" title="Waze" style="font-size:9px;font-weight:800;padding:3px 7px;border-radius:10px;background:rgba(148,163,184,.15);color:var(--text-muted);">...</span>
-                    <span id="tomtomIntStatusPill" title="TomTom" style="font-size:9px;font-weight:800;padding:3px 7px;border-radius:10px;background:rgba(148,163,184,.15);color:var(--text-muted);">...</span>
-                </span>
+                <span><i data-lucide="radio-tower" style="color:#33ccff;"></i> Alertas de Fontes Públicas</span>
             </div>
-            <div id="wazeIntMensagem" style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">Carregando status...</div>
+            <div style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">INMET e SIPAM · avisos meteorológicos e fogo; INPE · focos de calor. Sem dados simulados.</div>
             <div class="stats-bar" style="margin-bottom:8px;">
-                <div class="stat-item"><i data-lucide="list" style="color:#33ccff;"></i><span>Total: <span class="stat-count" id="wazeIntTotal">0</span></span></div>
-                <div class="stat-item"><i data-lucide="triangle-alert" style="color:#ef4444;"></i><span>Críticas: <span class="stat-count" id="wazeIntCriticas">0</span></span></div>
-                <div class="stat-item"><i data-lucide="circle-alert" style="color:var(--accent-orange);"></i><span>Altas: <span class="stat-count" id="wazeIntAltas">0</span></span></div>
-                <div class="stat-item"><i data-lucide="activity" style="color:#22c55e;"></i><span>Ativas: <span class="stat-count" id="wazeIntAtivas">0</span></span></div>
+                <div class="stat-item"><i data-lucide="cloud-alert" style="color:#33ccff;"></i><span>INMET: <span class="stat-count" id="publicInmetCount">...</span></span></div>
+                <div class="stat-item"><i data-lucide="flame" style="color:#ef4444;"></i><span>SIPAM ativo: <span class="stat-count" id="publicSipamCount">...</span></span></div>
+                <div class="stat-item"><i data-lucide="satellite-dish" style="color:var(--accent-orange);"></i><span>INPE: <span class="stat-count" id="publicInpeCount">...</span></span></div>
             </div>
-            <div id="wazeIntList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;"></div>
+            <div id="publicAlertList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;"></div>
         </div>
     </div>
 </div>
 
 <script>
-    /* Painel da Integração Waze — consome /api/waze e /api/occurrences.
-       Atualiza sozinho a cada 30s (mesmo ritmo de loadReports). */
+    /* Alertas públicos; não são ocorrências de trânsito. */
     let muniRest = null;
-    const PRIORITY_CLASS = { CRITICA: 'urgent', ALTA: 'urgent', MEDIA: 'warning', BAIXA: 'info' };
-    const TYPE_LABEL = { ACIDENTE: 'Acidente', ENGARRAFAMENTO: 'Engarrafamento', PERIGO: 'Perigo', CLIMA: 'Clima', INTERDICAO: 'Interdição', OBRA: 'Obra', OUTROS: 'Outros' };
+    let inmetAlerts = [];
+    let inmetAvailable = false;
 
-    async function loadWazeIntegration() {
-        try {
-            const [wazeStatusRes, tomtomStatusRes, occRes] = await Promise.all([
-                fetch('/api/waze?action=status'),
-                fetch('/api/tomtom?action=status'),
-                fetch('/api/occurrences?period=24h'),
-            ]);
-            const wazeStatus = await wazeStatusRes.json();
-            const tomtomStatus = await tomtomStatusRes.json();
-            const occ = await occRes.json();
-            renderStatusPill('wazeIntStatusPill', wazeStatus, 'Waze');
-            renderStatusPill('tomtomIntStatusPill', tomtomStatus, 'TomTom');
-            document.getElementById('wazeIntMensagem').textContent = `Waze: ${wazeStatus.mensagem} · TomTom: ${tomtomStatus.mensagem}`;
-            let ocorrencias = occ.occurrences || [];
-            if (muniRest) ocorrencias = ocorrencias.filter(o => dcNorm(o.city || '') === muniRest.norm);
-            renderWazeIntegrationList(ocorrencias);
-        } catch (e) {
-            document.getElementById('wazeIntMensagem').textContent = 'Falha ao consultar a integração (backend indisponível).';
+    function addPublicAlertCard(list, source, title, detail, link) {
+        const card = document.createElement('div');
+        card.className = 'report-card warning';
+        card.style.padding = '9px';
+        const heading = document.createElement('div');
+        heading.className = 'report-header';
+        const titleEl = document.createElement('span');
+        titleEl.className = 'report-type';
+        titleEl.textContent = title;
+        const sourceEl = document.createElement('span');
+        sourceEl.className = 'report-time';
+        sourceEl.textContent = source;
+        heading.append(titleEl, sourceEl);
+        const detailEl = document.createElement('div');
+        detailEl.className = 'report-desc';
+        detailEl.textContent = detail;
+        card.append(heading, detailEl);
+        if (link) {
+            try {
+                const url = new URL(link);
+                if (url.protocol === 'https:') {
+                    const anchor = document.createElement('a');
+                    anchor.href = url.href;
+                    anchor.target = '_blank';
+                    anchor.rel = 'noopener';
+                    anchor.className = 'waze-link';
+                    anchor.textContent = 'Abrir fonte oficial';
+                    card.appendChild(anchor);
+                }
+            } catch {}
         }
+        list.appendChild(card);
     }
 
-    function renderStatusPill(elId, status, label) {
-        const pill = document.getElementById(elId);
-        const map = {
-            CONECTADO: { text: status.mockEnabled ? `🟡 ${label} DEMO` : `🟢 ${label}`, bg: status.mockEnabled ? 'rgba(249,115,28,.15)' : 'rgba(34,197,94,.15)', color: status.mockEnabled ? 'var(--accent-orange)' : '#22c55e' },
-            AGUARDANDO_CONFIGURACAO: { text: `🟡 ${label} AGUARDANDO`, bg: 'rgba(249,115,28,.15)', color: 'var(--accent-orange)' },
-            ERRO: { text: `🔴 ${label} ERRO`, bg: 'rgba(239,68,68,.15)', color: '#ef4444' },
-        };
-        const cfg = map[status.status] || map.AGUARDANDO_CONFIGURACAO;
-        pill.textContent = cfg.text;
-        pill.style.background = cfg.bg;
-        pill.style.color = cfg.color;
-    }
+    function renderPublicAlerts() {
+        const list = document.getElementById('publicAlertList');
+        const activeSipam = sipamEvents.filter(ev => String(ev.status_evento || '').toLowerCase() === 'ativo');
+        document.getElementById('publicInmetCount').textContent = inmetAvailable ? inmetAlerts.length : '—';
+        document.getElementById('publicSipamCount').textContent = activeSipam.length;
+        document.getElementById('publicInpeCount').textContent = document.getElementById('statFocos').textContent;
+        list.replaceChildren();
 
-    function renderWazeIntegrationList(occurrences) {
-        document.getElementById('wazeIntTotal').textContent = occurrences.length;
-        document.getElementById('wazeIntCriticas').textContent = occurrences.filter(o => o.priority === 'CRITICA').length;
-        document.getElementById('wazeIntAltas').textContent = occurrences.filter(o => o.priority === 'ALTA').length;
-        document.getElementById('wazeIntAtivas').textContent = occurrences.filter(o => !['RESOLVIDA', 'ENCERRADA'].includes(o.status)).length;
-
-        const list = document.getElementById('wazeIntList');
-        if (!occurrences.length) {
-            list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:8px;">Nenhuma ocorrência Waze nas últimas 24h.</div>';
-            return;
+        inmetAlerts.slice(0, 8).forEach(alerta => {
+            const detail = [alerta.severidade, alerta.areas, alerta.fim ? `Válido até ${fmtSipam(alerta.fim)}` : ''].filter(Boolean).join(' · ');
+            addPublicAlertCard(list, 'INMET', alerta.evento || 'Aviso meteorológico', detail || alerta.descricao || 'Aviso vigente em Mato Grosso.', alerta.link);
+        });
+        activeSipam.slice(0, 8).forEach(evento => {
+            const area = Number(evento.area_total_evento);
+            const detail = [evento.municipio, Number.isFinite(area) && area > 0 ? `${area.toFixed(1)} ha` : '', evento.dt_ultima_visao ? `Visto ${fmtSipam(evento.dt_ultima_visao)}` : ''].filter(Boolean).join(' · ');
+            addPublicAlertCard(list, 'SIPAM · fogo ativo', `Evento #${evento.id_evento || '—'}`, detail || 'Foco de fogo monitorado pelo SIPAM.');
+        });
+        if (inpeFocos.length) {
+            addPublicAlertCard(list, 'INPE · focos de calor', `${inpeFocos.length.toLocaleString('pt-BR')} focos detectados`, 'Detecções diárias por satélite em Mato Grosso; não representam confirmação de incêndio em campo.');
         }
-        const SOURCE_BADGE = { WAZE: '🚗 Waze', TOMTOM: '🛰️ TomTom' };
-        list.innerHTML = occurrences.slice(0, 20).map(o => {
-            const cls = PRIORITY_CLASS[o.priority] || 'info';
-            const wazeUrl = (o.latitude != null && o.longitude != null) ? `https://www.waze.com/ul?ll=${o.latitude},${o.longitude}&navigate=yes&zoom=17` : null;
-            return `<div class="report-card ${cls}" style="padding:9px;">
-                <div class="report-header">
-                    <span class="report-type">${TYPE_LABEL[o.type] || o.type}</span>
-                    <span class="report-time">${SOURCE_BADGE[o.source] || o.source} · ${new Date(o.reportedAt).toLocaleTimeString('pt-BR')}</span>
-                </div>
-                <div class="report-location">${o.city || o.street || 'Mato Grosso'}</div>
-                <div class="report-desc">${o.description || ''}</div>
-                ${wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i data-lucide="navigation"></i> Waze</a>` : ''}
-            </div>`;
-        }).join('');
+        if (!inpeFocos.length && !inmetAlerts.length && !activeSipam.length) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'font-size:11px;color:var(--text-muted);padding:8px;';
+            empty.textContent = inmetAvailable ? 'Nenhum alerta público vigente encontrado.' : 'Fontes públicas indisponíveis no momento.';
+            list.appendChild(empty);
+        }
         if (window.lucide) lucide.createIcons();
     }
 
-    loadWazeIntegration();
-    setInterval(loadWazeIntegration, 30 * 1000);
+    async function loadPublicInmetAlerts() {
+        try {
+            const response = await dcApi.alertas();
+            inmetAvailable = Boolean(response.ok && response.data && Array.isArray(response.data.inmet));
+            inmetAlerts = inmetAvailable ? response.data.inmet : [];
+        } catch {
+            inmetAvailable = false;
+            inmetAlerts = [];
+        }
+        renderPublicAlerts();
+    }
+
 </script>
 
 <div id="reportModal" class="modal-overlay">
@@ -410,14 +410,6 @@
     };
     const sevColors = { urgent:'#ef4444', warning:'#f9731c', info:'#00d2ff' };
 
-    // Reportes de demonstração — usados apenas como fallback se o backend estiver
-    // indisponível (nunca mesclados permanentemente com dados reais).
-    const DEMO_REPORTS = [
-        { id:'demo-1', type:'acidente', severity:'urgent', location:'Av. Getulio Vargas, Cuiaba', description:'Acidente com 2 veiculos - pista bloqueada', reporter:'Anonimo', lat:-15.5941, lng:-56.0990, ts:Date.now()-300000 },
-        { id:'demo-2', type:'clima', severity:'warning', location:'Rondonopolis', description:'Chuva intensa com ventania - risco de queda de arvores', reporter:'Sistema', lat:-16.4833, lng:-54.6333, ts:Date.now()-600000 },
-        { id:'demo-3', type:'fogo', severity:'urgent', location:'Regiao de Sinop', description:'Queimada em larga escala - vento auxiliando propagacao', reporter:'INPE', lat:-11.8697, lng:-55.4846, ts:Date.now()-900000 },
-        { id:'demo-4', type:'engarrafamento', severity:'info', location:'BR-364, entrada de Cuiaba', description:'Congestionamento intenso - 5km de fila', reporter:'Waze Community', lat:-15.5000, lng:-56.1000, ts:Date.now()-1200000 },
-    ];
     // Última lista confirmada pelo backend (compartilhada com todos os usuários).
     let apiReports = [];
     let backendOk = false;
@@ -430,9 +422,9 @@
     }
 
     // Lista efetivamente exibida: reportes locais ainda não confirmados + dados
-    // reais do backend (ou demonstração, se o backend estiver fora do ar).
+    // reais do backend. Não substitui falhas da API por eventos fictícios.
     function userReportsAtuais() {
-        const base = backendOk ? apiReports : DEMO_REPORTS;
+        const base = backendOk ? apiReports : [];
         const extras = localOnlyReports.filter(l => !base.some(b => String(b.id) === String(l.id)));
         const tudo = extras.concat(base);
         if (!muniRest || !muniPoly) return tudo;
@@ -606,6 +598,7 @@
         } catch { sipamEvents = []; }
         document.getElementById('statSipam').textContent = sipamEvents.length;
         renderSIPAM();
+        renderPublicAlerts();
     }
 
     function renderSIPAM() {
@@ -650,8 +643,14 @@
                 if (txt.length > 100) csvText = txt;
             } catch {}
         }
-        if (!csvText) { document.getElementById('statFocos').textContent = '—'; return; }
+        if (!csvText) {
+            inpeFocos = [];
+            document.getElementById('statFocos').textContent = '—';
+            renderPublicAlerts();
+            return;
+        }
         inpeLayer.clearLayers();
+        inpeFocos = [];
         const lines = csvText.split('\n');
         const hdr = lines[0].split(',').map(h=>h.trim());
         const iLat=hdr.indexOf('lat'), iLon=hdr.indexOf('lon'), iSat=hdr.indexOf('satelite'),
@@ -665,6 +664,7 @@
             const lat = parseFloat(c[iLat]), lng = parseFloat(c[iLon]);
             if (!isFinite(lat) || !isFinite(lng)) continue;
             const risco = parseFloat(c[iRisco]);
+            inpeFocos.push({ municipio: (c[iMun] || '').trim(), lat, lng, risco });
             const cor = isFinite(risco) && risco >= 0.7 ? '#dc2626' : isFinite(risco) && risco >= 0.4 ? '#f9731c' : '#fbbf24';
             const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes&zoom=17`;
             L.circleMarker([lat, lng], {
@@ -686,6 +686,7 @@
         }
         document.getElementById('statFocos').textContent = n.toLocaleString('pt-BR');
         if (document.getElementById('f-inpe').checked) inpeLayer.addTo(map);
+        renderPublicAlerts();
     }
 
     function applyFilters() {
@@ -786,10 +787,12 @@
     loadReports();
     loadSIPAM();
     loadINPE();
+    loadPublicInmetAlerts();
     carregarMalhaMunicipio();
 
     setInterval(loadReports, 30*1000);                 // reportes de outros usuários — tempo real
     setInterval(() => { loadSIPAM(); loadINPE(); }, 10*60*1000);
+    setInterval(loadPublicInmetAlerts, 10*60*1000);
     setInterval(renderReportCards, 60000);              // atualiza rótulos relativos ("há Xm")
 })();
 if (window.lucide) lucide.createIcons();

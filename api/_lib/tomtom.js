@@ -14,7 +14,7 @@ function bool(v, dflt) {
 function config() {
   return {
     enabled: bool(process.env.TOMTOM_ENABLED, false),
-    mockEnabled: bool(process.env.TOMTOM_MOCK_ENABLED, true),
+    mockEnabled: bool(process.env.TOMTOM_MOCK_ENABLED, false),
     apiKey: process.env.TOMTOM_API_KEY || '',
     bbox: process.env.TOMTOM_BBOX || '-61.6,-18.0,-50.2,-7.3',
     pollingInterval: Number(process.env.TOMTOM_POLLING_INTERVAL) || 120000,
@@ -117,7 +117,7 @@ async function fetchOfficialIncidents() {
 }
 
 /* ---------- estado + sync (reaproveita upsertOccurrence/classify de ./waze) ---------- */
-const state = { lastError: null, lastSyncAt: null, nextSyncAt: null, totalReceived: 0, lastSyncDurationMs: null, usingMock: true };
+const state = { lastError: null, lastSyncAt: null, nextSyncAt: null, totalReceived: 0, lastSyncDurationMs: null, usingMock: false };
 function computeStatus(cfg) {
   if (!cfg.enabled && !cfg.mockEnabled) return 'AGUARDANDO_CONFIGURACAO';
   if (state.lastError && !state.usingMock) return 'ERRO';

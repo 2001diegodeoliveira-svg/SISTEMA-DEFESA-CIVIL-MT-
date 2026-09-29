@@ -4,12 +4,26 @@
    despacha para os handlers em ./_routes conforme o caminho.
    ============================================================ */
 const { serve } = require('./_lib/serverless');
-const { corsHeaders } = require('./_lib/http');
+const { corsHeaders, bearerToken } = require('./_lib/http');
+const { validateProductionConfig } = require('./_lib/runtime-config');
+const { verifyToken, isLoginEligible } = require('./_lib/auth');
+const { readCollection } = require('./_lib/store');
+
+function readHeader(headers, name) {
+  if (!headers) return undefined;
+  if (typeof headers.get === 'function') {
+    const value = headers.get(name);
+    if (value != null) return value;
+  }
+  const value = headers[name.toLowerCase()] ?? headers[name];
+  return Array.isArray(value) ? value.join(', ') : (value == null ? undefined : String(value));
+}
 
 const handlers = {
   'auth/login': require('./_routes/auth/login'),
   'auth/logout': require('./_routes/auth/logout'),
   'auth/me': require('./_routes/auth/me'),
+  'user-registrations': require('./_routes/user-registrations'),
   'alertas': require('./_routes/alertas'),
   'areas': require('./_routes/areas'),
   'occurrences': require('./_routes/occurrences'),
@@ -74,10 +88,31 @@ function parseRoute(req) {
 }
 
 module.exports = serve(async function handler(req) {
-  const origin = req.headers && req.headers.get ? req.headers.get('origin') : undefined;
+  const origin = readHeader(req.headers, 'origin');
+
+  const configProblems = validateProductionConfig();
+  if (configProblems.length) {
+    return new Response(JSON.stringify({ erro: 'Backend não configurado para produção.', detalhes: configProblems }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+    });
+  }
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  }
+
+  const token = bearerToken(req);
+  const payload = token && verifyToken(token);
+  if (payload) {
+    const users = await readCollection('users');
+    const user = users.find((item) => String(item.id) === String(payload.sub));
+    if (!isLoginEligible(user)) {
+      return new Response(JSON.stringify({ erro: 'Conta suspensa ou sem cadastro aprovado.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
   }
 
   const { route, query } = parseRoute(req);
@@ -93,9 +128,13 @@ module.exports = serve(async function handler(req) {
      tanto no Express quanto na Vercel. */
   const clone = Object.create(req);
   clone.url = '/api/' + route + (query ? '?' + query : '');
+  clone.headers = {
+    get: (name) => readHeader(req.headers, name) || null,
+  };
 
   let target = null;
   if (handlers[route]) target = handlers[route];
+  else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
   else {
     const m = route.match(/^areas\/([^/]+)$/);
     if (m) target = areasIdHandler;

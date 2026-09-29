@@ -8,6 +8,19 @@
 const path = require('path');
 const express = require('express');
 
+/* Carrega variáveis do arquivo .env local (se existir) antes de inicializar
+   o store — permite rodar local com PostgreSQL apenas criando o .env. */
+(function loadDotEnv() {
+  try {
+    const p = path.join(__dirname, '.env');
+    if (!require('fs').existsSync(p)) return;
+    for (const linha of require('fs').readFileSync(p, 'utf8').split(/\r?\n/)) {
+      const m = linha.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
+      if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2];
+    }
+  } catch { /* .env ausente — usa variáveis do ambiente */ }
+})();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -55,7 +68,7 @@ function wrap(fn) {
 /* Todas as rotas /api/* → roteador único (igual ao deploy na Vercel). */
 app.all('/api/*', wrap(apiRouter));
 
-// Job de sincronização Waze/TomTom (mock por padrão) — só roda no server.js
+// Job de sincronização Waze/TomTom — só roda no server.js
 // standalone (processo Node persistente); em serverless (Vercel) use
 // um agendador externo chamando POST /api/waze?action=sync e
 // POST /api/tomtom?action=sync.

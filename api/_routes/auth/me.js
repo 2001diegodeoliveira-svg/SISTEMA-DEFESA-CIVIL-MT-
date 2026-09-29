@@ -1,6 +1,6 @@
 /* GET /api/auth/me → { user } (valida token) */
 const { jsonResponse, bearerToken } = require('../../_lib/http');
-const { verifyToken, ensureSeededUsers, publicUser } = require('../../_lib/auth');
+const { verifyToken, ensureSeededUsers, publicUser, isLoginEligible } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
@@ -18,6 +18,8 @@ module.exports = serve(async function handler(req) {
   }
   const users = await ensureSeededUsers();
   const user = users.find(x => x.id === payload.sub);
-  if (!user) return jsonResponse(401, { erro: 'Usuário não encontrado.' }, origin);
+  if (!isLoginEligible(user)) {
+    return jsonResponse(401, { erro: 'Conta suspensa ou sem cadastro aprovado.' }, origin);
+  }
   return jsonResponse(200, { user: publicUser(user) }, origin);
 });

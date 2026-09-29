@@ -1,0 +1,1597 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sistema de Cadastro de Usuários — Administration Estadual / Municipal</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --card: #141b2d;
+    --card2: #1a233a;
+    --card3: #101827;
+    --border: #25304a;
+    --text: #e2e8f0;
+    --muted: #8fa1b8;
+    --dim: #5b6b85;
+    --accent: #22d3ee;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #fb7185;
+    --purple: #a78bfa;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background:
+      linear-gradient(180deg, rgba(6, 10, 20, .86) 0%, rgba(8, 13, 26, .55) 45%, rgba(6, 10, 20, .92) 100%),
+      url('imagem-login-defesa.png') center/cover no-repeat fixed;
+    background-color: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1220px; margin: 0 auto; padding: 0 16px 70px; }
+  .hidden { display: none !important; }
+
+  /* ============ HEADER ============ */
+  header.top {
+    border-bottom: 1px solid var(--border);
+    background: rgba(11, 15, 26, .85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 30;
+  }
+  .top .wrap {
+    display: flex; align-items: center; gap: 14px;
+    padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap;
+  }
+  .logo {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    display: grid; place-items: center; font-weight: 800; color: #06121c;
+    overflow: hidden;
+  }
+  .logo img {
+    width: 100%; height: 100%; object-fit: contain;
+    display: block;
+  }
+  .top h1 { font-size: 1rem; color: #fff; line-height: 1.2; }
+  .top small { color: var(--muted); font-size: .75rem; }
+  .spacer { flex: 1; }
+  .who {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 12px 5px 5px;
+  }
+  .who .av {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    color: #06121c; display: grid; place-items: center;
+    font-size: .72rem; font-weight: 700;
+  }
+  .who b { font-size: .82rem; }
+  .who span { display: block; color: var(--muted); font-size: .68rem; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 7px 15px; font-size: .84rem; cursor: pointer;
+    font-family: inherit; transition: .15s; display: flex; align-items: center; gap: 7px;
+  }
+  .tab:hover { color: var(--text); border-color: var(--accent); }
+  .tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    color: #06121c; border-color: transparent; font-weight: 600;
+  }
+  .tab .count {
+    background: var(--yellow); color: #1a1205; border-radius: 999px;
+    font-size: .68rem; padding: 1px 7px; font-weight: 700;
+  }
+  .tab.active .count { background: #1a1205; color: var(--yellow); }
+
+  /* ============ BOTÕES ============ */
+  .btn {
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    color: #06121c; border: none; border-radius: 10px;
+    padding: 10px 18px; font-weight: 600; font-size: .88rem;
+    cursor: pointer; font-family: inherit; transition: .15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .btn:hover { filter: brightness(1.12); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }
+  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+  .btn.ghost:hover { color: var(--text); border-color: var(--accent); }
+  .btn.ok { background: linear-gradient(135deg, var(--green), #10b981); color: #04231a; }
+  .btn.no { background: linear-gradient(135deg, var(--red), #f43f5e); color: #fff; }
+  .btn.warn { background: linear-gradient(135deg, var(--yellow), #f59e0b); color: #1a1205; }
+  .btn.sm { padding: 6px 12px; font-size: .78rem; border-radius: 8px; }
+  .btn.block { width: 100%; }
+  .row-btns { display: flex; gap: 9px; flex-wrap: wrap; }
+
+  /* ============ CARDS ============ */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px; margin: 22px 0;
+  }
+  .card-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .card-head h2 { font-size: 1.05rem; color: #fff; }
+  .card-head .sub { color: var(--muted); font-size: .84rem; margin-top: 3px; }
+  .card-head .spacer { flex: 1; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { background: var(--card3); border: 1px solid var(--border); border-radius: 11px; padding: 13px 15px; }
+  .stat .label { color: var(--muted); font-size: .71rem; text-transform: uppercase; letter-spacing: .06em; }
+  .stat .value { font-size: 1.6rem; font-weight: 700; margin-top: 2px; }
+  .stat.p .value { color: var(--yellow); }
+  .stat.a .value { color: var(--green); }
+  .stat.r .value { color: var(--red); }
+  .stat.e .value { color: var(--accent); }
+  .stat.m .value { color: var(--purple); }
+
+  /* ============ FORM ============ */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .field > label { font-size: .78rem; color: var(--muted); font-weight: 500; }
+  .req { color: var(--red); }
+  input, select, textarea {
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px; padding: 10px 12px;
+    font-size: .88rem; font-family: inherit; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, .12);
+  }
+  input:disabled, select:disabled { opacity: .5; cursor: not-allowed; }
+  input::placeholder, textarea::placeholder { color: #4d5c74; }
+  input.erro, select.erro { border-color: var(--red); }
+  .hint { font-size: .73rem; color: var(--dim); }
+  .msg-erro { font-size: .73rem; color: var(--red); display: none; }
+  .msg-erro.on { display: block; }
+
+  .form-actions {
+    display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+  }
+
+  /* Toggle de perfil */
+  .radio-row { display: flex; gap: 11px; flex-wrap: wrap; }
+  .radio-card {
+    flex: 1; min-width: 175px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 11px;
+    padding: 12px 14px; background: var(--card2);
+    display: flex; align-items: center; gap: 11px; transition: .15s;
+  }
+  .radio-card:hover { border-color: var(--accent); }
+  .radio-card.sel-esta { border-color: var(--accent); background: rgba(34, 211, 238, .1); }
+  .radio-card.sel-mun { border-color: var(--purple); background: rgba(167, 139, 250, .12); }
+  .radio-card input { width: auto; flex: none; }
+  .radio-card b { display: block; font-size: .88rem; }
+  .radio-card small { color: var(--muted); font-size: .73rem; }
+
+  .check { display: flex; align-items: flex-start; gap: 9px; font-size: .82rem; color: var(--muted); cursor: pointer; }
+  .check input { width: auto; margin-top: 3px; }
+  .upload {
+    border: 1px dashed var(--border); border-radius: 10px; padding: 14px;
+    text-align: center; color: var(--muted); font-size: .8rem; cursor: pointer;
+  }
+  .upload:hover { border-color: var(--accent); color: var(--text); }
+  .upload input { display: none; }
+  .upload .file { color: var(--green); font-weight: 600; }
+
+  /* ============ TABELA ============ */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .toolbar input { min-width: 250px; }
+  .toolbar select { width: auto; min-width: 160px; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: .87rem; min-width: 980px; }
+  th {
+    background: var(--card2); color: var(--muted); text-align: left;
+    padding: 11px 13px; font-size: .72rem; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600; white-space: nowrap;
+    position: sticky; top: 0;
+  }
+  td { padding: 11px 13px; border-top: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:hover td { background: rgba(34, 211, 238, .045); }
+  .name-cell { display: flex; align-items: center; gap: 10px; }
+  .ava {
+    width: 32px; height: 32px; border-radius: 9px; flex: none;
+    background: var(--card2); border: 1px solid var(--border);
+    display: grid; place-items: center; font-size: .72rem; font-weight: 700; color: var(--accent);
+  }
+  .ava.mun { color: var(--purple); }
+  .sub-cell { color: var(--muted); font-size: .76rem; }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: .73rem; font-weight: 600; white-space: nowrap;
+  }
+  .pill.estadual { background: rgba(34, 211, 238, .15); color: var(--accent); }
+  .pill.municipal { background: rgba(167, 139, 250, .17); color: var(--purple); }
+  .pill.pendente { background: rgba(251, 191, 36, .15); color: var(--yellow); }
+  .pill.aprovado { background: rgba(52, 211, 153, .15); color: var(--green); }
+  .pill.recusado { background: rgba(251, 113, 133, .15); color: var(--red); }
+  .pill.ativo { background: rgba(52, 211, 153, .15); color: var(--green); }
+  .pill.inativo { background: rgba(139, 161, 184, .15); color: var(--muted); }
+  .pill.lvl-consulta { background: rgba(139, 161, 184, .15); color: var(--muted); }
+  .pill.lvl-operacao { background: rgba(34, 211, 238, .15); color: var(--accent); }
+  .pill.lvl-gestao { background: rgba(251, 191, 36, .15); color: var(--yellow); }
+  .actions { display: flex; gap: 6px; }
+  .empty { text-align: center; padding: 44px 20px; color: var(--muted); }
+  .empty b { display: block; color: var(--text); margin-bottom: 6px; }
+  .empty .ico { font-size: 2rem; margin-bottom: 10px; }
+
+  /* ============ MODAL ============ */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(3, 6, 14, .82);
+    display: none; place-items: center; z-index: 60; padding: 16px; overflow-y: auto;
+  }
+  .modal-bg.open { display: grid; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; width: 100%; max-width: 520px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal.wide { max-width: 780px; }
+  .modal h3 { margin-bottom: 6px; font-size: 1.05rem; color: #fff; }
+  .modal > p { color: var(--muted); font-size: .86rem; margin-bottom: 18px; }
+  .modal .form-actions { margin-top: 0; border-top: none; padding-top: 16px; }
+
+  .dl { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; font-size: .86rem; }
+  .dl dt { color: var(--muted); font-size: .78rem; }
+  .dl dd { color: var(--text); }
+  .dl-sec {
+    grid-column: 1 / -1; color: var(--accent); font-size: .73rem;
+    text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
+    border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 8px;
+  }
+  .dl-sec:first-child { margin-top: 0; }
+
+  .timeline { list-style: none; margin-top: 6px; }
+  .timeline li {
+    border-left: 2px solid var(--border); padding: 0 0 14px 14px; position: relative; font-size: .82rem;
+  }
+  .timeline li::before {
+    content: ""; position: absolute; left: -6px; top: 3px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--card);
+  }
+  .timeline li.ok::before { background: var(--green); }
+  .timeline li.no::before { background: var(--red); }
+  .timeline b { color: var(--text); }
+  .timeline .t { color: var(--dim); font-size: .74rem; }
+
+  /* ============ TOAST ============ */
+  .toast { position: fixed; bottom: 22px; right: 22px; z-index: 90; display: flex; flex-direction: column; gap: 10px; }
+  .toast div {
+    background: var(--card); border: 1px solid var(--accent); border-left: 4px solid var(--accent);
+    border-radius: 10px; padding: 12px 18px; font-size: .86rem; max-width: 340px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .55); animation: slide .25s ease;
+  }
+  .toast div.err { border-color: var(--red); border-left-color: var(--red); }
+  .toast div.ok { border-color: var(--green); border-left-color: var(--green); }
+  @keyframes slide { from { opacity: 0; transform: translateX(24px); } }
+
+  .tab.locked:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  /* ============ ÍCONES (SVG inline, traço 1.75) ============ */
+  /* viewBox vem do <symbol>; o tamanho é controlado só pelo width/height abaixo,
+     então todos os ícones ocupam exatamente a mesma caixa e alinham entre si. */
+  .ico {
+    display: inline-block;
+    width: 16px; height: 16px; flex: none;
+    fill: none; stroke: currentColor; stroke-width: 1.75;
+    stroke-linecap: round; stroke-linejoin: round;
+    vertical-align: -3px;   /* centro óptico alinhado a texto de ~14px */
+    pointer-events: none;
+  }
+  .ico.lg { width: 20px; height: 20px; vertical-align: -4px; }
+  .ico.xl { width: 30px; height: 30px; stroke-width: 1.5; vertical-align: middle; }
+  .ico.ok { color: var(--green); }
+  .ico.no { color: var(--red); }
+  .ico.warn { color: var(--yellow); }
+  .ico.info { color: var(--accent); }
+
+  /* Dentro de containers flex o vertical-align não se aplica:
+     quem alinha é o align-items do container. */
+  .btn .ico, .tab .ico, .sec-title .ico, .row-ico .ico,
+  .logo .ico, .stat .ico, .upload .ico, .who .ico {
+    vertical-align: 0;
+  }
+  .btn { align-items: center; }
+  .tab { align-items: center; }
+  .sec-title { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+  .sec-title .ico { color: var(--accent); }
+  .logo { align-items: center; }
+  .logo .ico { color: #06121c; }
+  .who .ico { color: #06121c; }
+  .modal .logo { background: linear-gradient(135deg, var(--accent), var(--purple)); border: none; }
+
+  /* Banner do modal de login com a imagem de fundo */
+  .login-banner {
+    height: 130px;
+    margin: -24px -24px 16px;
+    border-radius: 16px 16px 0 0;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      linear-gradient(180deg, rgba(6, 10, 20, .28) 0%, rgba(6, 10, 20, .82) 100%),
+      url('imagem-login-defesa.png') center/cover no-repeat;
+  }
+  .login-banner .logo {
+    width: 54px; height: 54px;
+    background: rgba(6, 10, 20, .45);
+    border: 1px solid rgba(255, 255, 255, .28);
+  }
+  .login-banner .logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  .stat { position: relative; }
+  .stat > .ico {
+    position: absolute; top: 12px; right: 13px;
+    width: 18px; height: 18px; opacity: .5;
+  }
+  .stat .label { padding-right: 26px; }
+
+  .row-ico { display: flex; gap: 10px; align-items: flex-start; }
+  .row-ico .ico { width: 17px; height: 17px; color: var(--muted); margin-top: 1px; }
+  a.ico-link, .empty .ico { color: var(--muted); }
+
+  .tab.locked::after {
+    content: ""; width: 12px; height: 12px; display: inline-block;
+    flex: none; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") center/contain no-repeat;
+    opacity: .55;
+  }
+  .tab.locked:hover::after { opacity: 1; }
+  .tab.sessao { border-style: dashed; }
+
+  /* Em fluxo de texto o alinhamento é medido em relação ao x-height,
+     não por um deslocamento fixo — evita ícone "flutuando" em rótulos. */
+  .upload .ico { display: block; margin: 0 auto 7px; color: var(--muted); width: 22px; height: 22px; }
+  .dl-ico { width: 13px; height: 13px; color: var(--dim); margin-right: 4px; vertical-align: -2px; }
+  .dl-sec .dl-ico { width: 14px; height: 14px; color: var(--accent); vertical-align: -3px; }
+  .check .ico { vertical-align: -2px; }
+  label .ico { vertical-align: -2px; margin-right: 4px; }
+  .label .ico { float: right; opacity: .5; }
+  .file .ico { vertical-align: -3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ============ TABS ============ */
+  .view { display: none; }
+  .view.on { display: block; }
+
+  /* Aba "Cadastrar-se" — o fundo é da página inteira (body) */
+  .view#novo {
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    background: none;
+  }
+  .view#novo > .card {
+    margin: 0;
+    background: transparent;
+    border: none;
+  }
+  .lock-note {
+    background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .32);
+    color: var(--yellow); border-radius: 10px; padding: 11px 14px; font-size: .82rem; margin-bottom: 16px;
+  }
+  .banner-ok {
+    background: rgba(52, 211, 153, .1); border: 1px solid rgba(52, 211, 153, .35);
+    color: var(--green); border-radius: 10px; padding: 14px 16px; font-size: .87rem; margin-bottom: 18px;
+  }
+  .banner-ok b { display: block; margin-bottom: 4px; }
+
+  @media (max-width: 700px) {
+    .form-actions { flex-direction: column-reverse; }
+    .form-actions .btn { width: 100%; }
+    .toolbar input, .toolbar select { min-width: 0; width: 100%; }
+    .dl { grid-template-columns: 1fr; gap: 2px 0; }
+    .dl dd { margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== SPRITE DE ÍCONES ==================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  
+    <symbol id="s-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="s-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
+    <symbol id="s-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="s-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="s-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+    <symbol id="s-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="s-key" viewBox="0 0 24 24"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3"/></symbol>
+    <symbol id="s-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="s-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="s-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="s-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></symbol>
+    <symbol id="s-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></symbol>
+    <symbol id="s-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="s-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="s-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="s-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 8 5-5 5 5"/><path d="M12 3v12"/></symbol>
+    <symbol id="s-alert" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+    <symbol id="s-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></symbol>
+    <symbol id="s-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></symbol>
+    <symbol id="s-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="s-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="s-building" viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M15 21V9h4a2 2 0 0 1 2 2v10"/><path d="M9 7h2M9 11h2M9 15h2"/></symbol>
+    <symbol id="s-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></symbol>
+    <symbol id="s-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+    <symbol id="s-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15h6"/></symbol>
+    <symbol id="s-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+    <symbol id="s-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+    <symbol id="s-flag" viewBox="0 0 24 24"><path d="M4 22V4h11l-1 3 1 3H4"/></symbol>
+    <symbol id="s-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+  
+</svg>
+
+<!-- ==================== MODAL DE LOGIN ==================== -->
+<div class="modal-bg" id="modalLogin">
+  <div class="modal" style="max-width:400px">
+    <div class="login-banner">
+      <div class="logo"><img src="imagens/logo.png" alt="Defesa Civil MT" /></div>
+    </div>
+    <h3 style="text-align:center">Área restrita</h3>
+    <p style="text-align:center" id="loginSub">Digite as credenciais de administrador para acessar esta área.</p>
+
+    <form id="formLogin" autocomplete="off">
+      <div class="field" style="margin-bottom:13px">
+        <label><svg class="ico" viewBox="0 0 24 24"><use href="#s-user" /></svg> Login</label>
+        <input id="loginUser" placeholder="Digite seu login" autocomplete="username" />
+      </div>
+      <div class="field" style="margin-bottom:6px">
+        <label><svg class="ico" viewBox="0 0 24 24"><use href="#s-lock" /></svg> Senha</label>
+        <input id="loginSenha" type="password" placeholder="Digite sua senha" autocomplete="current-password" />
+      </div>
+      <span class="msg-erro" id="loginErro"></span>
+      <div class="form-actions">
+        <button type="button" class="btn ghost" id="loginCancelar">
+          <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Cancelar
+        </button>
+        <button class="btn" type="submit">
+          <svg class="ico" viewBox="0 0 24 24"><use href="#s-key" /></svg>Entrar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app">
+  <header class="top">
+    <div class="wrap">
+      <div class="logo">
+        <img src="imagens/logo.png" alt="Defesa Civil MT" />
+      </div>
+      <div>
+        <h1>Cadastro de Usuários</h1>
+        <small>Estadual &amp; Municipal</small>
+      </div>
+      <div class="spacer"></div>
+      <div class="tabs">
+        <button class="tab active" data-view="novo">
+          <svg class="ico" viewBox="0 0 24 24"><use href="#s-user-plus" /></svg>Cadastrar-se
+        </button>
+        <button class="tab locked" data-view="analise" data-restrito="1">
+          <svg class="ico" viewBox="0 0 24 24"><use href="#s-shield-check" /></svg>Análise de Cadastros
+          <span class="count hidden" id="badgePend">0</span>
+        </button>
+        <button class="tab locked" data-view="config" data-restrito="1">
+          <svg class="ico" viewBox="0 0 24 24"><use href="#s-settings" /></svg>Configurações
+        </button>
+      </div>
+      <div class="who hidden" id="quemSou">
+        <div class="av">
+          <svg class="ico" viewBox="0 0 24 24"><use href="#s-shield-check" /></svg>
+        </div>
+        <div>
+          <b>Administrador</b>
+          <span id="sessionInfo">sessão ativa</span>
+        </div>
+      </div>
+      <button class="btn sm hidden" id="btnSair">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-logout" /></svg>Sair
+      </button>
+      <button class="btn ghost sm" id="btnEntrar">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-key" /></svg>Área restrita
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- ========== ABA: CADASTRAR ========== -->
+    <section class="view on" id="novo">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2 class="sec-title"><svg class="ico lg"><use href="#s-user-plus" /></svg><span id="formTitle">Cadastro de usuário</span></h2>
+            <div class="sub" id="formSub">Preencha seus dados. A solicitação será analisada pela administração antes da liberação do acesso. Campos com <span class="req">*</span> são obrigatórios.</div>
+          </div>
+        </div>
+
+        <form id="formUser" autocomplete="off">
+          <!-- Perfil -->
+          <div class="field full" style="margin-bottom:18px">
+            <label>Esfera de acesso <span class="req">*</span></label>
+            <div class="radio-row">
+              <label class="radio-card" id="cardEstadual">
+                <input type="radio" name="perfil" value="Estadual" checked />
+                <span><b>Estadual</b><small>Acesso aos módulos do estado</small></span>
+              </label>
+              <label class="radio-card" id="cardMunicipal">
+                <input type="radio" name="perfil" value="Municipal" />
+                <span><b>Municipal</b><small>Acesso restrito ao município</small></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="field full">
+              <label>Nome completo <span class="req">*</span></label>
+              <input name="nome" placeholder="Ex.: Maria Aparecida da Silva" />
+              <span class="msg-erro" data-erro="nome"></span>
+            </div>
+            <div class="field">
+              <label for="novoUsuario">Login desejado <span class="req">*</span></label>
+              <input id="novoUsuario" name="usuario" placeholder="Ex.: maria.silva" minlength="3" maxlength="40" autocomplete="username" required />
+              <span class="msg-erro" data-erro="usuario"></span>
+              <span class="hint">3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado.</span>
+            </div>
+            <div class="field">
+              <label for="novaSenha">Senha <span class="req">*</span></label>
+              <input id="novaSenha" name="senha" type="password" placeholder="Mínimo de 12 caracteres" minlength="12" maxlength="200" autocomplete="new-password" required />
+              <span class="msg-erro" data-erro="senha"></span>
+              <span class="hint">A senha só libera o acesso após aprovação.</span>
+            </div>
+            <div class="field">
+              <label>E-mail institucional <span class="req">*</span></label>
+              <input name="email" type="email" placeholder="maria@orgao.gov.br" />
+              <span class="msg-erro" data-erro="email"></span>
+            </div>
+            <div class="field">
+              <label>CPF <span class="req">*</span></label>
+              <input name="cpf" placeholder="000.000.000-00" maxlength="14" />
+              <span class="msg-erro" data-erro="cpf"></span>
+            </div>
+            <div class="field">
+              <label>Data de nascimento</label>
+              <input name="nascimento" type="date" />
+            </div>
+            <div class="field">
+              <label>Telefone</label>
+              <input name="telefone" placeholder="(00) 00000-0000" maxlength="15" />
+            </div>
+            <div class="field">
+              <label>Telefone alternativo</label>
+              <input name="telefoneAlt" placeholder="(00) 0000-0000" maxlength="15" />
+            </div>
+
+            <!-- Localização -->
+            <div class="field" data-perfil="estadual">
+              <label>Estado (UF) <span class="req">*</span></label>
+              <select name="estado"><option value="">Selecione...</option></select>
+              <span class="msg-erro" data-erro="estado"></span>
+            </div>
+            <div class="field" data-perfil="municipal" style="display:none">
+              <label>Município <span class="req">*</span></label>
+              <input name="municipio" placeholder="Ex.: Cuiabá" />
+              <span class="msg-erro" data-erro="municipio"></span>
+            </div>
+            <div class="field" data-perfil="municipal" style="display:none">
+              <label>Código IBGE do município</label>
+              <input name="ibge" placeholder="Ex.: 5103403" maxlength="7" inputmode="numeric" />
+            </div>
+            <div class="field" data-perfil="estadual" style="display:none">
+              <label>Regional / Mesorregião</label>
+              <input name="regional" placeholder="Ex.: região leste" />
+            </div>
+
+            <!-- Lotação -->
+            <div class="field">
+              <label>Órgão / Entidade <span class="req">*</span></label>
+              <input name="orgao" placeholder="Ex.: Secretaria de Saúde" />
+              <span class="msg-erro" data-erro="orgao"></span>
+            </div>
+            <div class="field">
+              <label>Setor / Departamento</label>
+              <input name="setor" placeholder="Ex.: Vigilância Sanitária" />
+            </div>
+            <div class="field">
+              <label>Cargo / Função</label>
+              <input name="cargo" placeholder="Ex.: Técnico Administrativo" />
+            </div>
+            <div class="field">
+              <label>Matrícula funcional</label>
+              <input name="matricula" placeholder="Ex.: 1234567" />
+            </div>
+            <div class="field full">
+              <label>Endereço / Local de trabalho</label>
+              <input name="endereco" placeholder="Rua, número, bairro, cidade" />
+            </div>
+
+            <!-- Permissões -->
+            <div class="field">
+              <label>Nível de permissão <span class="req">*</span></label>
+              <select name="nivel">
+                <option value="Consulta">Somente consulta</option>
+                <option value="Operacao" selected>Operação</option>
+                <option value="Gestao">Gestão</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Validade do acesso</label>
+              <input name="validade" type="date" />
+              <span class="hint">Deixe em branco para acesso por tempo indeterminado.</span>
+            </div>
+            <div class="field" data-perfil="municipal" style="display:none">
+              <label>Responsável pelo cadastro</label>
+              <input name="responsavel" placeholder="Nome de quem autorizou" />
+            </div>
+            <div class="field full">
+              <label>Observações do solicitante</label>
+              <textarea name="observacoes" placeholder="Motivo do pedido, informações adicionais..."></textarea>
+            </div>
+            <div class="field full">
+              <label>Documento comprobatório</label>
+              <div class="upload" id="dropZone">
+                <svg class="ico lg"><use href="#s-file" /></svg>
+                Clique para anexar (PDF, JPG, PNG)
+                <input type="file" id="inputFile" accept=".pdf,.jpg,.jpeg,.png" />
+                <div class="file" id="fileName"></div>
+              </div>
+              <span class="hint">Apenas o nome do arquivo é registrado neste sistema.</span>
+            </div>
+            <div class="field full">
+              <label class="check">
+                <input type="checkbox" name="declaracao" />
+                <span><svg class="ico ok" viewBox="0 0 24 24"><use href="#s-check-circle" /></svg>
+                  Confirmo que os dados informados são verdadeiros e que estou ciente das políticas de uso do sistema.</span>
+              </label>
+              <span class="msg-erro" data-erro="declaracao"></span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn ghost" id="btnCancelar">
+              <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Limpar
+            </button>
+            <button type="submit" class="btn" id="btnSalvar">
+              <svg class="ico" viewBox="0 0 24 24"><use href="#s-send" /></svg><span id="btnSalvarTxt">Enviar solicitação</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========== ABA: ANÁLISE ========== -->
+    <section class="view" id="analise">
+      <div class="lock-note row-ico">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-lock" /></svg>
+        <span>Área restrita à administração. Todos os cadastros passam por análise antes de liberar o acesso ao sistema.</span>
+      </div>
+
+      <div class="stats" style="margin-bottom:20px">
+        <div class="stat p">
+          <svg class="ico lg"><use href="#s-clock" /></svg>
+          <div class="label">Pendentes</div><div class="value" id="stPendente">0</div>
+        </div>
+        <div class="stat a">
+          <svg class="ico lg ok"><use href="#s-check-circle" /></svg>
+          <div class="label">Aprovados</div><div class="value" id="stAprovado">0</div>
+        </div>
+        <div class="stat r">
+          <svg class="ico lg no"><use href="#s-x-circle" /></svg>
+          <div class="label">Recusados</div><div class="value" id="stRecusado">0</div>
+        </div>
+        <div class="stat e">
+          <svg class="ico lg info"><use href="#s-building" /></svg>
+          <div class="label">Estaduais</div><div class="value" id="stEstadual">0</div>
+        </div>
+        <div class="stat m">
+          <svg class="ico lg"><use href="#s-pin" /></svg>
+          <div class="label">Municipais</div><div class="value" id="stMunicipal">0</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:0">
+        <div class="card-head">
+          <div>
+            <h2 class="sec-title"><svg class="ico lg"><use href="#s-inbox" /></svg>Cadastros recebidos</h2>
+            <div class="sub" id="contadorLista">Nenhum registro.</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="row-btns">
+            <button class="btn warn sm" id="btnAprovarTodos">
+              <svg class="ico" viewBox="0 0 24 24"><use href="#s-check" /></svg>Aprovar todos os pendentes
+            </button>
+            <button class="btn ghost sm" id="btnCsv">
+              <svg class="ico" viewBox="0 0 24 24"><use href="#s-download" /></svg>Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div style="position:relative;flex:1;min-width:220px">
+            <svg class="ico" viewBox="0 0 24 24" style="position:absolute;left:11px;top:50%;margin-top:-8px;width:16px;height:16px;color:var(--dim)"><use href="#s-search" /></svg>
+            <input id="busca" style="padding-left:34px" placeholder="Buscar por nome, CPF, e-mail, órgão ou município..." />
+          </div>
+          <select id="fStatus">
+            <option value="">Todos os status</option>
+            <option value="Pendente">Pendentes</option>
+            <option value="Aprovado">Aprovados</option>
+            <option value="Recusado">Recusados</option>
+          </select>
+          <select id="fPerfil">
+            <option value="">Todos os perfis</option>
+            <option value="Estadual">Estaduais</option>
+            <option value="Municipal">Municipais</option>
+          </select>
+          <select id="fNivel">
+            <option value="">Todos os níveis</option>
+            <option value="Consulta">Consulta</option>
+            <option value="Operacao">Operação</option>
+            <option value="Gestao">Gestão</option>
+          </select>
+          <select id="fSituacao">
+            <option value="">Ativos e inativos</option>
+            <option value="Ativo">Somente ativos</option>
+            <option value="Inativo">Somente inativos</option>
+          </select>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Contato</th>
+                <th>Perfil</th>
+                <th>Órgão / Local</th>
+                <th>Nível</th>
+                <th>Status</th>
+                <th>Situação</th>
+                <th>Recebido em</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="vazio" class="empty" style="display:none">
+          <svg class="ico xl"><use href="#s-inbox" /></svg>
+          <b>Nenhum cadastro encontrado</b>
+          Ajuste os filtros ou aguarde novas solicitações.
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ABA: CONFIGURAÇÕES ========== -->
+    <section class="view" id="config">
+      <div class="card" style="margin-top:22px">
+        <div class="card-head">
+          <div>
+            <h2 class="sec-title"><svg class="ico lg"><use href="#s-shield-check" /></svg>Acesso administrativo</h2>
+            <div class="sub">A autenticação e as permissões são gerenciadas pelo backend do sistema.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2 class="sec-title"><svg class="ico lg"><use href="#s-save" /></svg>Exportar cadastros</h2>
+            <div class="sub">Baixe uma cópia dos registros do PostgreSQL. Senhas e hashes nunca são exportados.</div>
+          </div>
+        </div>
+        <div class="row-btns">
+          <button class="btn ghost" id="btnBackup">
+            <svg class="ico" viewBox="0 0 24 24"><use href="#s-download" /></svg>Baixar backup (JSON)
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ==================== MODAIS ==================== -->
+<div class="modal-bg" id="modalAnalise">
+  <div class="modal wide">
+    <h3 class="sec-title"><svg class="ico lg"><use href="#s-shield-check" /></svg><span id="anTitulo">Analisar cadastro</span></h3>
+    <p>Confira os dados enviados e defina o resultado da análise.</p>
+
+    <div id="anDados" style="margin-bottom:18px"></div>
+
+    <div class="field" style="margin-bottom:14px">
+      <label>Nível de permissão aprovado</label>
+      <select id="anNivel">
+        <option value="Consulta">Somente consulta</option>
+        <option value="Operacao">Operação</option>
+        <option value="Gestao">Gestão</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:6px">
+      <label>Parecer do administrador <span class="req">*</span></label>
+      <textarea id="anParecer" placeholder="Descreva a decisão, o motivo da recusa, ou observações..."></textarea>
+      <span class="msg-erro" id="anErro">Informe o parecer para prosseguir.</span>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn ghost" id="anFechar">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Fechar
+      </button>
+      <button class="btn no" id="anRecusar">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-x-circle" /></svg>Recusar
+      </button>
+      <button class="btn ok" id="anAprovar">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-check-circle" /></svg><span id="anAprovarTxt">Aprovar cadastro</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalDetalhe">
+  <div class="modal wide">
+    <h3 class="sec-title"><svg class="ico lg"><use href="#s-eye" /></svg><span id="deTitulo">Detalhes do cadastro</span></h3>
+    <p id="deSub"></p>
+    <div id="deDados" style="margin-bottom:18px"></div>
+    <h3 class="sec-title" style="font-size:.92rem;margin-top:18px">
+      <svg class="ico" viewBox="0 0 24 24"><use href="#s-clock" /></svg>Histórico
+    </h3>
+    <ul class="timeline" id="deHistorico"></ul>
+    <div class="form-actions">
+      <button class="btn ghost" id="deFechar">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalSim">
+  <div class="modal">
+    <h3 class="sec-title"><svg class="ico lg warn"><use href="#s-alert" /></svg>Confirmar ação</h3>
+    <p id="simTexto">Tem certeza?</p>
+    <div class="form-actions">
+      <button class="btn ghost" id="simNao">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Cancelar
+      </button>
+      <button class="btn danger" id="simSim">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-alert" /></svg>Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIGURAÇÃO
+     ============================================================ */
+  var UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+  var UFS_NOME = {
+    AC:"Acre", AL:"Alagoas", AP:"Amapá", AM:"Amazonas", BA:"Bahia", CE:"Ceará", DF:"Distrito Federal",
+    ES:"Espírito Santo", GO:"Goiás", MA:"Maranhão", MT:"Mato Grosso", MS:"Mato Grosso do Sul", MG:"Minas Gerais",
+    PA:"Pará", PB:"Paraíba", PR:"Paraná", PE:"Pernambuco", PI:"Piauí", RJ:"Rio de Janeiro", RN:"Rio Grande do Norte",
+    RS:"Rio Grande do Sul", RO:"Rondônia", RR:"Roraima", SC:"Santa Catarina", SP:"São Paulo", SE:"Sergipe", TO:"Tocantins"
+  };
+  var NIVEIS = { Consulta: "lvl-consulta", Operacao: "lvl-operacao", Gestao: "lvl-gestao" };
+  var NIVEIS_TXT = { Consulta: "Consulta", Operacao: "Operação", Gestao: "Gestão" };
+
+  var lista = [];
+  var adminUser = null;
+  var editando = null;
+  var anexoAtual = "";
+  var emAnalise = null;
+
+  /* ============================================================
+     HELPERS
+     ============================================================ */
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function iniciais(nome) {
+    var p = String(nome || "?").trim().split(/\s+/);
+    return ((p[0] || "?")[0] + (p.length > 1 ? p[p.length - 1][0] : "")).toUpperCase();
+  }
+  function mCpf(v) {
+    v = v.replace(/\D/g, "").slice(0, 11);
+    if (v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
+    if (v.length > 6) return v.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
+    if (v.length > 3) return v.replace(/(\d{3})(\d{0,3})/, "$1.$2");
+    return v;
+  }
+  function mFone(v) {
+    v = v.replace(/\D/g, "").slice(0, 11);
+    if (v.length > 10) return v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+    if (v.length > 6) return v.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+    if (v.length > 2) return v.replace(/(\d{2})(\d{0,5})/, "($1) $2");
+    return v;
+  }
+  function cpfOk(v) {
+    var n = String(v).replace(/\D/g, "");
+    if (n.length !== 11 || /^(\d)\1{10}$/.test(n)) return false;
+    var s, r, j, i;
+    for (j = 9; j < 11; j++) {
+      s = 0;
+      for (i = 0; i < j; i++) s += parseInt(n[i], 10) * (j + 1 - i);
+      r = (s * 10) % 11;
+      if (r === 10 || r === 11) r = 0;
+      if (r !== parseInt(n[j], 10)) return false;
+    }
+    return true;
+  }
+  function dataBR(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    if (isNaN(d)) return "—";
+    return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+  function hoje() { return new Date().toISOString().slice(0, 10); }
+
+  function avisar(msg, tipo) {
+    var d = document.createElement("div");
+    d.textContent = msg;
+    if (tipo) d.className = tipo;
+    $("toast").appendChild(d);
+    setTimeout(function () { d.remove(); }, 3600);
+  }
+  function confirmar(texto, cb) {
+    $("simTexto").textContent = texto;
+    $("modalSim").classList.add("open");
+    $("simSim").onclick = function () { $("modalSim").classList.remove("open"); cb(); };
+    $("simNao").onclick = function () { $("modalSim").classList.remove("open"); };
+  }
+
+  /* ============================================================
+     AUTENTICAÇÃO DO ADMINISTRADOR
+     A aba "Cadastrar-se" é pública. As demais exigem login.
+     ============================================================ */
+  function autenticado() {
+    return !!(adminUser && adminUser.perfil === "admin" && dcApi.getToken());
+  }
+  async function carregarUsuarios() {
+    var response = await dcApi.userRegistrations();
+    if (!response.ok) throw new Error(response.data.erro || "Não foi possível carregar os cadastros.");
+    lista = response.data.registrations || [];
+    render();
+  }
+  function abrirLogin(destino) {
+    abaDestino = destino;
+    $("loginSub").textContent = "Digite as credenciais de administrador para acessar \"" +
+      (destino === "config" ? "Configurações" : "Análise de Cadastros") + "\".";
+    $("loginErro").classList.remove("on");
+    $("loginErro").textContent = "";
+    $("loginSenha").value = "";
+    $("modalLogin").classList.add("open");
+    $("loginSenha").focus();
+  }
+  var abaDestino = "analise";
+
+  $("formLogin").onsubmit = async function (ev) {
+    ev.preventDefault();
+    var u = $("loginUser").value.trim();
+    var s = $("loginSenha").value;
+    var response = await dcApi.login(u, s);
+    var data = response.data || {};
+    if (!response.ok || !data.user || !data.token) {
+      $("loginErro").textContent = data.erro || "Login ou senha incorretos.";
+      $("loginErro").classList.add("on");
+      return;
+    }
+    if (data.user.perfil !== "admin") {
+      $("loginErro").textContent = "Esta área é exclusiva de administradores.";
+      $("loginErro").classList.add("on");
+      return;
+    }
+    localStorage.setItem("dcmt_token", data.token);
+    aplicarSessao(data.user);
+    $("modalLogin").classList.remove("open");
+    try { await carregarUsuarios(); }
+    catch (error) { avisar(error.message, "err"); }
+    irAba(abaDestino);
+    avisar("Bem-vindo, " + data.user.nome + ".", "ok");
+  };
+
+  $("loginCancelar").onclick = function () { $("modalLogin").classList.remove("open"); };
+
+  function aplicarSessao(user) {
+    adminUser = user;
+    $("quemSou").classList.remove("hidden");
+    $("btnSair").classList.remove("hidden");
+    $("btnEntrar").classList.add("hidden");
+    $("quemSou").querySelector("b").textContent = user.nome || user.usuario;
+    $("sessionInfo").textContent = "Administrador";
+    Array.prototype.forEach.call(document.querySelectorAll(".tab[data-restrito]"), function (t) {
+      t.classList.remove("locked");
+    });
+  }
+  function encerrarSessao() {
+    localStorage.removeItem("dcmt_token");
+    adminUser = null;
+    lista = [];
+    $("quemSou").classList.add("hidden");
+    $("btnSair").classList.add("hidden");
+    $("btnEntrar").classList.remove("hidden");
+    Array.prototype.forEach.call(document.querySelectorAll(".tab[data-restrito]"), function (t) {
+      t.classList.add("locked");
+    });
+  }
+
+  $("btnEntrar").onclick = function () { abrirLogin("analise"); };
+
+  $("btnSair").onclick = function () {
+    confirmar("Deseja encerrar a sessão de administrador?", function () {
+      dcApi.logout();
+      encerrarSessao();
+      resetarFormulario();
+      irAba("novo");
+      avisar("Sessão encerrada. As áreas restritas foram bloqueadas.");
+    });
+  };
+
+  /* ============================================================
+     NAVEGAÇÃO COM TRAVA POR SENHA
+     ============================================================ */
+  function irAba(nome) {
+    var tab = document.querySelector('.tab[data-view="' + nome + '"]');
+    if (tab && tab.dataset.restrito && !autenticado()) {
+      abrirLogin(nome);
+      return;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (t) { t.classList.remove("active"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".view"), function (v) { v.classList.remove("on"); });
+    if (tab) tab.classList.add("active");
+    var v = $(nome);
+    if (v) v.classList.add("on");
+    window.scrollTo({ top: 0 });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (tab) {
+    tab.onclick = function () { irAba(tab.dataset.view); };
+  });
+
+  /* ============================================================
+     FORMULÁRIO — perfil e máscaras
+     ============================================================ */
+  var selUF = document.querySelector('[name="estado"]');
+  selUF.innerHTML = '<option value="">Selecione...</option>' +
+    UFS.map(function (uf) { return '<option value="' + uf + '">' + uf + " — " + UFS_NOME[uf] + "</option>"; }).join("");
+
+  function perfilAtual() {
+    return document.querySelector('input[name="perfil"]:checked').value;
+  }
+  function sincronizarPerfil() {
+    var ehMun = perfilAtual() === "Municipal";
+    $("cardEstadual").classList.toggle("sel-esta", !ehMun);
+    $("cardMunicipal").classList.toggle("sel-mun", ehMun);
+    Array.prototype.forEach.call(document.querySelectorAll("[data-perfil]"), function (el) {
+      var alvo = el.dataset.perfil;
+      el.style.display = (alvo === "municipal") === ehMun ? "flex" : "none";
+    });
+    selUF.required = !ehMun;
+    document.querySelector('[name="municipio"]').required = ehMun;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="perfil"]'), function (r) {
+    r.onchange = sincronizarPerfil;
+  });
+  sincronizarPerfil();
+
+  var cpfEl = document.querySelector('[name="cpf"]');
+  cpfEl.oninput = function () { this.value = mCpf(this.value); };
+  [["telefone", mFone], ["telefoneAlt", mFone]].forEach(function (p) {
+    var el = document.querySelector('[name="' + p[0] + '"]');
+    el.oninput = function () { this.value = p[1](this.value); };
+  });
+  var ibgeEl = document.querySelector('[name="ibge"]');
+  ibgeEl.oninput = function () { this.value = this.value.replace(/\D/g, "").slice(0, 7); };
+
+  $("dropZone").onclick = function () { $("inputFile").click(); };
+  $("inputFile").onchange = function () {
+    anexoAtual = this.files[0] ? this.files[0].name : "";
+    $("fileName").innerHTML = anexoAtual
+      ? '<svg class="ico ok" viewBox="0 0 24 24"><use href="#s-file" /></svg> ' + esc(anexoAtual)
+      : "";
+  };
+
+  function limparErros() {
+    Array.prototype.forEach.call(document.querySelectorAll(".msg-erro"), function (m) {
+      m.classList.remove("on"); m.textContent = "";
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#formUser .erro"), function (i) { i.classList.remove("erro"); });
+  }
+  function erroEm(campo, msg) {
+    var m = document.querySelector('.msg-erro[data-erro="' + campo + '"]');
+    if (m) { m.textContent = msg; m.classList.add("on"); }
+    var el = document.querySelector('[name="' + campo + '"]');
+    if (el) { el.classList.add("erro"); el.focus(); }
+  }
+
+  /* ============================================================
+     SALVAR CADASTRO
+     ============================================================ */
+  $("formUser").onsubmit = async function (ev) {
+    ev.preventDefault();
+    limparErros();
+    var f = ev.target;
+    var perfil = f.perfil.value;
+    var cpf = f.cpf.value.trim();
+    var email = f.email.value.trim();
+    var nome = f.nome.value.trim();
+    var orgao = f.orgao.value.trim();
+    var municipio = f.municipio.value.trim();
+    var estado = f.estado.value;
+    var usuario = f.usuario.value.trim();
+    var senha = f.senha.value;
+
+    if (nome.length < 5) return erroEm("nome", "Informe o nome completo (mínimo 5 caracteres).");
+    if (!editando && !/^[a-zA-Z0-9._-]{3,40}$/.test(usuario)) return erroEm("usuario", "Informe um login válido (3 a 40 caracteres).");
+    if (!editando && senha.length < 12) return erroEm("senha", "A senha deve ter pelo menos 12 caracteres.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return erroEm("email", "E-mail inválido.");
+    if (!cpfOk(cpf)) return erroEm("cpf", "CPF inválido. Confira os dígitos.");
+    if (perfil === "Municipal" && municipio.length < 3) return erroEm("municipio", "Informe o município.");
+    if (perfil === "Estadual" && !estado) return erroEm("estado", "Selecione o estado (UF).");
+    if (orgao.length < 3) return erroEm("orgao", "Informe o órgão ou entidade.");
+    if (!f.declaracao.checked) return erroEm("declaracao", "É necessário confirmar a declaração.");
+
+    var dupCpf = lista.some(function (u) { return u.cpf === cpf && u.id !== editando; });
+    if (dupCpf) return erroEm("cpf", "Já existe um cadastro com este CPF.");
+    var dupEmail = lista.some(function (u) {
+      return u.email.toLowerCase() === email.toLowerCase() && u.id !== editando;
+    });
+    if (dupEmail) return erroEm("email", "Este e-mail já está cadastrado.");
+
+    var payload = {
+      usuario: usuario,
+      senha: senha,
+      nome: nome,
+      email: email,
+      cpf: cpf,
+      nascimento: f.nascimento.value,
+      telefone: f.telefone.value.trim(),
+      telefoneAlt: f.telefoneAlt.value.trim(),
+      perfil: perfil,
+      estado: perfil === "Estadual" ? estado : "",
+      municipio: perfil === "Municipal" ? municipio : "",
+      ibge: perfil === "Municipal" ? f.ibge.value.trim() : "",
+      regional: perfil === "Estadual" ? f.regional.value.trim() : "",
+      orgao: orgao,
+      setor: f.setor.value.trim(),
+      cargo: f.cargo.value.trim(),
+      matricula: f.matricula.value.trim(),
+      endereco: f.endereco.value.trim(),
+      nivel: f.nivel.value,
+      validade: f.validade.value,
+      responsavel: f.responsavel.value.trim(),
+      observacoes: f.observacoes.value.trim(),
+      anexo: anexoAtual,
+      declaracao: f.declaracao.checked
+    };
+
+    var saveButton = $("btnSalvar");
+    saveButton.disabled = true;
+    try {
+      var response = editando
+        ? await dcApi.updateUserRegistration(editando, payload)
+        : await dcApi.createUserRegistration(payload);
+      if (!response.ok) {
+        avisar(response.data.erro || "Não foi possível salvar a solicitação.", "err");
+        return;
+      }
+      var foiEdicao = Boolean(editando);
+      resetarFormulario();
+      avisar(foiEdicao ? "Cadastro atualizado." : "Solicitação enviada. Aguarde a análise da administração.", "ok");
+      if (autenticado()) await carregarUsuarios();
+    } catch (error) {
+      avisar(error.message || "Falha ao conectar ao servidor.", "err");
+    } finally {
+      saveButton.disabled = false;
+    }
+  };
+
+  $("btnCancelar").onclick = function () { resetarFormulario(); limparErros(); };
+
+  function resetarFormulario() {
+    editando = null;
+    anexoAtual = "";
+    $("formUser").reset();
+    $("formUser").usuario.disabled = false;
+    $("formUser").senha.disabled = false;
+    $("fileName").textContent = "";
+    sincronizarPerfil();
+    $("formTitle").textContent = "Cadastro de usuário";
+    $("btnSalvarTxt").textContent = "Enviar solicitação";
+    $("btnSalvar").querySelector("use").setAttribute("href", "#s-send");
+    $("formSub").innerHTML = "Preencha seus dados. A solicitação será analisada pela administração antes da liberação do acesso. Campos com <span class=\"req\">*</span> são obrigatórios.";
+    limparErros();
+  }
+
+  /* ============================================================
+     RENDERIZAÇÃO
+     ============================================================ */
+  function render() {
+    if (!autenticado()) {
+      $("badgePend").classList.add("hidden");
+      return;
+    }
+    $("stPendente").textContent = lista.filter(function (u) { return u.status === "Pendente"; }).length;
+    $("stAprovado").textContent = lista.filter(function (u) { return u.status === "Aprovado"; }).length;
+    $("stRecusado").textContent = lista.filter(function (u) { return u.status === "Recusado"; }).length;
+    $("stEstadual").textContent = lista.filter(function (u) { return u.perfil === "Estadual"; }).length;
+    $("stMunicipal").textContent = lista.filter(function (u) { return u.perfil === "Municipal"; }).length;
+
+    var pend = $("stPendente").textContent;
+    $("badgePend").textContent = pend;
+    $("badgePend").classList.toggle("hidden", pend === "0");
+
+    renderTabela();
+  }
+
+  function filtrar() {
+    var busca = $("busca").value.trim().toLowerCase();
+    var fs = $("fStatus").value;
+    var fp = $("fPerfil").value;
+    var fn = $("fNivel").value;
+    var fx = $("fSituacao").value;
+    return lista.filter(function (u) {
+      var alvo = [u.nome, u.cpf, u.email, u.orgao, u.setor, u.municipio, u.estado, u.matricula, u.cargo]
+        .join(" ").toLowerCase();
+      if (busca && alvo.indexOf(busca) === -1) return false;
+      if (fs && u.status !== fs) return false;
+      if (fp && u.perfil !== fp) return false;
+      if (fn && u.nivel !== fn) return false;
+      if (fx && u.situacao !== fx) return false;
+      return true;
+    }).sort(function (a, b) {
+      var ordem = { Pendente: 0, Aprovado: 1, Recusado: 2 };
+      var d = ordem[a.status] - ordem[b.status];
+      return d !== 0 ? d : new Date(b.criadoEm) - new Date(a.criadoEm);
+    });
+  }
+
+  function renderTabela() {
+    var dados = filtrar();
+    var tbody = $("tbody");
+    $("vazio").style.display = dados.length ? "none" : "block";
+    $("contadorLista").textContent = dados.length
+      ? dados.length + " registro(s) exibido(s) de " + lista.length + "."
+      : "Nenhum registro.";
+
+    if (!dados.length) { tbody.innerHTML = ""; return; }
+
+    tbody.innerHTML = dados.map(function (u) {
+      var local = u.perfil === "Estadual"
+        ? "UF: " + esc(u.estado) + (u.regional ? " — " + esc(u.regional) : "")
+        : "Município: " + esc(u.municipio) + (u.ibge ? " (" + esc(u.ibge) + ")" : "");
+      var statusPill = u.status === "Aprovado" ? "aprovado" : u.status === "Recusado" ? "recusado" : "pendente";
+      return "<tr>" +
+        '<td><div class="name-cell"><div class="ava ' + (u.perfil === "Municipal" ? "mun" : "") + '">' + esc(iniciais(u.nome)) + "</div>" +
+          "<div><b>" + esc(u.nome) + '</b><div class="sub-cell">@' + esc(u.usuario) + " · " + esc(u.cargo || u.matricula || "sem cargo") + "</div></div></div></td>" +
+        '<td><svg class="dl-ico" viewBox="0 0 24 24"><use href="#s-mail" /></svg>' + esc(u.email) +
+          '<div class="sub-cell"><svg class="dl-ico" viewBox="0 0 24 24"><use href="#s-phone" /></svg>' + esc(u.telefone || "—") + "</div></td>" +
+        '<td><span class="pill ' + u.perfil.toLowerCase() + '">' + u.perfil + "</span></td>" +
+        '<td><svg class="dl-ico" viewBox="0 0 24 24"><use href="#s-building" /></svg>' + esc(u.orgao) +
+          '<div class="sub-cell"><svg class="dl-ico" viewBox="0 0 24 24"><use href="#s-pin" /></svg>' + local + "</div></td>" +
+        '<td><span class="pill ' + (NIVEIS[u.nivel] || "") + '">' + (NIVEIS_TXT[u.nivel] || u.nivel) + "</span></td>" +
+        '<td><span class="pill ' + statusPill + '">' + u.status + "</span></td>" +
+        '<td><span class="pill ' + u.situacao.toLowerCase() + '">' + u.situacao + "</span></td>" +
+        '<td class="sub-cell">' + dataBR(u.criadoEm) + "</td>" +
+        '<td><div class="actions">' +
+          '<button class="btn ' + (u.status === "Pendente" ? "warn sm" : "ghost sm") + '" data-analisar="' + u.id + '" title="Analisar cadastro"' + (u.status !== "Pendente" ? " disabled" : "") + '>' +
+            '<svg class="ico" viewBox="0 0 24 24"><use href="#s-shield-check" /></svg>' + (u.status === "Pendente" ? "Analisar" : u.status) + "</button>" +
+          '<button class="btn ghost sm" data-detalhe="' + u.id + '" title="Ver detalhes">' +
+            '<svg class="ico" viewBox="0 0 24 24"><use href="#s-eye" /></svg>Detalhes</button>' +
+          '<button class="btn ghost sm" data-editar="' + u.id + '" title="Editar cadastro"' + (u.status !== "Pendente" ? " disabled" : "") + '>' +
+            '<svg class="ico" viewBox="0 0 24 24"><use href="#s-edit" /></svg>Editar</button>' +
+          '<button class="btn ghost sm" data-excluir="' + u.id + '" title="Excluir cadastro"' + (u.status === "Aprovado" ? " disabled" : "") + '>' +
+            '<svg class="ico" viewBox="0 0 24 24"><use href="#s-trash" /></svg>Excluir</button>' +
+        "</div></td>" +
+        "</tr>";
+    }).join("");
+
+    bind("data-analisar", function (id) { abrirAnalise(id); });
+    bind("data-detalhe", function (id) { abrirDetalhe(id); });
+    bind("data-editar", function (id) { editar(id); });
+    bind("data-excluir", async function (id) {
+      var u = achar(id);
+      confirmar('Excluir definitivamente a solicitação de "' + u.nome + '"?', async function () {
+        var response = await dcApi.deleteUserRegistration(id);
+        if (!response.ok) { avisar(response.data.erro || "Não foi possível excluir.", "err"); return; }
+        await carregarUsuarios();
+        avisar("Solicitação excluída.", "ok");
+      });
+    });
+  }
+
+  function bind(attr, fn) {
+    Array.prototype.forEach.call($("tbody").querySelectorAll("[" + attr + "]"), function (b) {
+      b.onclick = function () { fn(b.getAttribute(attr)); };
+    });
+  }
+  function achar(id) { return lista.find(function (u) { return u.id === id; }); }
+
+  ["busca", "fStatus", "fPerfil", "fNivel", "fSituacao"].forEach(function (id) {
+    $(id).addEventListener("input", renderTabela);
+  });
+
+  /* ============================================================
+     ANÁLISE / APROVAÇÃO
+     ============================================================ */
+  function dlSec(txt, icone) {
+    return '<div class="dl-sec"><svg class="dl-ico" viewBox="0 0 24 24"><use href="' + icone + '" /></svg>' + txt + "</div>";
+  }
+  function linhas(u) {
+    return [
+      ["Identificação", [
+        ["Nome completo", esc(u.nome)],
+        ["CPF", esc(u.cpf)],
+        ["Nascimento", u.nascimento ? dataBR(u.nascimento) : "—"],
+        ["E-mail", esc(u.email)],
+        ["Telefone", esc(u.telefone || "—") + (u.telefoneAlt ? " / " + esc(u.telefoneAlt) : "")]
+      ]],
+      ["Vínculo institucional", [
+        ["Esfera", '<span class="pill ' + u.perfil.toLowerCase() + '">' + u.perfil + "</span>"],
+        ["Estado (UF)", u.perfil === "Estadual" ? esc(u.estado) + (u.regional ? " — " + esc(u.regional) : "") : "—"],
+        ["Município", u.perfil === "Municipal" ? esc(u.municipio) + (u.ibge ? " (IBGE " + esc(u.ibge) + ")" : "") : "—"],
+        ["Órgão / Entidade", esc(u.orgao)],
+        ["Setor / Departamento", esc(u.setor || "—")],
+        ["Cargo / Função", esc(u.cargo || "—")],
+        ["Matrícula", esc(u.matricula || "—")],
+        ["Endereço", esc(u.endereco || "—")]
+      ]],
+      ["Acesso solicitado", [
+        ["Nível informado", '<span class="pill ' + (NIVEIS[u.nivel] || "") + '">' + (NIVEIS_TXT[u.nivel] || u.nivel) + "</span>"],
+        ["Validade", u.validade ? dataBR(u.validade) : "Tempo indeterminado"],
+        ["Responsável", esc(u.responsavel || "—")]
+      ]],
+      ["Solicitação", [
+        ["Origem", esc(u.origem || "—")],
+        ["Recebido em", dataBR(u.criadoEm)],
+        ["Anexo", esc(u.anexo || "nenhum")],
+        ["Observações", esc(u.observacoes || "—")]
+      ]]
+    ];
+  }
+
+  var SEC_ICONE = ["#s-user", "#s-building", "#s-key", "#s-clipboard"];
+  function htmlDl(u) {
+    return linhas(u).map(function (sec, i) {
+      return dlSec(sec[0], SEC_ICONE[i]) +
+        sec[1].map(function (l) { return "<dt>" + l[0] + "</dt><dd>" + l[1] + "</dd>"; }).join("");
+    }).join("");
+  }
+
+  function abrirAnalise(id) {
+    if (!autenticado()) { abrirLogin("analise"); return; }
+    var u = achar(id);
+    if (!u) return;
+    emAnalise = u;
+    $("anTitulo").textContent = "Analisar cadastro de " + u.nome;
+    $("anDados").innerHTML = '<dl class="dl">' + htmlDl(u) + "</dl>";
+    $("anNivel").value = u.nivel;
+    $("anParecer").value = u.parecer || "";
+    $("anErro").classList.remove("on");
+    $("anAprovarTxt").textContent = u.status === "Aprovado" ? "Confirmar aprovação" : "Aprovar cadastro";
+    $("modalAnalise").classList.add("open");
+  }
+  $("anFechar").onclick = function () { $("modalAnalise").classList.remove("open"); };
+
+  async function decidir(status) {
+    if (!autenticado()) { $("modalAnalise").classList.remove("open"); abrirLogin("analise"); return; }
+    var parecer = $("anParecer").value.trim();
+    if (parecer.length < 5) {
+      $("anErro").classList.add("on");
+      $("anParecer").focus();
+      return;
+    }
+    var u = emAnalise;
+    var response = await dcApi.decideUserRegistration(u.id, {
+      status: status,
+      parecer: parecer,
+      nivel: $("anNivel").value
+    });
+    if (!response.ok) { avisar(response.data.erro || "Não foi possível registrar a decisão.", "err"); return; }
+    $("modalAnalise").classList.remove("open");
+    await carregarUsuarios();
+    avisar(
+      status === "Aprovado"
+        ? "Cadastro de " + u.nome + " aprovado. Acesso liberado."
+        : "Cadastro de " + u.nome + " recusado.",
+      status === "Aprovado" ? "ok" : "err"
+    );
+  }
+  $("anAprovar").onclick = function () { decidir("Aprovado"); };
+  $("anRecusar").onclick = function () {
+    var u = emAnalise;
+    confirmar('Recusar o cadastro de "' + u.nome + '"? O solicitante verá o parecer informado.', function () {
+      decidir("Recusado");
+    });
+  };
+
+  function abrirDetalhe(id) {
+    if (!autenticado()) { abrirLogin("analise"); return; }
+    var u = achar(id);
+    if (!u) return;
+    $("deTitulo").textContent = u.nome;
+    $("deSub").textContent = "Status: " + u.status + " | Situação: " + u.situacao +
+      (u.avaliadoEm ? " | avaliado em " + dataBR(u.avaliadoEm) + " por " + u.avaliadoPor : "");
+    $("deDados").innerHTML = '<dl class="dl">' + htmlDl(u) +
+      dlSec("Decisão", "#s-flag") +
+      "<dt>Parecer</dt><dd>" + (u.parecer ? esc(u.parecer) : "—") + "</dd></dl>";
+
+    var hist = (u.historico || []).slice().reverse();
+    $("deHistorico").innerHTML = hist.length
+      ? hist.map(function (h) {
+          var classe = /aprov/i.test(h.acao) ? "ok" : /recus|exclu/i.test(h.acao) ? "no" : "";
+          var icone = classe === "ok" ? "#s-check-circle" : classe === "no" ? "#s-x-circle" : "#s-clock";
+          return '<li class="' + classe + '">' +
+            '<b><svg class="dl-ico" viewBox="0 0 24 24"><use href="' + icone + '" /></svg>' + esc(h.acao) + "</b> — " + esc(h.autor) +
+            '<div class="t">' + dataBR(h.data) + "</div>" +
+            (h.detalhe ? "<div>" + esc(h.detalhe) + "</div>" : "") + "</li>";
+        }).join("")
+      : '<li>Sem histórico registrado.</li>';
+    $("modalDetalhe").classList.add("open");
+  }
+  $("deFechar").onclick = function () { $("modalDetalhe").classList.remove("open"); };
+
+  /* ============================================================
+     EDITAR
+     ============================================================ */
+  function editar(id) {
+    if (!autenticado()) { abrirLogin("analise"); return; }
+    var u = achar(id);
+    if (!u) return;
+    editando = id;
+    var f = $("formUser");
+    f.nome.value = u.nome;
+    f.email.value = u.email;
+    f.cpf.value = u.cpf;
+    f.nascimento.value = u.nascimento || "";
+    f.telefone.value = u.telefone || "";
+    f.telefoneAlt.value = u.telefoneAlt || "";
+    f.estado.value = u.estado || "";
+    f.municipio.value = u.municipio || "";
+    f.ibge.value = u.ibge || "";
+    f.regional.value = u.regional || "";
+    f.orgao.value = u.orgao;
+    f.setor.value = u.setor || "";
+    f.cargo.value = u.cargo || "";
+    f.matricula.value = u.matricula || "";
+    f.endereco.value = u.endereco || "";
+    f.nivel.value = u.nivel;
+    f.validade.value = u.validade || "";
+    f.responsavel.value = u.responsavel || "";
+    f.observacoes.value = u.observacoes || "";
+    f.declaracao.checked = true;
+    var radio = f.querySelector('input[name="perfil"][value="' + u.perfil + '"]');
+    if (radio) radio.checked = true;
+    f.usuario.value = u.usuario || "";
+    f.senha.value = "";
+    f.usuario.disabled = true;
+    f.senha.disabled = true;
+    anexoAtual = u.anexo || "";
+    $("fileName").innerHTML = anexoAtual
+      ? '<svg class="ico ok" viewBox="0 0 24 24"><use href="#s-file" /></svg> ' + esc(anexoAtual)
+      : "";
+    sincronizarPerfil();
+
+    $("formTitle").textContent = "Editando cadastro de " + u.nome;
+    $("btnSalvarTxt").textContent = "Salvar alterações";
+    $("btnSalvar").querySelector("use").setAttribute("href", "#s-save");
+    $("formSub").innerHTML = "As alterações entram no histórico do cadastro. <span class=\"req\">*</span> Continue preenchendo os campos obrigatórios.";
+    irAba("novo");
+  }
+
+  /* ============================================================
+     APROVAR TODOS
+     ============================================================ */
+  $("btnAprovarTodos").onclick = function () {
+    if (!autenticado()) { abrirLogin("analise"); return; }
+    var pend = lista.filter(function (u) { return u.status === "Pendente"; });
+    if (!pend.length) { avisar("Não há cadastros pendentes.", "err"); return; }
+    confirmar("Aprovar automaticamente " + pend.length + " cadastro(s) pendente(s)?", async function () {
+      var aprovados = 0;
+      for (var i = 0; i < pend.length; i++) {
+        var response = await dcApi.decideUserRegistration(pend[i].id, {
+          status: "Aprovado",
+          nivel: pend[i].nivel,
+          parecer: "Aprovado em lote pela administração."
+        });
+        if (!response.ok) {
+          avisar(response.data.erro || "Falha ao aprovar " + pend[i].nome + ".", "err");
+          break;
+        }
+        aprovados++;
+      }
+      await carregarUsuarios();
+      if (aprovados) avisar(aprovados + " cadastro(s) aprovado(s).", "ok");
+    });
+  };
+
+  /* ============================================================
+     EXPORTAÇÃO
+     ============================================================ */
+  $("btnCsv").onclick = function () {
+    if (!autenticado()) { abrirLogin("analise"); return; }
+    var dados = filtrar();
+    if (!dados.length) { avisar("Nada para exportar.", "err"); return; }
+    var cab = ["Nome", "CPF", "E-mail", "Telefone", "Perfil", "Estado", "Municipio", "IBGE", "Orgao", "Setor",
+      "Cargo", "Matricula", "Endereco", "Nivel", "Validade", "Status", "Situacao", "Parecer", "Origem", "Recebido em"];
+    var linhasCsv = dados.map(function (u) {
+      return [u.nome, u.cpf, u.email, u.telefone, u.perfil, u.estado, u.municipio, u.ibge, u.orgao, u.setor,
+        u.cargo, u.matricula, u.endereco, NIVEIS_TXT[u.nivel] || u.nivel, u.validade, u.status, u.situacao,
+        u.parecer, u.origem, dataBR(u.criadoEm)];
+    });
+    var csv = [cab].concat(linhasCsv).map(function (l) {
+      return l.map(function (c) { return '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"'; }).join(";");
+    }).join("\r\n");
+
+    var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "cadastros-" + hoje() + ".csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    avisar("CSV gerado com " + dados.length + " registro(s).", "ok");
+  };
+
+  /* ============================================================
+     CONFIGURAÇÕES
+     ============================================================ */
+  $("btnBackup").onclick = function () {
+    if (!autenticado()) { abrirLogin("config"); return; }
+    var blob = new Blob([JSON.stringify({ versao: 2, geradoEm: new Date().toISOString(), usuarios: lista }, null, 2)],
+      { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "backup-cadastros-" + hoje() + ".json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    avisar("Backup gerado.", "ok");
+  };
+
+  /* ============================================================
+     INICIALIZAÇÃO — página abre no cadastro público
+     ============================================================ */
+  sincronizarPerfil();
+  render();
+  (async function restaurarSessao() {
+    if (!dcApi.getToken()) { encerrarSessao(); return; }
+    try {
+      var response = await dcApi.me();
+      if (!response.ok || !response.data.user || response.data.user.perfil !== "admin") {
+        encerrarSessao();
+        return;
+      }
+      aplicarSessao(response.data.user);
+      await carregarUsuarios();
+    } catch (error) {
+      encerrarSessao();
+      avisar("Não foi possível validar a sessão administrativa.", "err");
+    }
+  })();
+})();
+</script>
+</body>
+</html>

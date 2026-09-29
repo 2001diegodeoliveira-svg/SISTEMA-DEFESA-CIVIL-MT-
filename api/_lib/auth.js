@@ -1,88 +1,68 @@
 /* ============================================================
    Autenticação — JWT + senha com hash (bcryptjs).
-   Usuários semeados via SEED_USERS (env JSON) ou padrão de demo.
+  Bootstrap opcional de admin via SEED_USERS; usuários comuns exigem cadastro aprovado.
    ============================================================ */
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
-const { MUNICIPIOS_SEED } = require('./municipios');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
 const JWT_EXP = process.env.JWT_EXP || '12h';
 
-/* Usuários padrão de demonstração (credenciais abaixo — só para dev).
-   Em produção, defina SEED_USERS e JWT_SECRET no ambiente. */
-const DEFAULT_SEED = [
-  { usuario: 'defesa', senha: 'defesa123', nome: 'Defesa Civil', perfil: 'admin',     municipio: 'Cuiabá' },
-  { usuario: 'admin',  senha: 'defesa123', nome: 'Coordenador', perfil: 'admin',     municipio: 'Cuiabá' },
-  { usuario: 'operador', senha: 'defesa123', nome: 'Operador',   perfil: 'avancado',  municipio: 'Cuiabá' },
-  { usuario: 'comum',  senha: 'defesa123', nome: 'Cidadão',     perfil: 'comum',     municipio: '' },
-  { usuario: 'Dev@2026', senha: 'defesa123', nome: 'Usuário Geral', perfil: 'comum', municipio: '' },
-  ...MUNICIPIOS_SEED,
-];
-
 function seedUsers() {
   try {
-    if (process.env.SEED_USERS) return JSON.parse(process.env.SEED_USERS);
+    const users = JSON.parse(process.env.SEED_USERS || '[]');
+    return Array.isArray(users) ? users : [];
   } catch {}
-  return DEFAULT_SEED;
+  return [];
 }
 
 async function ensureSeededUsers() {
-  let users = await readCollection('users');
-  if (users && users.length) return users;
-
-  const seed = seedUsers();
-  users = [];
-  for (const u of seed) {
-    users.push({
-      id: 'U' + (users.length + 1),
-      usuario: u.usuario,
-      senhaHash: bcrypt.hashSync(u.senha, 10),
-      nome: u.nome,
-      perfil: u.perfil,
-      municipio: u.municipio || '',
-      criadoEm: new Date().toISOString(),
-    });
+  const users = await readCollection('users');
+  const configuredAdmins = seedUsers().filter((user) => user.perfil === 'admin' && user.usuario && user.senha);
+  let changed = false;
+  for (const configured of configuredAdmins) {
+    const index = users.findIndex((user) => String(user.usuario).toLowerCase() === String(configured.usuario).toLowerCase());
+    const existing = index >= 0 ? users[index] : null;
+    if (existing && existing.ativo !== false && existing.perfil === 'admin' && bcrypt.compareSync(configured.senha, existing.senhaHash)) continue;
+    const account = {
+      ...(existing || {}),
+      id: existing ? existing.id : 'U' + (users.length + 1),
+      usuario: configured.usuario,
+      senhaHash: bcrypt.hashSync(configured.senha, 12),
+      nome: configured.nome || existing && existing.nome || '',
+      perfil: 'admin',
+      municipio: configured.municipio || '',
+      ativo: true,
+      cadastroId: null,
+      criadoEm: existing && existing.criadoEm || new Date().toISOString(),
+    };
+    if (index >= 0) users[index] = account;
+    else users.push(account);
+    changed = true;
   }
-  await writeCollection('users', users);
+  if (changed) await writeCollection('users', users);
   return users;
 }
 
 async function findByCredentials(usuario, senha) {
   const users = await ensureSeededUsers();
   const u = users.find(x => x.usuario === usuario);
-  if (!u) return null;
+  if (!isLoginEligible(u)) return null;
   if (!bcrypt.compareSync(senha, u.senhaHash)) return null;
   return u;
 }
 
-/* Login com auto-provisão: se a conta não existe no store persistido mas as
-   credenciais batem com o seed padrão (ex.: store antiga/corrompida que só
-   tinha as contas de demonstração), cria a conta e autentica. Garante que
-   os 142 municípios SEMPRE consigam entrar como gestor municipal. */
-async function findOrProvisionUser(usuario, senha) {
-  const users = await ensureSeededUsers();
-  const u = users.find(x => x.usuario === usuario);
-  if (u) {
-    if (!bcrypt.compareSync(senha, u.senhaHash)) return null;
-    return u;
+function isLoginEligible(user) {
+  if (!user || user.ativo === false) return false;
+  if (user.perfil === 'admin') {
+    return seedUsers().some((seed) => seed.perfil === 'admin' &&
+      String(seed.usuario).toLowerCase() === String(user.usuario).toLowerCase());
   }
-  const seed = seedUsers().find(x => x.usuario === usuario && x.senha === senha && x.perfil === 'municipal');
-  if (!seed) return null;
-  const novo = {
-    id: 'U' + (users.length + 1),
-    usuario: seed.usuario,
-    senhaHash: bcrypt.hashSync(seed.senha, 10),
-    nome: seed.nome,
-    perfil: seed.perfil,
-    municipio: seed.municipio || '',
-    criadoEm: new Date().toISOString(),
-  };
-  users.push(novo);
-  try { await writeCollection('users', users); } catch (e) { /* store somente leitura: autentica em memória */ }
-  return novo;
+  return Boolean(user.cadastroId);
 }
+
+const findOrProvisionUser = findByCredentials;
 
 function signToken(user) {
   return jwt.sign(
@@ -115,6 +95,7 @@ module.exports = {
   ensureSeededUsers,
   findByCredentials,
   findOrProvisionUser,
+  isLoginEligible,
   signToken,
   verifyToken,
   publicUser,

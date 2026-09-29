@@ -45,6 +45,21 @@
         // Alertas
         alertas: function () { return request('alertas'); },
 
+        // Solicitações de acesso e administração de usuários
+        userRegistrations: function () { return request('user-registrations'); },
+        createUserRegistration: function (data) {
+            return request('user-registrations', { method: 'POST', body: data });
+        },
+        decideUserRegistration: function (id, decision) {
+            return request('user-registrations/' + encodeURIComponent(id), { method: 'PATCH', body: decision });
+        },
+        updateUserRegistration: function (id, data) {
+            return request('user-registrations/' + encodeURIComponent(id), { method: 'PUT', body: data });
+        },
+        deleteUserRegistration: function (id) {
+            return request('user-registrations/' + encodeURIComponent(id), { method: 'DELETE' });
+        },
+
         // Ocorrências (Waze)
         reports: function () { return request('reports'); },
         createReport: function (data) { return request('reports', { method: 'POST', body: data }); },

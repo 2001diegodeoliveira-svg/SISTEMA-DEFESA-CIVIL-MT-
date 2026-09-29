@@ -131,7 +131,7 @@
         if (SESSION.perfil === 'comum') { location.href = 'alertas.html'; return; }
         CAN_EDIT = SESSION.perfil === 'municipal';
         IS_MUNICIPAL = SESSION.perfil === 'municipal';
-        IS_ESTADUAL = SESSION.perfil === 'admin';
+        IS_ESTADUAL = SESSION.perfil === 'admin' || SESSION.perfil === 'avancado';
         dcRenderUserArea();
 
         if (IS_MUNICIPAL) {
@@ -280,8 +280,10 @@
     /* ============ abas ============ */
     function renderTabs() {
         var nav = $('tabsNav');
-        var visaoBtn = '<button class="tab' + (curSec === 'visao' ? ' active' : '') + '" data-sec="visao">' +
-            '<i data-lucide="layout-dashboard"></i><span>Visão Geral</span></button>';
+        var visaoBtn = IS_ESTADUAL
+            ? '<button class="tab' + (curSec === 'visao' ? ' active' : '') + '" data-sec="visao">' +
+                '<i data-lucide="layout-dashboard"></i><span>Visão Geral</span></button>'
+            : '';
         nav.innerHTML = visaoBtn + SECOES.map(function (s) {
             var n = Array.isArray(DOC.secoes[s.id]) ? DOC.secoes[s.id].length : 0;
             var badge = s.kind === 'single' ? (n ? '<em>OK</em>' : '') : (n ? '<em>' + n + '</em>' : '');
@@ -539,8 +541,8 @@
         dcApi.gestaoVisaoGeral().then(function (r) {
             if (!r.ok || !r.data || !r.data.ok || !r.data.municipios) { erroApi(r, 'Falha ao carregar o panorama estadual. Verifique a conexão com o servidor.'); return; }
             renderVisaoEstadual(r.data);
-        }).catch(function () {
-            loadingErro('Falha ao carregar o panorama estadual. Verifique a conexão com o servidor.');
+        }).catch(function (e) {
+            loadingErro('Falha ao montar o panorama estadual' + (e && e.message ? ': ' + e.message : '.'));
         });
     }
 
@@ -617,7 +619,13 @@
 
         $('panelArea').innerHTML = html;
         if (window.lucide) lucide.createIcons();
-        montarMapaVisao(dado);
+        try { montarMapaVisao(dado); } catch (e) { mapaIndisponivel($('veMap')); }
+    }
+
+    function mapaIndisponivel(el) {
+        if (!el) return;
+        el.innerHTML = '<div class="empty" style="padding:14px 6px;"><i data-lucide="map-off"></i> Mapa indisponível.</div>';
+        if (window.lucide) lucide.createIcons();
     }
 
     function corMapa(pre) {
@@ -631,6 +639,7 @@
     function montarMapaVisao(dado) {
         var el = $('veMap');
         if (!el) return;
+        if (!window.L) { mapaIndisponivel(el); return; }
         if (window.veMapInst) { window.veMapInst.remove(); window.veMapInst = null; }
         var m = L.map(el, { zoomControl: true, scrollWheelZoom: false }).setView([-12.8, -55.5], 5);
         window.veMapInst = m;
