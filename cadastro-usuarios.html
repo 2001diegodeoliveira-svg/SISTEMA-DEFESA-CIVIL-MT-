@@ -399,7 +399,29 @@
     .dl { grid-template-columns: 1fr; gap: 2px 0; }
     .dl dd { margin-bottom: 8px; }
   }
+
+  /* ============ MODO PÚBLICO X ADMINISTRAÇÃO ============ */
+  /* Por padrão a página é pública (só formulário de cadastro).
+     O administrador abre com ?admin=1 para ver login, análise e configurações. */
+  .admin-link, .pub-link {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: var(--muted); font-size: .78rem; text-decoration: none;
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px;
+  }
+  .admin-link:hover, .pub-link:hover { color: var(--text); border-color: var(--accent); }
+  html.somente-cadastro .tab.locked,
+  html.somente-cadastro #btnEntrar,
+  html.somente-cadastro #btnSair,
+  html.somente-cadastro #quemSou { display: none !important; }
+  html.somente-cadastro .admin-link { display: inline-flex; }
+  html.somente-cadastro .pub-link { display: none !important; }
+  html.modo-admin .admin-link { display: none !important; }
+  html.modo-admin .pub-link { display: inline-flex; }
 </style>
+<script>
+  /* Página pública por padrão; ?admin=1 libera a área administrativa. */
+  document.documentElement.classList.add(/[?&]admin=1/.test(location.search) ? 'modo-admin' : 'somente-cadastro');
+</script>
 </head>
 <body>
 
@@ -493,6 +515,12 @@
           <svg class="ico" viewBox="0 0 24 24"><use href="#s-settings" /></svg>Configurações
         </button>
       </div>
+      <a class="pub-link" href="cadastro-usuarios.html">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-send" /></svg>Página pública
+      </a>
+      <a class="admin-link" href="cadastro-usuarios.html?admin=1">
+        <svg class="ico" viewBox="0 0 24 24"><use href="#s-lock" /></svg>Administração
+      </a>
       <div class="who hidden" id="quemSou">
         <div class="av">
           <svg class="ico" viewBox="0 0 24 24"><use href="#s-shield-check" /></svg>
@@ -1204,7 +1232,11 @@
       avisar(foiEdicao ? "Cadastro atualizado." : "Solicitação enviada. Aguarde a análise da administração.", "ok");
       if (autenticado()) await carregarUsuarios();
     } catch (error) {
-      avisar(error.message || "Falha ao conectar ao servidor.", "err");
+      var msg = "Falha ao conectar com o servidor. Verifique sua conexão e tente novamente.";
+      if (/failed to fetch|load failed|networkerror|typeerror/i.test(String(error && error.message))) {
+        msg = "Falha ao conectar com o servidor. Abra o sistema pela URL http://localhost:3000 (ou o endereço publicado) em vez de abrir o arquivo direto.";
+      }
+      avisar(msg, "err");
     } finally {
       saveButton.disabled = false;
     }
