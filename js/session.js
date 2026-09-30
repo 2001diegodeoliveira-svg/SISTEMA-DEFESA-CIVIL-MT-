@@ -34,18 +34,19 @@ function dcLogout() {
     location.reload();
 }
 
-/* Autentica no backend e guarda token + perfil.
-   Retorna { ok, erro } para a página de login tratar. */
+/* Valida as credenciais no backend. O segundo fator é obrigatório: o login
+   devolve um desafio de 2FA e NÃO emite token. A sessão só é criada depois
+   da confirmação do código (auth/totp/verify ou auth/totp/activate).
+   Retorna { ok:true, desafio, setup, user } para a página tratar o segundo fator. */
 async function dcLogin(usuario, senha) {
     if (window.dcApi && window.dcApi.login) {
         try {
             const r = await window.dcApi.login(usuario, senha);
-            if (r.ok && r.data && r.data.token) {
-                localStorage.setItem('dcmt_token', r.data.token);
-                localStorage.setItem('dcmt_session', JSON.stringify(r.data.user));
-                return { ok: true, user: r.data.user };
+            const d = r.data || {};
+            if (r.ok && d.desafio) {
+                return { ok: true, desafio: d.desafio, setup: !!d.setup, user: d.user || null };
             }
-            return { ok: false, erro: (r.data && r.data.erro) || 'Credenciais inválidas.' };
+            return { ok: false, erro: d.erro || 'Credenciais inválidas.' };
         } catch (e) {
             return { ok: false, erro: 'Falha ao conectar com o servidor de autenticação.' };
         }

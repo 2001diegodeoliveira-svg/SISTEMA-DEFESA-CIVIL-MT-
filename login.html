@@ -334,29 +334,10 @@
                     <div class="passo-voltar"><a id="voltarCredenciais">Voltar e corrigir usuário/senha</a></div>
                 </div>
 
-                <!-- PASSO 2b — Convite para ativar o autenticador (conta sem 2FA) -->
-                <div class="passo" id="passo-02b">
-                    <div class="segundo-fator-box" style="margin-bottom:18px;">
-                        <i data-lucide="key-round"></i>
-                        <div>
-                            <h3>Autenticação validada!</h3>
-                            <p>Sua conta ainda não usa o Google Authenticator. Ative o segundo fator para proteger seu acesso ao painel operacional.</p>
-                        </div>
-                    </div>
-
-                    <button class="btn" id="ativar2faBtn">
-                        <i data-lucide="smartphone"></i> ATIVAR GOOGLE AUTHENTICATOR
-                    </button>
-                    <button class="btn secundario" id="entrarSem2faBtn">
-                        <i data-lucide="log-in"></i> ENTRAR NO PAINEL AGORA
-                    </button>
-                    <div class="passo-voltar"><a id="voltarCredenciais2">Voltar</a></div>
-                </div>
-
-                <!-- PASSO 3 — Configuração do Google Authenticator -->
+                <!-- PASSO 3 — Configuração do Google Authenticator (primeiro acesso) -->
                 <div class="passo" id="passo-03">
-                    <div class="passo-titulo">Configurar Google Authenticator</div>
-                    <p class="passo-desc">Escaneie o QR code com o aplicativo Google Authenticator (Android/iPhone) ou digite o segredo manualmente. Depois informe o código exibido para confirmar.</p>
+                    <div class="passo-titulo">Vincular o Google Authenticator</div>
+                    <p class="passo-desc">Credenciais confirmadas. Para entrar no painel, vincule seu celular: escaneie o QR code e informe o código temporário gerado pelo aplicativo.</p>
 
                     <div class="qr-wrap">
                         <div class="qr-box"><img id="qrImg" alt="QR code do autenticador"></div>
@@ -366,18 +347,15 @@
                     <div class="qr-helper">
                         <b>Passo 1:</b> baixe o <b>Google Authenticator</b> (Play Store / App Store).<br>
                         <b>Passo 2:</b> toque em <b>+</b> &rarr; <b>Escanear código QR</b> e aponte para o quadro acima (ou adicione por chave de configuração).<br>
-                        <b>Passo 3:</b> digite o código de 6 dígitos gerado para confirmar a ativação.
+                        <b>Passo 3:</b> digite o código de 6 dígitos gerado para confirmar e entrar.
                     </div>
 
                     <input type="text" class="totp-input" id="totpSetupInput" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
 
                     <button class="btn" id="confirmar2faBtn">
-                        <i data-lucide="shield-check"></i> ATIVAR AUTENTICADOR
+                        <i data-lucide="shield-check"></i> VINCULAR E ENTRAR
                     </button>
-                    <button class="btn secundario" id="cancelar2faBtn">
-                        <i data-lucide="arrow-left"></i> CONCLUIR AGORA SEM ATIVAR
-                    </button>
-                    <div class="passo-voltar"><a id="voltarConvite">Voltar</a></div>
+                    <div class="passo-voltar"><a id="voltarCredenciais3">Voltar e corrigir usuário/senha</a></div>
                 </div>
 
                 <div class="demo-note">
@@ -489,25 +467,63 @@
             ocultarMsg();
         }
 
-        // Guarda a sessão e navega para o painel (restrito ao perfil selecionado).
-        function entrarNoPainel(token) {
-            try { localStorage.setItem('dcmt_token', token); } catch (e) {}
-            const s = dcGetSession();
-            if (perfilSelecionado === 'municipal' && (!s || s.perfil !== 'municipal')) {
-                localStorage.removeItem('dcmt_token');
-                localStorage.removeItem('dcmt_session');
+        // Guarda token + perfil e navega para o painel (restrito ao perfil escolhido).
+        function entrarNoPainel(token, user) {
+            if (!token || !user) {
+                mostrarMsg('Sessão incompleta. Faça login novamente.');
+                irPara('01');
+                return;
+            }
+            // Segurança: perfil "Gestor municipal" escolhido exige conta municipal.
+            if (perfilSelecionado === 'municipal' && user.perfil !== 'municipal') {
                 mostrarMsg('A conta "' + estado.usuario + '" não é um gestor municipal. Escolha o município correto na lista (usuário e senha: ' + estado.usuario + ' / defesa123).');
                 irPara('01');
                 return;
             }
-            // O município e o nome vêm do vínculo da conta no backend — nunca do formulário.
-            if (s) localStorage.setItem('dcmt_session', JSON.stringify(s));
-
-            if (s && s.perfil === 'municipal') {
-                location.href = 'gestao.html';
+            try {
+                localStorage.setItem('dcmt_token', token);
+                // O município e o nome vêm do vínculo da conta no backend — nunca do formulário.
+                localStorage.setItem('dcmt_session', JSON.stringify(user));
+            } catch (e) {
+                mostrarMsg('Não foi possível guardar a sessão neste navegador.');
                 return;
             }
-            location.href = 'index.html';
+            location.href = (user.perfil === 'municipal') ? 'gestao.html' : 'index.html';
+        }
+
+        /* Depois das credenciais válidas o painel exige o segundo fator:
+           - conta nova      → gera o QR code (setup) e pede o código
+           - conta já vinculada → pede só o código de 6 dígitos */
+        async function abrirSegundoFator(d) {
+            estado.desafio = d.desafio;
+            if (!d.setup) {
+                const totpInput = document.getElementById('totpInput');
+                totpInput.value = '';
+                irPara('02');
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => totpInput.focus(), 60);
+                return;
+            }
+            const btn = document.getElementById('entrarBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Gerando QR code...';
+            ocultarMsg();
+
+            const res = await dcApi.totpSetup(d.desafio);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="log-in"></i> ENTRAR NO PAINEL';
+
+            if (!res.ok || !res.data || !res.data.qr) {
+                mostrarMsg(res.data && res.data.erro || 'Não foi possível gerar o QR code.');
+                return;
+            }
+            document.getElementById('qrImg').src = res.data.qr;
+            document.getElementById('qrSecret').textContent = res.data.segredo;
+            const setupInput = document.getElementById('totpSetupInput');
+            setupInput.value = '';
+            irPara('03');
+            setTimeout(() => setupInput.focus(), 60);
         }
 
         document.getElementById('entrarBtn').addEventListener('click', async () => {
@@ -547,26 +563,14 @@
                 mostrarMsg(res.data && res.data.erro || 'Falha na autenticação.');
                 return;
             }
-
-            if (res.data && res.data.exigeTotp && res.data.desafio) {
-                estado.desafio = res.data.desafio;
-                const totpInput = document.getElementById('totpInput');
-                totpInput.value = '';
-                irPara('02');
-                if (window.lucide) lucide.createIcons();
-                setTimeout(() => totpInput.focus(), 60);
+            if (!res.data || !res.data.desafio) {
+                mostrarMsg('Resposta inesperada do servidor de autenticação.');
                 return;
             }
-
-            if (res.data && res.data.token) {
-                estado.desafio = null;
-                // Token já armazenado para permitir "Ativar Google Authenticator".
-                try { localStorage.setItem('dcmt_token', res.data.token); } catch (e) {}
-                irPara('02b');
-            }
+            await abrirSegundoFator(res.data);
         });
 
-        // Segundo fator — valida o código do Google Authenticator.
+        // Segundo fator — valida o código do Google Authenticator (conta já vinculada).
         document.getElementById('totpBtn').addEventListener('click', async () => {
             const codigo = document.getElementById('totpInput').value.trim();
             if (!/^\d{6}$/.test(codigo)) {
@@ -587,9 +591,7 @@
                 mostrarMsg(res.data && res.data.erro || 'Código inválido ou expirado.');
                 return;
             }
-            if (res.data && res.data.token) {
-                entrarNoPainel(res.data.token);
-            }
+            entrarNoPainel(res.data && res.data.token, res.data && res.data.user);
         });
 
         const totpInput = document.getElementById('totpInput');
@@ -598,48 +600,14 @@
             ocultarMsg();
         });
 
-        ['voltarCredenciais', 'voltarCredenciais2', 'voltarConvite'].forEach(id => {
+        ['voltarCredenciais', 'voltarCredenciais3'].forEach(id => {
             document.getElementById(id).addEventListener('click', () => {
+                estado.desafio = null;
                 irPara('01');
-                const btn = document.getElementById('entrarBtn');
-                btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="log-in"></i> ENTRAR NO PAINEL';
             });
         });
 
-        // Convite: ativar o autenticador ou seguir direto para o painel.
-        document.getElementById('entrarSem2faBtn').addEventListener('click', () => {
-            entrarNoPainel(dcApi.getToken());
-        });
-
-        document.getElementById('ativar2faBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('ativar2faBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Gerando QR code...';
-            ocultarMsg();
-
-            const res = await dcApi.totpSetup(estado.desafio);
-
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="smartphone"></i> ATIVAR GOOGLE AUTHENTICATOR';
-
-            if (!res.ok) {
-                mostrarMsg(res.data && res.data.erro || 'Não foi possível gerar o QR code.');
-                return;
-            }
-            if (res.data && res.data.ativo) {
-                mostrarMsg('Este usuário já está com o Google Authenticator ativo nesta conta.', 'ok');
-                entrarNoPainel(dcApi.getToken());
-                return;
-            }
-            document.getElementById('qrImg').src = res.data.qr;
-            document.getElementById('qrSecret').textContent = res.data.segredo;
-            const setupInput = document.getElementById('totpSetupInput');
-            setupInput.value = '';
-            irPara('03');
-            setTimeout(() => setupInput.focus(), 60);
-        });
-
+        // Primeiro acesso — confirma o código do QR e conclui o login.
         document.getElementById('confirmar2faBtn').addEventListener('click', async () => {
             const codigo = document.getElementById('totpSetupInput').value.trim();
             if (!/^\d{6}$/.test(codigo)) {
@@ -648,24 +616,20 @@
             }
             const btn = document.getElementById('confirmar2faBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Ativando...';
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verificando código...';
             ocultarMsg();
 
             const res = await dcApi.totpActivate(estado.desafio, codigo);
 
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="shield-check"></i> ATIVAR AUTENTICADOR';
+            btn.innerHTML = '<i data-lucide="shield-check"></i> VINCULAR E ENTRAR';
 
             if (!res.ok) {
                 mostrarMsg(res.data && res.data.erro || 'Código inválido. Confira o Google Authenticator.');
                 return;
             }
-            mostrarMsg('Google Authenticator ativado com sucesso nesta conta.', 'ok');
-            setTimeout(() => entrarNoPainel(dcApi.getToken()), 900);
-        });
-
-        document.getElementById('cancelar2faBtn').addEventListener('click', () => {
-            entrarNoPainel(dcApi.getToken());
+            mostrarMsg('Autenticador vinculado com sucesso. Entrando no painel...', 'ok');
+            setTimeout(() => entrarNoPainel(res.data && res.data.token, res.data && res.data.user), 700);
         });
 
         const setupInput = document.getElementById('totpSetupInput');

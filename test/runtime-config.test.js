@@ -7,6 +7,9 @@ const { readCollection } = require('../api/_lib/store');
 const { writeCollection } = require('../api/_lib/store');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { generateSync: generateTotp } = require('otplib');
+/* No otplib v13 generateSync devolve o código de 6 dígitos diretamente. */
+const gerarCodigoTotp = (segredo) => generateTotp({ secret: segredo });
 
 function validProductionEnv(overrides = {}) {
   return {
@@ -197,9 +200,49 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     process.env.SEED_USERS = JSON.stringify([{
       usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin', nome: 'Administrador de Testes', perfil: 'admin',
     }]);
+
+    /* O 2FA é obrigatório: o login só devolve o desafio e a sessão só é
+       emitida depois de confirmar o código do Google Authenticator. */
+    const completeSecondFactor = async (loginRes) => {
+      const payload = await loginRes.json();
+      assert.equal(payload.token, undefined, 'o login não pode emitir token antes do 2FA');
+      assert.equal(payload.exigeTotp, true);
+      assert.ok(payload.desafio);
+      assert.equal(payload.setup, true, 'conta nova deve começar no setup do QR');
+
+      const setupRes = await request('auth/totp/setup', 'POST', { desafio: payload.desafio });
+      const setup = await setupRes.json();
+      assert.equal(setupRes.status, 200);
+      assert.ok(setup.qr);
+      assert.ok(setup.segredo);
+
+      const codigo = gerarCodigoTotp(setup.segredo);
+      assert.match(codigo, /^\d{6}$/);
+      const activateRes = await request('auth/totp/activate', 'POST', { desafio: payload.desafio, codigo });
+      const activate = await activateRes.json();
+      assert.equal(activateRes.status, 200);
+      assert.ok(activate.token, 'a ativação válida deve concluir o primeiro login');
+      return { ...activate, segredo: setup.segredo };
+    };
+
     const loginAdmin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
-    const adminPayload = await loginAdmin.json();
     assert.equal(loginAdmin.status, 200);
+    const adminPayload = await completeSecondFactor(loginAdmin);
+
+    // Segundo login da mesma conta já exige apenas o código (sem novo QR).
+    const relogin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
+    const reloginPayload = await relogin.json();
+    assert.equal(relogin.status, 200);
+    assert.equal(reloginPayload.setup, false, 'conta já vinculada não deve pedir setup');
+    const wrongCode = await request('auth/totp/verify', 'POST', { desafio: reloginPayload.desafio, codigo: '000000' });
+    assert.equal(wrongCode.status, 401);
+    const verified = await request('auth/totp/verify', 'POST', {
+      desafio: reloginPayload.desafio,
+      codigo: gerarCodigoTotp(adminPayload.segredo),
+    });
+    const verifiedPayload = await verified.json();
+    assert.equal(verified.status, 200);
+    assert.ok(verifiedPayload.token);
 
     const registrationResponse = await request('user-registrations', 'POST', {
       usuario: pendingUsername,

@@ -479,7 +479,34 @@
         <input id="loginSenha" type="password" placeholder="Digite sua senha" autocomplete="current-password" />
       </div>
       <span class="msg-erro" id="loginErro"></span>
-      <div class="form-actions">
+
+      <!-- Segundo fator: Google Authenticator (obrigatório) -->
+      <div id="login2fa" style="display:none;margin-top:14px;border-top:1px solid #e5e7eb;padding-top:14px">
+        <p style="font-size:12.5px;color:#4b5563;line-height:1.5;margin-bottom:12px" id="login2faTexto">
+          Credenciais confirmadas. Informe o código de 6 dígitos do Google Authenticator.
+        </p>
+        <div id="login2faQr" style="display:none;text-align:center;margin-bottom:12px">
+          <div style="display:inline-block;background:#fff;padding:8px;border:1px solid #e5e7eb;border-radius:8px">
+            <img id="login2faImg" alt="QR code do autenticador" style="display:block;width:170px;height:170px" />
+          </div>
+          <div id="login2faSegredo" style="font-family:monospace;font-size:12px;letter-spacing:1.5px;background:#f3f4f6;border:1px dashed #d1d5db;border-radius:6px;padding:7px;margin-top:8px;user-select:all"></div>
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label><svg class="ico" viewBox="0 0 24 24"><use href="#s-lock" /></svg> Código do Google Authenticator</label>
+          <input id="login2faCodigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+                 placeholder="000000" style="text-align:center;letter-spacing:10px;font-size:20px;font-weight:700" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn ghost" id="login2faVoltar">
+            <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Voltar
+          </button>
+          <button class="btn" id="login2faConfirmar">
+            <svg class="ico" viewBox="0 0 24 24"><use href="#s-key" /></svg>Confirmar
+          </button>
+        </div>
+      </div>
+
+      <div class="form-actions" id="loginAcoes">
         <button type="button" class="btn ghost" id="loginCancelar">
           <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Cancelar
         </button>
@@ -1013,34 +1040,112 @@
     $("loginErro").classList.remove("on");
     $("loginErro").textContent = "";
     $("loginSenha").value = "";
+    voltarPassoLogin();
     $("modalLogin").classList.add("open");
     $("loginSenha").focus();
   }
   var abaDestino = "analise";
 
+  /* Estado do segundo fator (Google Authenticator) durante o login admin. */
+  var login2fa = { desafio: null, setup: false };
+
+  function mostrarErroLogin(msg) {
+    $("loginErro").textContent = msg;
+    $("loginErro").classList.add("on");
+  }
+  function abrirPasso2fa(data) {
+    login2fa.desafio = data.desafio;
+    login2fa.setup = !!data.setup;
+    $("loginAcoes").style.display = "none";
+    $("login2fa").style.display = "block";
+    $("login2faQr").style.display = "none";
+    $("login2faSegredo").textContent = "";
+    $("login2faCodigo").value = "";
+    $("login2faTexto").textContent = login2fa.setup
+      ? "Credenciais confirmadas. Escaneie o QR code com o Google Authenticator e informe o código gerado."
+      : "Credenciais confirmadas. Informe o código de 6 dígitos do Google Authenticator.";
+    $("login2fa").scrollIntoView({ block: "nearest" });
+    $("login2faCodigo").focus();
+  }
+  function voltarPassoLogin() {
+    login2fa.desafio = null;
+    login2fa.setup = false;
+    $("login2fa").style.display = "none";
+    $("loginAcoes").style.display = "";
+    $("loginErro").classList.remove("on");
+    $("login2faCodigo").value = "";
+  }
+
+  /* Conclui o login depois que o segundo fator foi confirmado pelo backend. */
+  function concluirLoginAdmin(data) {
+    localStorage.setItem("dcmt_token", data.token);
+    localStorage.setItem("dcmt_session", JSON.stringify(data.user));
+    aplicarSessao(data.user);
+    $("modalLogin").classList.remove("open");
+    voltarPassoLogin();
+    carregarUsuarios().catch(function (error) { avisar(error.message, "err"); });
+    irAba(abaDestino);
+    avisar("Bem-vindo, " + data.user.nome + ".", "ok");
+  }
+
   $("formLogin").onsubmit = async function (ev) {
     ev.preventDefault();
     var u = $("loginUser").value.trim();
     var s = $("loginSenha").value;
+    $("loginErro").classList.remove("on");
     var response = await dcApi.login(u, s);
     var data = response.data || {};
-    if (!response.ok || !data.user || !data.token) {
-      $("loginErro").textContent = data.erro || "Login ou senha incorretos.";
-      $("loginErro").classList.add("on");
+    if (!response.ok || !data.user) {
+      mostrarErroLogin(data.erro || "Login ou senha incorretos.");
       return;
     }
     if (data.user.perfil !== "admin") {
-      $("loginErro").textContent = "Esta área é exclusiva de administradores.";
-      $("loginErro").classList.add("on");
+      mostrarErroLogin("Esta área é exclusiva de administradores.");
       return;
     }
-    localStorage.setItem("dcmt_token", data.token);
-    aplicarSessao(data.user);
-    $("modalLogin").classList.remove("open");
-    try { await carregarUsuarios(); }
-    catch (error) { avisar(error.message, "err"); }
-    irAba(abaDestino);
-    avisar("Bem-vindo, " + data.user.nome + ".", "ok");
+    /* A senha é só o primeiro fator: o backend devolve o desafio de 2FA
+       e a sessão só é emitida após a confirmação do código. */
+    if (!data.desafio) {
+      mostrarErroLogin("Resposta inesperada do servidor de autenticação.");
+      return;
+    }
+    if (!login2fa.setup && data.setup) {
+      var setupRes = await dcApi.totpSetup(data.desafio);
+      if (!setupRes.ok || !setupRes.data || !setupRes.data.qr) {
+        mostrarErroLogin((setupRes.data && setupRes.data.erro) || "Não foi possível gerar o QR code.");
+        return;
+      }
+      $("login2faImg").src = setupRes.data.qr;
+      $("login2faSegredo").textContent = setupRes.data.segredo;
+      $("login2faQr").style.display = "block";
+    }
+    abrirPasso2fa(data);
+  };
+
+  $("login2faConfirmar").onclick = async function () {
+    var codigo = $("login2faCodigo").value.replace(/\D/g, "");
+    if (codigo.length !== 6) {
+      mostrarErroLogin("Informe os 6 dígitos do Google Authenticator.");
+      return;
+    }
+    $("loginErro").classList.remove("on");
+    var res = login2fa.setup
+      ? await dcApi.totpActivate(login2fa.desafio, codigo)
+      : await dcApi.totpVerify(login2fa.desafio, codigo);
+    var data = res.data || {};
+    if (!res.ok || !data.token) {
+      mostrarErroLogin(data.erro || "Código inválido ou expirado.");
+      return;
+    }
+    concluirLoginAdmin(data);
+  };
+
+  $("login2faVoltar").onclick = voltarPassoLogin;
+  $("login2faCodigo").oninput = function () {
+    this.value = this.value.replace(/\D/g, "").slice(0, 6);
+  };
+  $("login2faCodigo").onkeydown = function (ev) {
+    if (ev.key === "Enter") { ev.preventDefault(); $("login2faConfirmar").click(); }
   };
 
   $("loginCancelar").onclick = function () { $("modalLogin").classList.remove("open"); };

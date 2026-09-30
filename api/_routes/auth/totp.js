@@ -126,7 +126,9 @@ module.exports = serve(async function handler(req) {
     if (index < 0) return jsonResponse(404, { erro: 'Conta não encontrada.' }, origin);
     users[index].otp = { secret: user.otp.secret, ativo: true };
     await persistUserList(users);
-    return jsonResponse(200, { ativo: true, user: publicUser(user) });
+    /* Primeiro acesso: a ativação conclude o login e entrega a sessão,
+       já que a senha foi validada no passo anterior (via desafio). */
+    return jsonResponse(200, { ativo: true, token: signToken(user), user: publicUser(user) });
   }
 
   if (action === 'disable') {
