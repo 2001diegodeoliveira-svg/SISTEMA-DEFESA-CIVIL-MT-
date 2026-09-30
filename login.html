@@ -359,12 +359,9 @@
                 </div>
 
                 <div class="demo-note">
-                    <b>Acesso:</b> o login é validado no backend e o perfil define o que cada um vê.
-                    <code>defesa</code>/<code>defesa123</code> = gestor estadual (controle geral de
-                    Mato Grosso: mapa completo, visão estadual e gestão de todos os municípios).
-                    Gestor municipal: escolha o município na lista (todos os 142, inclusive o de
-                    Cuiabá) e informe a senha <code>defesa123</code> — o acesso fica restrito ao
-                    seu município. <code>comum</code>/<code>defesa123</code> = somente alertas e orientações.
+                    <b>Acesso:</b> use uma conta criada pelo cadastro de usuários e aprovada pela administração.
+                    O perfil define as áreas disponíveis, e o Google Authenticator confirma o segundo fator.
+                    Ainda não possui uma conta? Faça sua solicitação em <a href="cadastro-usuarios.html">Cadastro de usuários</a>.
                 </div>
             </section>
         </div>
@@ -476,7 +473,7 @@
             }
             // Segurança: perfil "Gestor municipal" escolhido exige conta municipal.
             if (perfilSelecionado === 'municipal' && user.perfil !== 'municipal') {
-                mostrarMsg('A conta "' + estado.usuario + '" não é um gestor municipal. Escolha o município correto na lista (usuário e senha: ' + estado.usuario + ' / defesa123).');
+                mostrarMsg('A conta "' + estado.usuario + '" não é um gestor municipal aprovado. Escolha o município correto ou use uma conta municipal cadastrada.');
                 irPara('01');
                 return;
             }
