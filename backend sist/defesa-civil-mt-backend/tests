@@ -1,0 +1,4 @@
+mkdir defesa-civil-backend
+cd defesa-civil-backend
+npm init -y
+npm install express sequelize pg pg-hstore body-parser cors dotenv
