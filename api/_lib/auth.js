@@ -4,8 +4,10 @@
    ============================================================ */
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { verifySync } = require('otplib');
 const { readCollection, writeCollection } = require('./store');
+/* O TOTP é carregado sob demanda (ver ./totp-provider): o otplib v13 é ESM
+   e quebraria a API inteira se fosse requerido no topo deste arquivo. */
+const totp = require('./totp-provider');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
 const JWT_EXP = process.env.JWT_EXP || '12h';
@@ -15,16 +17,9 @@ function totpSecretFor(user) {
   return user && user.otp && user.otp.ativo ? user.otp.secret : null;
 }
 
-function checkTotpToken(secret, code) {
-  if (!secret || !code) return false;
-  try {
-    const token = String(code).replace(/\s/g, '');
-    if (!/^\d{6}$/.test(token)) return false;
-    const result = verifySync({ secret, token });
-    return result === true || (result && result.valid === true);
-  } catch {
-    return false;
-  }
+/* Assíncronas de propósito: a biblioteca TOTP é carregada sob demanda. */
+async function checkTotpToken(secret, code) {
+  return totp.verifyCode(secret, code);
 }
 
 function signTotpChallenge(user, extra) {
@@ -44,7 +39,7 @@ function verifyTotpChallenge(token) {
   }
 }
 
-function verifyTotpCode(user, code) {
+async function verifyTotpCode(user, code) {
   return checkTotpToken(totpSecretFor(user), code);
 }
 

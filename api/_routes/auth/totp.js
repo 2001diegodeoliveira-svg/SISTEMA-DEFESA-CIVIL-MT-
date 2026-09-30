@@ -5,14 +5,17 @@
    - activate : valida o código e ativa o TOTP na conta
    - disable  : desativa o TOTP da conta (exige sessão completa)
    ============================================================ */
-const { generateSecret, generateURI } = require('otplib');
-const QRCode = require('qrcode');
+/* Dependências carregadas sob demanda: qrcode/otplib quebram em runtimes
+   CommonJS sem suporte a require(ESM) e não podem derrubar a API inteira. */
+let QRCode = null;
+try { QRCode = require('qrcode'); } catch { QRCode = null; }
 const { jsonResponse, readJson, bearerToken } = require('../../_lib/http');
 const {
   verifyToken, verifyTotpChallenge, verifyTotpCode, checkTotpToken,
   signToken, publicUser, isLoginEligible,
 } = require('../../_lib/auth');
 const { readCollection, writeCollection } = require('../../_lib/store');
+const totpProvider = require('../../_lib/totp-provider');
 const { serve } = require('../../_lib/serverless');
 
 const SERVICE = 'Defesa Civil MT';
@@ -81,7 +84,7 @@ module.exports = serve(async function handler(req) {
 
     const users = await loadUsers();
     const user = await findUserById(users, payload.sub);
-    if (!user || !verifyTotpCode(user, codigo)) {
+    if (!user || !await verifyTotpCode(user, codigo)) {
       return jsonResponse(401, { erro: 'Código do Google Authenticator inválido ou expirado.' }, origin);
     }
     return jsonResponse(200, { token: signToken(user), user: publicUser(user) }, origin);
@@ -94,8 +97,14 @@ module.exports = serve(async function handler(req) {
     if (user.otp && user.otp.ativo) {
       return jsonResponse(200, { ativo: true, mensagem: 'Autenticador já está ativo nesta conta.' }, origin);
     }
-    const secret = generateSecret();
-    const uri = generateURI({ strategy: 'totp', issuer: SERVICE, label: user.usuario, secret });
+    if (!QRCode) {
+      return jsonResponse(503, { erro: 'Google Authenticator indisponível neste ambiente.' }, origin);
+    }
+    const secret = await totpProvider.generateSecret();
+    if (!secret) {
+      return jsonResponse(503, { erro: 'Google Authenticator indisponível neste ambiente.' }, origin);
+    }
+    const uri = await totpProvider.generateURI({ issuer: SERVICE, label: user.usuario, secret });
     const qr = await QRCode.toDataURL(uri, {
       margin: 1, scale: 6, width: 240,
       color: { dark: '#0f172a', light: '#ffffff' },
@@ -118,7 +127,7 @@ module.exports = serve(async function handler(req) {
       return jsonResponse(400, { erro: 'Nenhum segredo pendente. Solicite a configuração primeiro.' }, origin);
     }
     if (user.otp.ativo) return jsonResponse(200, { ativo: true });
-    if (!checkTotpToken(user.otp.secret, codigo)) {
+    if (!user.otp.ativo && !await checkTotpToken(user.otp.secret, codigo)) {
       return jsonResponse(401, { erro: 'Código inválido. Confira o código exibido no Google Authenticator.' }, origin);
     }
     const users = await loadUsers();
@@ -140,7 +149,7 @@ module.exports = serve(async function handler(req) {
       return jsonResponse(401, { erro: 'É necessário estar logado para desativar o autenticador.' }, origin);
     }
     if (!user.otp || !user.otp.ativo) return jsonResponse(400, { erro: 'Autenticador não está ativo nesta conta.' }, origin);
-    if (!verifyTotpCode(user, codigo)) {
+    if (!await verifyTotpCode(user, codigo)) {
       return jsonResponse(401, { erro: 'Código inválido.' }, origin);
     }
     const users = await loadUsers();

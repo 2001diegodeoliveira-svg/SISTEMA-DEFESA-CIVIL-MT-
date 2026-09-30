@@ -7,9 +7,11 @@ const { readCollection } = require('../api/_lib/store');
 const { writeCollection } = require('../api/_lib/store');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { generateSync: generateTotp } = require('otplib');
-/* No otplib v13 generateSync devolve o código de 6 dígitos diretamente. */
-const gerarCodigoTotp = (segredo) => generateTotp({ secret: segredo });
+/* O provider é carregado sob demanda (otplib v13 é ESM) — mesmo caminho da API. */
+const gerarCodigoTotp = async (segredo) => {
+  const lib = await import('otplib');
+  return lib.generateSync({ secret: segredo });
+};
 
 function validProductionEnv(overrides = {}) {
   return {
@@ -216,7 +218,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
       assert.ok(setup.qr);
       assert.ok(setup.segredo);
 
-      const codigo = gerarCodigoTotp(setup.segredo);
+      const codigo = await gerarCodigoTotp(setup.segredo);
       assert.match(codigo, /^\d{6}$/);
       const activateRes = await request('auth/totp/activate', 'POST', { desafio: payload.desafio, codigo });
       const activate = await activateRes.json();
@@ -238,7 +240,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     assert.equal(wrongCode.status, 401);
     const verified = await request('auth/totp/verify', 'POST', {
       desafio: reloginPayload.desafio,
-      codigo: gerarCodigoTotp(adminPayload.segredo),
+      codigo: await gerarCodigoTotp(adminPayload.segredo),
     });
     const verifiedPayload = await verified.json();
     assert.equal(verified.status, 200);
