@@ -57,10 +57,10 @@ function validateProductionConfig(env = process.env) {
   const hasKv = hasKvUrl && hasKvToken;
   if (seedUsers && (!Array.isArray(seedUsers) || !seedUsers.every((user) =>
     user && typeof user.usuario === 'string' && user.usuario.trim() &&
-    typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 12 &&
+    typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 12 && Buffer.byteLength(user.senha, 'utf8') <= 72 &&
     VALID_PROFILES.has(user.perfil)
   ))) {
-    problems.push('SEED_USERS, quando definido, deve conter usuários com senhas fortes e perfis válidos.');
+    problems.push('SEED_USERS, quando definido, deve conter usuários com senhas de 12 a 72 bytes UTF-8 e perfis válidos.');
   } else if (Array.isArray(seedUsers) && seedUsers.length && !seedUsers.some((user) => user.perfil === 'admin')) {
     problems.push('SEED_USERS deve incluir pelo menos um administrador.');
   }

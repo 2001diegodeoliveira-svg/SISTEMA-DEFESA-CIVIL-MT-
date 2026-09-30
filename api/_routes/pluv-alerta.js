@@ -59,6 +59,9 @@ module.exports = serve(async function handler(req) {
     if (!payload) {
       return jsonResponse(401, { erro: 'Autenticação necessária para alterar o alerta.' }, origin);
     }
+    if (!['admin', 'avancado'].includes(payload.perfil)) {
+      return jsonResponse(403, { erro: 'Somente gestores estaduais podem alterar o alerta.' }, origin);
+    }
     if (req.method === 'DELETE') {
       const cfg = await pluv.limparConfig();
       return jsonResponse(200, visaoConfig(cfg), origin);

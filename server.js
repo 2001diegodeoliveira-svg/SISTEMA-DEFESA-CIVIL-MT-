@@ -80,7 +80,8 @@ function wrap(fn) {
       const body = await nres.text();
       res.status(nres.status).send(body === '' ? null : body);
     } catch (e) {
-      res.status(500).json({ erro: 'Erro interno: ' + e.message });
+      console.error('[http] erro interno:', e);
+      res.status(500).json({ erro: 'Erro interno.' });
     }
   };
 }

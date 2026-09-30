@@ -26,6 +26,7 @@ function rewriteUrl(url) {
 }
 
 const UPSTREAM_TIMEOUT_MS = 20000;
+const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024;
 
 // Tenta buscar a origem com timeout; refaz 1 tentativa em caso de falha de rede/timeout.
 async function fetchUpstream(target, attempts = 2) {
@@ -38,6 +39,7 @@ async function fetchUpstream(target, attempts = 2) {
                     'User-Agent': 'DefesaCivilMT/1.0 (+painel-operacional)',
                     'Accept': '*/*',
                 },
+                redirect: 'manual',
                 signal: ctrl.signal,
             });
         } catch (e) {
@@ -46,6 +48,29 @@ async function fetchUpstream(target, attempts = 2) {
             clearTimeout(timer);
         }
     }
+}
+
+async function readUpstreamBody(response) {
+  const contentLength = Number(response.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > MAX_UPSTREAM_BYTES) {
+    throw new Error('Resposta da origem excede o limite permitido.');
+  }
+  if (!response.body) return Buffer.alloc(0);
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_UPSTREAM_BYTES) {
+      try { await reader.cancel(); } catch { /* resposta já encerrada */ }
+      throw new Error('Resposta da origem excede o limite permitido.');
+    }
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks, size);
 }
 
 module.exports = serve(async function handler(req) {
@@ -80,7 +105,10 @@ module.exports = serve(async function handler(req) {
 
   try {
     const upstream = await fetchUpstream(target);
-    const buf = Buffer.from(await upstream.arrayBuffer());
+    if (upstream.status >= 300 && upstream.status < 400) {
+      throw new Error('Redirecionamentos da origem não são permitidos.');
+    }
+    const buf = await readUpstreamBody(upstream);
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
 
     return new Response(buf, {
@@ -91,6 +119,7 @@ module.exports = serve(async function handler(req) {
       }),
     });
   } catch (e) {
-    return new Response(JSON.stringify({ erro: 'Falha ao buscar a origem: ' + e.message }), { status: 502, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
+    console.error('[proxy] falha ao buscar a origem:', e && e.message);
+    return new Response(JSON.stringify({ erro: 'Falha ao buscar a origem.' }), { status: 502, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
 });

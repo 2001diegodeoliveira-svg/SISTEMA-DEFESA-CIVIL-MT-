@@ -52,7 +52,9 @@ function validateData(body, { editing = false } = {}) {
 
   if (nome.length < 5 || nome.length > 160) return { erro: 'Informe o nome completo (5 a 160 caracteres).' };
   if (!/^[a-zA-Z0-9._-]{3,40}$/.test(usuario)) return { erro: 'Usuário deve ter de 3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado.' };
-  if (!editing && (senha.length < 12 || senha.length > 200)) return { erro: 'A senha deve ter entre 12 e 200 caracteres.' };
+  if (!editing && (senha.length < 12 || Buffer.byteLength(senha, 'utf8') > 72)) {
+    return { erro: 'A senha deve ter ao menos 12 caracteres e no máximo 72 bytes UTF-8.' };
+  }
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return { erro: 'E-mail inválido.' };
   if (!validCpf(cpf)) return { erro: 'CPF inválido.' };
   if (!PROFILES.has(perfil)) return { erro: 'Esfera de acesso inválida.' };

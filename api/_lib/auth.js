@@ -81,7 +81,8 @@ async function ensureSeededUsers() {
 
 async function findByCredentials(usuario, senha) {
   const users = await ensureSeededUsers();
-  const u = users.find(x => x.usuario === usuario);
+  const normalizedUsername = String(usuario || '').trim().toLowerCase();
+  const u = users.find((user) => String(user.usuario || '').trim().toLowerCase() === normalizedUsername);
   if (!isLoginEligible(u)) return null;
   if (!bcrypt.compareSync(senha, u.senhaHash)) return null;
   return u;

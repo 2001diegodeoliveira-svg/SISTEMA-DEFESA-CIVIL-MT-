@@ -7,6 +7,7 @@ const { readCollection } = require('../api/_lib/store');
 const { writeCollection } = require('../api/_lib/store');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { signToken } = require('../api/_lib/auth');
 /* O provider é carregado sob demanda (otplib v13 é ESM) — mesmo caminho da API. */
 const gerarCodigoTotp = async (segredo) => {
   const lib = await import('otplib');
@@ -59,6 +60,14 @@ test('produção recusa mocks ativos e integração sem credencial', () => {
 
   assert.ok(problems.some((problem) => problem.includes('TOMTOM_MOCK_ENABLED')));
   assert.ok(problems.some((problem) => problem.includes('WAZE_FEED_URL')));
+});
+
+test('produção recusa senha de bootstrap acima do limite do bcrypt', () => {
+  const problems = validateProductionConfig(validProductionEnv({
+    SEED_USERS: JSON.stringify([{ usuario: 'admin', senha: 'a'.repeat(73), perfil: 'admin' }]),
+  }));
+
+  assert.ok(problems.some((problem) => problem.includes('12 a 72 bytes UTF-8')));
 });
 
 test('desenvolvimento mantém os padrões locais', () => {
@@ -137,6 +146,40 @@ test('CORS reflete apenas origens explicitamente autorizadas', () => {
   } finally {
     if (previous === undefined) delete process.env.CORS_ORIGIN;
     else process.env.CORS_ORIGIN = previous;
+  }
+});
+
+test('proxy não segue redirecionamentos nem aceita respostas maiores que o limite', async () => {
+  const previousFetch = global.fetch;
+  let fetchOptions;
+  try {
+    global.fetch = async (_url, options) => {
+      fetchOptions = options;
+      return new Response('redirect', {
+        status: 302,
+        headers: { location: 'http://127.0.0.1/private' },
+      });
+    };
+    const redirectResponse = await apiHandler({
+      method: 'GET',
+      url: 'https://example.test/api/proxy?url=https%3A%2F%2Ftrusted.example%2Fdata',
+      headers: { origin: undefined },
+    });
+    assert.equal(fetchOptions.redirect, 'manual');
+    assert.equal(redirectResponse.status, 502);
+
+    global.fetch = async () => new Response('large', {
+      headers: { 'content-length': String(10 * 1024 * 1024 + 1) },
+    });
+    const oversizedResponse = await apiHandler({
+      method: 'GET',
+      url: 'https://example.test/api/proxy?url=https%3A%2F%2Ftrusted.example%2Fdata',
+      headers: { origin: undefined },
+    });
+    assert.equal(oversizedResponse.status, 502);
+    assert.deepEqual(await oversizedResponse.json(), { erro: 'Falha ao buscar a origem.' });
+  } finally {
+    global.fetch = previousFetch;
   }
 });
 
@@ -246,6 +289,21 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     assert.equal(verified.status, 200);
     assert.ok(verifiedPayload.token);
 
+    const invalidLongPassword = await request('user-registrations', 'POST', {
+      usuario: pendingUsername,
+      senha: 'é'.repeat(37),
+      nome: 'Solicitante Teste',
+      email: `${pendingUsername}@example.test`,
+      cpf: '529.982.247-25',
+      perfil: 'Estadual',
+      estado: 'MT',
+      nivel: 'Gestao',
+      orgao: 'Defesa Civil Teste',
+      declaracao: true,
+    });
+    assert.equal(invalidLongPassword.status, 400);
+    assert.match((await invalidLongPassword.json()).erro, /72 bytes UTF-8/);
+
     const registrationResponse = await request('user-registrations', 'POST', {
       usuario: pendingUsername,
       senha: 'senha-segura-com-12',
@@ -287,11 +345,15 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     }, adminPayload.token);
     assert.equal(approval.status, 200);
 
-    const approvedLogin = await request('auth/login', 'POST', { usuario: pendingUsername, senha: 'senha-segura-com-12' });
+    const approvedLogin = await request('auth/login', 'POST', { usuario: pendingUsername.toUpperCase(), senha: 'senha-segura-com-12' });
     const approvedPayload = await approvedLogin.json();
     assert.equal(approvedLogin.status, 200);
     assert.equal(approvedPayload.user.perfil, 'comum');
     assert.notEqual(approvedPayload.user.perfil, 'admin');
+
+    const commonToken = signToken(approvedPayload.user);
+    const commonConfigChange = await request('pluv-alerta', 'POST', { ativo: false }, commonToken);
+    assert.equal(commonConfigChange.status, 403);
   } finally {
     for (const [key, value] of previous) {
       if (value === undefined) delete process.env[key];
