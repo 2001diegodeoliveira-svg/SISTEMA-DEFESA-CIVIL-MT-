@@ -53,10 +53,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
   municipio_id INTEGER REFERENCES municipios(id),
   ativo       BOOLEAN NOT NULL DEFAULT TRUE,
   cadastro_id TEXT,
+  bootstrap_admin BOOLEAN NOT NULL DEFAULT FALSE,
   criado_em   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cadastro_id TEXT;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS bootstrap_admin BOOLEAN NOT NULL DEFAULT FALSE;
 CREATE INDEX IF NOT EXISTS idx_usuarios_municipio ON usuarios(municipio_id);
 
 -- Solicitações de acesso enviadas pelo cadastro público. A senha fica somente

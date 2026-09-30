@@ -56,7 +56,7 @@ async function findByCredentials(usuario, senha) {
 function isLoginEligible(user) {
   if (!user || user.ativo === false) return false;
   if (user.perfil === 'admin') {
-    return seedUsers().some((seed) => seed.perfil === 'admin' &&
+    return user.bootstrapAdmin === true || seedUsers().some((seed) => seed.perfil === 'admin' &&
       String(seed.usuario).toLowerCase() === String(user.usuario).toLowerCase());
   }
   return Boolean(user.cadastroId);

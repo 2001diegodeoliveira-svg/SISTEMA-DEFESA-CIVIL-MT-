@@ -188,6 +188,7 @@ async function pgReadUsers() {
     municipio: r.municipio_nome || '',
     ativo: r.ativo,
     cadastroId: r.cadastro_id,
+    bootstrapAdmin: r.bootstrap_admin,
     criadoEm: r.criado_em ? r.criado_em.toISOString() : undefined,
   }));
 }
@@ -196,16 +197,17 @@ async function pgWriteUsers(list) {
   const rows = (Array.isArray(list) ? list : []).map((u) => {
     const mun = u.municipio ? m.byNorm.get(norm(u.municipio)) : undefined;
     return [u.usuario, u.senhaHash, u.nome || '', perfilOk(u.perfil), mun ? mun.id : null,
-      u.ativo !== false, u.cadastroId || null, tsPg(u.criadoEm)];
+      u.ativo !== false, u.cadastroId || null, u.bootstrapAdmin === true, tsPg(u.criadoEm)];
   });
   if (!rows.length) return;
   const sql =
-    `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, criado_em)
-     VALUES ${placeholders(rows, 8)}
+    `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, bootstrap_admin, criado_em)
+     VALUES ${placeholders(rows, 9)}
      ON CONFLICT (usuario) DO UPDATE SET
        senha_hash = EXCLUDED.senha_hash, nome = EXCLUDED.nome,
        perfil = EXCLUDED.perfil, municipio_id = EXCLUDED.municipio_id,
-       ativo = EXCLUDED.ativo, cadastro_id = EXCLUDED.cadastro_id`;
+       ativo = EXCLUDED.ativo, cadastro_id = EXCLUDED.cadastro_id,
+       bootstrap_admin = EXCLUDED.bootstrap_admin`;
   await getPool().query(sql, rows.flat());
 }
 
@@ -276,8 +278,8 @@ async function pgUpdateUserRegistration(id, changes) {
       }
 
       await client.query(
-        `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, criado_em)
-         VALUES ($1,$2,$3,$4,$5,TRUE,$6,now())`,
+        `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, bootstrap_admin, criado_em)
+         VALUES ($1,$2,$3,$4,$5,TRUE,$6,FALSE,now())`,
         [current.usuario, current.senhaHash, data.nome || '', perfil, municipality ? municipality.id : null, current.id]
       );
     }
@@ -667,7 +669,7 @@ async function updateUserRegistration(id, changes) {
     const perfil = updated.perfil === 'Municipal' ? 'municipal' : (updated.nivel === 'Consulta' ? 'comum' : 'avancado');
     users.push({ id: 'U' + (users.length + 1), usuario: current.usuario, senhaHash: current.senhaHash,
       nome: updated.nome || '', perfil, municipio: updated.perfil === 'Municipal' ? updated.municipio : '',
-      ativo: true, cadastroId: current.id, criadoEm: new Date().toISOString() });
+      ativo: true, cadastroId: current.id, bootstrapAdmin: false, criadoEm: new Date().toISOString() });
     await writeCollection('users', users);
   }
   registrations[index] = updated;
