@@ -288,12 +288,8 @@
                 <div class="passo ativo" id="passo-01">
                     <div class="profiles-grid" id="perfisGrid"></div>
 
-                    <div class="form-row">
+                    <div class="form-row" id="munRow" style="display:none;">
                         <div class="field">
-                            <label for="nomeInput">Nome do responsável</label>
-                            <input type="text" id="nomeInput" placeholder="Ex.: Maria Souza" autocomplete="off">
-                        </div>
-                        <div class="field" id="munField" style="display:none;">
                             <label for="munSelect">Município de atuação</label>
                             <select id="munSelect" disabled><option value="">Selecione o perfil Gestor Municipal...</option></select>
                         </div>
@@ -408,7 +404,7 @@
     <script>
         let perfilSelecionado = null;
         let municipios = [];
-        const estado = { usuario: '', senha: '', nome: '', desafio: null };
+        const estado = { usuario: '', senha: '', desafio: null };
 
         const grid = document.getElementById('perfisGrid');
         Object.entries(PERFIS).forEach(([key, p]) => {
@@ -429,11 +425,11 @@
 
         // Gestor municipal: mostra o seletor de município, que preenche o
         // campo de usuário com a conta daquele município (ex.: Cuiabá → cuiaba).
-        const munField = document.getElementById('munField');
+        const munRow = document.getElementById('munRow');
         const munSelect = document.getElementById('munSelect');
         function atualizarSeletorMunicipio() {
             const precisaMuni = perfilSelecionado === 'municipal';
-            munField.style.display = precisaMuni ? 'block' : 'none';
+            munRow.style.display = precisaMuni ? 'grid' : 'none';
             if (!precisaMuni) return;
             if (municipios.length === 0) carregarMunicipios();
         }
@@ -494,7 +490,7 @@
         }
 
         // Guarda a sessão e navega para o painel (restrito ao perfil selecionado).
-        function entrarNoPainel(token, nomeInformado) {
+        function entrarNoPainel(token) {
             try { localStorage.setItem('dcmt_token', token); } catch (e) {}
             const s = dcGetSession();
             if (perfilSelecionado === 'municipal' && (!s || s.perfil !== 'municipal')) {
@@ -504,11 +500,7 @@
                 irPara('01');
                 return;
             }
-            if (nomeInformado && s && (!s.nome || s.nome === 'Cidadão')) {
-                s.nome = nomeInformado;
-            }
-            // O município do gestor municipal vem do vínculo da conta no backend —
-            // nunca do formulário.
+            // O município e o nome vêm do vínculo da conta no backend — nunca do formulário.
             if (s) localStorage.setItem('dcmt_session', JSON.stringify(s));
 
             if (s && s.perfil === 'municipal') {
@@ -521,7 +513,6 @@
         document.getElementById('entrarBtn').addEventListener('click', async () => {
             const usuario = document.getElementById('usuarioInput').value.trim();
             const senha = document.getElementById('senhaInput').value;
-            const nome = document.getElementById('nomeInput').value.trim();
 
             // Ao escolher "Gestor municipal", a conta usada precisa ser do município
             // selecionado — sem isso o sistema poderia autenticar outra conta (ex.:
@@ -541,7 +532,6 @@
 
             estado.usuario = usuario;
             estado.senha = senha;
-            estado.nome = nome;
 
             const btn = document.getElementById('entrarBtn');
             btn.disabled = true;
@@ -598,7 +588,7 @@
                 return;
             }
             if (res.data && res.data.token) {
-                entrarNoPainel(res.data.token, estado.nome);
+                entrarNoPainel(res.data.token);
             }
         });
 
@@ -619,7 +609,7 @@
 
         // Convite: ativar o autenticador ou seguir direto para o painel.
         document.getElementById('entrarSem2faBtn').addEventListener('click', () => {
-            entrarNoPainel(dcApi.getToken(), estado.nome);
+            entrarNoPainel(dcApi.getToken());
         });
 
         document.getElementById('ativar2faBtn').addEventListener('click', async () => {
@@ -639,7 +629,7 @@
             }
             if (res.data && res.data.ativo) {
                 mostrarMsg('Este usuário já está com o Google Authenticator ativo nesta conta.', 'ok');
-                entrarNoPainel(dcApi.getToken(), estado.nome);
+                entrarNoPainel(dcApi.getToken());
                 return;
             }
             document.getElementById('qrImg').src = res.data.qr;
@@ -671,11 +661,11 @@
                 return;
             }
             mostrarMsg('Google Authenticator ativado com sucesso nesta conta.', 'ok');
-            setTimeout(() => entrarNoPainel(dcApi.getToken(), estado.nome), 900);
+            setTimeout(() => entrarNoPainel(dcApi.getToken()), 900);
         });
 
         document.getElementById('cancelar2faBtn').addEventListener('click', () => {
-            entrarNoPainel(dcApi.getToken(), estado.nome);
+            entrarNoPainel(dcApi.getToken());
         });
 
         const setupInput = document.getElementById('totpSetupInput');
