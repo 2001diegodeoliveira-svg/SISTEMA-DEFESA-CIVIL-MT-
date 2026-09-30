@@ -189,6 +189,7 @@ async function pgReadUsers() {
     ativo: r.ativo,
     cadastroId: r.cadastro_id,
     bootstrapAdmin: r.bootstrap_admin,
+    otp: r.totp_secret ? { secret: r.totp_secret, ativo: r.totp_habilitado === true } : null,
     criadoEm: r.criado_em ? r.criado_em.toISOString() : undefined,
   }));
 }
@@ -197,17 +198,19 @@ async function pgWriteUsers(list) {
   const rows = (Array.isArray(list) ? list : []).map((u) => {
     const mun = u.municipio ? m.byNorm.get(norm(u.municipio)) : undefined;
     return [u.usuario, u.senhaHash, u.nome || '', perfilOk(u.perfil), mun ? mun.id : null,
-      u.ativo !== false, u.cadastroId || null, u.bootstrapAdmin === true, tsPg(u.criadoEm)];
+      u.ativo !== false, u.cadastroId || null, u.bootstrapAdmin === true,
+      (u.otp && u.otp.secret) || null, Boolean(u.otp && u.otp.ativo), tsPg(u.criadoEm)];
   });
   if (!rows.length) return;
   const sql =
-    `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, bootstrap_admin, criado_em)
-     VALUES ${placeholders(rows, 9)}
+    `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, bootstrap_admin, totp_secret, totp_habilitado, criado_em)
+     VALUES ${placeholders(rows, 11)}
      ON CONFLICT (usuario) DO UPDATE SET
        senha_hash = EXCLUDED.senha_hash, nome = EXCLUDED.nome,
        perfil = EXCLUDED.perfil, municipio_id = EXCLUDED.municipio_id,
        ativo = EXCLUDED.ativo, cadastro_id = EXCLUDED.cadastro_id,
-       bootstrap_admin = EXCLUDED.bootstrap_admin`;
+       bootstrap_admin = EXCLUDED.bootstrap_admin,
+       totp_secret = EXCLUDED.totp_secret, totp_habilitado = EXCLUDED.totp_habilitado`;
   await getPool().query(sql, rows.flat());
 }
 

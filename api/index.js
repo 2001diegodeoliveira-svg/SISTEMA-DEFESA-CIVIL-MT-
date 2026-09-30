@@ -23,6 +23,10 @@ const handlers = {
   'auth/login': require('./_routes/auth/login'),
   'auth/logout': require('./_routes/auth/logout'),
   'auth/me': require('./_routes/auth/me'),
+  'auth/totp/verify': require('./_routes/auth/totp'),
+  'auth/totp/setup': require('./_routes/auth/totp'),
+  'auth/totp/activate': require('./_routes/auth/totp'),
+  'auth/totp/disable': require('./_routes/auth/totp'),
   'user-registrations': require('./_routes/user-registrations'),
   'alertas': require('./_routes/alertas'),
   'areas': require('./_routes/areas'),
@@ -102,6 +106,35 @@ module.exports = serve(async function handler(req) {
     return new Response(null, { status: 204, headers: corsHeaders(origin) });
   }
 
+  const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  let configuredAdmin = false;
+  try {
+    const seeds = JSON.parse(process.env.SEED_USERS || '[]');
+    configuredAdmin = Array.isArray(seeds) && seeds.some((user) => user && user.perfil === 'admin');
+  } catch {}
+  if (production && !configuredAdmin) {
+    try {
+      const users = await readCollection('users');
+      if (!users.some((user) => user.perfil === 'admin' && isLoginEligible(user))) {
+        return new Response(JSON.stringify({
+          erro: 'Backend não configurado para produção.',
+          detalhes: ['Configure um administrador ativo via SEED_USERS ou promova um bootstrap admin persistido.'],
+        }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
+    } catch (error) {
+      return new Response(JSON.stringify({
+        erro: 'Backend não configurado para produção.',
+        detalhes: ['Banco persistente indisponível para validar o administrador bootstrap.'],
+      }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+  }
+
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
   if (payload) {
@@ -135,6 +168,7 @@ module.exports = serve(async function handler(req) {
   let target = null;
   if (handlers[route]) target = handlers[route];
   else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
+  else if (route.startsWith('auth/totp/')) target = handlers['auth/totp/verify'];
   else {
     const m = route.match(/^areas\/([^/]+)$/);
     if (m) target = areasIdHandler;

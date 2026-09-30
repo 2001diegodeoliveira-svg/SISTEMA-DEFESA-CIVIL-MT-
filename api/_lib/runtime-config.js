@@ -37,20 +37,23 @@ function validateProductionConfig(env = process.env) {
   try {
     seedUsers = JSON.parse(env.SEED_USERS || 'null');
   } catch {}
-  if (!Array.isArray(seedUsers) || !seedUsers.length || !seedUsers.every((user) =>
-    user && typeof user.usuario === 'string' && user.usuario.trim() &&
-    typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 12 &&
-    VALID_PROFILES.has(user.perfil)
-  )) {
-    problems.push('SEED_USERS deve conter usuários com senhas fortes e perfis válidos; contas demo não são permitidas.');
-  } else if (!seedUsers.some((user) => user.perfil === 'admin')) {
-    problems.push('SEED_USERS deve incluir pelo menos um administrador.');
-  }
-
   const hasDatabase = Boolean(env.DATABASE_URL && env.FILE_STORE !== '1');
   const hasKvUrl = Boolean(env.KV_REST_API_URL);
   const hasKvToken = Boolean(env.KV_REST_API_TOKEN);
   const hasKv = hasKvUrl && hasKvToken;
+  if (seedUsers && (!Array.isArray(seedUsers) || !seedUsers.every((user) =>
+    user && typeof user.usuario === 'string' && user.usuario.trim() &&
+    typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 12 &&
+    VALID_PROFILES.has(user.perfil)
+  ))) {
+    problems.push('SEED_USERS, quando definido, deve conter usuários com senhas fortes e perfis válidos.');
+  } else if (Array.isArray(seedUsers) && seedUsers.length && !seedUsers.some((user) => user.perfil === 'admin')) {
+    problems.push('SEED_USERS deve incluir pelo menos um administrador.');
+  }
+
+  if ((!Array.isArray(seedUsers) || !seedUsers.length) && !hasDatabase && !hasKv) {
+    problems.push('Configure um admin bootstrap em SEED_USERS ou um banco persistente com administrador ativo.');
+  }
   if (hasKvUrl !== hasKvToken) problems.push('KV_REST_API_URL e KV_REST_API_TOKEN devem ser configurados juntos.');
   if (env.VERCEL && !hasDatabase && !hasKv) {
     problems.push('Vercel em produção exige DATABASE_URL ou KV completo; armazenamento local/memória é efêmero.');

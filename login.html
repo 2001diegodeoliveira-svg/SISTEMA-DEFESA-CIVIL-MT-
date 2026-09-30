@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
     <title>Acesso Restrito — Defesa Civil Mato Grosso</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
 
@@ -19,6 +19,8 @@
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --border-color: rgba(148, 163, 184, 0.12);
+            --ok: #22c55e;
+            --err: #ef4444;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -51,44 +53,142 @@
             background: radial-gradient(circle at 80% 20%, rgba(30,41,59,.9) 0%, var(--bg-dark) 60%);
         }
 
-        .login-box { width: min(640px, 100%); }
-        .login-head { text-align: center; margin-bottom: 30px; }
-        .login-head h2 { font-size: 26px; font-weight: 800; }
-        .login-head p { color: var(--text-muted); font-size: 13px; margin-top: 8px; line-height: 1.5; }
-
-        .profiles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 22px; }
-        .profile-card {
+        /* ---- Painel de login --- */
+        .painel {
+            width: min(960px, 100%);
+            display: grid; grid-template-columns: 360px 1fr;
             background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 12px; padding: 18px; cursor: pointer; transition: all .15s;
-            text-align: left;
+            border-radius: 18px; overflow: hidden;
+            box-shadow: 0 24px 60px rgba(2,7,20,.65);
+        }
+
+        .painel-side {
+            position: relative; padding: 38px 30px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            background: url('imagem-login-defesa.png') center / cover no-repeat;
+            color: #fff; min-height: 620px;
+        }
+        .painel-side::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(200deg, rgba(11,19,41,.40) 0%, rgba(2,7,20,.82) 70%);
+        }
+        .side-top, .side-bottom { position: relative; z-index: 1; }
+        .side-top img { height: 84px; filter: drop-shadow(0 4px 12px rgba(0,0,0,.45)); }
+        .side-top h2 { font-size: 22px; font-weight: 800; line-height: 1.25; margin: 14px 0 6px; }
+        .side-top p  { font-size: 12.5px; opacity: .85; line-height: 1.55; }
+        .side-badges { margin-top: 22px; display: grid; gap: 10px; }
+        .side-badge {
+            display: flex; gap: 10px; align-items: center;
+            font-size: 11.5px; opacity: .95;
+            background: rgba(15,23,42,.55); border: 1px solid rgba(255,255,255,.14);
+            border-radius: 10px; padding: 10px 12px; backdrop-filter: blur(4px);
+        }
+        .side-badge i { color: var(--accent-orange); font-size: 16px; flex: none; }
+        .side-bottom {
+            font-size: 11px; opacity: .8; line-height: 1.5;
+            border-left: 3px solid var(--accent-orange); padding: 8px 12px;
+            background: rgba(2,7,20,.45); border-radius: 0 8px 8px 0;
+        }
+
+        .painel-main { padding: 40px 46px; position: relative; }
+        .painel-main h2 { font-size: 23px; font-weight: 800; letter-spacing: .3px; }
+        .painel-main .sub { color: var(--text-muted); font-size: 12.5px; margin-top: 6px; line-height: 1.55; }
+
+        .box-msg {
+            display: none; margin: 16px 0 0; padding: 11px 14px;
+            border-radius: 8px; font-size: 12px; line-height: 1.45;
+            border: 1px solid; align-items: center; gap: 8px;
+        }
+        .box-msg.erro { color: #fecaca; background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.35); display: flex; }
+        .box-msg.ok   { color: #bbf7d0; background: rgba(34,197,94,.10); border-color: rgba(34,197,94,.3); display: flex; }
+        .box-msg.info { color: #c7d2fe; background: rgba(99,102,241,.10); border-color: rgba(99,102,241,.3); display: flex; }
+
+        .passo { display: none; margin-top: 24px; animation: passoIn .25s ease; }
+        .passo.ativo { display: block; }
+        @keyframes passoIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        .profiles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .profile-card {
+            background: var(--bg-dark); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 16px; cursor: pointer; transition: all .15s;
+            text-align: left; color: var(--text-main);
         }
         .profile-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
         .profile-card.selected { border-color: var(--accent-orange); background: rgba(249,99,28,.08); }
-        .profile-card i { font-size: 20px; color: var(--text-muted); margin-bottom: 10px; display: block; }
+        .profile-card i { font-size: 18px; color: var(--text-muted); margin-bottom: 8px; display: block; }
         .profile-card.selected i { color: var(--accent-orange); }
-        .profile-card b { font-size: 13.5px; display: block; margin-bottom: 4px; }
-        .profile-card span { font-size: 11px; color: var(--text-muted); line-height: 1.45; display: block; }
+        .profile-card b { font-size: 13px; display: block; margin-bottom: 3px; }
+        .profile-card span { font-size: 11px; color: var(--text-muted); line-height: 1.4; display: block; }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
         .field label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); display: block; margin-bottom: 7px; font-weight: 600; }
         .field input, .field select {
-            width: 100%; background: var(--bg-card); border: 1px solid var(--border-color);
+            width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color);
             border-radius: 8px; padding: 12px 14px; color: var(--text-main);
             font-size: 13.5px; outline: none; transition: border .15s;
         }
         .field select option { background: var(--bg-dark); }
         .field input:focus, .field select:focus { border-color: var(--accent-orange); }
 
-        .btn-enter {
+        .btn {
             width: 100%; background: var(--accent-orange); border: none; color: #fff;
             padding: 14px; border-radius: 8px; font-weight: 700; font-size: 14px;
             cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: background .2s; margin-top: 6px;
+            transition: background .2s, opacity .2s; margin-top: 18px;
         }
-        .btn-enter:hover { background: var(--accent-orange-hover); }
+        .btn:hover { background: var(--accent-orange-hover); }
+        .btn:disabled { opacity: .6; cursor: default; }
+        .btn.secundario {
+            background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main);
+        }
+        .btn.secundario:hover { background: var(--bg-card-hover); border-color: var(--accent-orange); }
+
+        .espaco { margin-top: 18px; }
+        .passo-titulo { font-size: 15.5px; font-weight: 700; margin-bottom: 4px; }
+        .passo-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; }
+
+        .totp-input {
+            width: 100%; text-align: center; font-size: 28px; font-weight: 800;
+            letter-spacing: 14px; padding: 14px; background: var(--bg-dark);
+            border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-main);
+            outline: none; font-family: 'Inter', monospace; text-transform: uppercase;
+        }
+        .totp-input:focus { border-color: var(--accent-orange); }
+
+        .segundo-fator-box {
+            background: var(--bg-dark); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 18px;
+            display: flex; gap: 16px; align-items: flex-start;
+        }
+        .segundo-fator-box i { color: var(--accent-orange); font-size: 30px; flex: none; margin-top: 2px; }
+        .segundo-fator-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+        .segundo-fator-box p { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+        .qr-wrap { text-align: center; }
+        .qr-box {
+            display: inline-block; background: #fff; padding: 10px;
+            border-radius: 12px; margin: 4px auto 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+        }
+        .qr-box img { display: block; width: 200px; height: 200px; }
+        .secret-line {
+            font-family: monospace; background: var(--bg-dark); border: 1px dashed var(--border-color);
+            padding: 10px; border-radius: 8px; letter-spacing: 2px; font-size: 13px;
+            text-align: center; user-select: all; margin: 0 auto 14px; max-width: 320px;
+        }
+        .qr-helper { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; text-align: left; margin-bottom: 18px; }
+        .qr-helper b { color: var(--text-main); }
+
+        .passo-voltar {
+            margin-top: 16px; text-align: center;
+        }
+        .passo-voltar a {
+            color: var(--text-muted); font-size: 12px; text-decoration: none; cursor: pointer;
+        }
+        .passo-voltar a:hover { color: var(--accent-orange); }
 
         .demo-note {
-            margin-top: 18px; font-size: 10.5px; color: var(--text-muted);
+            margin-top: 20px; font-size: 10.5px; color: var(--text-muted);
             border: 1px dashed var(--border-color); border-left: 3px solid var(--accent-orange);
             border-radius: 8px; padding: 10px 14px; line-height: 1.55;
         }
@@ -98,7 +198,12 @@
             padding: 22px 5%; font-size: 12px; color: var(--text-muted); text-align: center;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 860px) {
+            .painel { grid-template-columns: 1fr; }
+            .painel-side { min-height: 0; padding: 26px; }
+            .side-top img { height: 64px; }
+            .side-badges { display: none; }
+            .painel-main { padding: 28px 24px; }
             .profiles-grid, .form-row { grid-template-columns: 1fr; }
         }
     </style>
@@ -119,51 +224,138 @@
     </header>
 
     <main>
-        <div class="login-box">
-            <div class="login-head">
-                <h2>ÁREA RESTRITA — PAINEL OPERACIONAL</h2>
-                <p>Selecione seu perfil de acesso conforme a estrutura da proposta técnica (item 9).
-                   Cada perfil define camadas, painéis e ações disponíveis.</p>
-            </div>
-
-            <div class="profiles-grid" id="perfisGrid"></div>
-
-            <div class="form-row">
-                <div class="field">
-                    <label for="nomeInput">Nome do responsável</label>
-                    <input type="text" id="nomeInput" placeholder="Ex.: Maria Souza" autocomplete="off">
+        <div class="painel">
+            <aside class="painel-side">
+                <div class="side-top">
+                    <img src="imagens/logo.png" alt="Defesa Civil MT">
+                    <h2>PAINEL OPERACIONAL<br>DA DEFESA CIVIL</h2>
+                    <p>Controle, monitoramento e resposta em todo o estado de Mato Grosso.</p>
+                    <div class="side-badges">
+                        <div class="side-badge"><i data-lucide="shield-check"></i> Autenticação em dois fatores (Google Authenticator)</div>
+                        <div class="side-badge"><i data-lucide="map"></i> Mapa completo, alertas e gestão por município</div>
+                        <div class="side-badge"><i data-lucide="radar"></i> Perfis conforme a proposta técnica (item 9)</div>
+                    </div>
                 </div>
-                <div class="field" id="munField" style="display:none;">
-                    <label for="munSelect">Município de atuação</label>
-                    <select id="munSelect" disabled><option value="">Selecione o perfil Gestor Municipal...</option></select>
+                <div class="side-bottom">
+                    Cada perfil define camadas, painéis e ações disponíveis. O segundo fator protege o acesso ao painel operacional.
                 </div>
-            </div>
+            </aside>
 
-            <div class="form-row">
-                <div class="field">
-                    <label for="usuarioInput">Usuário</label>
-                    <input type="text" id="usuarioInput" placeholder="Seu usuário de acesso" autocomplete="off">
+            <section class="painel-main">
+                <h2>ÁREA RESTRITA</h2>
+                <p class="sub">Entre com suas credenciais. Se sua conta tiver o Google Authenticator ativo, será solicitado o código de verificação.</p>
+
+                <div class="box-msg" id="boxMsg"></div>
+
+                <!-- PASSO 1 — Credenciais -->
+                <div class="passo ativo" id="passo-01">
+                    <div class="profiles-grid" id="perfisGrid"></div>
+
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="nomeInput">Nome do responsável</label>
+                            <input type="text" id="nomeInput" placeholder="Ex.: Maria Souza" autocomplete="off">
+                        </div>
+                        <div class="field" id="munField" style="display:none;">
+                            <label for="munSelect">Município de atuação</label>
+                            <select id="munSelect" disabled><option value="">Selecione o perfil Gestor Municipal...</option></select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="usuarioInput">Usuário</label>
+                            <input type="text" id="usuarioInput" placeholder="Seu usuário de acesso" autocomplete="off">
+                        </div>
+                        <div class="field">
+                            <label for="senhaInput">Senha</label>
+                            <input type="password" id="senhaInput" placeholder="Sua senha" autocomplete="current-password">
+                        </div>
+                    </div>
+
+                    <button class="btn" id="entrarBtn">
+                        <i data-lucide="log-in"></i> ENTRAR NO PAINEL
+                    </button>
                 </div>
-                <div class="field">
-                    <label for="senhaInput">Senha</label>
-                    <input type="password" id="senhaInput" placeholder="Sua senha" autocomplete="current-password">
+
+                <!-- PASSO 2 — Segundo fator (conta com Google Authenticator ativo) -->
+                <div class="passo" id="passo-02">
+                    <div class="passo-titulo">Código de verificação</div>
+                    <p class="passo-desc">Sua conta possui autenticação em dois fatores ativa. Abra o Google Authenticator e informe o código de 6 dígitos.</p>
+
+                    <div class="segundo-fator-box">
+                        <i data-lucide="smartphone"></i>
+                        <div>
+                            <h3>Confirmação de identidade</h3>
+                            <p>Insira o código atual exibido no aplicativo Google Authenticator para concluir o login.</p>
+                        </div>
+                    </div>
+
+                    <div class="espaco">
+                        <input type="text" class="totp-input" id="totpInput" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+                    </div>
+
+                    <button class="btn" id="totpBtn">
+                        <i data-lucide="shield-check"></i> VALIDAR E ENTRAR
+                    </button>
+                    <div class="passo-voltar"><a id="voltarCredenciais">Voltar e corrigir usuário/senha</a></div>
                 </div>
-            </div>
 
-            <div id="loginMsg" style="font-size:12px;color:#ef4444;margin-bottom:12px;display:none;"></div>
+                <!-- PASSO 2b — Convite para ativar o autenticador (conta sem 2FA) -->
+                <div class="passo" id="passo-02b">
+                    <div class="segundo-fator-box" style="margin-bottom:18px;">
+                        <i data-lucide="key-round"></i>
+                        <div>
+                            <h3>Autenticação validada!</h3>
+                            <p>Sua conta ainda não usa o Google Authenticator. Ative o segundo fator para proteger seu acesso ao painel operacional.</p>
+                        </div>
+                    </div>
 
-            <button class="btn-enter" id="entrarBtn">
-                <i data-lucide="log-in"></i> ENTRAR NO PAINEL
-            </button>
+                    <button class="btn" id="ativar2faBtn">
+                        <i data-lucide="smartphone"></i> ATIVAR GOOGLE AUTHENTICATOR
+                    </button>
+                    <button class="btn secundario" id="entrarSem2faBtn">
+                        <i data-lucide="log-in"></i> ENTRAR NO PAINEL AGORA
+                    </button>
+                    <div class="passo-voltar"><a id="voltarCredenciais2">Voltar</a></div>
+                </div>
 
-            <div class="demo-note">
-                <b>Acesso:</b> o login é validado no backend e o perfil define o que cada um vê.
-                <code>defesa</code>/<code>defesa123</code> = gestor estadual (controle geral de
-                Mato Grosso: mapa completo, visão estadual e gestão de todos os municípios).
-                Gestor municipal: escolha o município na lista (todos os 142, inclusive o de
-                Cuiabá) e informe a senha <code>defesa123</code> — o acesso fica restrito ao
-                seu município. <code>comum</code>/<code>defesa123</code> = somente alertas e orientações.
-            </div>
+                <!-- PASSO 3 — Configuração do Google Authenticator -->
+                <div class="passo" id="passo-03">
+                    <div class="passo-titulo">Configurar Google Authenticator</div>
+                    <p class="passo-desc">Escaneie o QR code com o aplicativo Google Authenticator (Android/iPhone) ou digite o segredo manualmente. Depois informe o código exibido para confirmar.</p>
+
+                    <div class="qr-wrap">
+                        <div class="qr-box"><img id="qrImg" alt="QR code do autenticador"></div>
+                        <div class="secret-line" id="qrSecret"></div>
+                    </div>
+
+                    <div class="qr-helper">
+                        <b>Passo 1:</b> baixe o <b>Google Authenticator</b> (Play Store / App Store).<br>
+                        <b>Passo 2:</b> toque em <b>+</b> &rarr; <b>Escanear código QR</b> e aponte para o quadro acima (ou adicione por chave de configuração).<br>
+                        <b>Passo 3:</b> digite o código de 6 dígitos gerado para confirmar a ativação.
+                    </div>
+
+                    <input type="text" class="totp-input" id="totpSetupInput" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+
+                    <button class="btn" id="confirmar2faBtn">
+                        <i data-lucide="shield-check"></i> ATIVAR AUTENTICADOR
+                    </button>
+                    <button class="btn secundario" id="cancelar2faBtn">
+                        <i data-lucide="arrow-left"></i> CONCLUIR AGORA SEM ATIVAR
+                    </button>
+                    <div class="passo-voltar"><a id="voltarConvite">Voltar</a></div>
+                </div>
+
+                <div class="demo-note">
+                    <b>Acesso:</b> o login é validado no backend e o perfil define o que cada um vê.
+                    <code>defesa</code>/<code>defesa123</code> = gestor estadual (controle geral de
+                    Mato Grosso: mapa completo, visão estadual e gestão de todos os municípios).
+                    Gestor municipal: escolha o município na lista (todos os 142, inclusive o de
+                    Cuiabá) e informe a senha <code>defesa123</code> — o acesso fica restrito ao
+                    seu município. <code>comum</code>/<code>defesa123</code> = somente alertas e orientações.
+                </div>
+            </section>
         </div>
     </main>
 
@@ -179,6 +371,7 @@
     <script>
         let perfilSelecionado = null;
         let municipios = [];
+        const estado = { usuario: '', senha: '', nome: '', desafio: null };
 
         const grid = document.getElementById('perfisGrid');
         Object.entries(PERFIS).forEach(([key, p]) => {
@@ -244,61 +437,41 @@
             document.getElementById('usuarioInput').value = achado ? achado.usuario : '';
         });
 
-        document.getElementById('entrarBtn').addEventListener('click', async () => {
-            const usuario = document.getElementById('usuarioInput').value.trim();
-            const senha = document.getElementById('senhaInput').value;
-            const nome = document.getElementById('nomeInput').value.trim();
-            const msg = document.getElementById('loginMsg');
+        function mostrarMsg(texto, tipo) {
+            const el = document.getElementById('boxMsg');
+            el.className = 'box-msg ' + (tipo || 'erro');
+            el.innerHTML = '<i data-lucide="' + (tipo === 'ok' ? 'circle-check' : tipo === 'info' ? 'info' : 'triangle-alert') + '"></i> <span>' + texto + '</span>';
+            if (window.lucide) lucide.createIcons();
+        }
 
-            // Ao escolher "Gestor municipal", a conta usada precisa ser do município
-            // selecionado — sem isso o sistema poderia autenticar outra conta (ex.:
-            // "defesa") e "entrar como estadual" por engano.
-            if (perfilSelecionado === 'municipal') {
-                const achado = municipios.find(m => m.usuario === usuario);
-                if (!munSelect.value || !achado) {
-                    msg.style.display = 'block';
-                    msg.textContent = 'Gestor municipal: selecione o município na lista para preencher a conta de acesso.';
-                    return;
-                }
-            }
+        function ocultarMsg() {
+            const el = document.getElementById('boxMsg');
+            el.className = 'box-msg';
+            el.innerHTML = '';
+        }
 
-            if (!usuario || !senha) {
-                msg.style.display = 'block';
-                msg.textContent = 'Informe usuário e senha.';
-                return;
-            }
+        function irPara(passo) {
+            document.querySelectorAll('.passo').forEach(p => p.classList.remove('ativo'));
+            document.getElementById('passo-' + passo).classList.add('ativo');
+            ocultarMsg();
+        }
 
-            const btn = document.getElementById('entrarBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Validando...';
-            msg.style.display = 'none';
-
-            const res = await dcLogin(usuario, senha);
-
-            btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="log-in"></i> ENTRAR NO PAINEL';
-
-            if (!res.ok) {
-                msg.style.display = 'block';
-                msg.textContent = res.erro || 'Falha na autenticação.';
-                return;
-            }
-
-            // Se o usuário digitou um nome e o backend não retornou, usamos o nome local
+        // Guarda a sessão e navega para o painel (restrito ao perfil selecionado).
+        function entrarNoPainel(token, nomeInformado) {
+            try { localStorage.setItem('dcmt_token', token); } catch (e) {}
             const s = dcGetSession();
-            // Segurança: perfil "Gestor municipal" selecionado exige conta municipal.
             if (perfilSelecionado === 'municipal' && (!s || s.perfil !== 'municipal')) {
                 localStorage.removeItem('dcmt_token');
                 localStorage.removeItem('dcmt_session');
-                msg.style.display = 'block';
-                msg.textContent = 'A conta "' + usuario + '" não é um gestor municipal. Escolha o município correto na lista (usuário e senha: ' + usuario + ' / defesa123).';
+                mostrarMsg('A conta "' + estado.usuario + '" não é um gestor municipal. Escolha o município correto na lista (usuário e senha: ' + estado.usuario + ' / defesa123).');
+                irPara('01');
                 return;
             }
-            if (nome && s && (!s.nome || s.nome === 'Cidadão')) {
-                s.nome = nome;
+            if (nomeInformado && s && (!s.nome || s.nome === 'Cidadão')) {
+                s.nome = nomeInformado;
             }
             // O município do gestor municipal vem do vínculo da conta no backend —
-            // nunca do formulário. Gestão e mapa já abrem restritos ao próprio município.
+            // nunca do formulário.
             if (s) localStorage.setItem('dcmt_session', JSON.stringify(s));
 
             if (s && s.perfil === 'municipal') {
@@ -306,6 +479,182 @@
                 return;
             }
             location.href = 'index.html';
+        }
+
+        document.getElementById('entrarBtn').addEventListener('click', async () => {
+            const usuario = document.getElementById('usuarioInput').value.trim();
+            const senha = document.getElementById('senhaInput').value;
+            const nome = document.getElementById('nomeInput').value.trim();
+
+            // Ao escolher "Gestor municipal", a conta usada precisa ser do município
+            // selecionado — sem isso o sistema poderia autenticar outra conta (ex.:
+            // "defesa") e "entrar como estadual" por engano.
+            if (perfilSelecionado === 'municipal') {
+                const achado = municipios.find(m => m.usuario === usuario);
+                if (!munSelect.value || !achado) {
+                    mostrarMsg('Gestor municipal: selecione o município na lista para preencher a conta de acesso.');
+                    return;
+                }
+            }
+
+            if (!usuario || !senha) {
+                mostrarMsg('Informe usuário e senha.');
+                return;
+            }
+
+            estado.usuario = usuario;
+            estado.senha = senha;
+            estado.nome = nome;
+
+            const btn = document.getElementById('entrarBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Validando...';
+            ocultarMsg();
+
+            const res = await dcApi.login(usuario, senha);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="log-in"></i> ENTRAR NO PAINEL';
+
+            if (!res.ok) {
+                mostrarMsg(res.data && res.data.erro || 'Falha na autenticação.');
+                return;
+            }
+
+            if (res.data && res.data.exigeTotp && res.data.desafio) {
+                estado.desafio = res.data.desafio;
+                const totpInput = document.getElementById('totpInput');
+                totpInput.value = '';
+                irPara('02');
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => totpInput.focus(), 60);
+                return;
+            }
+
+            if (res.data && res.data.token) {
+                estado.desafio = null;
+                // Token já armazenado para permitir "Ativar Google Authenticator".
+                try { localStorage.setItem('dcmt_token', res.data.token); } catch (e) {}
+                irPara('02b');
+            }
+        });
+
+        // Segundo fator — valida o código do Google Authenticator.
+        document.getElementById('totpBtn').addEventListener('click', async () => {
+            const codigo = document.getElementById('totpInput').value.trim();
+            if (!/^\d{6}$/.test(codigo)) {
+                mostrarMsg('Informe os 6 dígitos do Google Authenticator.');
+                return;
+            }
+            const btn = document.getElementById('totpBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Validando código...';
+            ocultarMsg();
+
+            const res = await dcApi.totpVerify(estado.desafio, codigo);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="shield-check"></i> VALIDAR E ENTRAR';
+
+            if (!res.ok) {
+                mostrarMsg(res.data && res.data.erro || 'Código inválido ou expirado.');
+                return;
+            }
+            if (res.data && res.data.token) {
+                entrarNoPainel(res.data.token, estado.nome);
+            }
+        });
+
+        const totpInput = document.getElementById('totpInput');
+        totpInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            ocultarMsg();
+        });
+
+        ['voltarCredenciais', 'voltarCredenciais2', 'voltarConvite'].forEach(id => {
+            document.getElementById(id).addEventListener('click', () => {
+                irPara('01');
+                const btn = document.getElementById('entrarBtn');
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="log-in"></i> ENTRAR NO PAINEL';
+            });
+        });
+
+        // Convite: ativar o autenticador ou seguir direto para o painel.
+        document.getElementById('entrarSem2faBtn').addEventListener('click', () => {
+            entrarNoPainel(dcApi.getToken(), estado.nome);
+        });
+
+        document.getElementById('ativar2faBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('ativar2faBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Gerando QR code...';
+            ocultarMsg();
+
+            const res = await dcApi.totpSetup(estado.desafio);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="smartphone"></i> ATIVAR GOOGLE AUTHENTICATOR';
+
+            if (!res.ok) {
+                mostrarMsg(res.data && res.data.erro || 'Não foi possível gerar o QR code.');
+                return;
+            }
+            if (res.data && res.data.ativo) {
+                mostrarMsg('Este usuário já está com o Google Authenticator ativo nesta conta.', 'ok');
+                entrarNoPainel(dcApi.getToken(), estado.nome);
+                return;
+            }
+            document.getElementById('qrImg').src = res.data.qr;
+            document.getElementById('qrSecret').textContent = res.data.segredo;
+            const setupInput = document.getElementById('totpSetupInput');
+            setupInput.value = '';
+            irPara('03');
+            setTimeout(() => setupInput.focus(), 60);
+        });
+
+        document.getElementById('confirmar2faBtn').addEventListener('click', async () => {
+            const codigo = document.getElementById('totpSetupInput').value.trim();
+            if (!/^\d{6}$/.test(codigo)) {
+                mostrarMsg('Informe os 6 dígitos gerados pelo Google Authenticator.');
+                return;
+            }
+            const btn = document.getElementById('confirmar2faBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Ativando...';
+            ocultarMsg();
+
+            const res = await dcApi.totpActivate(estado.desafio, codigo);
+
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="shield-check"></i> ATIVAR AUTENTICADOR';
+
+            if (!res.ok) {
+                mostrarMsg(res.data && res.data.erro || 'Código inválido. Confira o Google Authenticator.');
+                return;
+            }
+            mostrarMsg('Google Authenticator ativado com sucesso nesta conta.', 'ok');
+            setTimeout(() => entrarNoPainel(dcApi.getToken(), estado.nome), 900);
+        });
+
+        document.getElementById('cancelar2faBtn').addEventListener('click', () => {
+            entrarNoPainel(dcApi.getToken(), estado.nome);
+        });
+
+        const setupInput = document.getElementById('totpSetupInput');
+        setupInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            ocultarMsg();
+        });
+
+        document.getElementById('senhaInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('entrarBtn').click();
+        });
+        totpInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('totpBtn').click();
+        });
+        setupInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('confirmar2faBtn').click();
         });
     </script>
 </body>

@@ -1,6 +1,6 @@
-/* POST /api/auth/login → { token, user } */
+/* POST /api/auth/login → { token, user } ou, com 2FA ativo, { exigeTotp, desafio } */
 const { jsonResponse, readJson } = require('../../_lib/http');
-const { findOrProvisionUser, signToken, publicUser } = require('../../_lib/auth');
+const { findOrProvisionUser, signToken, signTotpChallenge, publicUser } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
@@ -20,6 +20,9 @@ module.exports = serve(async function handler(req) {
   const user = await findOrProvisionUser(usuario, senha);
   if (!user) {
     return jsonResponse(401, { erro: 'Credenciais inválidas.' }, origin);
+  }
+  if (user.otp && user.otp.ativo) {
+    return jsonResponse(200, { exigeTotp: true, desafio: signTotpChallenge(user) }, origin);
   }
   const token = signToken(user);
   return jsonResponse(200, { token, user: publicUser(user) }, origin);

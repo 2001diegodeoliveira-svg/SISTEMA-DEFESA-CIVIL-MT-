@@ -4,10 +4,49 @@
    ============================================================ */
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { verifySync } = require('otplib');
 const { readCollection, writeCollection } = require('./store');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
 const JWT_EXP = process.env.JWT_EXP || '12h';
+const JWT_TOTP_EXP = process.env.JWT_TOTP_EXP || '5m';
+
+function totpSecretFor(user) {
+  return user && user.otp && user.otp.ativo ? user.otp.secret : null;
+}
+
+function checkTotpToken(secret, code) {
+  if (!secret || !code) return false;
+  try {
+    const token = String(code).replace(/\s/g, '');
+    if (!/^\d{6}$/.test(token)) return false;
+    const result = verifySync({ secret, token });
+    return result === true || (result && result.valid === true);
+  } catch {
+    return false;
+  }
+}
+
+function signTotpChallenge(user, extra) {
+  return jwt.sign(
+    { scope: 'totp', sub: user.id, usuario: user.usuario, ...(extra || {}) },
+    JWT_SECRET,
+    { expiresIn: JWT_TOTP_EXP }
+  );
+}
+
+function verifyTotpChallenge(token) {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    return payload && payload.scope === 'totp' ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+function verifyTotpCode(user, code) {
+  return checkTotpToken(totpSecretFor(user), code);
+}
 
 function seedUsers() {
   try {
@@ -100,4 +139,8 @@ module.exports = {
   verifyToken,
   publicUser,
   seedUsers,
+  signTotpChallenge,
+  verifyTotpChallenge,
+  verifyTotpCode,
+  checkTotpToken,
 };

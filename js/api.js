@@ -42,6 +42,20 @@
             return request('auth/logout', { method: 'POST' }).catch(function () { return null; });
         },
 
+        // Google Authenticator (TOTP — segundo fator)
+        totpVerify: function (desafio, codigo) {
+            return request('auth/totp/verify', { method: 'POST', body: { desafio: desafio, codigo: codigo } });
+        },
+        totpSetup: function (desafio) {
+            return request('auth/totp/setup', { method: 'POST', body: { desafio: desafio } });
+        },
+        totpActivate: function (desafio, codigo) {
+            return request('auth/totp/activate', { method: 'POST', body: { desafio: desafio, codigo: codigo } });
+        },
+        totpDisable: function (codigo) {
+            return request('auth/totp/disable', { method: 'POST', body: { codigo: codigo } });
+        },
+
         // Alertas
         alertas: function () { return request('alertas'); },
 
