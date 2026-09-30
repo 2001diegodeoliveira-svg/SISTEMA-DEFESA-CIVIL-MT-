@@ -125,6 +125,8 @@ module.exports = serve(async function handler(req) {
         });
       }
     } catch (error) {
+      // Registra o motivo real (sem credenciais) para diagnóstico nos logs.
+      console.error('[bootstrap-admin] falha ao consultar o banco:', error && error.message);
       return new Response(JSON.stringify({
         erro: 'Backend não configurado para produção.',
         detalhes: ['Banco persistente indisponível para validar o administrador bootstrap.'],

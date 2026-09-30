@@ -8,6 +8,7 @@ function parseList(value) {
 function validateProductionConfig(env = process.env) {
   if (env.NODE_ENV !== 'production' && env.VERCEL_ENV !== 'production') return [];
 
+  const onVercel = Boolean(env.VERCEL);
   const problems = [];
   const secret = env.JWT_SECRET || '';
   if (Buffer.byteLength(secret, 'utf8') < 32 || secret === DEFAULT_JWT_SECRET) {
@@ -16,16 +17,22 @@ function validateProductionConfig(env = process.env) {
 
   const origins = parseList(env.CORS_ORIGIN);
   if (!origins.length || origins.includes('*')) {
-    problems.push('CORS_ORIGIN deve listar origens HTTPS explícitas.');
+    problems.push('CORS_ORIGIN deve listar origens explícitas.');
   } else if (origins.some((origin) => {
     try {
       const parsed = new URL(origin);
-      return parsed.protocol !== 'https:' || parsed.origin !== origin;
+      /* Na Vercel o serviço está exposto à internet: exigimos HTTPS.
+         Em servidor próprio atrás de proxy/túnel, HTTP em rede local
+         também é aceito (o túnel termina TLS antes de chegar aqui). */
+      if (parsed.protocol !== 'https:' && onVercel) return true;
+      return parsed.origin !== origin;
     } catch {
       return true;
     }
   })) {
-    problems.push('Cada origem em CORS_ORIGIN deve ser uma URL HTTPS sem caminho.');
+    problems.push(onVercel
+      ? 'Cada origem em CORS_ORIGIN deve ser uma URL HTTPS sem caminho.'
+      : 'Cada origem em CORS_ORIGIN deve ser uma URL sem caminho (ex.: http://localhost:3000).');
   }
 
   const proxyHosts = parseList(env.PROXY_HOSTS);
@@ -38,6 +45,13 @@ function validateProductionConfig(env = process.env) {
     seedUsers = JSON.parse(env.SEED_USERS || 'null');
   } catch {}
   const hasDatabase = Boolean(env.DATABASE_URL && env.FILE_STORE !== '1');
+  if (hasDatabase) {
+    try {
+      new URL(env.DATABASE_URL);
+    } catch {
+      problems.push('DATABASE_URL não é uma URL PostgreSQL válida.');
+    }
+  }
   const hasKvUrl = Boolean(env.KV_REST_API_URL);
   const hasKvToken = Boolean(env.KV_REST_API_TOKEN);
   const hasKv = hasKvUrl && hasKvToken;
@@ -55,8 +69,13 @@ function validateProductionConfig(env = process.env) {
     problems.push('Configure um admin bootstrap em SEED_USERS ou um banco persistente com administrador ativo.');
   }
   if (hasKvUrl !== hasKvToken) problems.push('KV_REST_API_URL e KV_REST_API_TOKEN devem ser configurados juntos.');
-  if (env.VERCEL && !hasDatabase && !hasKv) {
-    problems.push('Vercel em produção exige DATABASE_URL ou KV completo; armazenamento local/memória é efêmero.');
+  if (onVercel) {
+    if (!hasDatabase && !hasKv) {
+      problems.push('Vercel em produção exige DATABASE_URL ou KV completo; armazenamento local/memória é efêmero.');
+    } else if (hasDatabase && /localhost|127\.0\.0\.1/.test(env.DATABASE_URL || '')) {
+      // Na Vercel o banco precisa estar acessível pela internet (Neon, etc.).
+      problems.push('DATABASE_URL aponta para localhost; Vercel precisa de um PostgreSQL remoto acessível pela internet.');
+    }
   }
 
   if (['1', 'true', 'yes', 'on'].includes(String(env.WAZE_MOCK_ENABLED || '').toLowerCase())) {

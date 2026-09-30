@@ -299,3 +299,11 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     }
   }
 });
+
+test('produção recusa DATABASE_URL apontando para localhost', () => {
+  const problems = validateProductionConfig(validProductionEnv({
+    DATABASE_URL: 'postgresql://user:password@127.0.0.1:5432/app',
+  }));
+
+  assert.ok(problems.some((problem) => problem.includes('PostgreSQL remoto')));
+});

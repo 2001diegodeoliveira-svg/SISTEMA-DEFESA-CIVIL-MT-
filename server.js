@@ -25,7 +25,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const cors = require('cors');
-app.use(cors({ origin: true, credentials: true }));
+
+/* O CORS do Express NÃO pode refletir qualquer origem: isso ignoraria a
+   allowlist de CORS_ORIGIN aplicada pela API e permitiria que um site
+   malicioso chamasse as rotas autenticadas no navegador do usuário.
+   Reutilizamos exatamente a mesma lista配置 da camada de API. */
+function origensPermitidas() {
+  const producao = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  return (process.env.CORS_ORIGIN || (producao ? '' : '*'))
+    .split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+app.use(cors({
+  credentials: true,
+  origin(origin, callback) {
+    const permitidas = origensPermitidas();
+    // Sem header Origin (navegação, curl, mesmo servidor) => não é CORS.
+    if (!origin) return callback(null, false);
+    if (permitidas.includes('*')) return callback(null, true);
+    return callback(null, permitidas.includes(origin));
+  },
+}));
 app.use(express.json({ limit: '1mb' }));
 
 const apiRouter = require('./api/index');
@@ -74,6 +94,66 @@ app.all('/api/*', wrap(apiRouter));
 // POST /api/tomtom?action=sync.
 require('./api/_lib/waze').startJob();
 require('./api/_lib/tomtom').startJob();
+
+/* Nunca servir dados sensíveis nem o código do backend pela web.
+   Expor a porta 3000 na internet sem esta barreira vaza .env, hashes de
+   senha em ./data, o schema do banco e o próprio source do servidor.
+
+   A regra é de lista PERMITIDA (allowlist), não de bloqueio: assim, qualquer
+   arquivo novo colocado na raiz por engano continua privado por padrão. */
+const ARQUIVOS_RAIZ_BLOQUEADOS = new Set([
+  '.env', '.env.local', '.env.producao', '.env.producao.local', '.env.production', '.env.example',
+  'vercel.json', 'ecosystem.config.js', 'skills-lock.json',
+]);
+
+/* Extensões publicáveis dentro de pastas de conteúdo (css/, js/, imagens/...). */
+const EXTENSOES_PUBLICAS = new Set([
+  '.html', '.css', '.js', '.mjs', '.json', '.map', '.webmanifest',
+  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico', '.bmp',
+  '.woff', '.woff2', '.ttf', '.eot', '.otf',
+  '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.pdf', '.txt',
+]);
+
+/* Na raiz do projeto só páginas e imagens ficam públicas — nada de script. */
+const EXTENSOES_RAIZ_PERMITIDAS = new Set([
+  '.html', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico',
+  '.webmanifest', '.woff', '.woff2', '.ttf', '.otf', '.pdf',
+]);
+
+/* Pastas internas: contêm código, dados, dependências ou configuração. */
+const PASTAS_INTERNAS = new Set([
+  'api', 'bankend', 'data', 'db', 'node_modules', 'test', 'tests', 'logs',
+  'scripts', 'src', 'coverage', 'public', 'private', '.git', '.vercel', '.agents',
+  '.opencode', '.vscode', '.idea',
+]);
+
+app.use((req, res, next) => {
+  const caminho = decodeURIComponent((req.path || '').split('?')[0]);
+  const segmentos = caminho.split('/').filter(Boolean);
+  if (!segmentos.length) return next();
+
+  const base = segmentos[segmentos.length - 1];
+  const ext = path.extname(base).toLowerCase();
+  const naRaiz = segmentos.length === 1;
+
+  // Arquivos ocultos (.env, .gitignore, .vercel.json) nunca são públicos.
+  if (segmentos.some((s) => s.startsWith('.'))) {
+    return res.status(404).json({ erro: 'Não encontrado.' });
+  }
+  if (naRaiz && ARQUIVOS_RAIZ_BLOQUEADOS.has(base)) {
+    return res.status(404).json({ erro: 'Não encontrado.' });
+  }
+  // Pastas internas (dados, banco, backend, dependências) nunca são públicas.
+  if (PASTAS_INTERNAS.has(segmentos[0].toLowerCase())) {
+    return res.status(404).json({ erro: 'Não encontrado.' });
+  }
+  // Allowlist de extensões: .js só é público dentro de pastas de conteúdo.
+  const permitidas = naRaiz ? EXTENSOES_RAIZ_PERMITIDAS : EXTENSOES_PUBLICAS;
+  if (!permitidas.has(ext)) {
+    return res.status(404).json({ erro: 'Não encontrado.' });
+  }
+  return next();
+});
 
 /* Serve os estáticos do frontend (mesmo diretório) para testes locais */
 app.use(express.static(path.join(__dirname)));
