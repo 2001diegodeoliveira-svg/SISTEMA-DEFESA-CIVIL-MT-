@@ -1,0 +1,13 @@
+data/
+.env*
+.vercel/
+*.docx
+test/
+backend sist/
+bankend/
+backend/
+.env.producao
+skills-lock.json
+ecosystem.config.js
+vercel.json
+
