@@ -34,17 +34,14 @@ function dcLogout() {
     location.reload();
 }
 
-/* Valida as credenciais no backend. O segundo fator é obrigatório: o login
-   devolve um desafio de 2FA e NÃO emite token. A sessão só é criada depois
-   da confirmação do código (auth/totp/verify ou auth/totp/activate).
-   Retorna { ok:true, desafio, setup, user } para a página tratar o segundo fator. */
+/* Valida as credenciais no backend e retorna a sessão emitida após a senha. */
 async function dcLogin(usuario, senha) {
     if (window.dcApi && window.dcApi.login) {
         try {
             const r = await window.dcApi.login(usuario, senha);
             const d = r.data || {};
-            if (r.ok && d.desafio) {
-                return { ok: true, desafio: d.desafio, setup: !!d.setup, user: d.user || null };
+            if (r.ok && d.token && d.user) {
+                return { ok: true, token: d.token, user: d.user };
             }
             return { ok: false, erro: d.erro || 'Credenciais inválidas.' };
         } catch (e) {

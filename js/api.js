@@ -34,26 +34,15 @@
     global.dcApi = {
         // Autenticação
         login: function (usuario, senha) {
-            return request('auth/login', { method: 'POST', body: { usuario: usuario, senha: senha } });
+            return request('auth/login', { method: 'POST', body: { usuario: usuario, senha: senha } })
+                .catch(function () {
+                    return { status: 0, ok: false, data: { erro: 'Falha ao conectar com o servidor de autenticação.' } };
+                });
         },
         me: function () { return request('auth/me'); },
         logout: function () {
             try { localStorage.removeItem('dcmt_token'); } catch (e) {}
             return request('auth/logout', { method: 'POST' }).catch(function () { return null; });
-        },
-
-        // Google Authenticator (TOTP — segundo fator)
-        totpVerify: function (desafio, codigo) {
-            return request('auth/totp/verify', { method: 'POST', body: { desafio: desafio, codigo: codigo } });
-        },
-        totpSetup: function (desafio) {
-            return request('auth/totp/setup', { method: 'POST', body: { desafio: desafio } });
-        },
-        totpActivate: function (desafio, codigo) {
-            return request('auth/totp/activate', { method: 'POST', body: { desafio: desafio, codigo: codigo } });
-        },
-        totpDisable: function (codigo) {
-            return request('auth/totp/disable', { method: 'POST', body: { codigo: codigo } });
         },
 
         // Alertas

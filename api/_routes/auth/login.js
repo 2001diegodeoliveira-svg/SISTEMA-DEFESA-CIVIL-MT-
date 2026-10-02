@@ -1,8 +1,6 @@
-/* POST /api/auth/login → valida as credenciais e devolve o DESAFIO de 2FA.
-   A sessão (token) NUNCA é emitida aqui: só depois da confirmação do código
-   do Google Authenticator (auth/totp/verify ou auth/totp/activate). */
+/* POST /api/auth/login → valida as credenciais e emite a sessão. */
 const { jsonResponse, readJson } = require('../../_lib/http');
-const { findOrProvisionUser, signTotpChallenge, publicUser } = require('../../_lib/auth');
+const { findOrProvisionUser, signToken, publicUser } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
@@ -24,13 +22,8 @@ module.exports = serve(async function handler(req) {
     return jsonResponse(401, { erro: 'Credenciais inválidas.' }, origin);
   }
 
-  /* setup:true  → conta ainda não tem autenticador: o painel deve mostrar o QR.
-     setup:false → já configurado: o painel pede apenas o código de 6 dígitos. */
-  const jaAtivo = Boolean(user.otp && user.otp.ativo);
   return jsonResponse(200, {
-    exigeTotp: true,
-    setup: !jaAtivo,
-    desafio: signTotpChallenge(user),
+    token: signToken(user),
     user: publicUser(user),
   }, origin);
 });

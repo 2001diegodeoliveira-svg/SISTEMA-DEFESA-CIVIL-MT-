@@ -7,12 +7,6 @@ const { readCollection } = require('../api/_lib/store');
 const { writeCollection } = require('../api/_lib/store');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { signToken } = require('../api/_lib/auth');
-/* O provider é carregado sob demanda (otplib v13 é ESM) — mesmo caminho da API. */
-const gerarCodigoTotp = async (segredo) => {
-  const lib = await import('otplib');
-  return lib.generateSync({ secret: segredo });
-};
 
 function validProductionEnv(overrides = {}) {
   return {
@@ -246,48 +240,28 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
       usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin', nome: 'Administrador de Testes', perfil: 'admin',
     }]);
 
-    /* O 2FA é obrigatório: o login só devolve o desafio e a sessão só é
-       emitida depois de confirmar o código do Google Authenticator. */
-    const completeSecondFactor = async (loginRes) => {
-      const payload = await loginRes.json();
-      assert.equal(payload.token, undefined, 'o login não pode emitir token antes do 2FA');
-      assert.equal(payload.exigeTotp, true);
-      assert.ok(payload.desafio);
-      assert.equal(payload.setup, true, 'conta nova deve começar no setup do QR');
-
-      const setupRes = await request('auth/totp/setup', 'POST', { desafio: payload.desafio });
-      const setup = await setupRes.json();
-      assert.equal(setupRes.status, 200);
-      assert.ok(setup.qr);
-      assert.ok(setup.segredo);
-
-      const codigo = await gerarCodigoTotp(setup.segredo);
-      assert.match(codigo, /^\d{6}$/);
-      const activateRes = await request('auth/totp/activate', 'POST', { desafio: payload.desafio, codigo });
-      const activate = await activateRes.json();
-      assert.equal(activateRes.status, 200);
-      assert.ok(activate.token, 'a ativação válida deve concluir o primeiro login');
-      return { ...activate, segredo: setup.segredo };
-    };
-
     const loginAdmin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
+    const adminPayload = await loginAdmin.json();
     assert.equal(loginAdmin.status, 200);
-    const adminPayload = await completeSecondFactor(loginAdmin);
+    assert.ok(adminPayload.token, 'login válido deve emitir o token de sessão');
+    assert.equal(adminPayload.desafio, undefined);
+    assert.equal(adminPayload.exigeTotp, undefined);
+    assert.equal(adminPayload.user.perfil, 'admin');
 
-    // Segundo login da mesma conta já exige apenas o código (sem novo QR).
-    const relogin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
-    const reloginPayload = await relogin.json();
-    assert.equal(relogin.status, 200);
-    assert.equal(reloginPayload.setup, false, 'conta já vinculada não deve pedir setup');
-    const wrongCode = await request('auth/totp/verify', 'POST', { desafio: reloginPayload.desafio, codigo: '000000' });
-    assert.equal(wrongCode.status, 401);
-    const verified = await request('auth/totp/verify', 'POST', {
-      desafio: reloginPayload.desafio,
-      codigo: await gerarCodigoTotp(adminPayload.segredo),
-    });
-    const verifiedPayload = await verified.json();
-    assert.equal(verified.status, 200);
-    assert.ok(verifiedPayload.token);
+    const adminSession = await request('auth/me', 'GET', null, adminPayload.token);
+    assert.equal(adminSession.status, 200);
+
+    const seededUsers = await readCollection('users');
+    const seededAdmin = seededUsers.find((user) => user.usuario === 'bootstrap-admin');
+    seededAdmin.otp = { secret: 'LEGACY_TOTP_SECRET', ativo: true };
+    await writeCollection('users', seededUsers);
+    const legacyTotpLogin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
+    const legacyTotpPayload = await legacyTotpLogin.json();
+    assert.equal(legacyTotpLogin.status, 200);
+    assert.ok(legacyTotpPayload.token, 'dados TOTP legados não devem bloquear o login');
+
+    const removedTotpRoute = await request('auth/totp/verify', 'POST', { codigo: '000000' });
+    assert.equal(removedTotpRoute.status, 404);
 
     const invalidLongPassword = await request('user-registrations', 'POST', {
       usuario: pendingUsername,
@@ -349,10 +323,10 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     const approvedPayload = await approvedLogin.json();
     assert.equal(approvedLogin.status, 200);
     assert.equal(approvedPayload.user.perfil, 'comum');
+    assert.ok(approvedPayload.token);
     assert.notEqual(approvedPayload.user.perfil, 'admin');
 
-    const commonToken = signToken(approvedPayload.user);
-    const commonConfigChange = await request('pluv-alerta', 'POST', { ativo: false }, commonToken);
+    const commonConfigChange = await request('pluv-alerta', 'POST', { ativo: false }, approvedPayload.token);
     assert.equal(commonConfigChange.status, 403);
   } finally {
     for (const [key, value] of previous) {

@@ -23,10 +23,6 @@ const handlers = {
   'auth/login': require('./_routes/auth/login'),
   'auth/logout': require('./_routes/auth/logout'),
   'auth/me': require('./_routes/auth/me'),
-  'auth/totp/verify': require('./_routes/auth/totp'),
-  'auth/totp/setup': require('./_routes/auth/totp'),
-  'auth/totp/activate': require('./_routes/auth/totp'),
-  'auth/totp/disable': require('./_routes/auth/totp'),
   'user-registrations': require('./_routes/user-registrations'),
   'alertas': require('./_routes/alertas'),
   'areas': require('./_routes/areas'),
@@ -170,7 +166,6 @@ module.exports = serve(async function handler(req) {
   let target = null;
   if (handlers[route]) target = handlers[route];
   else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
-  else if (route.startsWith('auth/totp/')) target = handlers['auth/totp/verify'];
   else {
     const m = route.match(/^areas\/([^/]+)$/);
     if (m) target = areasIdHandler;

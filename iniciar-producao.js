@@ -40,5 +40,5 @@ if (ausentes.length) {
   process.exit(1);
 }
 
-console.log('Iniciando em modo produção (PostgreSQL + 2FA obrigatório) na porta ' + (process.env.PORT || 3000));
+console.log('Iniciando em modo produção (PostgreSQL) na porta ' + (process.env.PORT || 3000));
 require('./server.js');
