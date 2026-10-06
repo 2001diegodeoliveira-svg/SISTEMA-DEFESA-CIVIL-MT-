@@ -1,6 +1,6 @@
 /* GET /api/auth/me → { user } (valida token) */
 const { jsonResponse, bearerToken } = require('../../_lib/http');
-const { verifyToken, ensureSeededUsers, publicUser, isLoginEligible } = require('../../_lib/auth');
+const { verifyToken, ensureSeededUsers, publicUser, isLoginEligible, isLoginEnabled } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
@@ -9,6 +9,11 @@ module.exports = serve(async function handler(req) {
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
   if (req.method !== 'GET') {
     return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
+  }
+  if (!isLoginEnabled()) {
+    return jsonResponse(200, { user: {
+      id: 'anon', usuario: 'Acesso livre', nome: 'Acesso livre', perfil: 'admin', municipio: '',
+    } }, origin);
   }
 
   const token = bearerToken(req);

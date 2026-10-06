@@ -15,7 +15,7 @@ function validateProductionConfig(env = process.env) {
   const onVercel = Boolean(env.VERCEL);
   const problems = [];
   const secret = env.JWT_SECRET || '';
-  if (Buffer.byteLength(secret, 'utf8') < 32 || secret === DEFAULT_JWT_SECRET) {
+  if (isLoginEnabled(env) && (Buffer.byteLength(secret, 'utf8') < 32 || secret === DEFAULT_JWT_SECRET)) {
     problems.push('JWT_SECRET forte é obrigatório.');
   }
 
@@ -59,17 +59,17 @@ function validateProductionConfig(env = process.env) {
   const hasKvUrl = Boolean(env.KV_REST_API_URL);
   const hasKvToken = Boolean(env.KV_REST_API_TOKEN);
   const hasKv = hasKvUrl && hasKvToken;
-  if (seedUsers && (!Array.isArray(seedUsers) || !seedUsers.every((user) =>
+  if (isLoginEnabled(env) && seedUsers && (!Array.isArray(seedUsers) || !seedUsers.every((user) =>
     user && typeof user.usuario === 'string' && user.usuario.trim() &&
     typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 12 && Buffer.byteLength(user.senha, 'utf8') <= 72 &&
     VALID_PROFILES.has(user.perfil)
   ))) {
     problems.push('SEED_USERS, quando definido, deve conter usuários com senhas de 12 a 72 bytes UTF-8 e perfis válidos.');
-  } else if (Array.isArray(seedUsers) && seedUsers.length && !seedUsers.some((user) => user.perfil === 'admin')) {
+  } else if (isLoginEnabled(env) && Array.isArray(seedUsers) && seedUsers.length && !seedUsers.some((user) => user.perfil === 'admin')) {
     problems.push('SEED_USERS deve incluir pelo menos um administrador.');
   }
 
-  if ((!Array.isArray(seedUsers) || !seedUsers.length) && !hasDatabase && !hasKv) {
+  if (isLoginEnabled(env) && (!Array.isArray(seedUsers) || !seedUsers.length) && !hasDatabase && !hasKv) {
     problems.push('Configure um admin bootstrap em SEED_USERS ou um banco persistente com administrador ativo.');
   }
   if (hasKvUrl !== hasKvToken) problems.push('KV_REST_API_URL e KV_REST_API_TOKEN devem ser configurados juntos.');

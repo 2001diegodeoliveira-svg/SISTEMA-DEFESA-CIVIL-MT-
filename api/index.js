@@ -5,7 +5,7 @@
    ============================================================ */
 const { serve } = require('./_lib/serverless');
 const { corsHeaders, bearerToken } = require('./_lib/http');
-const { validateProductionConfig } = require('./_lib/runtime-config');
+const { isLoginEnabled, validateProductionConfig } = require('./_lib/runtime-config');
 const { verifyToken, isLoginEligible } = require('./_lib/auth');
 const { readCollection } = require('./_lib/store');
 
@@ -104,14 +104,13 @@ module.exports = serve(async function handler(req) {
 
   const { route, query } = parseRoute(req);
   const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-  const loginSuspended = ['0', 'false', 'off', 'disabled'].includes(String(process.env.AUTH_LOGIN_ENABLED || '').trim().toLowerCase());
-  const suspendedLoginRequest = route === 'auth/login' && loginSuspended;
+  const loginEnabled = isLoginEnabled();
   let configuredAdmin = false;
   try {
     const seeds = JSON.parse(process.env.SEED_USERS || '[]');
     configuredAdmin = Array.isArray(seeds) && seeds.some((user) => user && user.perfil === 'admin');
   } catch {}
-  if (production && !configuredAdmin && !suspendedLoginRequest) {
+  if (production && loginEnabled && !configuredAdmin) {
     try {
       const users = await readCollection('users');
       if (!users.some((user) => user.perfil === 'admin' && isLoginEligible(user))) {
@@ -138,7 +137,7 @@ module.exports = serve(async function handler(req) {
 
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
-  if (payload) {
+  if (payload && loginEnabled) {
     const users = await readCollection('users');
     const user = users.find((item) => String(item.id) === String(payload.sub));
     if (!isLoginEligible(user)) {
@@ -161,8 +160,12 @@ module.exports = serve(async function handler(req) {
      tanto no Express quanto na Vercel. */
   const clone = Object.create(req);
   clone.url = '/api/' + route + (query ? '?' + query : '');
+  const authorization = readHeader(req.headers, 'authorization') ||
+    (loginEnabled ? undefined : 'Bearer access-without-login');
   clone.headers = {
-    get: (name) => readHeader(req.headers, name) || null,
+    get: (name) => name.toLowerCase() === 'authorization'
+      ? authorization || null
+      : readHeader(req.headers, name) || null,
   };
 
   let target = null;

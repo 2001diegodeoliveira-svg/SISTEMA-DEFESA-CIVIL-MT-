@@ -1,6 +1,6 @@
 /* POST /api/auth/login → valida as credenciais e emite a sessão. */
 const { jsonResponse, readJson } = require('../../_lib/http');
-const { findOrProvisionUser, signToken, publicUser } = require('../../_lib/auth');
+const { findOrProvisionUser, signToken, publicUser, isLoginEnabled } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
@@ -10,7 +10,7 @@ module.exports = serve(async function handler(req) {
   if (req.method !== 'POST') {
     return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
   }
-  if (['0', 'false', 'off', 'disabled'].includes(String(process.env.AUTH_LOGIN_ENABLED || '').trim().toLowerCase())) {
+  if (!isLoginEnabled()) {
     return jsonResponse(503, { erro: 'Login temporariamente suspenso para manutenção.' }, origin);
   }
 

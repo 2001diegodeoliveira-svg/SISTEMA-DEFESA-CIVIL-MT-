@@ -1,7 +1,7 @@
 /* Solicitações públicas de acesso; consulta e análise restritas a administradores. */
 const bcrypt = require('bcryptjs');
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
-const { verifyToken, isLoginEligible } = require('../_lib/auth');
+const { verifyToken, isLoginEligible, isLoginEnabled } = require('../_lib/auth');
 const { readCollection, createUserRegistration, updateUserRegistration, editUserRegistration, deleteUserRegistration } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 
@@ -27,6 +27,9 @@ function publicRegistration(registration) {
 }
 
 async function requireAdmin(req) {
+  if (!isLoginEnabled()) {
+    return { id: 'anon', usuario: 'Acesso livre', perfil: 'admin', ativo: true };
+  }
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
   if (!payload) return null;

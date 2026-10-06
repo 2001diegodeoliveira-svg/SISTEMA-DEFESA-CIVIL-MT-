@@ -5,6 +5,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
+const { isLoginEnabled } = require('./runtime-config');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
 const JWT_EXP = process.env.JWT_EXP || '12h';
@@ -74,6 +75,9 @@ function signToken(user) {
 }
 
 function verifyToken(token) {
+  if (!isLoginEnabled()) {
+    return { sub: 'anon', usuario: 'Acesso livre', perfil: 'admin' };
+  }
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch {
@@ -101,4 +105,5 @@ module.exports = {
   verifyToken,
   publicUser,
   seedUsers,
+  isLoginEnabled,
 };

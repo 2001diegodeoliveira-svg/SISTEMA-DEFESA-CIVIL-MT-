@@ -5,8 +5,28 @@
    indisponível, mantém compatibilidade com a sessão demo local.
    ============================================================ */
 
+var DC_LOGIN_ENABLED = false;
+
+/* A reativação exige também AUTH_LOGIN_ENABLED=true no backend. */
+function dcSessaoDemo() {
+    return {
+        id: 'demo',
+        usuario: 'visitante',
+        nome: 'Usuário',
+        perfil: 'admin',
+        unidade: 'CGDC',
+        municipio: '',
+        demo: true,
+    };
+}
+
 function dcGetSession() {
-    try { return JSON.parse(localStorage.getItem('dcmt_session')); } catch (e) { return null; }
+    if (!DC_LOGIN_ENABLED) return dcSessaoDemo();
+    try {
+        const s = JSON.parse(localStorage.getItem('dcmt_session'));
+        if (s) return s;
+    } catch (e) { /* sessão local inválida */ }
+    return null;
 }
 
 /* Normaliza nomes (remove acentos, minúsculas) para comparações permissivas. */
@@ -65,7 +85,7 @@ function dcRenderUserArea() {
         if (window.lucide) lucide.createIcons();
         return;
     }
-    const perfilLabel = (typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].label : (s.perfil || 'Usuário');
+    const perfilLabel = s.demo ? 'Acesso livre' : ((typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].label : (s.perfil || 'Usuário'));
     const icone = (typeof PERFIS !== 'undefined' && PERFIS[s.perfil]) ? PERFIS[s.perfil].icone : 'user';
     el.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;padding:6px 8px 6px 12px;">
@@ -74,9 +94,9 @@ function dcRenderUserArea() {
                 <div style="font-size:12px;font-weight:600;">${s.nome || perfilLabel}</div>
                 <div style="font-size:9.5px;color:var(--text-muted);">${perfilLabel}${s.municipio ? ' · ' + s.municipio : ''}</div>
             </div>
-            <button onclick="dcLogout()" title="Sair" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px 6px;font-size:12px;">
+            ${s.demo ? '' : `<button onclick="dcLogout()" title="Sair" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px 6px;font-size:12px;">
                 <i data-lucide="log-out" style="width:14px;height:14px;"></i>
-            </button>
+            </button>`}
         </div>`;
     if (window.lucide) lucide.createIcons();
 }

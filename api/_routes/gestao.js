@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
-const { verifyToken } = require('../_lib/auth');
+const { verifyToken, isLoginEnabled } = require('../_lib/auth');
 const { readCollection, writeCollection, driver, resumoGestao } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 const { MUNICIPIOS_MT, normUsuario } = require('../_lib/municipios');
@@ -144,6 +144,7 @@ module.exports = serve(async function handler(req) {
   }
 
   const podeEscrever = async () => {
+    if (!isLoginEnabled()) return { ok: true, munVinculado: null };
     if (!payload) return { ok: false, erro: 'Autenticação necessária.' };
     if (payload.perfil !== 'municipal') {
       return { ok: false, erro: 'Somente o gestor municipal do próprio município pode editar a gestão.' };

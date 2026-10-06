@@ -140,6 +140,32 @@ test('produção retorna manutenção para login suspenso mesmo sem admin seedad
   }
 });
 
+test('rota protegida permite operações sem token durante a suspensão do login', async () => {
+  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'AUTH_LOGIN_ENABLED'];
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  try {
+    process.env.NODE_ENV = 'test';
+    delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
+    process.env.AUTH_LOGIN_ENABLED = 'false';
+    const response = await apiHandler({ method: 'GET', url: '/api/user-registrations', headers: {} });
+    assert.equal(response.status, 200);
+    assert.ok(Array.isArray((await response.json()).registrations));
+    const protectedWrite = await apiHandler({
+      method: 'POST',
+      url: '/api/pluv-alerta',
+      headers: { 'content-type': 'application/json' },
+      text: async () => JSON.stringify({}),
+    });
+    assert.equal(protectedWrite.status, 400);
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
 test('rota serverless propaga CORS com headers Node e serve alertas sem fetch externo', async () => {
   const env = validProductionEnv();
   const keys = new Set([...Object.keys(env), 'NODE_ENV', 'VERCEL', 'VERCEL_ENV']);
@@ -230,7 +256,7 @@ test('store não transforma indisponibilidade do KV em coleção vazia', async (
 });
 
 test('solicitação pública fica pendente e só cria conta após aprovação administrativa', async () => {
-  const keys = ['DATABASE_URL', 'FILE_STORE', 'VERCEL', 'VERCEL_ENV', 'NODE_ENV', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'JWT_SECRET', 'SEED_USERS'];
+  const keys = ['DATABASE_URL', 'FILE_STORE', 'VERCEL', 'VERCEL_ENV', 'NODE_ENV', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'JWT_SECRET', 'SEED_USERS', 'AUTH_LOGIN_ENABLED'];
   const previous = new Map(keys.map((key) => [key, process.env[key]]));
   try {
     delete process.env.DATABASE_URL;
@@ -242,6 +268,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     process.env.FILE_STORE = '0';
     process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
     process.env.SEED_USERS = '';
+    process.env.AUTH_LOGIN_ENABLED = 'true';
 
     const pendingUsername = `solicitante${Date.now()}`;
     const request = (path, method, body, token) => {
