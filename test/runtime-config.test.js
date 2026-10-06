@@ -5,6 +5,7 @@ const { corsHeaders } = require('../api/_lib/http');
 const apiHandler = require('../api/index');
 const { readCollection } = require('../api/_lib/store');
 const { writeCollection } = require('../api/_lib/store');
+const { demoReset } = require('../api/_lib/demo');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -17,6 +18,7 @@ function validProductionEnv(overrides = {}) {
     CORS_ORIGIN: 'https://defesacivil.mt.gov.br',
     PROXY_HOSTS: 'apiprevmet3.inmet.gov.br,panorama.sipam.gov.br',
     AUTH_LOGIN_ENABLED: 'true',
+    DEMO_HORAS: '0',
     SEED_USERS: JSON.stringify([{ usuario: 'admin', senha: 'uma-senha-segura-com-12-caracteres', perfil: 'admin' }]),
     DATABASE_URL: 'postgresql://user:password@db.example.test/app',
     FILE_STORE: '0',
@@ -141,13 +143,14 @@ test('produção retorna manutenção para login suspenso mesmo sem admin seedad
 });
 
 test('rota protegida permite operações sem token durante a suspensão do login', async () => {
-  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'AUTH_LOGIN_ENABLED'];
+  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'AUTH_LOGIN_ENABLED', 'DEMO_HORAS'];
   const previous = new Map(keys.map((key) => [key, process.env[key]]));
   try {
     process.env.NODE_ENV = 'test';
     delete process.env.VERCEL;
     delete process.env.VERCEL_ENV;
     process.env.AUTH_LOGIN_ENABLED = 'false';
+    process.env.DEMO_HORAS = '0';
     const response = await apiHandler({ method: 'GET', url: '/api/user-registrations', headers: {} });
     assert.equal(response.status, 200);
     assert.ok(Array.isArray((await response.json()).registrations));
@@ -256,7 +259,7 @@ test('store não transforma indisponibilidade do KV em coleção vazia', async (
 });
 
 test('solicitação pública fica pendente e só cria conta após aprovação administrativa', async () => {
-  const keys = ['DATABASE_URL', 'FILE_STORE', 'VERCEL', 'VERCEL_ENV', 'NODE_ENV', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'JWT_SECRET', 'SEED_USERS', 'AUTH_LOGIN_ENABLED'];
+  const keys = ['DATABASE_URL', 'FILE_STORE', 'VERCEL', 'VERCEL_ENV', 'NODE_ENV', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'JWT_SECRET', 'SEED_USERS', 'AUTH_LOGIN_ENABLED', 'DEMO_HORAS'];
   const previous = new Map(keys.map((key) => [key, process.env[key]]));
   try {
     delete process.env.DATABASE_URL;
@@ -269,6 +272,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
     process.env.SEED_USERS = '';
     process.env.AUTH_LOGIN_ENABLED = 'true';
+    process.env.DEMO_HORAS = '0';
 
     const pendingUsername = `solicitante${Date.now()}`;
     const request = (path, method, body, token) => {
@@ -400,4 +404,104 @@ test('produção recusa DATABASE_URL apontando para localhost', () => {
   }));
 
   assert.ok(problems.some((problem) => problem.includes('PostgreSQL remoto')));
+});
+
+async function comAmbienteDemo(rodar) {
+  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'DATABASE_URL', 'FILE_STORE',
+    'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'AUTH_LOGIN_ENABLED', 'DEMO_HORAS'];
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  try {
+    delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
+    delete process.env.DATABASE_URL;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    process.env.NODE_ENV = 'test';
+    process.env.FILE_STORE = '0';
+    process.env.AUTH_LOGIN_ENABLED = 'true';
+    await rodar();
+  } finally {
+    demoReset();
+    /* Limpa no driver em memória antes de restaurar o ambiente real. */
+    delete process.env.DATABASE_URL;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    process.env.FILE_STORE = '0';
+    try { await writeCollection('system_config', []); } catch { /* sem armazenamento */ }
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
+test('janela de demonstração libera a API sem token e expira exigindo login', async () => {
+  await comAmbienteDemo(async () => {
+    process.env.DEMO_HORAS = '24';
+    demoReset();
+    await writeCollection('system_config', []);
+
+    const aberta = await apiHandler({ method: 'GET', url: '/api/demo', headers: {} });
+    assert.equal(aberta.status, 200);
+    const estado = await aberta.json();
+    assert.equal(estado.habilitado, true);
+    assert.equal(estado.aberto, true);
+    assert.equal(estado.loginHabilitado, true);
+    assert.ok(estado.inicio > 0);
+
+    const liberada = await apiHandler({ method: 'GET', url: '/api/user-registrations', headers: {} });
+    assert.equal(liberada.status, 200);
+    assert.ok(Array.isArray((await liberada.json()).registrations));
+
+    /* Primeiro acesso registrado a 25h atrás: janela vencida. */
+    const config = await readCollection('system_config');
+    await writeCollection('system_config', config.map((item) => item.id === 'demo'
+      ? { ...item, inicio: Date.now() - 25 * 3600000 }
+      : item));
+    demoReset();
+
+    const expirada = await apiHandler({ method: 'GET', url: '/api/demo', headers: {} });
+    const estadoExpirado = await expirada.json();
+    assert.equal(estadoExpirado.aberto, false);
+    assert.equal(estadoExpirado.restanteMs, 0);
+
+    const bloqueada = await apiHandler({ method: 'GET', url: '/api/user-registrations', headers: {} });
+    assert.equal(bloqueada.status, 401);
+
+    const sessao = await apiHandler({ method: 'GET', url: '/api/auth/me', headers: {} });
+    assert.equal(sessao.status, 401);
+  });
+});
+
+test('DEMO_HORAS=0 desliga a janela e as rotas protegidas exigem token desde o início', async () => {
+  await comAmbienteDemo(async () => {
+    process.env.DEMO_HORAS = '0';
+    demoReset();
+    await writeCollection('system_config', []);
+
+    const consulta = await apiHandler({ method: 'GET', url: '/api/demo', headers: {} });
+    const estado = await consulta.json();
+    assert.equal(estado.habilitado, false);
+    assert.equal(estado.aberto, false);
+
+    const bloqueada = await apiHandler({ method: 'GET', url: '/api/user-registrations', headers: {} });
+    assert.equal(bloqueada.status, 401);
+  });
+});
+
+test('sessão liberada da janela de demonstração não exige usuário no banco', async () => {
+  await comAmbienteDemo(async () => {
+    process.env.DEMO_HORAS = '1';
+    demoReset();
+    await writeCollection('system_config', []);
+
+    const me = await apiHandler({ method: 'GET', url: '/api/auth/me', headers: {} });
+    assert.equal(me.status, 200);
+    assert.equal((await me.json()).user.perfil, 'admin');
+
+    const { verifyToken, isSessaoLiberada } = require('../api/_lib/auth');
+    const payload = verifyToken('token-invalido');
+    assert.equal(isSessaoLiberada(payload), true);
+    assert.equal(payload.perfil, 'admin');
+  });
 });

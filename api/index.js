@@ -6,7 +6,8 @@
 const { serve } = require('./_lib/serverless');
 const { corsHeaders, bearerToken } = require('./_lib/http');
 const { isLoginEnabled, validateProductionConfig } = require('./_lib/runtime-config');
-const { verifyToken, isLoginEligible } = require('./_lib/auth');
+const { verifyToken, isLoginEligible, isSessaoLiberada } = require('./_lib/auth');
+const { demoAtualizar, demoAberto } = require('./_lib/demo');
 const { readCollection } = require('./_lib/store');
 
 function readHeader(headers, name) {
@@ -20,6 +21,7 @@ function readHeader(headers, name) {
 }
 
 const handlers = {
+  'demo': require('./_routes/demo'),
   'auth/login': require('./_routes/auth/login'),
   'auth/logout': require('./_routes/auth/logout'),
   'auth/me': require('./_routes/auth/me'),
@@ -105,6 +107,10 @@ module.exports = serve(async function handler(req) {
   const { route, query } = parseRoute(req);
   const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
   const loginEnabled = isLoginEnabled();
+  /* Registra/consulta o marco do primeiro acesso e mantém a janela de
+     demonstração em cache para os handlers que autorizam por token. */
+  await demoAtualizar();
+  const acessoAberto = demoAberto();
   let configuredAdmin = false;
   try {
     const seeds = JSON.parse(process.env.SEED_USERS || '[]');
@@ -137,7 +143,7 @@ module.exports = serve(async function handler(req) {
 
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
-  if (payload && loginEnabled) {
+  if (payload && loginEnabled && !isSessaoLiberada(payload)) {
     const users = await readCollection('users');
     const user = users.find((item) => String(item.id) === String(payload.sub));
     if (!isLoginEligible(user)) {
@@ -161,7 +167,7 @@ module.exports = serve(async function handler(req) {
   const clone = Object.create(req);
   clone.url = '/api/' + route + (query ? '?' + query : '');
   const authorization = readHeader(req.headers, 'authorization') ||
-    (loginEnabled ? undefined : 'Bearer access-without-login');
+    (loginEnabled && !acessoAberto ? undefined : 'Bearer access-without-login');
   clone.headers = {
     get: (name) => name.toLowerCase() === 'authorization'
       ? authorization || null

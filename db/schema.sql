@@ -194,4 +194,12 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
 
+-- Configurações globais do sistema (chave/valor), ex.: o marco do
+-- primeiro acesso da janela de demonstração.
+CREATE TABLE IF NOT EXISTS system_config (
+  chave         TEXT PRIMARY KEY,
+  valor         JSONB NOT NULL,
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 COMMIT;

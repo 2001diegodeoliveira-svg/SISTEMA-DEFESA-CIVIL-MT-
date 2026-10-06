@@ -1,7 +1,7 @@
 /* Solicitações públicas de acesso; consulta e análise restritas a administradores. */
 const bcrypt = require('bcryptjs');
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
-const { verifyToken, isLoginEligible, isLoginEnabled } = require('../_lib/auth');
+const { verifyToken, isLoginEligible, isLoginEnabled, isSessaoLiberada } = require('../_lib/auth');
 const { readCollection, createUserRegistration, updateUserRegistration, editUserRegistration, deleteUserRegistration } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 
@@ -33,6 +33,10 @@ async function requireAdmin(req) {
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
   if (!payload) return null;
+  /* Janela de demonstração: acesso administrativo sem conta no banco. */
+  if (isSessaoLiberada(payload)) {
+    return { id: payload.sub, usuario: payload.usuario, perfil: payload.perfil, ativo: true };
+  }
   const users = await readCollection('users');
   const user = users.find((item) => String(item.id) === String(payload.sub));
   return user && user.perfil === 'admin' && isLoginEligible(user) ? user : null;

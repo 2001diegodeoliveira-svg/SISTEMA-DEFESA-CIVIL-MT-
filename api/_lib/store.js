@@ -487,8 +487,50 @@ async function pgWritePluv(list) {
   );
 }
 
+/* ---- pg: configurações do sistema (chave/valor) ---- */
+const SYSTEM_CONFIG_DDL = `CREATE TABLE IF NOT EXISTS system_config (
+  chave         text PRIMARY KEY,
+  valor         jsonb NOT NULL,
+  atualizado_em timestamptz NOT NULL DEFAULT now()
+)`;
+let systemConfigPronta = false;
+
+/* Cria a tabela na primeira utilização: o deploy pode não ter rodado o
+   db:migrate, e uma janela de demonstração não pode derrubar a API. */
+async function ensureSystemConfig() {
+  if (systemConfigPronta) return;
+  try {
+    await getPool().query(SYSTEM_CONFIG_DDL);
+    systemConfigPronta = true;
+  } catch (error) {
+    const { rows } = await getPool().query('SELECT 1 FROM system_config LIMIT 1');
+    if (!Array.isArray(rows)) throw error;
+    systemConfigPronta = true;
+  }
+}
+async function pgReadSystemConfig() {
+  await ensureSystemConfig();
+  const { rows } = await getPool().query('SELECT chave, valor FROM system_config');
+  return rows.map((row) => ({
+    id: row.chave,
+    ...(row.valor && typeof row.valor === 'object' ? row.valor : {}),
+  }));
+}
+async function pgWriteSystemConfig(value) {
+  await ensureSystemConfig();
+  const itens = (Array.isArray(value) ? value : []).filter((item) => item && item.id !== undefined && item.id !== null);
+  await inTx(async (c) => {
+    await c.query('DELETE FROM system_config');
+    for (const item of itens) {
+      const { id, ...valor } = item;
+      await c.query('INSERT INTO system_config (chave, valor) VALUES ($1, $2::jsonb)', [String(id), JSON.stringify(valor)]);
+    }
+  });
+}
+
 /* ---- dispatcher pg ---- */
 async function pgRead(name) {
+  if (name === 'system_config') return pgReadSystemConfig();
   if (name === 'users') return pgReadUsers();
   if (name === 'user_registrations') return pgReadUserRegistrations();
   if (name === 'occurrences') return pgReadOccurrences();
@@ -509,6 +551,7 @@ async function pgRead(name) {
   return [];
 }
 async function pgWrite(name, value) {
+  if (name === 'system_config') return pgWriteSystemConfig(value);
   if (name === 'users') return pgWriteUsers(value);
   if (name === 'user_registrations') {
     const existing = await pgReadUserRegistrations();

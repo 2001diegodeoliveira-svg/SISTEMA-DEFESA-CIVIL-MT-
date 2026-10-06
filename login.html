@@ -200,6 +200,8 @@
             .profiles-grid, .form-row { grid-template-columns: 1fr; }
         }
     </style>
+    <script src="js/demo.js"></script>
+    <script src="js/protecao.js"></script>
 </head>
 <body>
 
@@ -288,7 +290,10 @@
     <script src="js/proxy.js"></script>
     <script src="js/api.js"></script>
     <script src="js/session.js"></script>
-    <script>if (!DC_LOGIN_ENABLED) location.replace('index.html');</script>
+    <script>
+        /* Com a janela de demonstração aberta o login não é necessário. */
+        DC_DEMO.aguardar(function (estado) { if (estado.liberado) location.replace('index.html'); });
+    </script>
     <script>
         let perfilSelecionado = null;
         let municipios = [];

@@ -1,6 +1,6 @@
 /* GET /api/auth/me → { user } (valida token) */
 const { jsonResponse, bearerToken } = require('../../_lib/http');
-const { verifyToken, ensureSeededUsers, publicUser, isLoginEligible, isLoginEnabled } = require('../../_lib/auth');
+const { verifyToken, ensureSeededUsers, publicUser, isLoginEligible, isLoginEnabled, isSessaoLiberada } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 
 module.exports = serve(async function handler(req) {
@@ -20,6 +20,12 @@ module.exports = serve(async function handler(req) {
   const payload = token && verifyToken(token);
   if (!payload) {
     return jsonResponse(401, { erro: 'Não autenticado.' }, origin);
+  }
+  if (isSessaoLiberada(payload)) {
+    return jsonResponse(200, { user: {
+      id: payload.sub, usuario: payload.usuario, nome: 'Acesso livre',
+      perfil: payload.perfil, municipio: '',
+    } }, origin);
   }
   const users = await ensureSeededUsers();
   const user = users.find(x => x.id === payload.sub);

@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
 const { isLoginEnabled } = require('./runtime-config');
+const { demoAberto } = require('./demo');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
 const JWT_EXP = process.env.JWT_EXP || '12h';
@@ -76,13 +77,23 @@ function signToken(user) {
 
 function verifyToken(token) {
   if (!isLoginEnabled()) {
-    return { sub: 'anon', usuario: 'Acesso livre', perfil: 'admin' };
+    return { sub: 'anon', usuario: 'Acesso livre', perfil: 'admin', liberada: true };
   }
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch {
-    return null;
+  if (token) {
+    try {
+      return jwt.verify(token, JWT_SECRET);
+    } catch { /* token ausente/inválido: verifica a janela de demonstração */ }
   }
+  if (demoAberto()) {
+    return { sub: 'demo', usuario: 'Acesso livre', perfil: 'admin', liberada: true };
+  }
+  return null;
+}
+
+/* Sessão sintética (login desabilitado ou janela de demonstração aberta):
+   não existe usuário no banco e as rotas não devem procurá-lo. */
+function isSessaoLiberada(payload) {
+  return Boolean(payload && payload.liberada === true);
 }
 
 function publicUser(user) {
@@ -103,6 +114,7 @@ module.exports = {
   isLoginEligible,
   signToken,
   verifyToken,
+  isSessaoLiberada,
   publicUser,
   seedUsers,
   isLoginEnabled,

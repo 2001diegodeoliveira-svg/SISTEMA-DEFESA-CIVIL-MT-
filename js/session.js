@@ -1,11 +1,15 @@
 /* ============================================================
    Sessão da Defesa Civil MT.
    Autenticação real via backend: token JWT (dcmt_token) +
-   perfil do usuário (dcmt_session). Se o backend estiver
-   indisponível, mantém compatibilidade com a sessão demo local.
+   perfil do usuário (dcmt_session). Enquanto a janela de
+   demonstração (js/demo.js) está aberta, o acesso é livre.
    ============================================================ */
 
-var DC_LOGIN_ENABLED = false;
+/* Exige login quando a janela de demonstração expirou (ou não existe). */
+function dcLoginExigido() {
+    if (!window.DC_DEMO) return false;
+    return window.DC_DEMO.estado.liberado === false;
+}
 
 /* A reativação exige também AUTH_LOGIN_ENABLED=true no backend. */
 function dcSessaoDemo() {
@@ -21,7 +25,7 @@ function dcSessaoDemo() {
 }
 
 function dcGetSession() {
-    if (!DC_LOGIN_ENABLED) return dcSessaoDemo();
+    if (!dcLoginExigido()) return dcSessaoDemo();
     try {
         const s = JSON.parse(localStorage.getItem('dcmt_session'));
         if (s) return s;
