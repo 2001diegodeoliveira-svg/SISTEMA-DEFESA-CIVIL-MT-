@@ -10,6 +10,9 @@ module.exports = serve(async function handler(req) {
   if (req.method !== 'POST') {
     return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
   }
+  if (['0', 'false', 'off', 'disabled'].includes(String(process.env.AUTH_LOGIN_ENABLED || '').trim().toLowerCase())) {
+    return jsonResponse(503, { erro: 'Login temporariamente suspenso para manutenção.' }, origin);
+  }
 
   const body = await readJson(req);
   const usuario = String(body.usuario || '').trim();

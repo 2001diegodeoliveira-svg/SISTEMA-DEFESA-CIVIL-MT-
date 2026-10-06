@@ -102,13 +102,16 @@ module.exports = serve(async function handler(req) {
     return new Response(null, { status: 204, headers: corsHeaders(origin) });
   }
 
+  const { route, query } = parseRoute(req);
   const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  const loginSuspended = ['0', 'false', 'off', 'disabled'].includes(String(process.env.AUTH_LOGIN_ENABLED || '').trim().toLowerCase());
+  const suspendedLoginRequest = route === 'auth/login' && loginSuspended;
   let configuredAdmin = false;
   try {
     const seeds = JSON.parse(process.env.SEED_USERS || '[]');
     configuredAdmin = Array.isArray(seeds) && seeds.some((user) => user && user.perfil === 'admin');
   } catch {}
-  if (production && !configuredAdmin) {
+  if (production && !configuredAdmin && !suspendedLoginRequest) {
     try {
       const users = await readCollection('users');
       if (!users.some((user) => user.perfil === 'admin' && isLoginEligible(user))) {
@@ -146,7 +149,6 @@ module.exports = serve(async function handler(req) {
     }
   }
 
-  const { route, query } = parseRoute(req);
   if (route === '') {
     return new Response(JSON.stringify({ erro: 'API Defesa Civil MT.' }), {
       status: 200,

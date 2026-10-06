@@ -109,6 +109,30 @@ test('handler Vercel aceita headers do Node e aplica a origem CORS permitida', a
   }
 });
 
+test('produção retorna manutenção para login suspenso mesmo sem admin seedado', async () => {
+  const env = validProductionEnv({ SEED_USERS: '' });
+  const keys = new Set([...Object.keys(env), 'NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'AUTH_LOGIN_ENABLED']);
+  const previous = new Map([...keys].map((key) => [key, process.env[key]]));
+  try {
+    for (const [key, value] of Object.entries(env)) process.env[key] = value;
+    process.env.AUTH_LOGIN_ENABLED = 'false';
+    const response = await apiHandler({
+      method: 'POST',
+      url: '/api/auth/login',
+      headers: { origin: 'https://defesacivil.mt.gov.br', 'content-type': 'application/json' },
+      text: async () => JSON.stringify({ usuario: 'admin', senha: 'nao-usada' }),
+    });
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { erro: 'Login temporariamente suspenso para manutenção.' });
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
 test('rota serverless propaga CORS com headers Node e serve alertas sem fetch externo', async () => {
   const env = validProductionEnv();
   const keys = new Set([...Object.keys(env), 'NODE_ENV', 'VERCEL', 'VERCEL_ENV']);
