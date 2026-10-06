@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { validateProductionConfig } = require('../api/_lib/runtime-config');
+const { isLoginEnabled, validateProductionConfig } = require('../api/_lib/runtime-config');
 const { corsHeaders } = require('../api/_lib/http');
 const apiHandler = require('../api/index');
 const { readCollection } = require('../api/_lib/store');
@@ -16,6 +16,7 @@ function validProductionEnv(overrides = {}) {
     JWT_SECRET: 'a-secure-production-secret-with-more-than-32-bytes',
     CORS_ORIGIN: 'https://defesacivil.mt.gov.br',
     PROXY_HOSTS: 'apiprevmet3.inmet.gov.br,panorama.sipam.gov.br',
+    AUTH_LOGIN_ENABLED: 'true',
     SEED_USERS: JSON.stringify([{ usuario: 'admin', senha: 'uma-senha-segura-com-12-caracteres', perfil: 'admin' }]),
     DATABASE_URL: 'postgresql://user:password@db.example.test/app',
     FILE_STORE: '0',
@@ -66,6 +67,12 @@ test('produção recusa senha de bootstrap acima do limite do bcrypt', () => {
 
 test('desenvolvimento mantém os padrões locais', () => {
   assert.deepEqual(validateProductionConfig({ NODE_ENV: 'development' }), []);
+});
+
+test('login só é habilitado por configuração explícita', () => {
+  assert.equal(isLoginEnabled({}), false);
+  assert.equal(isLoginEnabled({ AUTH_LOGIN_ENABLED: 'false' }), false);
+  assert.equal(isLoginEnabled({ AUTH_LOGIN_ENABLED: 'true' }), true);
 });
 
 test('handler da API falha fechado com HTTP 503 se produção está incompleta', async () => {

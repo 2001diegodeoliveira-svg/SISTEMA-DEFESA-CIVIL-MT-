@@ -1,6 +1,10 @@
 const DEFAULT_JWT_SECRET = 'dc-mt-dev-secret-change-me';
 const VALID_PROFILES = new Set(['admin', 'avancado', 'municipal', 'comum']);
 
+function isLoginEnabled(env = process.env) {
+  return ['1', 'true', 'yes', 'on'].includes(String(env.AUTH_LOGIN_ENABLED || '').trim().toLowerCase());
+}
+
 function parseList(value) {
   return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
 }
@@ -94,4 +98,4 @@ function validateProductionConfig(env = process.env) {
   return problems;
 }
 
-module.exports = { validateProductionConfig };
+module.exports = { isLoginEnabled, validateProductionConfig };
