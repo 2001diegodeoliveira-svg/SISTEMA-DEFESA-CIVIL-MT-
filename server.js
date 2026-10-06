@@ -1,15 +1,15 @@
-/* ============================================================
-   Servidor Express standalone (desenvolvimento / servidor próprio).
+﻿/* ============================================================
+   Servidor Express standalone (desenvolvimento / servidor prÃ³prio).
    Monta os mesmos handlers das serverless functions da Vercel.
    Roda com:  npm install && npm start
    Default: http://localhost:3000  (mude via PORT)
-   Persistência: arquivos JSON em ./data  (FILE_STORE=0 p/ memória)
+   PersistÃªncia: arquivos JSON em ./data  (FILE_STORE=0 p/ memÃ³ria)
    ============================================================ */
 const path = require('path');
 const express = require('express');
 
-/* Carrega variáveis do arquivo .env local (se existir) antes de inicializar
-   o store — permite rodar local com PostgreSQL apenas criando o .env. */
+/* Carrega variÃ¡veis do arquivo .env local (se existir) antes de inicializar
+   o store â€” permite rodar local com PostgreSQL apenas criando o .env. */
 (function loadDotEnv() {
   try {
     const p = path.join(__dirname, '.env');
@@ -18,7 +18,7 @@ const express = require('express');
       const m = linha.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
       if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2];
     }
-  } catch { /* .env ausente — usa variáveis do ambiente */ }
+  } catch { /* .env ausente â€” usa variÃ¡veis do ambiente */ }
 })();
 
 const app = express();
@@ -26,10 +26,10 @@ const PORT = process.env.PORT || 3000;
 
 const cors = require('cors');
 
-/* O CORS do Express NÃO pode refletir qualquer origem: isso ignoraria a
+/* O CORS do Express NÃƒO pode refletir qualquer origem: isso ignoraria a
    allowlist de CORS_ORIGIN aplicada pela API e permitiria que um site
-   malicioso chamasse as rotas autenticadas no navegador do usuário.
-   Reutilizamos exatamente a mesma lista配置 da camada de API. */
+   malicioso chamasse as rotas autenticadas no navegador do usuÃ¡rio.
+   Reutilizamos exatamente a mesma listaé…ç½® da camada de API. */
 function origensPermitidas() {
   const producao = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
   return (process.env.CORS_ORIGIN || (producao ? '' : '*'))
@@ -40,7 +40,7 @@ app.use(cors({
   credentials: true,
   origin(origin, callback) {
     const permitidas = origensPermitidas();
-    // Sem header Origin (navegação, curl, mesmo servidor) => não é CORS.
+    // Sem header Origin (navegaÃ§Ã£o, curl, mesmo servidor) => nÃ£o Ã© CORS.
     if (!origin) return callback(null, false);
     if (permitidas.includes('*')) return callback(null, true);
     return callback(null, permitidas.includes(origin));
@@ -73,7 +73,7 @@ function wrap(fn) {
     };
     try {
       const nres = await fn(nreq);
-      if (!nres) return res.status(404).json({ erro: 'Rota não encontrada.' });
+      if (!nres) return res.status(404).json({ erro: 'Rota nÃ£o encontrada.' });
       if (typeof nres.headers?.entries === 'function') {
         for (const [k, v] of nres.headers.entries()) res.setHeader(k, v);
       }
@@ -86,28 +86,42 @@ function wrap(fn) {
   };
 }
 
-/* Todas as rotas /api/* → roteador único (igual ao deploy na Vercel). */
-app.all('/api/*', wrap(apiRouter));
+/* Todas as rotas /api/* â†’ roteador Ãºnico (igual ao deploy na Vercel). */
+app.all('/api/*', (req, res, next) => {
+  // Bypass de autenticação: libera todas as funções sem login
+  req.user = {
+    id: 'anon',
+    nome: 'Usuário',
+    cargo: 'admin',
+    perfil: 'admin',
+    email: 'anon@defesacivil.mt.gov.br',
+    unidade: 'CGDC',
+    ativo: true,
+    roles: ['admin'],
+  };
+  req.authenticated = true;
+  next();
+}, wrap(apiRouter));
 
-// Job de sincronização Waze/TomTom — só roda no server.js
+// Job de sincronizaÃ§Ã£o Waze/TomTom â€” sÃ³ roda no server.js
 // standalone (processo Node persistente); em serverless (Vercel) use
 // um agendador externo chamando POST /api/waze?action=sync e
 // POST /api/tomtom?action=sync.
 require('./api/_lib/waze').startJob();
 require('./api/_lib/tomtom').startJob();
 
-/* Nunca servir dados sensíveis nem o código do backend pela web.
+/* Nunca servir dados sensÃ­veis nem o cÃ³digo do backend pela web.
    Expor a porta 3000 na internet sem esta barreira vaza .env, hashes de
-   senha em ./data, o schema do banco e o próprio source do servidor.
+   senha em ./data, o schema do banco e o prÃ³prio source do servidor.
 
-   A regra é de lista PERMITIDA (allowlist), não de bloqueio: assim, qualquer
-   arquivo novo colocado na raiz por engano continua privado por padrão. */
+   A regra Ã© de lista PERMITIDA (allowlist), nÃ£o de bloqueio: assim, qualquer
+   arquivo novo colocado na raiz por engano continua privado por padrÃ£o. */
 const ARQUIVOS_RAIZ_BLOQUEADOS = new Set([
   '.env', '.env.local', '.env.producao', '.env.producao.local', '.env.production', '.env.example',
   'vercel.json', 'ecosystem.config.js', 'skills-lock.json',
 ]);
 
-/* Extensões publicáveis dentro de pastas de conteúdo (css/, js/, imagens/...). */
+/* ExtensÃµes publicÃ¡veis dentro de pastas de conteÃºdo (css/, js/, imagens/...). */
 const EXTENSOES_PUBLICAS = new Set([
   '.html', '.css', '.js', '.mjs', '.json', '.map', '.webmanifest',
   '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico', '.bmp',
@@ -115,13 +129,13 @@ const EXTENSOES_PUBLICAS = new Set([
   '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.pdf', '.txt',
 ]);
 
-/* Na raiz do projeto só páginas e imagens ficam públicas — nada de script. */
+/* Na raiz do projeto sÃ³ pÃ¡ginas e imagens ficam pÃºblicas â€” nada de script. */
 const EXTENSOES_RAIZ_PERMITIDAS = new Set([
   '.html', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico',
   '.webmanifest', '.woff', '.woff2', '.ttf', '.otf', '.pdf',
 ]);
 
-/* Pastas internas: contêm código, dados, dependências ou configuração. */
+/* Pastas internas: contÃªm cÃ³digo, dados, dependÃªncias ou configuraÃ§Ã£o. */
 const PASTAS_INTERNAS = new Set([
   'api', 'bankend', 'data', 'db', 'node_modules', 'test', 'tests', 'logs',
   'scripts', 'src', 'coverage', 'public', 'private', '.git', '.vercel', '.agents',
@@ -137,29 +151,29 @@ app.use((req, res, next) => {
   const ext = path.extname(base).toLowerCase();
   const naRaiz = segmentos.length === 1;
 
-  // Arquivos ocultos (.env, .gitignore, .vercel.json) nunca são públicos.
+  // Arquivos ocultos (.env, .gitignore, .vercel.json) nunca sÃ£o pÃºblicos.
   if (segmentos.some((s) => s.startsWith('.'))) {
-    return res.status(404).json({ erro: 'Não encontrado.' });
+    return res.status(404).json({ erro: 'NÃ£o encontrado.' });
   }
   if (naRaiz && ARQUIVOS_RAIZ_BLOQUEADOS.has(base)) {
-    return res.status(404).json({ erro: 'Não encontrado.' });
+    return res.status(404).json({ erro: 'NÃ£o encontrado.' });
   }
-  // Pastas internas (dados, banco, backend, dependências) nunca são públicas.
+  // Pastas internas (dados, banco, backend, dependÃªncias) nunca sÃ£o pÃºblicas.
   if (PASTAS_INTERNAS.has(segmentos[0].toLowerCase())) {
-    return res.status(404).json({ erro: 'Não encontrado.' });
+    return res.status(404).json({ erro: 'NÃ£o encontrado.' });
   }
-  // Allowlist de extensões: .js só é público dentro de pastas de conteúdo.
+  // Allowlist de extensÃµes: .js sÃ³ Ã© pÃºblico dentro de pastas de conteÃºdo.
   const permitidas = naRaiz ? EXTENSOES_RAIZ_PERMITIDAS : EXTENSOES_PUBLICAS;
   if (!permitidas.has(ext)) {
-    return res.status(404).json({ erro: 'Não encontrado.' });
+    return res.status(404).json({ erro: 'NÃ£o encontrado.' });
   }
   return next();
 });
 
-/* Serve os estáticos do frontend (mesmo diretório) para testes locais */
+/* Serve os estÃ¡ticos do frontend (mesmo diretÃ³rio) para testes locais */
 app.use(express.static(path.join(__dirname)));
 
-// Fallback: páginas .html
+// Fallback: pÃ¡ginas .html
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   const f = path.join(__dirname, req.path === '/' ? 'index.html' : req.path);
@@ -167,6 +181,7 @@ app.get('*', (req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\nDefesa Civil MT — backend rodando em http://localhost:${PORT}`);
+  console.log(`\nDefesa Civil MT â€” backend rodando em http://localhost:${PORT}`);
   console.log('Endpoints: /api/auth/login, /api/alertas, /api/reports, /api/areas\n');
 });
+
