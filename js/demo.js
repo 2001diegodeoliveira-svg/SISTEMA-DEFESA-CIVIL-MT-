@@ -1,13 +1,16 @@
 /* ============================================================
-   Janela de demonstração — espelho no cliente.
+   Controle de acesso — espelho no cliente.
 
-   A primeira visita grava o início em localStorage; o servidor é a
-   autoridade (GET /api/demo) e devolve o marco que ele registrou.
-   Enquanto a janela está aberta o sistema roda sem login; ao expirar,
-   com AUTH_LOGIN_ENABLED ativo, as páginas restritas vão para login.html.
+   O sistema NÃO abre sem login por padrão: o estado inicial é
+   FECHADO e qualquer página (exceto login.html) é redirecionada
+   para o login até existir uma sessão válida.
 
-   Páginas que continuam públicas mesmo com a janela expirada:
-   listadas em PUBLICAS abaixo.
+   O servidor é a autoridade (GET /api/demo): se ele declarar a
+   janela de demonstração ABERTA (DEMO_HORAS > 0), o acesso livre
+   é permitido. Sem resposta do servidor o sistema permanece
+   fechado (falha fechada, nunca aberta).
+
+   Páginas públicas mesmo sem sessão: nenhuma (apenas login.html).
    ============================================================ */
 (function (global) {
     'use strict';
@@ -17,15 +20,8 @@
     var TIMEOUT_SYNC_MS = 4000;
     var LIMITE_TIMEOUT_MS = 2147483647;
 
-    /* Serviços cidadãos que não exigem sessão. */
-    var PUBLICAS = [
-        'login.html',
-        'alertas.html',
-        'ocorrencia.html',
-        'registrar-ocorrencia.html',
-        'cadastro-voluntario.html',
-        'satelite.html'
-    ];
+    /* Serviços que não exigem sessão — por padrão, só a página de login. */
+    var PUBLICAS = ['login.html'];
 
     function nomePagina() {
         var partes = String((global.location && global.location.pathname) || '').split('/');
@@ -45,22 +41,27 @@
 
     function sessaoReal() {
         try {
-            return !!(global.localStorage.getItem('dcmt_session') || global.localStorage.getItem('dcmt_token'));
+            var token = global.localStorage.getItem('dcmt_token');
+            if (!token) return false;
+            var s = JSON.parse(global.localStorage.getItem('dcmt_session') || 'null');
+            if (!s || !s.perfil) return false;
+            var validos = ['admin', 'avancado', 'municipal', 'comum'];
+            return validos.indexOf(s.perfil) !== -1;
         } catch (e) { return false; }
     }
 
     var inicio = lerInicioLocal();
     if (!inicio) { inicio = Date.now(); gravarInicioLocal(inicio); }
 
+    /* Estado inicial FECHADO: exige login até o servidor confirmar
+       a janela de demonstração. Falha fechada, nunca aberta. */
     var estado = {
         inicio: inicio,
-        duracaoMs: DURACAO_PADRAO_MS,
-        expiraEm: inicio + DURACAO_PADRAO_MS,
-        aberto: true,
-        /* Sem resposta do servidor assumimos login desabilitado, para não
-           jogar o visitante no login durante uma falha de rede. */
-        loginHabilitado: false,
-        liberado: true,
+        duracaoMs: 0,
+        expiraEm: inicio,
+        aberto: false,
+        loginHabilitado: true,
+        liberado: false,
         sincronizado: false,
         concluido: false
     };
@@ -68,7 +69,7 @@
     function recalcular() {
         estado.expiraEm = estado.inicio + estado.duracaoMs;
         estado.aberto = Date.now() < estado.expiraEm;
-        estado.liberado = estado.aberto || !estado.loginHabilitado;
+        estado.liberado = estado.aberto || estado.loginHabilitado === false;
     }
     recalcular();
 
@@ -87,7 +88,9 @@
         var pagina = nomePagina();
         if (pagina === 'login.html') return;
         if (PUBLICAS.indexOf(pagina) !== -1) return;
-        global.location.replace('login.html');
+        try {
+            global.location.replace('login.html');
+        } catch (e) { /* já está em login */ }
     }
 
     function aplicarNaPagina() {
@@ -96,6 +99,9 @@
             if (typeof global.dcAplicarNav === 'function') global.dcAplicarNav();
         } catch (e) { /* página ainda não pronta */ }
     }
+
+    /* Bloqueio imediato: não espera a sincronização com o servidor. */
+    bloquearSeNecessario();
 
     function agendarBloqueio() {
         if (estado.liberado || !estado.expiraEm) return;
@@ -118,27 +124,33 @@
         comTempo
             .then(function (dados) {
                 if (!dados) return;
-                /* O servidor é a autoridade: marco, duração e janela vêm dele
-                   (assim um reset no banco reinicia a janela em todo navegador). */
+                /* O servidor é a autoridade. Sem resposta (offline, API
+                   indisponível) o estado permanece FECHADO. */
                 var servidor = Number(dados.inicio);
                 if (servidor > 0) {
                     estado.inicio = servidor;
                     gravarInicioLocal(servidor);
                 }
-                if (dados.habilitado === false) {
-                    /* Janela desligada no servidor: fecha imediatamente aqui. */
+                if (dados.loginHabilitado === false) {
+                    /* Login suspenso no servidor: libera leitura sem token. */
                     estado.duracaoMs = 0;
+                    estado.loginHabilitado = false;
+                } else if (dados.habilitado === true && Number(dados.duracaoHoras) > 0) {
+                    /* Autorização explícita do servidor para janela de demo. */
+                    estado.duracaoMs = Number(dados.duracaoHoras) * 3600000;
                     if (servidor <= 0) {
                         estado.inicio = Date.now();
                         gravarInicioLocal(estado.inicio);
                     }
-                } else if (Number(dados.duracaoHoras) > 0) {
-                    estado.duracaoMs = Number(dados.duracaoHoras) * 3600000;
+                    estado.loginHabilitado = true;
+                } else {
+                    /* Janela desligada: sistema fechado, exige login. */
+                    estado.duracaoMs = 0;
+                    estado.loginHabilitado = true;
                 }
-                estado.loginHabilitado = !!dados.loginHabilitado;
                 estado.sincronizado = true;
             })
-            .catch(function () { /* offline: mantém o cálculo local */ })
+            .catch(function () { /* offline: mantém o cálculo local (fechado) */ })
             .then(concluir);
     }
 

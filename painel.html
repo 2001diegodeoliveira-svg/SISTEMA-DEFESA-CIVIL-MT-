@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Painel de Operações — SGI PROTEGE MT</title>
+    <title>Painel de OperaÃ§Ãµes â€” SGI PROTEGE MT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -160,7 +160,7 @@
 
         @media(max-width:1200px) { .main { grid-template-columns:1fr; grid-template-rows:auto 400px auto; overflow-y:auto; } }
     </style>
-    <script src="js/demo.js"></script>
+    <script src="js/demo.js"></script><script>try{if(window.DC_DEMO&&!window.DC_DEMO.estado.liberado){var s=localStorage.getItem("dcmt_session")||localStorage.getItem("dcmt_token");if(!s) location.replace("login.html");}}catch(e){}</script>
     <script src="js/protecao.js"></script>
 </head>
 <body>
@@ -171,7 +171,7 @@
         <img src="imagens/logo.png" alt="Logo" onerror="this.style.display='none'">
         <div>
             <h1>SGI PROTEGE <span>MT</span></h1>
-            <p>CECOE — Painel de Operações</p>
+            <p>CECOE â€” Painel de OperaÃ§Ãµes</p>
         </div>
     </div>
     <div class="hdr-center">
@@ -180,16 +180,16 @@
     <div class="hdr-right">
         <div>
             <div class="clock" id="clock">--:--:--</div>
-            <div class="date-str" id="dateStr">—</div>
+            <div class="date-str" id="dateStr">â€”</div>
         </div>
         <div class="sep"></div>
-        <a href="index.html" class="hdr-btn btn-home"><i data-lucide="home"></i> Início</a>
+        <a href="index.html" class="hdr-btn btn-home"><i data-lucide="home"></i> InÃ­cio</a>
         <a href="mapa.html" class="hdr-btn btn-home"><i data-lucide="map"></i> Mapa</a>
         <a href="alertas.html" class="hdr-btn btn-home"><i data-lucide="triangle-alert"></i> Alertas</a>
-        <a href="el-nino.html" class="hdr-btn btn-home"><i data-lucide="activity"></i> El Niño</a>
-        <a href="amazonia.html" class="hdr-btn btn-home"><i data-lucide="leaf"></i> Amazônia</a>
+        <a href="el-nino.html" class="hdr-btn btn-home"><i data-lucide="activity"></i> El NiÃ±o</a>
+        <a href="amazonia.html" class="hdr-btn btn-home"><i data-lucide="leaf"></i> AmazÃ´nia</a>
         <a href="waze.html" class="hdr-btn btn-home"><i data-lucide="road"></i> Waze</a>
-        <button class="hdr-btn btn-emergency" onclick="alert('Ligando para 199 — SGI PROTEGE MT')"><i data-lucide="phone"></i> 199</button>
+        <button class="hdr-btn btn-emergency" onclick="alert('Ligando para 199 â€” SGI PROTEGE MT')"><i data-lucide="phone"></i> 199</button>
     </div>
 </div>
 
@@ -200,14 +200,14 @@
     <div class="panel">
         <div class="panel-hdr">
             <h2><i data-lucide="pie-chart" style="color:var(--accent);"></i> Indicadores</h2>
-            <span id="updStats" style="font-size:9px;color:var(--muted);">—</span>
+            <span id="updStats" style="font-size:9px;color:var(--muted);">â€”</span>
         </div>
         <div class="panel-body">
             <div class="stat-grid" id="statGrid">
-                <div class="stat-card fire"><div class="ico">🔥</div><div class="val" id="sFocos">—</div><div class="lbl">Focos Hoje</div><div class="badge" id="sFocosBadge">—</div></div>
-                <div class="stat-card alert"><div class="ico">⚠️</div><div class="val" id="sSipam">—</div><div class="lbl">Eventos SIPAM</div><div class="badge" id="sSipamBadge">—</div></div>
-                <div class="stat-card city"><div class="ico">📡</div><div class="val" id="sCidades">—</div><div class="lbl">Cidades Ativas</div><div class="badge" id="sCidadesBadge">de 8</div></div>
-                <div class="stat-card ok"><div class="ico">🛰️</div><div class="val" id="sSats">—</div><div class="lbl">Satélites</div><div class="badge" id="sSatsBadge">INPE</div></div>
+                <div class="stat-card fire"><div class="ico">ðŸ”¥</div><div class="val" id="sFocos">â€”</div><div class="lbl">Focos Hoje</div><div class="badge" id="sFocosBadge">â€”</div></div>
+                <div class="stat-card alert"><div class="ico">âš ï¸</div><div class="val" id="sSipam">â€”</div><div class="lbl">Eventos SIPAM</div><div class="badge" id="sSipamBadge">â€”</div></div>
+                <div class="stat-card city"><div class="ico">ðŸ“¡</div><div class="val" id="sCidades">â€”</div><div class="lbl">Cidades Ativas</div><div class="badge" id="sCidadesBadge">de 8</div></div>
+                <div class="stat-card ok"><div class="ico">ðŸ›°ï¸</div><div class="val" id="sSats">â€”</div><div class="lbl">SatÃ©lites</div><div class="badge" id="sSatsBadge">INPE</div></div>
             </div>
 
             <div class="sec-title"><i data-lucide="building-2" style="color:var(--blue);"></i><span id="citiesTitle">Clima das 8 Cidades</span></div>
@@ -225,8 +225,8 @@
         <div class="panel-hdr">
             <h2><i data-lucide="earth" style="color:var(--green);"></i> Mapa em Tempo Real</h2>
             <div style="display:flex;align-items:center;gap:10px;">
-                <span id="mapCount" style="font-size:9px;color:var(--muted);">—</span>
-                <a href="mapa.html" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none;font-weight:600;">Tela Cheia ↗</a>
+                <span id="mapCount" style="font-size:9px;color:var(--muted);">â€”</span>
+                <a href="mapa.html" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none;font-weight:600;">Tela Cheia â†—</a>
             </div>
         </div>
         <div class="map-wrap">
@@ -263,7 +263,7 @@
         <!-- CPTEC -->
         <div class="panel" style="flex:0 0 auto;">
             <div class="panel-hdr">
-                <h2><i data-lucide="cloud-sun" style="color:var(--amber);"></i> CPTEC Previsão — Cuiabá</h2>
+                <h2><i data-lucide="cloud-sun" style="color:var(--amber);"></i> CPTEC PrevisÃ£o â€” CuiabÃ¡</h2>
             </div>
             <div class="panel-body" style="max-height:170px;" id="cptecPanel">
                 <div class="loading"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>
@@ -285,8 +285,8 @@
 
 <!-- FOOTER -->
 <div class="ftr">
-    <span>&copy; 2026 SGI PROTEGE de Mato Grosso — <a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a></span>
-    <span>Atualização automática a cada 5 min</span>
+    <span>&copy; 2026 SGI PROTEGE de Mato Grosso â€” <a href="index.html">InÃ­cio</a> Â· <a href="mapa.html">Mapa</a> Â· <a href="alertas.html">Alertas</a></span>
+    <span>AtualizaÃ§Ã£o automÃ¡tica a cada 5 min</span>
 </div>
 
 <script src="js/session.js"></script>
@@ -311,23 +311,23 @@ setInterval(tickClock, 1000); tickClock();
 
 // ===== CITY DATA =====
 const CITIES = [
-    { nome:'Cuiabá', lat:-15.588, lon:-56.097 },
+    { nome:'CuiabÃ¡', lat:-15.588, lon:-56.097 },
     { nome:'Sinop', lat:-12.472, lon:-55.722 },
-    { nome:'Rondonópolis', lat:-16.471, lon:-54.645 },
+    { nome:'RondonÃ³polis', lat:-16.471, lon:-54.645 },
     { nome:'Sorriso', lat:-12.546, lon:-55.727 },
-    { nome:'Cáceres', lat:-16.077, lon:-57.682 },
-    { nome:'Tangará da Serra', lat:-14.656, lon:-57.486 },
+    { nome:'CÃ¡ceres', lat:-16.077, lon:-57.682 },
+    { nome:'TangarÃ¡ da Serra', lat:-14.656, lon:-57.486 },
     { nome:'Primavera do Leste', lat:-15.556, lon:-53.949 },
-    { nome:'Barra do Garças', lat:-15.891, lon:-52.258 },
+    { nome:'Barra do GarÃ§as', lat:-15.891, lon:-52.258 },
 ];
 
-// Gestor municipal: painel delimitado ao próprio município (decisão de acesso).
+// Gestor municipal: painel delimitado ao prÃ³prio municÃ­pio (decisÃ£o de acesso).
 const muniRest = (window.dcMuniRestricao) ? dcMuniRestricao() : null;
 const CITIES_VISIVEIS = muniRest
     ? CITIES.filter(c => dcNorm(c.nome) === muniRest.norm)
     : CITIES;
 
-const ICONE_CPTEC = { 'Chuva':'🌧️','Chuvoso':'🌧️','Ensolarado':'☀️','Parcialmente nublado':'⛅','Nublado':'☁️','Sol com nuvens':'🌤️','Tempestades':'⛈️','Nevoeiro':'🌫️','Neve':'❄️' };
+const ICONE_CPTEC = { 'Chuva':'ðŸŒ§ï¸','Chuvoso':'ðŸŒ§ï¸','Ensolarado':'â˜€ï¸','Parcialmente nublado':'â›…','Nublado':'â˜ï¸','Sol com nuvens':'ðŸŒ¤ï¸','Tempestades':'â›ˆï¸','Nevoeiro':'ðŸŒ«ï¸','Neve':'â„ï¸' };
 
 // ===== API FETCHERS =====
 async function fetchCity(c) {
@@ -343,7 +343,7 @@ async function fetchCity(c) {
 
 async function fetchFocos(munNorm) {
     try {
-        // Tenta o CSV do dia atual; se ainda não publicado, volta até 3 dias
+        // Tenta o CSV do dia atual; se ainda nÃ£o publicado, volta atÃ© 3 dias
         let txt = null;
         for (let i = 0; i < 4 && !txt; i++) {
             const d = new Date(Date.now() - i * 86400000);
@@ -391,10 +391,10 @@ async function fetchCptec() {
         if (!r.ok) return [];
         const d = await r.json();
         if (!d.clima?.length) return [];
-        const ds = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        const ds = ['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b'];
         return d.clima.map(c => {
             const dt = new Date(c.data+'T12:00:00');
-            return { dia:ds[dt.getDay()], data:`${dt.getDate()}/${dt.getMonth()+1}`, ico:ICONE_CPTEC[c.condicao]||'🌡️', desc:c.condicao_desc, tmax:c.max, tmin:c.min };
+            return { dia:ds[dt.getDay()], data:`${dt.getDate()}/${dt.getMonth()+1}`, ico:ICONE_CPTEC[c.condicao]||'ðŸŒ¡ï¸', desc:c.condicao_desc, tmax:c.max, tmin:c.min };
         });
     } catch { return []; }
 }
@@ -417,19 +417,19 @@ async function renderPainel() {
     const badCid = document.getElementById('sCidadesBadge');
     if (badCid) badCid.textContent = 'de ' + CITIES_VISIVEIS.length;
     document.getElementById('sSats').textContent = focos.sats.length;
-    document.getElementById('sSatsBadge').textContent = focos.sats.join(', ') || '—';
+    document.getElementById('sSatsBadge').textContent = focos.sats.join(', ') || 'â€”';
     const citiesTitle = document.getElementById('citiesTitle');
-    if (citiesTitle) citiesTitle.textContent = 'Clima — ' + CITIES_VISIVEIS.map(c=>c.nome).join(', ');
+    if (citiesTitle) citiesTitle.textContent = 'Clima â€” ' + CITIES_VISIVEIS.map(c=>c.nome).join(', ');
 
     // --- Cities ---
     const cg = document.getElementById('cityGrid');
     cg.innerHTML = CITIES_VISIVEIS.map((c,i) => {
         const d = cityRes[i];
-        if (!d) return `<div class="city-card"><div class="cn">${c.nome}</div><div class="ct" style="color:var(--muted);">—°C</div></div>`;
+        if (!d) return `<div class="city-card"><div class="cn">${c.nome}</div><div class="ct" style="color:var(--muted);">â€”Â°C</div></div>`;
         const tc = d.temp>=38?'var(--red)':d.temp>=32?'var(--accent)':d.temp>=22?'var(--amber)':'var(--blue)';
         return `<div class="city-card">
             <div class="cn">${c.nome}</div>
-            <div class="ct" style="color:${tc};">${Math.round(d.temp)}°C</div>
+            <div class="ct" style="color:${tc};">${Math.round(d.temp)}Â°C</div>
             <div class="cm"><span><i data-lucide="droplet"></i> ${d.hum}%</span><span><i data-lucide="wind"></i> ${Math.round(d.wind)} km/h</span></div>
         </div>`;
     }).join('');
@@ -438,19 +438,19 @@ async function renderPainel() {
     // --- Fire Panel ---
     const fp = document.getElementById('firePanel');
     let fireHtml = '';
-    fireHtml += `<div class="row-item"><div class="ri-icon">🔥</div><div class="ri-val" style="color:var(--red);">${focos.today}</div><div class="ri-label">focos hoje em MT</div></div>`;
-    fireHtml += `<div class="row-item"><div class="ri-icon">⚠️</div><div class="ri-val" style="color:var(--amber);">${focos.high}</div><div class="ri-label">risco alto (≥0.6)</div></div>`;
-    fireHtml += `<div class="row-item"><div class="ri-icon">🛰️</div><div class="ri-val">${focos.sats.length}</div><div class="ri-label">${focos.sats.join(', ')||'—'}</div></div>`;
+    fireHtml += `<div class="row-item"><div class="ri-icon">ðŸ”¥</div><div class="ri-val" style="color:var(--red);">${focos.today}</div><div class="ri-label">focos hoje em MT</div></div>`;
+    fireHtml += `<div class="row-item"><div class="ri-icon">âš ï¸</div><div class="ri-val" style="color:var(--amber);">${focos.high}</div><div class="ri-label">risco alto (â‰¥0.6)</div></div>`;
+    fireHtml += `<div class="row-item"><div class="ri-icon">ðŸ›°ï¸</div><div class="ri-val">${focos.sats.length}</div><div class="ri-label">${focos.sats.join(', ')||'â€”'}</div></div>`;
     if (focos.topBioma.length) {
         fireHtml += `<div style="margin-top:6px;">`;
-        focos.topBioma.forEach(([b,n]) => { fireHtml += `<div class="row-item"><div class="ri-icon" style="color:var(--accent);">●</div><div class="ri-val">${n}</div><div class="ri-label">${b}</div></div>`; });
+        focos.topBioma.forEach(([b,n]) => { fireHtml += `<div class="row-item"><div class="ri-icon" style="color:var(--accent);">â—</div><div class="ri-val">${n}</div><div class="ri-label">${b}</div></div>`; });
         fireHtml += `</div>`;
     }
     if (sipam.length) {
-        fireHtml += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);"><div class="sec-title" style="margin:0 0 4px;">SIPAM — Top Eventos</div>`;
+        fireHtml += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);"><div class="sec-title" style="margin:0 0 4px;">SIPAM â€” Top Eventos</div>`;
         sipam.slice(0,4).forEach(ev => {
             const cor = ev.status_evento==='Ativo'?'var(--red)':ev.status_evento==='Controlado'?'var(--green)':'var(--amber)';
-            fireHtml += `<div class="row-item"><div class="ri-icon" style="color:${cor};">●</div><div class="ri-val" style="font-size:9px;">#${ev.id_evento}</div><div class="ri-label">${ev.municipio||'MT'} — ${ev.status_evento||'—'} — ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'—'}</div></div>`;
+            fireHtml += `<div class="row-item"><div class="ri-icon" style="color:${cor};">â—</div><div class="ri-val" style="font-size:9px;">#${ev.id_evento}</div><div class="ri-label">${ev.municipio||'MT'} â€” ${ev.status_evento||'â€”'} â€” ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'â€”'}</div></div>`;
         });
         fireHtml += `</div>`;
     }
@@ -463,7 +463,7 @@ async function renderPainel() {
             <div class="cptec-day">${c.dia}<br><span style="font-weight:400;font-size:8px;color:var(--muted);">${c.data}</span></div>
             <div class="cptec-ico">${c.ico}</div>
             <div class="cptec-desc">${c.desc}</div>
-            <div class="cptec-temp"><span style="color:var(--accent);">${c.tmax}°</span> <span style="color:var(--blue);font-weight:400;">${c.tmin}°</span></div>
+            <div class="cptec-temp"><span style="color:var(--accent);">${c.tmax}Â°</span> <span style="color:var(--blue);font-weight:400;">${c.tmin}Â°</span></div>
         </div>`).join('');
     } else {
         cp.innerHTML = '<div class="loading"><i data-lucide="loader" class="lucide-spin"></i> Carregando...</div>';
@@ -477,13 +477,13 @@ async function renderPainel() {
         const cor = ev.status_evento==='Ativo'?'':' orange';
         const tagCor = ev.status_evento==='Ativo'?'var(--red);background:rgba(239,68,68,.12)':'var(--green);background:rgba(34,197,94,.12)';
         feedHtml += `<div class="feed-item${cor}">
-            <div class="feed-head"><span class="feed-tag" style="color:${tagCor}">${ev.status_evento||'—'}</span><span class="feed-time">#${ev.id_evento}</span></div>
-            <div class="feed-title">Evento — ${ev.municipio||'MT'}</div>
+            <div class="feed-head"><span class="feed-tag" style="color:${tagCor}">${ev.status_evento||'â€”'}</span><span class="feed-time">#${ev.id_evento}</span></div>
+            <div class="feed-title">Evento â€” ${ev.municipio||'MT'}</div>
             <div class="feed-loc"><i data-lucide="map-pin"></i> ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':''} ${ev.tipo_evento||''}</div>
         </div>`;
     });
     if (focos.topMun.length) {
-        feedHtml += `<div class="sec-title" style="margin:8px 0 6px;"><i data-lucide="flame" style="color:var(--red);"></i> Top Municípios — Focos</div>`;
+        feedHtml += `<div class="sec-title" style="margin:8px 0 6px;"><i data-lucide="flame" style="color:var(--red);"></i> Top MunicÃ­pios â€” Focos</div>`;
         focos.topMun.forEach(([m,n]) => {
             feedHtml += `<div class="feed-item yellow">
                 <div class="feed-head"><span class="feed-tag" style="color:var(--amber);background:rgba(251,191,36,.12);">INPE</span><span class="feed-time">${n} focos</span></div>
@@ -502,7 +502,7 @@ async function renderPainel() {
         { name:'Open-Meteo (clima)', ok:true },
         { name:'INPE BDQueimadas', ok:focos.today>0 },
         { name:'SIPAM Painel do Fogo', ok:sipam.length>0 },
-        { name:'CPTEC/INPE (previsão)', ok:cptec.length>0 },
+        { name:'CPTEC/INPE (previsÃ£o)', ok:cptec.length>0 },
         { name:'IBGE (malhas)', ok:true },
     ];
     sl.innerHTML = srcs.map(s => `<div class="src-row"><div class="src-dot ${s.ok?'ok':'err'}"></div><div class="src-name">${s.name}</div><div class="src-status" style="color:${s.ok?'var(--green)':'var(--red)'};">${s.ok?'ONLINE':'OFFLINE'}</div></div>`).join('');
@@ -524,8 +524,8 @@ const pMap = L.map('painelMap', {
     minZoom: 5, maxZoom: 15
 });
 
-// CARTO exige API key nos tiles gratuitos (ficava com marca d'água/tela
-// preta); Esri World Dark Gray é gratuito e não exige chave.
+// CARTO exige API key nos tiles gratuitos (ficava com marca d'Ã¡gua/tela
+// preta); Esri World Dark Gray Ã© gratuito e nÃ£o exige chave.
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 16, maxNativeZoom: 16
 }).addTo(pMap);
@@ -572,12 +572,12 @@ function cityIcon(temp) {
     const col = temp>=38?'#ef4444':temp>=32?'#f9731c':temp>=22?'#fbbf24':'#38bdf8';
     return L.divIcon({
         className:'', iconSize:[24,24], iconAnchor:[12,12],
-        html:`<div style="width:24px;height:24px;border-radius:50%;background:rgba(15,23,42,.85);border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:${col};box-shadow:0 0 10px ${col}44;">${Math.round(temp)}°</div>`
+        html:`<div style="width:24px;height:24px;border-radius:50%;background:rgba(15,23,42,.85);border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:${col};box-shadow:0 0 10px ${col}44;">${Math.round(temp)}Â°</div>`
     });
 }
 
-// MT boundary — malha oficial IBGE (substitui o array simplificado antigo, que
-// continha coordenadas erradas com longitude até -46, invadindo Goiás/MS).
+// MT boundary â€” malha oficial IBGE (substitui o array simplificado antigo, que
+// continha coordenadas erradas com longitude atÃ© -46, invadindo GoiÃ¡s/MS).
 const MT_MALHA_URL = 'https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima';
 
 async function loadMTBoundary() {
@@ -593,7 +593,7 @@ async function loadMTBoundary() {
             },
             attribution: 'IBGE'
         }).addTo(layerBoundary);
-        // Ajusta a câmera para a malha oficial (precisão em vez dos limites fixos antigos)
+        // Ajusta a cÃ¢mera para a malha oficial (precisÃ£o em vez dos limites fixos antigos)
         pMap.fitBounds(malha.getBounds(), { padding: [20, 20] });
     } catch (e) {
         console.warn('Falha ao carregar malha IBGE no painel:', e);
@@ -628,11 +628,11 @@ function updateMap(focosData, sipamData, cityResults) {
         if (isNaN(lat) || isNaN(lon)) continue;
 
         L.marker([lat, lon], { icon: fireIcon(risco) }).bindPopup(
-            `<b>🔥 Foco INPE</b><br>` +
-            `<span>Município: ${f.municipio||'—'}</span><br>` +
+            `<b>ðŸ”¥ Foco INPE</b><br>` +
+            `<span>MunicÃ­pio: ${f.municipio||'â€”'}</span><br>` +
             `<span>Risco: <b style="color:${risco>=0.6?'#ef4444':'#fbbf24'}">${risco.toFixed(2)}</b></span><br>` +
-            `<span>Satélite: ${f.satelite||'—'}</span><br>` +
-            `<span>Bióma: ${f.bioma||'—'}</span><br>` +
+            `<span>SatÃ©lite: ${f.satelite||'â€”'}</span><br>` +
+            `<span>BiÃ³ma: ${f.bioma||'â€”'}</span><br>` +
             `<a href="https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i data-lucide="navigation"></i> Waze</a>`
         ).addTo(layerFocos);
 
@@ -648,16 +648,16 @@ function updateMap(focosData, sipamData, cityResults) {
             // If no coords, try municipality geocoding approximation
             return;
         }
-        const status = ev.status_evento||'—';
+        const status = ev.status_evento||'â€”';
         const col = status==='Ativo'?'#ef4444':status==='Controlado'?'#22c55e':'#fbbf24';
         const wazeUrl = `https://www.waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17`;
 
         L.marker([lat, lon], { icon: sipamIcon(status) }).bindPopup(
-            `<b>⚠️ Evento SIPAM #${ev.id_evento}</b><br>` +
-            `<span>Município: ${ev.municipio||'—'}</span><br>` +
+            `<b>âš ï¸ Evento SIPAM #${ev.id_evento}</b><br>` +
+            `<span>MunicÃ­pio: ${ev.municipio||'â€”'}</span><br>` +
             `<span>Status: <b style="color:${col}">${status}</b></span><br>` +
-            `<span>Área: ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'—'}</span><br>` +
-            `<span>Tipo: ${ev.tipo_evento||'—'}</span><br>` +
+            `<span>Ãrea: ${ev.area_total_evento?ev.area_total_evento.toFixed(1)+' ha':'â€”'}</span><br>` +
+            `<span>Tipo: ${ev.tipo_evento||'â€”'}</span><br>` +
             `<a href="${wazeUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 9px;background:linear-gradient(135deg,#33ccff,#0099ff);color:#fff;font-size:10px;font-weight:700;border-radius:6px;text-decoration:none;"><i data-lucide="navigation"></i> Waze</a>`
         ).addTo(layerSipam);
     });
@@ -671,12 +671,12 @@ function updateMap(focosData, sipamData, cityResults) {
 
         const icon = L.divIcon({
             className:'', iconSize:[28,28], iconAnchor:[14,14],
-            html:`<div style="width:28px;height:28px;border-radius:50%;background:rgba(15,23,42,.9);border:2.5px solid ${col};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:${col};box-shadow:0 0 14px ${col}55;">${Math.round(temp)}°</div>`
+            html:`<div style="width:28px;height:28px;border-radius:50%;background:rgba(15,23,42,.9);border:2.5px solid ${col};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:${col};box-shadow:0 0 14px ${col}55;">${Math.round(temp)}Â°</div>`
         });
 
         L.marker([c.lat, c.lon], {icon}).bindPopup(
-            `<b>📍 ${c.nome}</b><br>` +
-            `<span>Temperatura: <b>${Math.round(temp)}°C</b></span><br>` +
+            `<b>ðŸ“ ${c.nome}</b><br>` +
+            `<span>Temperatura: <b>${Math.round(temp)}Â°C</b></span><br>` +
             `<span>Umidade: ${d.hum}%</span><br>` +
             `<span>Vento: ${Math.round(d.wind)} km/h</span>` +
             (d.uv != null ? `<br><span>UV: ${d.uv.toFixed(1)}</span>` : '') +
@@ -685,23 +685,23 @@ function updateMap(focosData, sipamData, cityResults) {
     });
 
     // Update map count
-    document.getElementById('mapCount').textContent = `${totalCount} focos · ${sipamData.length} eventos`;
+    document.getElementById('mapCount').textContent = `${totalCount} focos Â· ${sipamData.length} eventos`;
 }
 
-// Garantir que o mapa seja desenhado após o container ter dimensões
+// Garantir que o mapa seja desenhado apÃ³s o container ter dimensÃµes
 window.addEventListener('load', () => {
     pMap.invalidateSize();
     if (window.lucide) lucide.createIcons();
 });
 
-// Recebe popups abertos após renderização (ex.: ícones lucide no conteúdo)
+// Recebe popups abertos apÃ³s renderizaÃ§Ã£o (ex.: Ã­cones lucide no conteÃºdo)
 pMap.on('popupopen', () => { if (window.lucide) lucide.createIcons(); });
 
-// Bootstrap: agora que updateMap está definido, iniciar o painel
+// Bootstrap: agora que updateMap estÃ¡ definido, iniciar o painel
 if (muniRest) {
     const chip = document.createElement('div');
     chip.id = 'painelMunChip';
-    chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>Visão restrita a <b>${muniRest.municipio}</b></span>`;
+    chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>VisÃ£o restrita a <b>${muniRest.municipio}</b></span>`;
     chip.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:9px;background:rgba(11,19,41,.94);border:1px solid rgba(249,115,22,.6);color:#f1f5f9;font-size:12px;font-weight:600;padding:10px 15px;border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 10px 26px rgba(0,0,0,.5);';
     document.body.appendChild(chip);
 }
@@ -711,3 +711,4 @@ setInterval(renderPainel, 5*60*1000);
 </script>
 </body>
 </html>
+

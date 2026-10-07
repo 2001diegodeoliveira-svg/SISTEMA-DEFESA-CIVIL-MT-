@@ -1,15 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
     <title>SGI PROTEGE - Estado de Mato Grosso</title>
-    <!-- Google Fonts & Lucide para ícones -->
+    <!-- Google Fonts & Lucide para Ã­cones -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
-    <!-- GSAP + ScrollTrigger (animações de entrada, reveals e parallax) -->
+    <!-- GSAP + ScrollTrigger (animaÃ§Ãµes de entrada, reveals e parallax) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     
@@ -328,7 +328,7 @@
         }
         .hm-badge b { color: var(--text-main); }
 
-        /* ===== Animações globais da home ===== */
+        /* ===== AnimaÃ§Ãµes globais da home ===== */
         .hero-content h2 span {
             background: linear-gradient(90deg, var(--accent-orange) 20%, #ffb08a 50%, var(--accent-orange) 80%);
             background-size: 200% auto;
@@ -354,7 +354,7 @@
         .reveal { opacity: 0; transform: translateY(22px); will-change: opacity, transform; }
         .reveal.in { opacity: 1; transform: none; }
 
-        /* Modal Orientações */
+        /* Modal OrientaÃ§Ãµes */
         .orient-modal {
             position: fixed; inset: 0; z-index: 9999;
             background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
@@ -505,7 +505,7 @@
             100% { transform: translateY(0); opacity: 1; }
         }
 
-        /* Atalhos Rápidos (Cards Inferiores ao Hero) */
+        /* Atalhos RÃ¡pidos (Cards Inferiores ao Hero) */
         .quick-access {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -558,7 +558,7 @@
             line-height: 1.4;
         }
 
-        /* Seção Inferior: Notícias e Monitoramento */
+        /* SeÃ§Ã£o Inferior: NotÃ­cias e Monitoramento */
         .bottom-sections {
             display: grid;
             grid-template-columns: 1.2fr 1.8fr;
@@ -592,7 +592,7 @@
             font-weight: 500;
         }
 
-        /* Notícias */
+        /* NotÃ­cias */
         .main-news-card {
             background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%), url('https://images.unsplash.com/photo-1542361345-89e58247f2d5?auto=format&fit=crop&w=600&q=80') center/cover;
             border-radius: 8px;
@@ -743,7 +743,7 @@
         }
         .pd-refresh-btn:hover { background: rgba(249,115,22,.2); }
 
-        /* Rodapé */
+        /* RodapÃ© */
         footer {
             background-color: #070d1d;
             border-top: 1px solid var(--border-color);
@@ -798,7 +798,7 @@
             height: 35px;
         }
 
-        /* Responsividade básica */
+        /* Responsividade bÃ¡sica */
         @media (max-width: 1024px) {
             .hero {
                 grid-template-columns: 1fr;
@@ -835,42 +835,42 @@
             }
         }
     </style>
-    <script src="js/demo.js"></script>
+    <script src="js/demo.js"></script><script>try{if(window.DC_DEMO&&!window.DC_DEMO.estado.liberado){var s=localStorage.getItem("dcmt_session")||localStorage.getItem("dcmt_token");if(!s) location.replace("login.html");}}catch(e){}</script>
     <script src="js/protecao.js"></script>
 </head>
 <body>
 
-    <!-- Fundo animado Three.js (partículas) -->
+    <!-- Fundo animado Three.js (partÃ­culas) -->
     <div id="particles-bg" aria-hidden="true"></div>
 
     <!-- Barra Superior -->
     <div class="top-bar">
         <a href="#"><i data-lucide="accessibility"></i> Acessibilidade</a>
-        <a href="#"><i data-lucide="eye"></i> Transparência</a>
+        <a href="#"><i data-lucide="eye"></i> TransparÃªncia</a>
         <a href="#"><i data-lucide="search"></i> Pesquisar</a>
     </div>
 
-    <!-- Cabeçalho Principal -->
+    <!-- CabeÃ§alho Principal -->
     <header>
         <div class="logo-area">
             <img src="imagens/logo.png" alt="SGI PROTEGE MT" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
             <div class="logo-text">
                 <h1>SGI PROTEGE</h1>
-                <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
+                <span>SISTEMA DE GESTÃƒO INTEGRADA E PROTEÃ‡ÃƒO</span>
             </div>
         </div>
 
         <nav>
             <ul>
-                <li><a href="#" class="active">Início</a></li>
+                <li><a href="#" class="active">InÃ­cio</a></li>
                 <li><a href="mapa.html">Mapa</a></li>
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="painel.html">Painel</a></li>
-                <li><a href="gestao.html">Gestão</a></li>
+                <li><a href="gestao.html">GestÃ£o</a></li>
                 <li><a href="gestaodefrota.html">Frota</a></li>
-                <li><a href="el-nino.html">El Niño</a></li>
-                <li><a href="amazonia.html">Amazônia</a></li>
-                <li><a href="#" onclick="document.getElementById('orientModal').classList.add('open'); return false;">Orientações</a></li>
+                <li><a href="el-nino.html">El NiÃ±o</a></li>
+                <li><a href="amazonia.html">AmazÃ´nia</a></li>
+                <li><a href="#" onclick="document.getElementById('orientModal').classList.add('open'); return false;">OrientaÃ§Ãµes</a></li>
                 <li><a href="waze.html">Waze</a></li>
             </ul>
         </nav>
@@ -879,16 +879,16 @@
             <div id="userArea"></div>
             <a href="ocorrencia.html" class="emergency-btn">
                 <i data-lucide="triangle-alert"></i>
-                Registre sua ocorrência
+                Registre sua ocorrÃªncia
             </a>
         </div>
     </header>
 
-    <!-- Hero / Seção Principal -->
+    <!-- Hero / SeÃ§Ã£o Principal -->
     <section class="hero">
         <div class="hero-content">
             <h2>PROTEGER VIDAS,<br><span>PRESERVAR O FUTURO.</span></h2>
-            <p>Painel geoespacial integrado para monitoramento, análise situacional e apoio à decisão da SGI PROTEGE de Mato Grosso.</p>
+            <p>Painel geoespacial integrado para monitoramento, anÃ¡lise situacional e apoio Ã  decisÃ£o da SGI PROTEGE de Mato Grosso.</p>
 
             <div class="hero-action">
                 <a href="alertas.html" class="btn-main-alert">
@@ -898,9 +898,9 @@
             </div>
 
             <div class="hero-stats">
-                <div class="hstat"><b id="hsMunicipios">141</b><span>Municípios monitorados</span></div>
+                <div class="hstat"><b id="hsMunicipios">141</b><span>MunicÃ­pios monitorados</span></div>
                 <div class="hstat"><b id="hsAlertas">6</b><span>Alertas ativos agora</span></div>
-                <div class="hstat"><b id="hsEstacoes">8</b><span>Estações na rede</span></div>
+                <div class="hstat"><b id="hsEstacoes">8</b><span>EstaÃ§Ãµes na rede</span></div>
             </div>
         </div>
 
@@ -915,12 +915,12 @@
 
                 <svg id="mtMapSvg" viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg" aria-label="Mapa de Mato Grosso"></svg>
 
-                <div class="live-chip"><span class="red-dot"></span> AO VIVO · MT</div>
+                <div class="live-chip"><span class="red-dot"></span> AO VIVO Â· MT</div>
                 <a class="hm-open" href="mapa.html">Mapa completo <i data-lucide="external-link"></i></a>
                 <div id="mapTip"></div>
                 <div class="hm-badge">
-                    <span class="red-dot"></span> <b id="hmCritical">—</b>&nbsp;estações em estado crítico
-                    · atualizado <span id="hmTime">—</span>
+                    <span class="red-dot"></span> <b id="hmCritical">â€”</b>&nbsp;estaÃ§Ãµes em estado crÃ­tico
+                    Â· atualizado <span id="hmTime">â€”</span>
                 </div>
             </div>
         </div>
@@ -937,59 +937,59 @@
         </aside>
     </div>
 
-    <!-- Cards de Acesso Rápido -->
+    <!-- Cards de Acesso RÃ¡pido -->
     <div class="quick-access">
         <a href="alertas.html" class="quick-card">
             <div class="quick-icon"><i data-lucide="circle-alert"></i></div>
             <div class="quick-content">
                 <h3>Alertas e Avisos</h3>
-                <p>Acompanhe os alertas e avisos da sua região</p>
+                <p>Acompanhe os alertas e avisos da sua regiÃ£o</p>
             </div>
         </a>
         <a href="painel.html" class="quick-card">
             <div class="quick-icon"><i data-lucide="satellite-dish"></i></div>
             <div class="quick-content">
                 <h3>Painel em Tempo Real</h3>
-                <p>Dados ao vivo: focos de incêndio, clima e alertas do estado</p>
+                <p>Dados ao vivo: focos de incÃªndio, clima e alertas do estado</p>
             </div>
         </a>
         <a href="#" class="quick-card">
             <div class="quick-icon"><i data-lucide="shield-check"></i></div>
             <div class="quick-content">
-                <h3>Orientações</h3>
-                <p>Saiba como se prevenir e o que fazer em casos de emergência</p>
+                <h3>OrientaÃ§Ãµes</h3>
+                <p>Saiba como se prevenir e o que fazer em casos de emergÃªncia</p>
             </div>
         </a>
         <a href="#" class="quick-card">
             <div class="quick-icon"><i data-lucide="phone-call"></i></div>
             <div class="quick-content">
-                <h3>Emergência</h3>
-                <p>Em situação de risco, ligue 199 ou envie sua localização</p>
+                <h3>EmergÃªncia</h3>
+                <p>Em situaÃ§Ã£o de risco, ligue 199 ou envie sua localizaÃ§Ã£o</p>
             </div>
         </a>
         <a href="cadastro-voluntario.html" class="quick-card">
             <div class="quick-icon"><i data-lucide="users"></i></div>
             <div class="quick-content">
-                <h3>Seja Voluntário</h3>
-                <p>Faça parte da rede de voluntários da SGI PROTEGE</p>
+                <h3>Seja VoluntÃ¡rio</h3>
+                <p>FaÃ§a parte da rede de voluntÃ¡rios da SGI PROTEGE</p>
             </div>
         </a>
         <a href="gestaodefrota.html" class="quick-card">
             <div class="quick-icon"><i data-lucide="truck"></i></div>
             <div class="quick-content">
                 <h3>Frota</h3>
-                <p>Gestão de viaturas, viagens e manutenção</p>
+                <p>GestÃ£o de viaturas, viagens e manutenÃ§Ã£o</p>
             </div>
         </a>
     </div>
 
-    <!-- Seção de Notícias e Monitoramento em Tempo Real -->
+    <!-- SeÃ§Ã£o de NotÃ­cias e Monitoramento em Tempo Real -->
     <div class="bottom-sections">
         
-        <!-- Notícias e Comunicados -->
+        <!-- NotÃ­cias e Comunicados -->
         <div class="section-box">
             <div class="section-title">
-                <span>NOTÍCIAS E COMUNICADOS</span>
+                <span>NOTÃCIAS E COMUNICADOS</span>
             </div>
 
             <div id="mtClimateNews"></div>
@@ -1000,7 +1000,7 @@
             <div class="section-title">
                 <span><i data-lucide="satellite-dish" style="color:#f9731c;margin-right:6px;"></i> PAINEL EM TEMPO REAL</span>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <span id="painelLastUpdate" style="font-size:10px;color:var(--text-muted);">—</span>
+                    <span id="painelLastUpdate" style="font-size:10px;color:var(--text-muted);">â€”</span>
                     <a href="mapa.html">Ver mapa completo &rarr;</a>
                 </div>
             </div>
@@ -1012,25 +1012,25 @@
 
     </div>
 
-    <!-- Fontes oficiais de dados (proposta técnica, item 6) -->
+    <!-- Fontes oficiais de dados (proposta tÃ©cnica, item 6) -->
     <section style="padding: 0 5% 40px;">
         <div class="section-box">
             <div class="section-title" style="margin-bottom: 16px;">
                 <span>FONTES OFICIAIS DE DADOS</span>
             </div>
             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px; max-width: 760px; line-height: 1.55;">
-                O painel integra dados públicos e oficiais mantendo a atribuição de origem de cada camada.
-                Quando não há serviço web compatível, o acesso é direcionado ao portal oficial.
+                O painel integra dados pÃºblicos e oficiais mantendo a atribuiÃ§Ã£o de origem de cada camada.
+                Quando nÃ£o hÃ¡ serviÃ§o web compatÃ­vel, o acesso Ã© direcionado ao portal oficial.
             </p>
             <div id="portaisStrip" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px;"></div>
         </div>
     </section>
 
-    <!-- Rodapé -->
+    <!-- RodapÃ© -->
     <footer>
         <div>
-            <strong>SGI PROTEGE DO SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</strong><br>
-            Todos os direitos reservados © 2026
+            <strong>SGI PROTEGE DO SISTEMA DE GESTÃƒO INTEGRADA E PROTEÃ‡ÃƒO</strong><br>
+            Todos os direitos reservados Â© 2026
         </div>
         <div class="footer-social">
             <span>Siga nossas redes</span>
@@ -1053,24 +1053,24 @@
         </div>
     </footer>
 
-    <!-- Modal Orientações com Vídeo -->
+    <!-- Modal OrientaÃ§Ãµes com VÃ­deo -->
     <div id="orientModal" class="orient-modal">
         <div class="om-box">
             <div class="om-head">
-                <h3><i data-lucide="shield"></i> Orientações de Segurança</h3>
+                <h3><i data-lucide="shield"></i> OrientaÃ§Ãµes de SeguranÃ§a</h3>
                 <button class="om-close" onclick="document.getElementById('orientModal').classList.remove('open')"><i data-lucide="x"></i></button>
             </div>
             <div class="om-video-wrap">
                 <video id="orientVideo" controls preload="metadata" poster="imagens/logo.png">
                     <source src="orienta%C3%A7%C3%A3o/orienta%C3%A7%C3%A3o%20zeca.mp4" type="video/mp4">
-                    Seu navegador não suporta vídeos HTML5.
+                    Seu navegador nÃ£o suporta vÃ­deos HTML5.
                 </video>
             </div>
             <div class="om-info">
-                <p>Assista ao vídeo de orientações da SGI PROTEGE de Mato Grosso. Saiba como agir antes, durante e depois de cada tipo de emergência.</p>
+                <p>Assista ao vÃ­deo de orientaÃ§Ãµes da SGI PROTEGE de Mato Grosso. Saiba como agir antes, durante e depois de cada tipo de emergÃªncia.</p>
             </div>
             <div class="om-actions">
-                <a href="index.html" class="om-home"><i data-lucide="home"></i> Voltar ao Início</a>
+                <a href="index.html" class="om-home"><i data-lucide="home"></i> Voltar ao InÃ­cio</a>
                 <button class="om-close-btn" onclick="document.getElementById('orientModal').classList.remove('open')">Fechar</button>
             </div>
         </div>
@@ -1081,16 +1081,16 @@
             {
                 data: '15 MAI 2026',
                 tag: 'CHUVA INTENSA',
-                titulo: 'Alerta de chuva forte em vários municípios de Mato Grosso exige atenção da população',
-                resumo: 'SGI PROTEGE acompanha áreas com risco de alagamento, queda de árvores e trânsito prejudicado em trechos críticos do estado.',
+                titulo: 'Alerta de chuva forte em vÃ¡rios municÃ­pios de Mato Grosso exige atenÃ§Ã£o da populaÃ§Ã£o',
+                resumo: 'SGI PROTEGE acompanha Ã¡reas com risco de alagamento, queda de Ã¡rvores e trÃ¢nsito prejudicado em trechos crÃ­ticos do estado.',
                 imagem: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=800&q=80',
                 local: 'Mato Grosso'
             },
             {
                 data: '12 MAI 2026',
                 tag: 'ONDA DE CALOR',
-                titulo: 'Temperaturas elevadas aumentam risco de incêndio em regiões do norte e leste do Estado',
-                resumo: 'Baixa umidade e ventos secos elevam o perigo para queimadas e incêndios florestais durante a tarde.',
+                titulo: 'Temperaturas elevadas aumentam risco de incÃªndio em regiÃµes do norte e leste do Estado',
+                resumo: 'Baixa umidade e ventos secos elevam o perigo para queimadas e incÃªndios florestais durante a tarde.',
                 imagem: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
                 local: 'Norte e Leste de MT'
             },
@@ -1098,15 +1098,15 @@
                 data: '09 MAI 2026',
                 tag: 'VENTO FORTE',
                 titulo: 'SGI PROTEGE monitora rajadas de vento em cidades do centro-oeste mato-grossense',
-                resumo: 'Ventos fortes podem afetar estrutura de telhados, postes e redes elétricas em municípios com maior risco.',
+                resumo: 'Ventos fortes podem afetar estrutura de telhados, postes e redes elÃ©tricas em municÃ­pios com maior risco.',
                 imagem: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80',
                 local: 'Centro-Oeste de MT'
             },
             {
                 data: '06 MAI 2026',
                 tag: 'GRANIZO',
-                titulo: 'Possíveis tempestades com granizo são monitoradas por equipes de SGI PROTEGE em Mato Grosso',
-                resumo: 'Condições de instabilidade favorecem formação de nuvens de desenvolvimento vertical e precipitação intensa.',
+                titulo: 'PossÃ­veis tempestades com granizo sÃ£o monitoradas por equipes de SGI PROTEGE em Mato Grosso',
+                resumo: 'CondiÃ§Ãµes de instabilidade favorecem formaÃ§Ã£o de nuvens de desenvolvimento vertical e precipitaÃ§Ã£o intensa.',
                 imagem: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
                 local: 'Mato Grosso'
             }
@@ -1134,7 +1134,7 @@
                 '<h4>' + escNews(n.titulo) + '</h4>' +
                 '<p>' + (n.resumo ? escNews(n.resumo) : (n.fonte ? 'Fonte: ' + escNews(n.fonte) : '')) + '</p>' +
                 (n.link && n.link !== '#'
-                    ? '<a href="' + escNews(n.link) + '" target="_blank" rel="noopener" style="color:#38bdf8;text-decoration:none;font-size:11px;font-weight:600;margin-top:6px;">Ler matéria &rarr;</a>'
+                    ? '<a href="' + escNews(n.link) + '" target="_blank" rel="noopener" style="color:#38bdf8;text-decoration:none;font-size:11px;font-weight:600;margin-top:6px;">Ler matÃ©ria &rarr;</a>'
                     : '') +
                 '</div>';
         }
@@ -1161,9 +1161,9 @@
             if (!lista || !lista.length) {
                 container.innerHTML = `
                     <div class="main-news-card" style="background:linear-gradient(135deg,#0a1b33 0%,#123a63 62%,#f97316 180%);opacity:.9;">
-                        <span class="badge-destaque">ATUALIZAÇÃO DIÁRIA</span>
-                        <h4>Nenhuma notícia publicada nas últimas 24h.</h4>
-                        <p>O feed é atualizado automaticamente — notícias de tempo, ações climáticas e SGI PROTEGE de Mato Grosso aparecerão aqui assim que forem publicadas.</p>
+                        <span class="badge-destaque">ATUALIZAÃ‡ÃƒO DIÃRIA</span>
+                        <h4>Nenhuma notÃ­cia publicada nas Ãºltimas 24h.</h4>
+                        <p>O feed Ã© atualizado automaticamente â€” notÃ­cias de tempo, aÃ§Ãµes climÃ¡ticas e SGI PROTEGE de Mato Grosso aparecerÃ£o aqui assim que forem publicadas.</p>
                     </div>
                 `;
                 return;
@@ -1174,8 +1174,8 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        /* Busca as notícias do dia no backend /api/noticias.
-           Sem backend, cai para a lista estática (sem data fixa). */
+        /* Busca as notÃ­cias do dia no backend /api/noticias.
+           Sem backend, cai para a lista estÃ¡tica (sem data fixa). */
         async function carregarNoticiasMT() {
             const apiBase = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
             try {
@@ -1220,7 +1220,7 @@
             }
 
             async function obterAvisosInmet() {
-                // Prioriza o backend (mesma fonte usada em alertas.html — já filtrada e ordenada).
+                // Prioriza o backend (mesma fonte usada em alertas.html â€” jÃ¡ filtrada e ordenada).
                 if (window.dcApi && window.dcApi.alertas) {
                     try {
                         const r = await dcApi.alertas();
@@ -1244,7 +1244,7 @@
                         const dm = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/);
                         if (!dm) continue;
                         const html = dm[1];
-                        const area = campoTabela(html, 'Área');
+                        const area = campoTabela(html, 'Ãrea');
                         if (!REGIOES_MT.test(area)) continue;
                         const fim = campoTabela(html, 'Fim');
                         const fimD = new Date(String(fim).replace(' ', 'T'));
@@ -1252,8 +1252,8 @@
                         avisos.push({
                             evento: campoTabela(html, 'Evento'),
                             severidade: campoTabela(html, 'Severidade'),
-                            descricao: campoTabela(html, 'Descrição'),
-                            inicio: campoTabela(html, 'Início'),
+                            descricao: campoTabela(html, 'DescriÃ§Ã£o'),
+                            inicio: campoTabela(html, 'InÃ­cio'),
                             fim, link: (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '',
                         });
                     }
@@ -1280,10 +1280,10 @@
                             <div class="alert-info">
                                 <h4 style="display:flex;align-items:center;gap:6px;">
                                     <i data-lucide="${icon[(a.evento||'').toLowerCase()] || 'cloud'}" style="color:${c};"></i>
-                                    INMET · ${a.evento}
+                                    INMET Â· ${a.evento}
                                     <span style="font-size:8.5px;background:${c}22;color:${c};padding:2px 6px;border-radius:8px;font-weight:800;letter-spacing:.4px;">${a.severidade.toUpperCase()}</span>
                                 </h4>
-                                <p>Vigente ${(a.descricao || '').slice(0, 44)}…</p>
+                                <p>Vigente ${(a.descricao || '').slice(0, 44)}â€¦</p>
                             </div>
                             <i data-lucide="chevron-right"></i>
                         </a>`;
@@ -1293,7 +1293,7 @@
                         <div style="padding:8px 6px;margin-bottom:6px;border-bottom:1px solid var(--border-color);">
                             <div style="display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#4ade80;margin-bottom:8px;">
                                 <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blinkDot 1.4s infinite;"></span>
-                                AVISOS INMET · TEMPO REAL
+                                AVISOS INMET Â· TEMPO REAL
                             </div>
                             ${bloco}
                         </div>`;
@@ -1301,7 +1301,7 @@
                     if (window.lucide) lucide.createIcons();
                     list.dataset.inmetDone = '1';
                 } catch (e) {
-                    // se falhar, mantém só os curados
+                    // se falhar, mantÃ©m sÃ³ os curados
                     if (list.dataset.curados) list.innerHTML = list.dataset.curados;
                 }
             }
@@ -1312,8 +1312,8 @@
                 <a href="alertas.html#${al.id}" class="alert-card curado" style="text-decoration:none;">
                     <div class="alert-info">
                         <h4><i data-lucide="${NIVEIS[al.nivel].icone}" style="color:${NIVEIS[al.nivel].cor};"></i>
-                            ${NIVEIS[al.nivel].label.toUpperCase()} — ${al.municipio}</h4>
-                        <p>${TIPOS[al.tipo].label} · ${al.resumo.length > 52 ? al.resumo.slice(0, 52) + '…' : al.resumo}</p>
+                            ${NIVEIS[al.nivel].label.toUpperCase()} â€” ${al.municipio}</h4>
+                        <p>${TIPOS[al.tipo].label} Â· ${al.resumo.length > 52 ? al.resumo.slice(0, 52) + 'â€¦' : al.resumo}</p>
                     </div>
                     <i data-lucide="chevron-right"></i>
                 </a>`).join('');
@@ -1321,7 +1321,7 @@
             if (window.lucide) lucide.createIcons();
             list.dataset.curados = inicial;
 
-            // Badge dinâmico no botão do hero
+            // Badge dinÃ¢mico no botÃ£o do hero
             const total = alertasVigentes().filter(a => a.nivel !== 'atencao').length;
             const btn = document.querySelector('.btn-main-alert');
             if (btn && total > 0 && !btn.querySelector('span')) {
@@ -1362,17 +1362,17 @@
             })(t0);
         }
 
-        // Atualiza métricas do painel em tempo real
+        // Atualiza mÃ©tricas do painel em tempo real
         // ===================== PAINEL EM TEMPO REAL =====================
         const MON_CITIES = [
-            { nome: 'Cuiabá', lat: -15.588, lon: -56.097 },
+            { nome: 'CuiabÃ¡', lat: -15.588, lon: -56.097 },
             { nome: 'Sinop', lat: -12.472, lon: -55.722 },
-            { nome: 'Rondonópolis', lat: -16.471, lon: -54.645 },
+            { nome: 'RondonÃ³polis', lat: -16.471, lon: -54.645 },
             { nome: 'Sorriso', lat: -12.546, lon: -55.727 },
-            { nome: 'Cáceres', lat: -16.077, lon: -57.682 },
-            { nome: 'Tangará', lat: -14.656, lon: -57.486 },
+            { nome: 'CÃ¡ceres', lat: -16.077, lon: -57.682 },
+            { nome: 'TangarÃ¡', lat: -14.656, lon: -57.486 },
             { nome: 'Primavera', lat: -15.556, lon: -53.949 },
-            { nome: 'Barra do Garças', lat: -15.891, lon: -52.258 },
+            { nome: 'Barra do GarÃ§as', lat: -15.891, lon: -52.258 },
         ];
 
         async function fetchCity(city) {
@@ -1388,7 +1388,7 @@
 
         async function fetchFocos() {
             try {
-                // Tenta o CSV do dia atual; se ainda não publicado, volta até 3 dias
+                // Tenta o CSV do dia atual; se ainda nÃ£o publicado, volta atÃ© 3 dias
                 let txt = null, iso = null;
                 for (let i = 0; i < 4 && !txt; i++) {
                     const d = new Date(Date.now() - i * 86400000);
@@ -1425,11 +1425,11 @@
                 if (!r.ok) return [];
                 const d = await r.json();
                 if (!d.clima?.length) return [];
-                const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-                const ICONE = { 'Chuva': '🌧️', 'Chuvoso': '🌧️', 'Ensolarado': '☀️', 'Parcialmente nublado': '⛅', 'Nublado': '☁️', 'Sol com nuvens': '🌤️', 'Tempestades': '⛈️', 'Nevoeiro': '🌫️', 'Neve': '❄️' };
+                const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'];
+                const ICONE = { 'Chuva': 'ðŸŒ§ï¸', 'Chuvoso': 'ðŸŒ§ï¸', 'Ensolarado': 'â˜€ï¸', 'Parcialmente nublado': 'â›…', 'Nublado': 'â˜ï¸', 'Sol com nuvens': 'ðŸŒ¤ï¸', 'Tempestades': 'â›ˆï¸', 'Nevoeiro': 'ðŸŒ«ï¸', 'Neve': 'â„ï¸' };
                 return d.clima.map(c => {
                     const dt = new Date(c.data + 'T12:00:00');
-                    return { dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth()+1}`, icone: ICONE[c.condicao] || '🌡️', desc: c.condicao_desc, tmax: c.max, tmin: c.min };
+                    return { dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth()+1}`, icone: ICONE[c.condicao] || 'ðŸŒ¡ï¸', desc: c.condicao_desc, tmax: c.max, tmin: c.min };
                 });
             } catch { return []; }
         }
@@ -1458,24 +1458,24 @@
                 <div class="pd-section-title"><i data-lucide="pie-chart" class="climate"></i> Resumo Geral</div>
                 <div class="pd-summary-grid">
                     <div class="pd-summary-card fire">
-                        <div class="pdc-i">🔥</div>
+                        <div class="pdc-i">ðŸ”¥</div>
                         <div class="pdc-v">${focosCount}</div>
                         <div class="pdc-l">Focos Hoje</div>
                     </div>
                     <div class="pd-summary-card alert">
-                        <div class="pdc-i">⚠️</div>
+                        <div class="pdc-i">âš ï¸</div>
                         <div class="pdc-v">${sipamCount}</div>
                         <div class="pdc-l">Eventos SIPAM</div>
                     </div>
                     <div class="pd-summary-card rain">
-                        <div class="pdc-i">📡</div>
+                        <div class="pdc-i">ðŸ“¡</div>
                         <div class="pdc-v">${citiesOk}/8</div>
                         <div class="pdc-l">Cidades Ativas</div>
                     </div>
                     <div class="pd-summary-card ok">
-                        <div class="pdc-i">🛰️</div>
+                        <div class="pdc-i">ðŸ›°ï¸</div>
                         <div class="pdc-v">${focos.sats.length}</div>
-                        <div class="pdc-l">Satélites INPE</div>
+                        <div class="pdc-l">SatÃ©lites INPE</div>
                     </div>
                 </div>
             </div>`;
@@ -1487,13 +1487,13 @@
             MON_CITIES.forEach((c, i) => {
                 const curr = cityResults[i];
                 if (!curr) {
-                    html += `<div class="pd-city-card"><div class="pd-city-name">${c.nome}</div><div class="pd-city-temp" style="color:var(--text-muted);">—°C</div></div>`;
+                    html += `<div class="pd-city-card"><div class="pd-city-name">${c.nome}</div><div class="pd-city-temp" style="color:var(--text-muted);">â€”Â°C</div></div>`;
                     return;
                 }
                 const tc = curr.temp >= 38 ? '#ef4444' : curr.temp >= 32 ? '#f9731c' : curr.temp >= 22 ? '#fbbf24' : '#38bdf8';
                 html += `<div class="pd-city-card">
                     <div class="pd-city-name">${c.nome}</div>
-                    <div class="pd-city-temp" style="color:${tc};">${Math.round(curr.temp)}°C</div>
+                    <div class="pd-city-temp" style="color:${tc};">${Math.round(curr.temp)}Â°C</div>
                     <div class="pd-city-meta">
                         <span><i data-lucide="droplet"></i> ${curr.humidity}%</span>
                         <span><i data-lucide="wind"></i> ${Math.round(curr.wind)} km/h</span>
@@ -1508,21 +1508,21 @@
             // Fire INPE
             html += `<div>
                 <div class="pd-section-title"><i data-lucide="flame" class="fire"></i> Focos INPE</div>
-                <div class="pd-fire-row"><div class="pd-fr-icon">🔥</div><div class="pd-fr-val" style="color:#ef4444;">${focosCount}</div><div class="pd-fr-label">focos hoje em MT</div></div>
-                <div class="pd-fire-row"><div class="pd-fr-icon">🛰️</div><div class="pd-fr-val">${focos.sats.length}</div><div class="pd-fr-label">satélites: ${focos.sats.join(', ') || '—'}</div></div>
-                ${sipam.slice(0, 3).map(ev => `<div class="pd-fire-row"><div class="pd-fr-icon" style="color:${ev.status_evento === 'Ativo' ? '#ef4444' : '#22c55e'};">●</div><div class="pd-fr-val" style="font-size:9px;">#${ev.id_evento}</div><div class="pd-fr-label">${ev.municipio || 'MT'} — ${ev.status_evento || '—'}</div></div>`).join('')}
+                <div class="pd-fire-row"><div class="pd-fr-icon">ðŸ”¥</div><div class="pd-fr-val" style="color:#ef4444;">${focosCount}</div><div class="pd-fr-label">focos hoje em MT</div></div>
+                <div class="pd-fire-row"><div class="pd-fr-icon">ðŸ›°ï¸</div><div class="pd-fr-val">${focos.sats.length}</div><div class="pd-fr-label">satÃ©lites: ${focos.sats.join(', ') || 'â€”'}</div></div>
+                ${sipam.slice(0, 3).map(ev => `<div class="pd-fire-row"><div class="pd-fr-icon" style="color:${ev.status_evento === 'Ativo' ? '#ef4444' : '#22c55e'};">â—</div><div class="pd-fr-val" style="font-size:9px;">#${ev.id_evento}</div><div class="pd-fr-label">${ev.municipio || 'MT'} â€” ${ev.status_evento || 'â€”'}</div></div>`).join('')}
             </div>`;
 
             // CPTEC
             html += `<div>
-                <div class="pd-section-title"><i data-lucide="calendar-days" class="forecast"></i> CPTEC Previsão</div>`;
+                <div class="pd-section-title"><i data-lucide="calendar-days" class="forecast"></i> CPTEC PrevisÃ£o</div>`;
             if (cptec.length) {
                 cptec.slice(0, 5).forEach(c => {
                     html += `<div class="pd-cptec-row">
                         <div class="pd-cptec-day">${c.dia}</div>
                         <div class="pd-cptec-icon">${c.icone}</div>
                         <div class="pd-cptec-desc">${c.desc}</div>
-                        <div class="pd-cptec-temp"><span style="color:#f9731c;">${c.tmax}°</span> <span style="color:#38bdf8;font-weight:400;">${c.tmin}°</span></div>
+                        <div class="pd-cptec-temp"><span style="color:#f9731c;">${c.tmax}Â°</span> <span style="color:#38bdf8;font-weight:400;">${c.tmin}Â°</span></div>
                     </div>`;
                 });
             } else {
@@ -1547,14 +1547,14 @@
             el.innerHTML = html;
             if (window.lucide) lucide.createIcons();
             const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            updEl.textContent = 'Atualizado às ' + now;
+            updEl.textContent = 'Atualizado Ã s ' + now;
         }
 
-        // Auto-refresh a cada 2 minutos + atualização manual
+        // Auto-refresh a cada 2 minutos + atualizaÃ§Ã£o manual
         renderPainel();
         setInterval(renderPainel, 2 * 60 * 1000);
 
-        // Mostrar o timestamp da última atualização e a próxima
+        // Mostrar o timestamp da Ãºltima atualizaÃ§Ã£o e a prÃ³xima
         (function autoUpdIndicator() {
             let upIn = 2 * 60;
             setInterval(() => {
@@ -1566,7 +1566,7 @@
                     upIn = 2 * 60;
                 } else {
                     const m = Math.floor(upIn / 60), s = upIn % 60;
-                    el.textContent = 'Próxima atualização em ' + m + 'm' + String(s).padStart(2, '0');
+                    el.textContent = 'PrÃ³xima atualizaÃ§Ã£o em ' + m + 'm' + String(s).padStart(2, '0');
                 }
             }, 1000);
         })();
@@ -1581,7 +1581,7 @@
             dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&qualidade=minima')
                 .then(r => r.json())
                 .then(gj => {
-                    // Anel externo do polígono do estado
+                    // Anel externo do polÃ­gono do estado
                     const geom = gj.features[0].geometry;
                     const rings = geom.type === 'Polygon' ? [geom.coordinates[0]] : geom.coordinates.map(p => p[0]);
                     let minLng = 1e9, maxLng = -1e9, minLat = 1e9, maxLat = -1e9;
@@ -1596,7 +1596,7 @@
                     const px = lng => ox + (lng - minLng) * k;
                     const py = lat => oy + (maxLat - lat) * k;
 
-                    // Contorno com animação de desenho
+                    // Contorno com animaÃ§Ã£o de desenho
                     const dPath = rings.map(r =>
                         'M' + r.map(([lng, lat]) => px(lng).toFixed(1) + ',' + py(lat).toFixed(1)).join('L') + 'Z'
                     ).join(' ');
@@ -1643,7 +1643,7 @@
                     sweepG.appendChild(rot);
                     svg.appendChild(sweepG);
 
-                    // Marcadores das estações
+                    // Marcadores das estaÃ§Ãµes
                     const critCor = { alerta: '#f9631c', emergencia: '#ef4444' };
                     ESTACOES_DC.forEach((s, i) => {
                         const { x, y } = (() => ({ x: px(s.lng), y: py(s.lat) }))();
@@ -1651,7 +1651,7 @@
                         g.setAttribute('class', 'station-dot');
                         g.style.animationDelay = (1.15 + i * 0.09) + 's';
 
-                        const isEmerg = s.status === 'Emergência';
+                        const isEmerg = s.status === 'EmergÃªncia';
                         const isAlerta = s.status === 'Alerta';
                         if (isEmerg || isAlerta) {
                             const ring = document.createElementNS(NS, 'circle');
@@ -1671,7 +1671,7 @@
                         g.appendChild(core);
 
                         g.addEventListener('mouseenter', () => {
-                            tip.innerHTML = `<b>${s.name}</b><span>${s.city} · ${s.val} — ${s.status}</span>`;
+                            tip.innerHTML = `<b>${s.name}</b><span>${s.city} Â· ${s.val} â€” ${s.status}</span>`;
                             tip.classList.add('show');
                         });
                         g.addEventListener('mousemove', e => {
@@ -1685,14 +1685,14 @@
                         svg.appendChild(g);
                     });
 
-                    // Badges dinâmicos
-                    const criticas = ESTACOES_DC.filter(s => s.status === 'Alerta' || s.status === 'Emergência').length;
+                    // Badges dinÃ¢micos
+                    const criticas = ESTACOES_DC.filter(s => s.status === 'Alerta' || s.status === 'EmergÃªncia').length;
                     document.getElementById('hmCritical').textContent = criticas;
                     document.getElementById('hmTime').textContent =
                         new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 })
                 .catch(() => {
-                    svg.outerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">Mapa indisponível no momento</div>';
+                    svg.outerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">Mapa indisponÃ­vel no momento</div>';
                 });
         })();
 
@@ -1717,7 +1717,7 @@
             if (window.gsap && window.ScrollTrigger) {
                 gsap.registerPlugin(ScrollTrigger);
 
-                // Reveal em cascata: cards, seções e sidebar sobem com stagger
+                // Reveal em cascata: cards, seÃ§Ãµes e sidebar sobem com stagger
                 const acc = { onEnter: x => {
                     gsap.fromTo(x, { y: 38, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .8, ease: 'power3.out', stagger: .12 });
                 }};
@@ -1728,7 +1728,7 @@
                     onEnter: acc.onEnter.bind(null, el)
                 }));
 
-                // Hero: entrada em cascata (título, subtítulo, ação, estatísticas)
+                // Hero: entrada em cascata (tÃ­tulo, subtÃ­tulo, aÃ§Ã£o, estatÃ­sticas)
                 gsap.fromTo('.hero-content h2', { y: 42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .9, ease: 'power3.out' });
                 gsap.fromTo('.hero-content p', { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .8, delay: .15, ease: 'power3.out' });
                 gsap.fromTo('.hero-action', { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .8, delay: .3, ease: 'power3.out' });
@@ -1772,7 +1772,7 @@
         if (window.lucide) lucide.createIcons();
     </script>
 
-    <!-- Three.js: partículas flutuantes de fundo -->
+    <!-- Three.js: partÃ­culas flutuantes de fundo -->
     <script type="importmap">
         {
             "imports": {
@@ -1786,7 +1786,7 @@
             const wrap = document.getElementById('particles-bg');
             if (!wrap) return;
 
-            // Não roda em telas pequenas com pouca GPU nem se preferir menos movimento
+            // NÃ£o roda em telas pequenas com pouca GPU nem se preferir menos movimento
             if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
             if (window.innerWidth < 480) return;
 
@@ -1800,7 +1800,7 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 wrap.appendChild(renderer.domElement);
 
-                // Partículas azul/laranja flutuando
+                // PartÃ­culas azul/laranja flutuando
                 const COUNT = window.innerWidth < 1200 ? 120 : 220;
                 const geo = new THREE.BufferGeometry();
                 const pos = new Float32Array(COUNT * 3);
@@ -1831,7 +1831,7 @@
                 const points = new THREE.Points(geo, mat);
                 scene.add(points);
 
-                // Linhas de conexão entre partículas próximas (constelação)
+                // Linhas de conexÃ£o entre partÃ­culas prÃ³ximas (constelaÃ§Ã£o)
                 const MAX_LINES = COUNT * 4;
                 const linePos = new Float32Array(MAX_LINES * 6);
                 const lineGeo = new THREE.BufferGeometry();
@@ -1841,7 +1841,7 @@
                 const lines = new THREE.LineSegments(lineGeo, lineMat);
                 scene.add(lines);
 
-                // Orbes de brilho orbitando o campo de partículas
+                // Orbes de brilho orbitando o campo de partÃ­culas
                 const mkOrb = (color, r, y, speed) => {
                     const o = new THREE.Mesh(
                         new THREE.SphereGeometry(r, 24, 24),
@@ -1858,7 +1858,7 @@
                     mkOrb(0x38bdf8, 0.42, 0.5, 0.32)
                 ];
 
-                // Reação suave ao mouse (parallax)
+                // ReaÃ§Ã£o suave ao mouse (parallax)
                 const mouse = { x: 0, y: 0 };
                 window.addEventListener('pointermove', e => {
                     mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -1878,7 +1878,7 @@
                     points.rotation.y = t * 0.03;
                     points.rotation.x = Math.sin(t * 0.05) * 0.05;
 
-                    // Recalcula as linhas de constelação (pares próximos)
+                    // Recalcula as linhas de constelaÃ§Ã£o (pares prÃ³ximos)
                     const TH = 1.6;
                     let n = 0;
                     for (let i = 0; i < COUNT && n < MAX_LINES; i++) {

@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGI PROTEGE MT - Controle de Viaturas</title>
-    <!-- Tailwind CSS para estilização rápida e moderna -->
+    <!-- Tailwind CSS para estilizaÃ§Ã£o rÃ¡pida e moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide para ícones -->
+    <!-- Lucide para Ã­cones -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Sistema de animação de ícones (mesmo do mapa e das demais páginas) -->
+    <!-- Sistema de animaÃ§Ã£o de Ã­cones (mesmo do mapa e das demais pÃ¡ginas) -->
     <link rel="stylesheet" href="css/animated-icons.css">
 
     <style>
@@ -120,7 +120,7 @@
             scrollbar-width: none;
         }
     </style>
-    <script src="js/demo.js"></script>
+    <script src="js/demo.js"></script><script>try{if(window.DC_DEMO&&!window.DC_DEMO.estado.liberado){var s=localStorage.getItem("dcmt_session")||localStorage.getItem("dcmt_token");if(!s) location.replace("login.html");}}catch(e){}</script>
     <script src="js/protecao.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col md:flex-row">
@@ -146,7 +146,7 @@
                 </div>
             </div>
 
-            <!-- Navegação Principal -->
+            <!-- NavegaÃ§Ã£o Principal -->
             <nav id="sidebar-nav" class="hidden md:flex flex-col gap-2">
                 <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/10">
                     <i data-lucide="pie-chart" class="w-5 text-center"></i>
@@ -165,12 +165,12 @@
 
                 <button onclick="switchTab('manutencao')" data-tab="manutencao" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="wrench" class="w-5 text-center"></i>
-                    <span>Manutenção</span>
+                    <span>ManutenÃ§Ã£o</span>
                 </button>
 
                 <button onclick="switchTab('veiculos')" data-tab="veiculos" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
                     <i data-lucide="car" class="w-5 text-center"></i>
-                    <span>Veículos</span>
+                    <span>VeÃ­culos</span>
                 </button>
 
                 <button onclick="switchTab('condutores')" data-tab="condutores" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
@@ -185,14 +185,14 @@
             </nav>
         </div>
 
-        <!-- Rodapé do menu / Status de Usuário -->
+        <!-- RodapÃ© do menu / Status de UsuÃ¡rio -->
         <div class="hidden md:flex items-center gap-3 pt-4 border-t border-slate-800 mt-6 font-semibold">
             <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-orange-400">
                 DC
             </div>
             <div>
                 <p class="text-sm font-bold leading-none">Gestor de Frota</p>
-                <span class="text-xs text-slate-500">Gestão de Frotas</span>
+                <span class="text-xs text-slate-500">GestÃ£o de Frotas</span>
             </div>
         </div>
     </aside>
@@ -210,7 +210,7 @@
                 <h2 id="page-title" class="text-xl font-extrabold text-slate-800">Dashboard de Viaturas</h2>
             </div>
             <div class="flex items-center gap-3">
-                <!-- Alertas Rápidos -->
+                <!-- Alertas RÃ¡pidos -->
                 <button onclick="switchTab('manutencao')" class="relative p-2 text-slate-500 hover:text-red-500 transition-colors">
                     <i data-lucide="bell" class="text-xl"></i>
                     <span id="alerts-count" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
@@ -223,13 +223,13 @@
             </div>
         </header>
 
-        <!-- ÁREA DE CONTEÚDO DAS ABAS -->
+        <!-- ÃREA DE CONTEÃšDO DAS ABAS -->
         <div class="p-4 md:p-8 flex-1 max-w-7xl w-full mx-auto">
 
             <!-- ================= ABAS: 1. DASHBOARD ================= -->
             <section id="tab-dashboard" class="tab-content block space-y-6">
                 
-                <!-- Status Rápido Frota -->
+                <!-- Status RÃ¡pido Frota -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div onclick="filterStatus('Todos')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-blue-500/30 transition-all group">
                         <div>
@@ -240,7 +240,7 @@
                             <i data-lucide="car" class="text-xl"></i>
                         </div>
                     </div>
-                    <div onclick="filterStatus('Disponível')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-green-500/30 transition-all group">
+                    <div onclick="filterStatus('DisponÃ­vel')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-green-500/30 transition-all group">
                         <div>
                             <p class="text-xs font-semibold text-green-600 uppercase tracking-wider group-hover:text-green-700 transition-colors">Prontos / Livres</p>
                             <h3 id="stat-dispo-veiculos" class="text-2xl font-extrabold text-green-600 mt-1">0</h3>
@@ -251,16 +251,16 @@
                     </div>
                     <div onclick="filterStatus('Em Viagem')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-blue-500/30 transition-all group">
                         <div>
-                            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Em Missão / Viagem</p>
+                            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Em MissÃ£o / Viagem</p>
                             <h3 id="stat-viagem-veiculos" class="text-2xl font-extrabold text-blue-600 mt-1">0</h3>
                         </div>
                         <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-100 transition-colors">
                             <i data-lucide="route" class="text-xl"></i>
                         </div>
                     </div>
-                    <div onclick="filterStatus('Em Manutenção')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-amber-500/30 transition-all group">
+                    <div onclick="filterStatus('Em ManutenÃ§Ã£o')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-amber-500/30 transition-all group">
                         <div>
-                            <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider group-hover:text-amber-700 transition-colors">Manutenção</p>
+                            <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider group-hover:text-amber-700 transition-colors">ManutenÃ§Ã£o</p>
                             <h3 id="stat-manut-veiculos" class="text-2xl font-extrabold text-amber-600 mt-1">0</h3>
                         </div>
                         <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
@@ -269,14 +269,14 @@
                     </div>
                 </div>
 
-                <!-- Gráficos & Resumos de Custos -->
+                <!-- GrÃ¡ficos & Resumos de Custos -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Resumo Financeiro de Manutenção -->
+                    <!-- Resumo Financeiro de ManutenÃ§Ã£o -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-2 flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <h4 class="font-bold text-slate-800 text-lg">Distribuição de Gastos com Manutenção</h4>
-                                <span class="text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-600 font-medium">Histórico Total</span>
+                                <h4 class="font-bold text-slate-800 text-lg">DistribuiÃ§Ã£o de Gastos com ManutenÃ§Ã£o</h4>
+                                <span class="text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-600 font-medium">HistÃ³rico Total</span>
                             </div>
                             <div class="space-y-4">
                                 <div>
@@ -304,15 +304,15 @@
                                 <p class="text-xs text-slate-400 font-semibold uppercase">Total Gasto em Oficina</p>
                                 <p id="cost-total-txt" class="text-2xl font-extrabold text-slate-900">R$ 0,00</p>
                             </div>
-                            <!-- Elemento mantido oculto para não quebrar referências no JavaScript -->
+                            <!-- Elemento mantido oculto para nÃ£o quebrar referÃªncias no JavaScript -->
                             <span id="km-total-txt" class="hidden"></span>
                         </div>
                     </div>
 
-                    <!-- Alertas Rápidos de Revisão Ativos -->
+                    <!-- Alertas RÃ¡pidos de RevisÃ£o Ativos -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col">
                         <div class="flex items-center justify-between mb-4">
-                            <h4 class="font-bold text-slate-800 text-lg">Alertas de Revisão</h4>
+                            <h4 class="font-bold text-slate-800 text-lg">Alertas de RevisÃ£o</h4>
                             <span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
                         </div>
                         <div id="alerts-list-container" class="space-y-3 flex-1 overflow-y-auto max-h-[220px] no-scrollbar">
@@ -331,9 +331,9 @@
                         </div>
                         <div class="flex gap-2 font-semibold">
                             <button onclick="filterStatus('Todos')" class="btn-filter px-3 py-1.5 text-xs bg-blue-950 text-white rounded-full transition-all">Todos</button>
-                            <button onclick="filterStatus('Disponível')" class="btn-filter px-3 py-1.5 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition-all">Disponíveis</button>
-                            <button onclick="filterStatus('Em Viagem')" class="btn-filter px-3 py-1.5 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition-all">Em Missão</button>
-                            <button onclick="filterStatus('Em Manutenção')" class="btn-filter px-3 py-1.5 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition-all">Manutenção</button>
+                            <button onclick="filterStatus('DisponÃ­vel')" class="btn-filter px-3 py-1.5 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition-all">DisponÃ­veis</button>
+                            <button onclick="filterStatus('Em Viagem')" class="btn-filter px-3 py-1.5 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition-all">Em MissÃ£o</button>
+                            <button onclick="filterStatus('Em ManutenÃ§Ã£o')" class="btn-filter px-3 py-1.5 text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition-all">ManutenÃ§Ã£o</button>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -344,13 +344,13 @@
                                     <th class="py-3 px-4">Prefixo</th>
                                     <th class="py-3 px-4">Placa</th>
                                     <th class="py-3 px-4">Quilometragem</th>
-                                    <th class="py-3 px-4">Próxima Revisão</th>
+                                    <th class="py-3 px-4">PrÃ³xima RevisÃ£o</th>
                                     <th class="py-3 px-4 text-center">Status</th>
-                                    <th class="py-3 px-4 text-right">Ação</th>
+                                    <th class="py-3 px-4 text-right">AÃ§Ã£o</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboard-vehicles-table" class="divide-y divide-slate-100 text-sm">
-                                <!-- Conteúdo preenchido dinamicamente -->
+                                <!-- ConteÃºdo preenchido dinamicamente -->
                             </tbody>
                         </table>
                     </div>
@@ -360,27 +360,27 @@
             <!-- ================= ABAS: 2. CONTROLE DE VIAGEM ================= -->
             <section id="tab-viagens" class="tab-content hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Formulário de Viagem / Lançamentos -->
+                    <!-- FormulÃ¡rio de Viagem / LanÃ§amentos -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-1">
                         <div class="border-b border-slate-100 pb-4 mb-4">
-                            <h3 class="font-bold text-slate-800 text-lg">Lançar Deslocamento de Viatura</h3>
-                            <p class="text-xs text-slate-400">Registre saídas operacionais e retornos de chamados</p>
+                            <h3 class="font-bold text-slate-800 text-lg">LanÃ§ar Deslocamento de Viatura</h3>
+                            <p class="text-xs text-slate-400">Registre saÃ­das operacionais e retornos de chamados</p>
                         </div>
 
-                        <!-- Abas internas para Saída ou Retorno -->
+                        <!-- Abas internas para SaÃ­da ou Retorno -->
                         <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
                             <button id="btn-sub-saida" onclick="toggleViagemSubTab('saida')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all">
-                                <i data-lucide="log-out" class="mr-1"></i> Saída (Ida)
+                                <i data-lucide="log-out" class="mr-1"></i> SaÃ­da (Ida)
                             </button>
                             <button id="btn-sub-retorno" onclick="toggleViagemSubTab('retorno')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
                                 <i data-lucide="log-in" class="mr-1"></i> Retorno (Volta)
                             </button>
                         </div>
 
-                        <!-- FORMULÁRIO DE REGISTRO DE SAÍDA -->
+                        <!-- FORMULÃRIO DE REGISTRO DE SAÃDA -->
                         <form id="form-saida" onsubmit="registrarSaida(event)" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Viatura Disponível</label>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Viatura DisponÃ­vel</label>
                                 <select id="saida-veiculo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
                                     <!-- Options inseridas via JS -->
                                 </select>
@@ -396,30 +396,30 @@
                                 <input type="number" id="saida-km" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Destino / Missão</label>
-                                <input type="text" id="saida-destino" placeholder="Local de atendimento ou ocorrência" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Destino / MissÃ£o</label>
+                                <input type="text" id="saida-destino" placeholder="Local de atendimento ou ocorrÃªncia" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
                             </div>
                             
-                            <!-- Banner Checklist Obrigatório -->
+                            <!-- Banner Checklist ObrigatÃ³rio -->
                             <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-3 flex gap-3 text-amber-800">
                                 <i data-lucide="circle-alert" class="mt-0.5 text-base text-amber-600"></i>
                                 <div class="text-xs">
-                                    <p class="font-bold">Vistoria Pré-Saída Requerida!</p>
-                                    <p class="opacity-90">Ao salvar, você será direcionado para o checklist obrigatório da viatura.</p>
+                                    <p class="font-bold">Vistoria PrÃ©-SaÃ­da Requerida!</p>
+                                    <p class="opacity-90">Ao salvar, vocÃª serÃ¡ direcionado para o checklist obrigatÃ³rio da viatura.</p>
                                 </div>
                             </div>
 
                             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/10 transition-all text-sm">
-                                Registrar Saída & Ir para Vistoria
+                                Registrar SaÃ­da & Ir para Vistoria
                             </button>
                         </form>
 
-                        <!-- FORMULÁRIO DE REGISTRO DE RETORNO (Oculto inicialmente) -->
+                        <!-- FORMULÃRIO DE REGISTRO DE RETORNO (Oculto inicialmente) -->
                         <form id="form-retorno" onsubmit="registrarRetorno(event)" class="space-y-4 hidden">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Missão Operacional Ativa</label>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">MissÃ£o Operacional Ativa</label>
                                 <select id="retorno-viagem" onchange="autocompletarRetorno(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
-                                    <option value="">Selecione a Missão em Andamento...</option>
+                                    <option value="">Selecione a MissÃ£o em Andamento...</option>
                                     <!-- Options inseridas via JS -->
                                 </select>
                             </div>
@@ -428,12 +428,12 @@
                                 <input type="number" id="retorno-km-final" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
                             </div>
                             
-                            <!-- Banner Checklist Obrigatório -->
+                            <!-- Banner Checklist ObrigatÃ³rio -->
                             <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-3 flex gap-3 text-amber-800">
                                 <i data-lucide="circle-alert" class="mt-0.5 text-base text-amber-600"></i>
                                 <div class="text-xs">
                                     <p class="font-bold">Vistoria de Recebimento Requerida!</p>
-                                    <p class="opacity-90">Após salvar, será disparado o checklist de encerramento de chamado e controle de danos.</p>
+                                    <p class="opacity-90">ApÃ³s salvar, serÃ¡ disparado o checklist de encerramento de chamado e controle de danos.</p>
                                 </div>
                             </div>
 
@@ -443,10 +443,10 @@
                         </form>
                     </div>
 
-                    <!-- Lista / Histórico de Viagens -->
+                    <!-- Lista / HistÃ³rico de Viagens -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-2">
                         <div class="border-b border-slate-100 pb-4 mb-4">
-                            <h3 class="font-bold text-slate-800 text-lg">Movimentações Recentes de Viaturas</h3>
+                            <h3 class="font-bold text-slate-800 text-lg">MovimentaÃ§Ãµes Recentes de Viaturas</h3>
                             <p class="text-xs text-slate-400">Rastreabilidade completa de atendimentos e rotas finalizadas</p>
                         </div>
 
@@ -457,9 +457,9 @@
                                         <th class="py-3 px-4">Viatura [Prefixo]</th>
                                         <th class="py-3 px-4">Agente</th>
                                         <th class="py-3 px-4">Destino / Chamado</th>
-                                        <th class="py-3 px-4">Período / KM</th>
+                                        <th class="py-3 px-4">PerÃ­odo / KM</th>
                                         <th class="py-3 px-4 text-center">Status</th>
-                                        <th class="py-3 px-4 text-right">Ações</th>
+                                        <th class="py-3 px-4 text-right">AÃ§Ãµes</th>
                                     </tr>
                                 </thead>
                                 <tbody id="viagens-table-body" class="divide-y divide-slate-100 text-xs">
@@ -473,12 +473,12 @@
 
             <!-- ================= ABAS: 3. CHECKLISTS DE VIAGEM ================= -->
             <section id="tab-checklist" class="tab-content hidden space-y-6">
-                <!-- Seção Ativa de Execução de Checklist -->
+                <!-- SeÃ§Ã£o Ativa de ExecuÃ§Ã£o de Checklist -->
                 <div id="checklist-wizard-card" class="bg-white p-6 rounded-2xl shadow-md border border-amber-200 max-w-2xl mx-auto hidden">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                         <div>
-                            <span id="wizard-type-badge" class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-amber-100 text-amber-800">Pré-Viagem (Ida)</span>
-                            <h3 class="font-extrabold text-slate-800 text-lg mt-2">Checklist de Prontidão de Viatura</h3>
+                            <span id="wizard-type-badge" class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-amber-100 text-amber-800">PrÃ©-Viagem (Ida)</span>
+                            <h3 class="font-extrabold text-slate-800 text-lg mt-2">Checklist de ProntidÃ£o de Viatura</h3>
                         </div>
                         <i data-lucide="clipboard-list" class="text-3xl text-amber-500"></i>
                     </div>
@@ -489,7 +489,7 @@
                             <strong id="wizard-vehicle-name" class="text-slate-700 font-bold">-</strong>
                         </div>
                         <div class="text-sm text-right">
-                            <span class="text-slate-400 font-medium block">Agente Responsável:</span>
+                            <span class="text-slate-400 font-medium block">Agente ResponsÃ¡vel:</span>
                             <strong id="wizard-driver-name" class="text-slate-700 font-bold">-</strong>
                         </div>
                     </div>
@@ -507,14 +507,14 @@
                             </div>
                         </div>
 
-                        <div class="font-semibold text-xs text-slate-400 uppercase tracking-wider mb-2">Itens de Verificação:</div>
+                        <div class="font-semibold text-xs text-slate-400 uppercase tracking-wider mb-2">Itens de VerificaÃ§Ã£o:</div>
                         
                         <!-- Lista de Itens do Checklist (V e X) -->
                         <div id="wizard-items-container" class="space-y-6">
-                            <!-- Injetado dinamicamente via JS com as 8 Seções de Vistoria -->
+                            <!-- Injetado dinamicamente via JS com as 8 SeÃ§Ãµes de Vistoria -->
                         </div>
 
-                        <!-- Botões de Ação do Wizard -->
+                        <!-- BotÃµes de AÃ§Ã£o do Wizard -->
                         <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
                             <button type="button" onclick="cancelarWizard()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all text-sm">Cancelar Vistoria</button>
                             <button type="submit" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-all text-sm">Aprovar & Salvar</button>
@@ -522,12 +522,12 @@
                     </form>
                 </div>
 
-                <!-- Histórico de Checklists Efetuados -->
+                <!-- HistÃ³rico de Checklists Efetuados -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
                     <div class="border-b border-slate-100 pb-4 mb-4 flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h3 class="font-bold text-slate-800 text-lg">Histórico de Checklists de Vistorias</h3>
-                            <p class="text-xs text-slate-400">Verificações de conformidade operacionais efetuadas na frota</p>
+                            <h3 class="font-bold text-slate-800 text-lg">HistÃ³rico de Checklists de Vistorias</h3>
+                            <p class="text-xs text-slate-400">VerificaÃ§Ãµes de conformidade operacionais efetuadas na frota</p>
                         </div>
                     </div>
 
@@ -541,7 +541,7 @@
                                     <th class="py-3 px-4">Data/Hora</th>
                                     <th class="py-3 px-4">Avarias/Danos</th>
                                     <th class="py-3 px-4 text-center">Status Vistoria</th>
-                                    <th class="py-3 px-4 text-right">Ações</th>
+                                    <th class="py-3 px-4 text-right">AÃ§Ãµes</th>
                                 </tr>
                             </thead>
                             <tbody id="checklists-table-body" class="divide-y divide-slate-100 text-xs">
@@ -552,29 +552,29 @@
                 </div>
             </section>
 
-            <!-- ================= ABAS: 4. MANUTENÇÃO E ALERTAS DE REVISÃO ================= -->
+            <!-- ================= ABAS: 4. MANUTENÃ‡ÃƒO E ALERTAS DE REVISÃƒO ================= -->
             <section id="tab-manutencao" class="tab-content hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     <div class="lg:col-span-1 space-y-6">
-                        <!-- FORMULÁRIO 1: ENTRADA / SAÍDA DE MANUTENÇÃO (AUTOMÁTICO) -->
+                        <!-- FORMULÃRIO 1: ENTRADA / SAÃDA DE MANUTENÃ‡ÃƒO (AUTOMÃTICO) -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
                             <div class="border-b border-slate-100 pb-4 mb-4">
-                                <h3 class="font-bold text-slate-800 text-lg">Movimentação em Oficina</h3>
-                                <p class="text-xs text-slate-400">Registre a entrada e saída técnica das viaturas em reparo</p>
+                                <h3 class="font-bold text-slate-800 text-lg">MovimentaÃ§Ã£o em Oficina</h3>
+                                <p class="text-xs text-slate-400">Registre a entrada e saÃ­da tÃ©cnica das viaturas em reparo</p>
                             </div>
 
-                            <!-- Sub-abas internas de Oficina: Registrar Entrada ou Concluir Saída -->
+                            <!-- Sub-abas internas de Oficina: Registrar Entrada ou Concluir SaÃ­da -->
                             <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
                                 <button id="btn-maint-entrada" onclick="toggleMaintSubTab('entrada')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all">
                                     <i data-lucide="log-in" class="mr-1"></i> Entrada (Enviar)
                                 </button>
                                 <button id="btn-maint-saida" onclick="toggleMaintSubTab('saida')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
-                                    <i data-lucide="check-check" class="mr-1"></i> Saída (Concluir)
+                                    <i data-lucide="check-check" class="mr-1"></i> SaÃ­da (Concluir)
                                 </button>
                             </div>
 
-                            <!-- FORMULÁRIO DE ENTRADA EM MANUTENÇÃO -->
+                            <!-- FORMULÃRIO DE ENTRADA EM MANUTENÃ‡ÃƒO -->
                             <form id="form-maint-entrada" onsubmit="registrarEntradaMaint(event)" class="space-y-4">
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Viatura Operacional</label>
@@ -584,7 +584,7 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Tipo Manutenção</label>
+                                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Tipo ManutenÃ§Ã£o</label>
                                         <select id="maint-entrada-tipo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                                             <option value="Corretiva">Corretiva</option>
                                             <option value="Preventiva">Preventiva</option>
@@ -600,8 +600,8 @@
                                     <input type="text" id="maint-entrada-oficina" placeholder="Nome da Oficina" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Diagnóstico / Sintomas</label>
-                                    <textarea id="maint-entrada-diagnostico" rows="2" placeholder="Descreva o defeito apresentado ou motivo da revisão técnica" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required></textarea>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">DiagnÃ³stico / Sintomas</label>
+                                    <textarea id="maint-entrada-diagnostico" rows="2" placeholder="Descreva o defeito apresentado ou motivo da revisÃ£o tÃ©cnica" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required></textarea>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Data/Hora de Entrada</label>
@@ -609,11 +609,11 @@
                                 </div>
 
                                 <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">
-                                    Enviar para Manutenção (Muda Status)
+                                    Enviar para ManutenÃ§Ã£o (Muda Status)
                                 </button>
                             </form>
 
-                            <!-- FORMULÁRIO DE SAÍDA / RETORNO DE MANUTENÇÃO -->
+                            <!-- FORMULÃRIO DE SAÃDA / RETORNO DE MANUTENÃ‡ÃƒO -->
                             <form id="form-maint-saida" onsubmit="registrarSaidaMaint(event)" class="space-y-4 hidden">
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Viatura em Reparo</label>
@@ -627,7 +627,7 @@
                                         <input type="number" id="maint-saida-km-entrada-show" class="w-full bg-slate-200 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" disabled>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">KM Final de Saída</label>
+                                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">KM Final de SaÃ­da</label>
                                         <input type="number" id="maint-saida-km" placeholder="KM final" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                     </div>
                                 </div>
@@ -637,28 +637,28 @@
                                         <input type="number" step="0.01" id="maint-saida-custo" placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Data/Hora de Saída</label>
+                                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Data/Hora de SaÃ­da</label>
                                         <input type="text" id="maint-saida-data" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Serviços Executados & Peças Trocadas</label>
-                                    <textarea id="maint-saida-servicos" rows="2" placeholder="Descreva as peças que foram efetivamente substituídas ou reparos" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required></textarea>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">ServiÃ§os Executados & PeÃ§as Trocadas</label>
+                                    <textarea id="maint-saida-servicos" rows="2" placeholder="Descreva as peÃ§as que foram efetivamente substituÃ­das ou reparos" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required></textarea>
                                 </div>
 
                                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">
-                                    Registrar Saída (Retorna para Disponível)
+                                    Registrar SaÃ­da (Retorna para DisponÃ­vel)
                                 </button>
                             </form>
                         </div>
 
-                        <!-- FORMULÁRIO 2: AGENDAR PRÓXIMA REVISÃO PREVENTIVA (SEPARADO) -->
+                        <!-- FORMULÃRIO 2: AGENDAR PRÃ“XIMA REVISÃƒO PREVENTIVA (SEPARADO) -->
                         <div class="bg-blue-50 border border-blue-200 p-6 rounded-2xl space-y-4">
                             <div class="border-b border-blue-100 pb-3">
                                 <h3 class="font-bold text-blue-900 text-base flex items-center gap-1.5">
-                                    <i data-lucide="history"></i> Agendar Próxima Revisão
+                                    <i data-lucide="history"></i> Agendar PrÃ³xima RevisÃ£o
                                 </h3>
-                                <p class="text-[11px] text-blue-700 leading-tight">Programe alertas automáticos baseados em quilometragem limite ou data calendário (o que ocorrer primeiro).</p>
+                                <p class="text-[11px] text-blue-700 leading-tight">Programe alertas automÃ¡ticos baseados em quilometragem limite ou data calendÃ¡rio (o que ocorrer primeiro).</p>
                             </div>
 
                             <form id="form-agendar-revisao" onsubmit="registrarAlertaRevisao(event)" class="space-y-4">
@@ -679,22 +679,22 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-blue-800 mb-1.5">Observações / Itens a Verificar</label>
-                                    <input type="text" id="alert-descricao" placeholder="Ex: Alinhamento, rodízio de pneus" class="w-full bg-white border border-blue-200 rounded-xl px-4 py-3 text-sm focus:outline-none">
+                                    <label class="block text-xs font-bold uppercase text-blue-800 mb-1.5">ObservaÃ§Ãµes / Itens a Verificar</label>
+                                    <input type="text" id="alert-descricao" placeholder="Ex: Alinhamento, rodÃ­zio de pneus" class="w-full bg-white border border-blue-200 rounded-xl px-4 py-3 text-sm focus:outline-none">
                                 </div>
 
                                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-xs">
-                                    Agendar Alerta de Revisão
+                                    Agendar Alerta de RevisÃ£o
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Lista / Histórico de Manutenções -->
+                    <!-- Lista / HistÃ³rico de ManutenÃ§Ãµes -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-2">
                         <div class="border-b border-slate-100 pb-4 mb-4">
-                            <h3 class="font-bold text-slate-800 text-lg">Histórico Geral de Manutenção</h3>
-                            <p class="text-xs text-slate-400">Controle de entrada, saída, custos e serviços executados</p>
+                            <h3 class="font-bold text-slate-800 text-lg">HistÃ³rico Geral de ManutenÃ§Ã£o</h3>
+                            <p class="text-xs text-slate-400">Controle de entrada, saÃ­da, custos e serviÃ§os executados</p>
                         </div>
 
                         <div class="overflow-x-auto no-scrollbar">
@@ -704,10 +704,10 @@
                                         <th class="py-3 px-4">Viatura [Prefixo]</th>
                                         <th class="py-3 px-4">Tipo / Estado</th>
                                         <th class="py-3 px-4">KM Entrada</th>
-                                        <th class="py-3 px-4">Problema / Serviços Executados</th>
+                                        <th class="py-3 px-4">Problema / ServiÃ§os Executados</th>
                                         <th class="py-3 px-4">Oficina / Prestador</th>
                                         <th class="py-3 px-4 text-right">Valor</th>
-                                        <th class="py-3 px-4 text-right">Ações</th>
+                                        <th class="py-3 px-4 text-right">AÃ§Ãµes</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manutencao-table-body" class="divide-y divide-slate-100 text-xs">
@@ -719,7 +719,7 @@
                 </div>
             </section>
 
-            <!-- ================= ABAS: 5. GERENCIAMENTO DE VEÍCULOS ================= -->
+            <!-- ================= ABAS: 5. GERENCIAMENTO DE VEÃCULOS ================= -->
             <section id="tab-veiculos" class="tab-content hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Tabela de Controle de Viaturas -->
@@ -727,7 +727,7 @@
                         <div class="border-b border-slate-100 pb-4 mb-4 flex justify-between items-center">
                             <div>
                                 <h3 class="font-bold text-slate-800 text-lg">Frota de Viaturas Ativas</h3>
-                                <p class="text-xs text-slate-400">Visualização de registros técnicos de cada veículo</p>
+                                <p class="text-xs text-slate-400">VisualizaÃ§Ã£o de registros tÃ©cnicos de cada veÃ­culo</p>
                             </div>
                         </div>
                         <div class="overflow-x-auto no-scrollbar">
@@ -738,8 +738,8 @@
                                         <th class="py-3 px-4">Viatura</th>
                                         <th class="py-3 px-4">Placa</th>
                                         <th class="py-3 px-4">KM Atual</th>
-                                        <th class="py-3 px-4">Situação</th>
-                                        <th class="py-3 px-4 text-right">Ações</th>
+                                        <th class="py-3 px-4">SituaÃ§Ã£o</th>
+                                        <th class="py-3 px-4 text-right">AÃ§Ãµes</th>
                                     </tr>
                                 </thead>
                                 <tbody id="veiculos-gestao-table-body" class="divide-y divide-slate-100 text-xs">
@@ -749,11 +749,11 @@
                         </div>
                     </div>
 
-                    <!-- Card Operacional: Cadastro ou Edição de Veículo -->
+                    <!-- Card Operacional: Cadastro ou EdiÃ§Ã£o de VeÃ­culo -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-1">
                         <div class="border-b border-slate-100 pb-4 mb-4">
                             <h3 id="veiculo-form-title" class="font-bold text-slate-800 text-lg">Cadastrar Nova Viatura</h3>
-                            <p id="veiculo-form-subtitle" class="text-xs text-slate-400">Insira ou altere os dados técnicos dos carros</p>
+                            <p id="veiculo-form-subtitle" class="text-xs text-slate-400">Insira ou altere os dados tÃ©cnicos dos carros</p>
                         </div>
                         <form id="form-veiculo-gestao" onsubmit="salvarVeiculo(event)" class="space-y-4">
                             <div class="grid grid-cols-2 gap-4">
@@ -787,19 +787,19 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Renavam</label>
-                                    <input type="text" id="veic-renavam" placeholder="Nº Registro" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
+                                    <input type="text" id="veic-renavam" placeholder="NÂº Registro" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Chassi</label>
-                                    <input type="text" id="veic-chassi" placeholder="Nº Chassi" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
+                                    <input type="text" id="veic-chassi" placeholder="NÂº Chassi" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Situação / Estado da Viatura</label>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">SituaÃ§Ã£o / Estado da Viatura</label>
                                 <select id="veic-status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none">
-                                    <option value="Disponível">Disponível (Livre)</option>
-                                    <option value="Em Viagem">Em Viagem (Missão)</option>
-                                    <option value="Em Manutenção">Em Manutenção (Oficina)</option>
+                                    <option value="DisponÃ­vel">DisponÃ­vel (Livre)</option>
+                                    <option value="Em Viagem">Em Viagem (MissÃ£o)</option>
+                                    <option value="Em ManutenÃ§Ã£o">Em ManutenÃ§Ã£o (Oficina)</option>
                                 </select>
                             </div>
                             <div class="flex gap-3">
@@ -822,17 +822,17 @@
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-2">
                         <div class="border-b border-slate-100 pb-4 mb-4">
                             <h3 class="font-bold text-slate-800 text-lg">Condutores Cadastrados</h3>
-                            <p class="text-xs text-slate-400">Listagem operacional e permissões de edição de condutores</p>
+                            <p class="text-xs text-slate-400">Listagem operacional e permissÃµes de ediÃ§Ã£o de condutores</p>
                         </div>
                         <div class="overflow-x-auto no-scrollbar">
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
                                         <th class="py-3 px-4">Nome</th>
-                                        <th class="py-3 px-4">Matrícula</th>
+                                        <th class="py-3 px-4">MatrÃ­cula</th>
                                         <th class="py-3 px-4">CNH (Cat)</th>
                                         <th class="py-3 px-4">Telefone</th>
-                                        <th class="py-3 px-4 text-right">Ações</th>
+                                        <th class="py-3 px-4 text-right">AÃ§Ãµes</th>
                                     </tr>
                                 </thead>
                                 <tbody id="condutores-gestao-table-body" class="divide-y divide-slate-100 text-xs">
@@ -842,11 +842,11 @@
                         </div>
                     </div>
 
-                    <!-- Card Operacional: Cadastro ou Edição de Condutor -->
+                    <!-- Card Operacional: Cadastro ou EdiÃ§Ã£o de Condutor -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 lg:col-span-1">
                         <div class="border-b border-slate-100 pb-4 mb-4">
                             <h3 id="condutor-form-title" class="font-bold text-slate-800 text-lg">Cadastrar Novo Condutor</h3>
-                            <p id="condutor-form-subtitle" class="text-xs text-slate-400">Registre novos motoristas ou faça alterações nos atuais</p>
+                            <p id="condutor-form-subtitle" class="text-xs text-slate-400">Registre novos motoristas ou faÃ§a alteraÃ§Ãµes nos atuais</p>
                         </div>
                         <form id="form-condutor-gestao" onsubmit="salvarMotorista(event)" class="space-y-4">
                             <div>
@@ -855,7 +855,7 @@
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Nº CNH</label>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">NÂº CNH</label>
                                     <input type="text" id="cond-cnh" placeholder="Ex: 12345678900" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                                 <div>
@@ -863,7 +863,7 @@
                                     <select id="cond-categoria" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none">
                                         <option value="B">B (Carros)</option>
                                         <option value="C">C (Carga)</option>
-                                        <option value="D">D (Micro/Ônibus)</option>
+                                        <option value="D">D (Micro/Ã”nibus)</option>
                                         <option value="E">E (Articulados)</option>
                                         <option value="AB">AB (Motos/Carros)</option>
                                     </select>
@@ -875,7 +875,7 @@
                                     <input type="text" id="cond-telefone" placeholder="(65) 99999-9999" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">ID / Matrícula Funcional</label>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">ID / MatrÃ­cula Funcional</label>
                                     <input type="text" id="cond-matricula" placeholder="Ex: DC-2394" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none" required>
                                 </div>
                             </div>
@@ -892,14 +892,14 @@
                 </div>
             </section>
 
-            <!-- ================= ABAS: 9. FICHA INDIVIDUAL DO VEÍCULO ================= -->
+            <!-- ================= ABAS: 9. FICHA INDIVIDUAL DO VEÃCULO ================= -->
             <section id="tab-ficha-veiculo" class="tab-content hidden space-y-6">
-                <!-- Botão de Voltar ao Dashboard -->
+                <!-- BotÃ£o de Voltar ao Dashboard -->
                 <div class="flex items-center justify-between">
                     <button onclick="switchTab('dashboard')" class="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold text-sm bg-white border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm">
                         <i data-lucide="arrow-left"></i> Voltar ao Dashboard
                     </button>
-                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Identificação Oficial do Estado</span>
+                    <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">IdentificaÃ§Ã£o Oficial do Estado</span>
                 </div>
 
                 <!-- Painel Superior (Emblema de Caminhonete e Status) -->
@@ -923,27 +923,27 @@
                             </div>
                         </div>
 
-                        <!-- Status e Custódia -->
+                        <!-- Status e CustÃ³dia -->
                         <div class="flex flex-wrap gap-4 items-center">
                             <div class="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl min-w-[150px]">
-                                <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">Responsável Atual</span>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">ResponsÃ¡vel Atual</span>
                                 <strong id="ficha-veic-condutor" class="text-sm font-bold text-orange-400">-</strong>
                             </div>
                             <div class="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl min-w-[120px] text-center">
-                                <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">Situação</span>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">SituaÃ§Ã£o</span>
                                 <span id="ficha-veic-status-badge" class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-black uppercase">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Detalhes Técnicos e Histórico -->
+                <!-- Detalhes TÃ©cnicos e HistÃ³rico -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Ficha Técnica -->
+                    <!-- Ficha TÃ©cnica -->
                     <div class="space-y-6">
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                             <h4 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
-                                <i data-lucide="circle-info" class="text-blue-600"></i> Informações Técnicas
+                                <i data-lucide="circle-info" class="text-blue-600"></i> InformaÃ§Ãµes TÃ©cnicas
                             </h4>
                             <div class="space-y-3 text-xs font-semibold">
                                 <div class="flex justify-between py-2 border-b border-slate-50 text-slate-600">
@@ -969,10 +969,10 @@
                             </div>
                         </div>
 
-                        <!-- Alertas e Revisões do Veículo -->
+                        <!-- Alertas e RevisÃµes do VeÃ­culo -->
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                             <h4 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
-                                <i data-lucide="bell" class="text-orange-500"></i> Alertas e Revisões Ativas
+                                <i data-lucide="bell" class="text-orange-500"></i> Alertas e RevisÃµes Ativas
                             </h4>
                             <div id="ficha-alertas-container" class="space-y-3">
                                 <!-- Injetado dinamicamente -->
@@ -980,14 +980,14 @@
                         </div>
                     </div>
 
-                    <!-- Linha do Tempo e Histórico Específico -->
+                    <!-- Linha do Tempo e HistÃ³rico EspecÃ­fico -->
                     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-2 flex flex-col justify-between">
                         <div>
                             <h4 class="font-bold text-slate-800 text-base border-b border-slate-100 pb-3 flex items-center gap-2 mb-4">
-                                <i data-lucide="history" class="text-blue-600"></i> Histórico de Atividade da Viatura
+                                <i data-lucide="history" class="text-blue-600"></i> HistÃ³rico de Atividade da Viatura
                             </h4>
 
-                            <!-- Abas de histórico interno da viatura -->
+                            <!-- Abas de histÃ³rico interno da viatura -->
                             <div class="flex bg-slate-100 p-1 rounded-xl mb-4">
                                 <button onclick="toggleFichaHistorico('viagens')" id="btn-ficha-hist-viagens" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all">
                                     Viagens (Rotas)
@@ -997,13 +997,13 @@
                                 </button>
                             </div>
 
-                            <!-- Listagens dinâmicas filtradas -->
+                            <!-- Listagens dinÃ¢micas filtradas -->
                             <div class="overflow-y-auto max-h-[220px] no-scrollbar space-y-2.5">
                                 <div id="ficha-historico-viagens-list" class="space-y-2">
                                     <!-- Viagens da viatura -->
                                 </div>
                                 <div id="ficha-historico-manutencoes-list" class="space-y-2 hidden">
-                                    <!-- Manutenções da viatura -->
+                                    <!-- ManutenÃ§Ãµes da viatura -->
                                 </div>
                             </div>
                         </div>
@@ -1015,9 +1015,9 @@
             <section id="tab-arquitetura" class="tab-content hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
                     <div class="border-b border-slate-100 pb-4 mb-4">
-                        <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">Especificação Técnica</span>
+                        <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">EspecificaÃ§Ã£o TÃ©cnica</span>
                         <h3 class="font-extrabold text-slate-800 text-xl mt-2">Arquitetura de Banco de Dados & Stack</h3>
-                        <p class="text-xs text-slate-400">Sugestão de diagramação e stack ideal para desenvolvimento rápido e escalável.</p>
+                        <p class="text-xs text-slate-400">SugestÃ£o de diagramaÃ§Ã£o e stack ideal para desenvolvimento rÃ¡pido e escalÃ¡vel.</p>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1028,7 +1028,7 @@
                             </h4>
                             <div class="space-y-3">
                                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                                    <span class="font-bold text-xs text-blue-600 uppercase">Tabela: Veículos (Viaturas)</span>
+                                    <span class="font-bold text-xs text-blue-600 uppercase">Tabela: VeÃ­culos (Viaturas)</span>
                                     <p class="text-xs text-slate-500 mt-1 leading-relaxed">
                                         <code>id (PK) | prefixo | marca | modelo | placa (Unique) | km_atual | ano | renavam | chassi | status_dispo</code>
                                     </p>
@@ -1040,45 +1040,45 @@
                                     </p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                                    <span class="font-bold text-xs text-blue-600 uppercase">Tabela: Viagens (Atendimentos/Missões)</span>
+                                    <span class="font-bold text-xs text-blue-600 uppercase">Tabela: Viagens (Atendimentos/MissÃµes)</span>
                                     <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                        <code>id (PK) | veiculo_id (FK) | motorista_id (FK) | data_saida | km_inicial | combustivel_saida | destino | data_retorno | km_final | combustivel_retorno | status (Ativa/Concluída)</code>
+                                        <code>id (PK) | veiculo_id (FK) | motorista_id (FK) | data_saida | km_inicial | combustivel_saida | destino | data_retorno | km_final | combustivel_retorno | status (Ativa/ConcluÃ­da)</code>
                                     </p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                                     <span class="font-bold text-xs text-blue-600 uppercase">Tabela: Checklists (Vistorias)</span>
                                     <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                        <code>id (PK) | viagem_id (FK) | tipo (Pré-Viagem/Pós-Viagem) | data_vistoria | oleo_ok | agua_ok | calibragem_ok | estepe_ok | luzes_ok | documento_ok | avarias_desc | status_geral (Aprovado/Atenção)</code>
+                                        <code>id (PK) | viagem_id (FK) | tipo (PrÃ©-Viagem/PÃ³s-Viagem) | data_vistoria | oleo_ok | agua_ok | calibragem_ok | estepe_ok | luzes_ok | documento_ok | avarias_desc | status_geral (Aprovado/AtenÃ§Ã£o)</code>
                                     </p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                                    <span class="font-bold text-xs text-blue-600 uppercase">Tabela: Manutenções</span>
+                                    <span class="font-bold text-xs text-blue-600 uppercase">Tabela: ManutenÃ§Ãµes</span>
                                     <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                        <code>id (PK) | veiculo_id (FK) | tipo_registro | valor | descricao | km_registro | posto_ou_oficina | data_entrada | data_saida | status (Ativa/Concluída)</code>
+                                        <code>id (PK) | veiculo_id (FK) | tipo_registro | valor | descricao | km_registro | posto_ou_oficina | data_entrada | data_saida | status (Ativa/ConcluÃ­da)</code>
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Stack Tecnológica Sugerida -->
+                        <!-- Stack TecnolÃ³gica Sugerida -->
                         <div class="space-y-4">
                             <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
                                 <i data-lucide="layers" class="text-blue-600"></i> Stack Recomendada (Escala & Time-to-Market)
                             </h4>
                             
                             <div class="border border-emerald-100 bg-emerald-50/50 p-5 rounded-2xl space-y-3">
-                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold uppercase tracking-wider">Fast / No-Code (Opção 1)</span>
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold uppercase tracking-wider">Fast / No-Code (OpÃ§Ã£o 1)</span>
                                 <h5 class="font-bold text-slate-800 text-sm">FlutterFlow (Front-end) + Supabase (Back-end)</h5>
                                 <p class="text-xs text-slate-600 leading-relaxed">
-                                    A escolha perfeita para entregar o produto em 3 semanas. O <strong>FlutterFlow</strong> gera código Flutter nativo garantindo o comportamento e design perfeito em celulares de motoristas, com suporte offline (essencial para vistorias no subsolo/garagens). O <strong>Supabase</strong> fornece banco PostgreSQL pronto e sincronização rápida de dados.
+                                    A escolha perfeita para entregar o produto em 3 semanas. O <strong>FlutterFlow</strong> gera cÃ³digo Flutter nativo garantindo o comportamento e design perfeito em celulares de motoristas, com suporte offline (essencial para vistorias no subsolo/garagens). O <strong>Supabase</strong> fornece banco PostgreSQL pronto e sincronizaÃ§Ã£o rÃ¡pida de dados.
                                 </p>
                             </div>
 
                             <div class="border border-blue-100 bg-blue-50/50 p-5 rounded-2xl space-y-3">
-                                <span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold uppercase tracking-wider">Pro-Code / Robustez (Opção 2)</span>
+                                <span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold uppercase tracking-wider">Pro-Code / Robustez (OpÃ§Ã£o 2)</span>
                                 <h5 class="font-bold text-slate-800 text-sm">React Native (App Motoristas) + Next.js (Dashboard Gestor)</h5>
                                 <p class="text-xs text-slate-600 leading-relaxed">
-                                    A melhor combinação corporativa. O <strong>React Native</strong> possibilita acesso direto à câmera e geolocalização nativa para controle de rotas. O <strong>Next.js (com Tailwind CSS)</strong> permite criar um painel administrativo ultra rápido, seguro e adaptável em qualquer tela para os gestores.
+                                    A melhor combinaÃ§Ã£o corporativa. O <strong>React Native</strong> possibilita acesso direto Ã  cÃ¢mera e geolocalizaÃ§Ã£o nativa para controle de rotas. O <strong>Next.js (com Tailwind CSS)</strong> permite criar um painel administrativo ultra rÃ¡pido, seguro e adaptÃ¡vel em qualquer tela para os gestores.
                                 </p>
                             </div>
                         </div>
@@ -1104,7 +1104,7 @@
             </button>
             <button onclick="switchTab('veiculos')" class="mobile-nav-item flex flex-col items-center text-slate-500">
                 <i data-lucide="car" class="text-lg"></i>
-                <span class="text-[10px] mt-1 font-medium">Veículos</span>
+                <span class="text-[10px] mt-1 font-medium">VeÃ­culos</span>
             </button>
             <button onclick="switchTab('condutores')" class="mobile-nav-item flex flex-col items-center text-slate-500">
                 <i data-lucide="id-card" class="text-lg"></i>
@@ -1113,7 +1113,7 @@
         </div>
     </main>
 
-    <!-- NOTIFICAÇÃO DO SISTEMA (TOAST) -->
+    <!-- NOTIFICAÃ‡ÃƒO DO SISTEMA (TOAST) -->
     <div id="toast" class="fixed top-5 right-5 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl z-50 flex items-center gap-3 transition-transform translate-x-[400px] duration-300">
         <div id="toast-icon" class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs">
             <i data-lucide="info"></i>
@@ -1121,7 +1121,7 @@
         <p id="toast-message" class="text-xs font-semibold"></p>
     </div>
 
-    <!-- MODAL DE EDIÇÃO GLOBAL DINÂMICO -->
+    <!-- MODAL DE EDIÃ‡ÃƒO GLOBAL DINÃ‚MICO -->
     <div id="global-edit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
             <!-- Header do Modal -->
@@ -1134,7 +1134,7 @@
                     <i data-lucide="x" class="text-lg"></i>
                 </button>
             </div>
-            <!-- Conteúdo / Campos de Entrada -->
+            <!-- ConteÃºdo / Campos de Entrada -->
             <div class="p-6 overflow-y-auto flex-1">
                 <form id="global-edit-form" onsubmit="salvarEdicaoGlobal(event)" class="space-y-4 text-xs font-sans">
                     <input type="hidden" id="edit-entity-type">
@@ -1144,10 +1144,10 @@
                         <!-- Campos injetados via JavaScript -->
                     </div>
                     
-                    <!-- Ações Finais do Modal -->
+                    <!-- AÃ§Ãµes Finais do Modal -->
                     <div class="flex gap-3 pt-4 border-t border-slate-100 mt-4">
                         <button type="button" onclick="closeGlobalEditModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-all text-xs">Cancelar</button>
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all text-xs shadow-lg shadow-blue-600/15">Salvar Alterações</button>
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all text-xs shadow-lg shadow-blue-600/15">Salvar AlteraÃ§Ãµes</button>
                     </div>
                 </form>
             </div>
@@ -1158,38 +1158,38 @@
         // DATA DE HOJE
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
 
-        // BANCO DE DADOS EM MEMÓRIA LOCAL
+        // BANCO DE DADOS EM MEMÃ“RIA LOCAL
         const DEFAULT_VEICULOS = [
-            { id: "1", prefixo: "DC-01", marca: "Chevrolet", modelo: "S-10", placa: "OBP-4A21", km_atual: 45200, ano: 2022, renavam: "123456789", chassi: "9BD12345678901234", status_dispo: "Disponível" },
+            { id: "1", prefixo: "DC-01", marca: "Chevrolet", modelo: "S-10", placa: "OBP-4A21", km_atual: 45200, ano: 2022, renavam: "123456789", chassi: "9BD12345678901234", status_dispo: "DisponÃ­vel" },
             { id: "2", prefixo: "DC-02", marca: "Chevrolet", modelo: "S-10", placa: "QNY-7H80", km_atual: 58100, ano: 2021, renavam: "987654321", chassi: "9BD54321098765432", status_dispo: "Em Viagem" },
-            { id: "3", prefixo: "DC-03", marca: "Chevrolet", modelo: "S-10", placa: "RNY-1A23", km_atual: 89600, ano: 2023, renavam: "456123789", chassi: "9BD98765432109876", status_dispo: "Em Manutenção" },
-            { id: "4", prefixo: "DC-04", marca: "Chevrolet", modelo: "S-10", placa: "NJK-5E92", km_atual: 32400, ano: 2022, renavam: "321654987", chassi: "9BD76543210987654", status_dispo: "Disponível" },
-            { id: "5", prefixo: "DC-05", marca: "Chevrolet", modelo: "S-10", placa: "OBG-3C44", km_atual: 112000, ano: 2020, renavam: "789456123", chassi: "9BD43210987654321", status_dispo: "Disponível" }
+            { id: "3", prefixo: "DC-03", marca: "Chevrolet", modelo: "S-10", placa: "RNY-1A23", km_atual: 89600, ano: 2023, renavam: "456123789", chassi: "9BD98765432109876", status_dispo: "Em ManutenÃ§Ã£o" },
+            { id: "4", prefixo: "DC-04", marca: "Chevrolet", modelo: "S-10", placa: "NJK-5E92", km_atual: 32400, ano: 2022, renavam: "321654987", chassi: "9BD76543210987654", status_dispo: "DisponÃ­vel" },
+            { id: "5", prefixo: "DC-05", marca: "Chevrolet", modelo: "S-10", placa: "OBG-3C44", km_atual: 112000, ano: 2020, renavam: "789456123", chassi: "9BD43210987654321", status_dispo: "DisponÃ­vel" }
         ];
 
         const DEFAULT_MOTORISTAS = [
             { id: "1", nome: "Carlos Alberto da Silva", cnh: "44589230591", categoria_cnh: "D", telefone: "(65) 98756-3241", matricula: "DC-4509" },
             { id: "2", nome: "Marina Rodrigues", cnh: "88950239401", categoria_cnh: "B", telefone: "(65) 94032-1188", matricula: "DC-9923" },
-            { id: "3", nome: "José Roberto Souza", cnh: "55678129033", categoria_cnh: "C", telefone: "(65) 97722-4411", matricula: "DC-2104" }
+            { id: "3", nome: "JosÃ© Roberto Souza", cnh: "55678129033", categoria_cnh: "C", telefone: "(65) 97722-4411", matricula: "DC-2104" }
         ];
 
         const DEFAULT_VIAGENS = [
-            { id: "v1", veiculo_id: "2", motorista_id: "2", data_saida: "2026-07-07 08:30", km_inicial: 58000, combustivel_saida: "Cheio", destino: "Atendimento Emergencial - Rondonópolis/MT", data_retorno: null, km_final: null, combustivel_retorno: null, status: "Ativa" },
-            { id: "v2", veiculo_id: "1", motorista_id: "1", data_saida: "2026-07-06 09:00", km_inicial: 45000, combustivel_saida: "Meio", destino: "Entrega de Equipamento de Salvamento", data_retorno: "2026-07-06 17:30", km_final: 45180, combustivel_retorno: "1/4", status: "Concluída" }
+            { id: "v1", veiculo_id: "2", motorista_id: "2", data_saida: "2026-07-07 08:30", km_inicial: 58000, combustivel_saida: "Cheio", destino: "Atendimento Emergencial - RondonÃ³polis/MT", data_retorno: null, km_final: null, combustivel_retorno: null, status: "Ativa" },
+            { id: "v2", veiculo_id: "1", motorista_id: "1", data_saida: "2026-07-06 09:00", km_inicial: 45000, combustivel_saida: "Meio", destino: "Entrega de Equipamento de Salvamento", data_retorno: "2026-07-06 17:30", km_final: 45180, combustivel_retorno: "1/4", status: "ConcluÃ­da" }
         ];
 
         const DEFAULT_CHECKLISTS = [
-            { id: "chk1", viagem_id: "v2", tipo: "Pré-Viagem (Ida)", data_vistoria: "2026-07-06 08:45", oleo_ok: true, agua_ok: true, calibragem_ok: true, estepe_ok: true, luzes_ok: true, documento_ok: true, avarias_desc: "Nenhuma irregularidade", status_geral: "Aprovado" }
+            { id: "chk1", viagem_id: "v2", tipo: "PrÃ©-Viagem (Ida)", data_vistoria: "2026-07-06 08:45", oleo_ok: true, agua_ok: true, calibragem_ok: true, estepe_ok: true, luzes_ok: true, documento_ok: true, avarias_desc: "Nenhuma irregularidade", status_geral: "Aprovado" }
         ];
 
         const DEFAULT_MANUTENCOES = [
-            { id: "m1", veiculo_id: "3", tipo: "Corretiva", custo: 0, pecas: "Aguardando diagnóstico e reparo no sistema de injeção", oficina: "Auto Elétrica Centro", km_registro: 89600, data_entrada: "2026-07-07 10:00", data_saida: null, status: "Ativa" },
-            { id: "m2", veiculo_id: "1", tipo: "Preventiva", custo: 320.00, pecas: "Troca do óleo do motor e pastilhas dianteiras", oficina: "LubriCar Cuiabá", km_registro: 44000, data_entrada: "2026-06-15 10:00", data_saida: "2026-06-15 14:30", status: "Concluída" }
+            { id: "m1", veiculo_id: "3", tipo: "Corretiva", custo: 0, pecas: "Aguardando diagnÃ³stico e reparo no sistema de injeÃ§Ã£o", oficina: "Auto ElÃ©trica Centro", km_registro: 89600, data_entrada: "2026-07-07 10:00", data_saida: null, status: "Ativa" },
+            { id: "m2", veiculo_id: "1", tipo: "Preventiva", custo: 320.00, pecas: "Troca do Ã³leo do motor e pastilhas dianteiras", oficina: "LubriCar CuiabÃ¡", km_registro: 44000, data_entrada: "2026-06-15 10:00", data_saida: "2026-06-15 14:30", status: "ConcluÃ­da" }
         ];
 
         const DEFAULT_ALERTAS = [
-            { id: "al1", veiculo_id: "1", tipo: "Data", parametro: "2026-08-30", descricao: "Revisão Periódica Semestral obrigatória" },
-            { id: "al2", veiculo_id: "2", tipo: "KM", parametro: "60000", descricao: "Rodízio de Pneus e Alinhamento tático" }
+            { id: "al1", veiculo_id: "1", tipo: "Data", parametro: "2026-08-30", descricao: "RevisÃ£o PeriÃ³dica Semestral obrigatÃ³ria" },
+            { id: "al2", veiculo_id: "2", tipo: "KM", parametro: "60000", descricao: "RodÃ­zio de Pneus e Alinhamento tÃ¡tico" }
         ];
 
         function getDb(key, fallback) {
@@ -1235,11 +1235,11 @@
 
             const titulos = {
                 'dashboard': 'SGI PROTEGE MT - Dashboard',
-                'viagens': 'Controle de Saídas e Retornos Operacionais',
-                'checklist': 'Vistorias Técnicas de Prontidão',
-                'manutencao': 'Manutenções de Viaturas e Alertas',
+                'viagens': 'Controle de SaÃ­das e Retornos Operacionais',
+                'checklist': 'Vistorias TÃ©cnicas de ProntidÃ£o',
+                'manutencao': 'ManutenÃ§Ãµes de Viaturas e Alertas',
                 'veiculos': 'Gerenciamento Geral de Viaturas',
-                'condutores': 'Gestão Operacional de Condutores',
+                'condutores': 'GestÃ£o Operacional de Condutores',
                 'ficha-veiculo': 'Ficha Individual da Viatura',
                 'arquitetura': 'Arquitetura e Relacional do Sistema'
             };
@@ -1248,7 +1248,7 @@
             renderAll();
         }
 
-        // SISTEMA DE NOTIFICAÇÕES (TOAST)
+        // SISTEMA DE NOTIFICAÃ‡Ã•ES (TOAST)
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const msgEl = document.getElementById('toast-message');
@@ -1269,7 +1269,7 @@
             }, 3500);
         }
 
-        // CONTROLADOR DE EXIBIÇÃO DO MENU LATERAL MOBILE
+        // CONTROLADOR DE EXIBIÃ‡ÃƒO DO MENU LATERAL MOBILE
         document.getElementById('mobile-menu-btn').addEventListener('click', () => {
             const nav = document.getElementById('sidebar-nav');
             nav.classList.toggle('hidden');
@@ -1282,9 +1282,9 @@
             document.querySelectorAll('.btn-filter').forEach(btn => {
                 let isMatch = false;
                 if (status === 'Todos' && btn.innerText === 'Todos') isMatch = true;
-                if (status === 'Disponível' && btn.innerText === 'Disponíveis') isMatch = true;
-                if (status === 'Em Viagem' && btn.innerText === 'Em Missão') isMatch = true;
-                if (status === 'Em Manutenção' && btn.innerText === 'Manutenção') isMatch = true;
+                if (status === 'DisponÃ­vel' && btn.innerText === 'DisponÃ­veis') isMatch = true;
+                if (status === 'Em Viagem' && btn.innerText === 'Em MissÃ£o') isMatch = true;
+                if (status === 'Em ManutenÃ§Ã£o' && btn.innerText === 'ManutenÃ§Ã£o') isMatch = true;
 
                 if (isMatch) {
                     btn.className = "btn-filter px-3 py-1.5 text-xs bg-blue-950 text-white rounded-full transition-all";
@@ -1320,7 +1320,7 @@
             }
         }
 
-        // ALTERNADOR DE SUB-ABAS DE OFICINA (ENTRADA E SAÍDA)
+        // ALTERNADOR DE SUB-ABAS DE OFICINA (ENTRADA E SAÃDA)
         function toggleMaintSubTab(sub) {
             const btnEntrada = document.getElementById('btn-maint-entrada');
             const btnSaida = document.getElementById('btn-maint-saida');
@@ -1366,17 +1366,17 @@
 
         function renderStats() {
             const total = veiculos.length;
-            const disponivel = veiculos.filter(v => v.status_dispo === 'Disponível').length;
+            const disponivel = veiculos.filter(v => v.status_dispo === 'DisponÃ­vel').length;
             const viagem = veiculos.filter(v => v.status_dispo === 'Em Viagem').length;
-            const manutencao = veiculos.filter(v => v.status_dispo === 'Em Manutenção').length;
+            const manutencao = veiculos.filter(v => v.status_dispo === 'Em ManutenÃ§Ã£o').length;
 
             document.getElementById('stat-total-veiculos').innerText = total;
             document.getElementById('stat-dispo-veiculos').innerText = disponivel;
             document.getElementById('stat-viagem-veiculos').innerText = viagem;
             document.getElementById('stat-manut-veiculos').innerText = manutencao;
 
-            const totalPreventiva = manutencoes.filter(m => m.tipo === 'Preventiva' && m.status === 'Concluída').reduce((acc, curr) => acc + curr.custo, 0);
-            const totalCorretiva = manutencoes.filter(m => m.tipo === 'Corretiva' && m.status === 'Concluída').reduce((acc, curr) => acc + curr.custo, 0);
+            const totalPreventiva = manutencoes.filter(m => m.tipo === 'Preventiva' && m.status === 'ConcluÃ­da').reduce((acc, curr) => acc + curr.custo, 0);
+            const totalCorretiva = manutencoes.filter(m => m.tipo === 'Corretiva' && m.status === 'ConcluÃ­da').reduce((acc, curr) => acc + curr.custo, 0);
             const totalGeral = totalPreventiva + totalCorretiva;
 
             document.getElementById('cost-prev-txt').innerText = `R$ ${totalPreventiva.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1454,9 +1454,9 @@
                 let statusTxt = v.status_dispo;
                 if (v.status_dispo === 'Em Viagem') {
                     statusClass = "bg-blue-100 text-blue-800";
-                    statusTxt = "Em Missão";
+                    statusTxt = "Em MissÃ£o";
                 }
-                if (v.status_dispo === 'Em Manutenção') statusClass = "bg-amber-100 text-amber-800";
+                if (v.status_dispo === 'Em ManutenÃ§Ã£o') statusClass = "bg-amber-100 text-amber-800";
 
                 const alertCount = alertas.filter(al => al.veiculo_id === v.id).length;
                 const revText = alertCount > 0 ? `<span class="text-xs text-amber-600 font-bold"><i data-lucide="triangle-alert" class="mr-1"></i> ${alertCount} alerta(s)</span>` : '<span class="text-xs text-slate-400">Em dia</span>';
@@ -1477,7 +1477,7 @@
             });
         }
 
-        // MOSTRAR FICHA INDIVIDUAL DO VEÍCULO
+        // MOSTRAR FICHA INDIVIDUAL DO VEÃCULO
         function mostrarFichaVeiculo(idVeiculo) {
             const v = veiculos.find(car => car.id === idVeiculo);
             if (!v) return;
@@ -1490,12 +1490,12 @@
             document.getElementById('ficha-veic-km').innerText = `${v.km_atual.toLocaleString('pt-BR')} km`;
             document.getElementById('ficha-veic-ano').innerText = v.ano;
             document.getElementById('ficha-veic-marca').innerText = v.marca;
-            document.getElementById('ficha-veic-renavam').innerText = v.renavam || 'Não Registrado';
-            document.getElementById('ficha-veic-chassi').innerText = v.chassi || 'Não Registrado';
+            document.getElementById('ficha-veic-renavam').innerText = v.renavam || 'NÃ£o Registrado';
+            document.getElementById('ficha-veic-chassi').innerText = v.chassi || 'NÃ£o Registrado';
 
             const badge = document.getElementById('ficha-veic-status-badge');
-            badge.innerText = v.status_dispo === 'Em Viagem' ? 'Em Missão' : v.status_dispo;
-            if (v.status_dispo === 'Disponível') {
+            badge.innerText = v.status_dispo === 'Em Viagem' ? 'Em MissÃ£o' : v.status_dispo;
+            if (v.status_dispo === 'DisponÃ­vel') {
                 badge.className = 'inline-block mt-1 px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full uppercase tracking-wider';
             } else if (v.status_dispo === 'Em Viagem') {
                 badge.className = 'inline-block mt-1 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full uppercase tracking-wider';
@@ -1510,9 +1510,9 @@
                     const mot = motoristas.find(m => m.id === viagemAtiva.motorista_id);
                     condutorText = mot ? mot.nome : "Agente Operacional";
                 }
-            } else if (v.status_dispo === 'Em Manutenção') {
+            } else if (v.status_dispo === 'Em ManutenÃ§Ã£o') {
                 const maintAtiva = manutencoes.find(m => m.veiculo_id === v.id && m.status === 'Ativa');
-                condutorText = maintAtiva ? `Oficina: ${maintAtiva.oficina}` : "Em Oficina Técnica";
+                condutorText = maintAtiva ? `Oficina: ${maintAtiva.oficina}` : "Em Oficina TÃ©cnica";
             }
             document.getElementById('ficha-veic-condutor').innerText = condutorText;
 
@@ -1553,7 +1553,7 @@
 
             const viagensVeic = viagens.filter(v => v.veiculo_id === veiculoId);
             if (viagensVeic.length === 0) {
-                listViagens.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">Nenhuma missão operacional registrada.</p>';
+                listViagens.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">Nenhuma missÃ£o operacional registrada.</p>';
             } else {
                 [...viagensVeic].reverse().forEach(v => {
                     const mot = motoristas.find(m => m.id === v.motorista_id);
@@ -1562,9 +1562,9 @@
                         <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium text-slate-700 flex justify-between items-center">
                             <div>
                                 <p class="font-bold text-slate-800">${v.destino}</p>
-                                <p class="text-slate-400 text-[10px] mt-0.5">Condutor: ${mot ? mot.nome : 'N/D'} | Saída: ${v.data_saida}${retornoTxt}</p>
+                                <p class="text-slate-400 text-[10px] mt-0.5">Condutor: ${mot ? mot.nome : 'N/D'} | SaÃ­da: ${v.data_saida}${retornoTxt}</p>
                             </div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'Ativa' ? 'bg-blue-100 text-blue-800' : 'bg-slate-200 text-slate-600'}">${v.status === 'Ativa' ? 'Em Missão' : 'Concluída'}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'Ativa' ? 'bg-blue-100 text-blue-800' : 'bg-slate-200 text-slate-600'}">${v.status === 'Ativa' ? 'Em MissÃ£o' : 'ConcluÃ­da'}</span>
                         </div>
                     `;
                 });
@@ -1579,7 +1579,7 @@
                         <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium text-slate-700 flex justify-between items-center">
                             <div>
                                 <p class="font-bold text-slate-800">${m.pecas}</p>
-                                <p class="text-slate-400 text-[10px] mt-0.5">Oficina: ${m.oficina} | Período: ${m.data_entrada} até ${m.data_saida || 'Aguardando'}</p>
+                                <p class="text-slate-400 text-[10px] mt-0.5">Oficina: ${m.oficina} | PerÃ­odo: ${m.data_entrada} atÃ© ${m.data_saida || 'Aguardando'}</p>
                             </div>
                             <span class="font-bold text-slate-800">${m.custo > 0 ? `R$ ${m.custo.toFixed(2)}` : 'Em Reparo'}</span>
                         </div>
@@ -1600,7 +1600,7 @@
                 container.innerHTML = `
                     <div class="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center text-[11px] text-slate-400">
                         <i data-lucide="circle-check" class="text-green-500 text-lg mb-1.5 block"></i>
-                        Viatura sem alertas de manutenção. Operação segura e revisões em dia!
+                        Viatura sem alertas de manutenÃ§Ã£o. OperaÃ§Ã£o segura e revisÃµes em dia!
                     </div>
                 `;
                 return;
@@ -1623,7 +1623,7 @@
                     <div class="p-3 bg-slate-50 border ${isExceeded ? 'border-red-200 bg-red-50/20' : 'border-slate-100'} rounded-xl text-[11px] text-slate-700 flex flex-col gap-2.5">
                         <div class="flex justify-between items-start gap-1">
                             <div>
-                                <p class="font-bold text-slate-800">${al.descricao || 'Manutenção Preventiva'}</p>
+                                <p class="font-bold text-slate-800">${al.descricao || 'ManutenÃ§Ã£o Preventiva'}</p>
                                 <p class="text-slate-400 text-[10px] mt-0.5">Tipo: Alerta de ${al.tipo === 'KM' ? 'Quilometragem' : 'Tempo'}</p>
                             </div>
                             <div class="text-right flex-shrink-0">
@@ -1641,7 +1641,7 @@
         function resolverAlerta(alertaId, veiculoId) {
             alertas = alertas.filter(al => al.id !== alertaId);
             setDb('db_alertas_dc_v2', alertas);
-            showToast("Alerta de manutenção resolvido e arquivado com sucesso!");
+            showToast("Alerta de manutenÃ§Ã£o resolvido e arquivado com sucesso!");
             renderAll();
             mostrarFichaVeiculo(veiculoId);
         }
@@ -1655,22 +1655,22 @@
             const maintSaidaRegistro = document.getElementById('maint-saida-registro');
             const alertVeic = document.getElementById('alert-veiculo');
 
-            const disponiveis = veiculos.filter(v => v.status_dispo === 'Disponível');
+            const disponiveis = veiculos.filter(v => v.status_dispo === 'DisponÃ­vel');
             
             saidaVeic.innerHTML = disponiveis.map(v => `<option value="${v.id}">[${v.prefixo}] ${v.marca} ${v.modelo} (${v.placa}) - KM: ${v.km_atual}</option>`).join('');
             if (disponiveis.length === 0) {
-                saidaVeic.innerHTML = '<option value="">Nenhuma viatura operacional disponível no momento</option>';
+                saidaVeic.innerHTML = '<option value="">Nenhuma viatura operacional disponÃ­vel no momento</option>';
             }
 
             maintEntradaVeic.innerHTML = disponiveis.map(v => `<option value="${v.id}">[${v.prefixo}] ${v.marca} ${v.modelo} (${v.placa}) - KM: ${v.km_atual}</option>`).join('');
             if (disponiveis.length === 0) {
-                maintEntradaVeic.innerHTML = '<option value="">Nenhuma viatura disponível para manutenção</option>';
+                maintEntradaVeic.innerHTML = '<option value="">Nenhuma viatura disponÃ­vel para manutenÃ§Ã£o</option>';
             }
 
             saidaMot.innerHTML = motoristas.map(m => `<option value="${m.id}">${m.nome} (${m.categoria_cnh})</option>`).join('');
 
             const abertas = viagens.filter(v => v.status === 'Ativa');
-            retornoViagem.innerHTML = '<option value="">Selecione a Missão em Andamento...</option>' + abertas.map(v => {
+            retornoViagem.innerHTML = '<option value="">Selecione a MissÃ£o em Andamento...</option>' + abertas.map(v => {
                 const veic = veiculos.find(car => car.id === v.veiculo_id);
                 const mot = motoristas.find(m => m.id === v.motorista_id);
                 const prefixoTxt = veic ? `[${veic.prefixo}]` : '';
@@ -1678,7 +1678,7 @@
             }).join('');
 
             const maintAtivas = manutencoes.filter(m => m.status === 'Ativa');
-            maintSaidaRegistro.innerHTML = '<option value="">Selecione a Viatura em Manutenção...</option>' + maintAtivas.map(m => {
+            maintSaidaRegistro.innerHTML = '<option value="">Selecione a Viatura em ManutenÃ§Ã£o...</option>' + maintAtivas.map(m => {
                 const veic = veiculos.find(car => car.id === m.veiculo_id);
                 const prefixoTxt = veic ? `[${veic.prefixo}] ` : '';
                 return `<option value="${m.id}">${prefixoTxt}${veic ? veic.modelo : 'Viatura'} (${m.oficina}) - Entrada: ${m.data_entrada}</option>`;
@@ -1687,7 +1687,7 @@
             alertVeic.innerHTML = veiculos.map(v => `<option value="${v.id}">[${v.prefixo}] ${v.marca} ${v.modelo} (${v.placa})</option>`).join('');
         }
 
-        // TABELA DE VIAGENS (Com novas Ações)
+        // TABELA DE VIAGENS (Com novas AÃ§Ãµes)
         function renderViagensTable() {
             const tbody = document.getElementById('viagens-table-body');
             tbody.innerHTML = '';
@@ -1701,7 +1701,7 @@
                 const veic = veiculos.find(car => car.id === v.veiculo_id);
                 const mot = motoristas.find(m => m.id === v.motorista_id);
 
-                let statusBadge = v.status === 'Ativa' ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-bold">Ativa</span>' : '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full font-bold">Concluída</span>';
+                let statusBadge = v.status === 'Ativa' ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-bold">Ativa</span>' : '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full font-bold">ConcluÃ­da</span>';
                 const prefixoTxt = veic ? `[${veic.prefixo}] ` : '';
 
                 tbody.innerHTML += `
@@ -1710,7 +1710,7 @@
                         <td class="py-3 px-4 font-semibold text-slate-700">${mot ? mot.nome : 'N/D'}</td>
                         <td class="py-3 px-4 text-slate-500 font-medium">${v.destino}</td>
                         <td class="py-3 px-4">
-                            <span class="block font-medium">Saída: ${v.data_saida} (${v.km_inicial} km)</span>
+                            <span class="block font-medium">SaÃ­da: ${v.data_saida} (${v.km_inicial} km)</span>
                             <span class="block text-slate-400">${v.status === 'Ativa' ? 'Em andamento' : `Chegada: ${v.data_retorno} (${v.km_final} km)`}</span>
                         </td>
                         <td class="py-3 px-4 text-center">${statusBadge}</td>
@@ -1723,7 +1723,7 @@
             });
         }
 
-        // TABELA DE CHECKLISTS (Com novas Ações)
+        // TABELA DE CHECKLISTS (Com novas AÃ§Ãµes)
         function renderChecklistsTable() {
             const tbody = document.getElementById('checklists-table-body');
             tbody.innerHTML = '';
@@ -1739,7 +1739,7 @@
                 const mot = viagem ? motoristas.find(m => m.id === viagem.motorista_id) : null;
 
                 const statusColor = c.status_geral === 'Aprovado' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-                const typeColor = c.tipo.includes('Pré') ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-indigo-50 text-indigo-800 border border-indigo-200';
+                const typeColor = c.tipo.includes('PrÃ©') ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-indigo-50 text-indigo-800 border border-indigo-200';
                 const prefixoTxt = veic ? `[${veic.prefixo}] ` : '';
 
                 tbody.innerHTML += `
@@ -1759,13 +1759,13 @@
             });
         }
 
-        // TABELA DE MANUTENÇÕES (Com novas Ações)
+        // TABELA DE MANUTENÃ‡Ã•ES (Com novas AÃ§Ãµes)
         function renderManutencaoTable() {
             const tbody = document.getElementById('manutencao-table-body');
             tbody.innerHTML = '';
 
             if (manutencoes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Nenhum registro de manutenção.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Nenhum registro de manutenÃ§Ã£o.</td></tr>`;
                 return;
             }
 
@@ -1773,7 +1773,7 @@
                 const veic = veiculos.find(car => car.id === m.veiculo_id);
                 const tipoColor = m.tipo === 'Corretiva' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
                 const statusColor = m.status === 'Ativa' ? 'bg-amber-100 text-amber-800 animate-pulse font-bold' : 'bg-slate-100 text-slate-500 font-semibold';
-                const statusTxt = m.status === 'Ativa' ? 'Em Oficina' : 'Concluída';
+                const statusTxt = m.status === 'Ativa' ? 'Em Oficina' : 'ConcluÃ­da';
                 const prefixoTxt = veic ? `[${veic.prefixo}] ` : '';
 
                 tbody.innerHTML += `
@@ -1788,7 +1788,7 @@
                             <span class="font-semibold block text-slate-700">${m.pecas}</span>
                             <span class="block text-[10px] text-slate-400 mt-1">
                                 Entrada: ${m.data_entrada}
-                                ${m.status === 'Ativa' ? ' | Saída: Em andamento' : ` | Saída: ${m.data_saida}`}
+                                ${m.status === 'Ativa' ? ' | SaÃ­da: Em andamento' : ` | SaÃ­da: ${m.data_saida}`}
                             </span>
                         </td>
                         <td class="py-3 px-4 text-slate-600 font-semibold">${m.oficina}</td>
@@ -1811,7 +1811,7 @@
             veiculos.forEach(v => {
                 let statusClass = "bg-green-100 text-green-800";
                 if (v.status_dispo === 'Em Viagem') statusClass = "bg-blue-100 text-blue-800";
-                if (v.status_dispo === 'Em Manutenção') statusClass = "bg-amber-100 text-amber-800";
+                if (v.status_dispo === 'Em ManutenÃ§Ã£o') statusClass = "bg-amber-100 text-amber-800";
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/60 transition-colors">
@@ -1849,7 +1849,7 @@
             });
         }
 
-        // ================= PROCESSAMENTOS DE EDIÇÃO DINÂMICA (MODAL GLOBAL) =================
+        // ================= PROCESSAMENTOS DE EDIÃ‡ÃƒO DINÃ‚MICA (MODAL GLOBAL) =================
 
         function openGlobalEditModal(type, id) {
             document.getElementById('edit-entity-type').value = type;
@@ -1866,7 +1866,7 @@
                 if (!v) return;
                 
                 modalTitle.innerText = "Alterar Deslocamento de Viatura";
-                modalSubtitle.innerText = `Missão ID: ${id}`;
+                modalSubtitle.innerText = `MissÃ£o ID: ${id}`;
                 
                 const veic = veiculos.find(car => car.id === v.veiculo_id);
                 const mot = motoristas.find(m => m.id === v.motorista_id);
@@ -1874,19 +1874,19 @@
                 container.innerHTML = `
                     <div>
                         <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Viatura Operada</label>
-                        <input type="text" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed" value="${veic ? `[${veic.prefixo}] ${veic.marca} ${veic.modelo} (${veic.placa})` : 'Não encontrada'}" disabled>
+                        <input type="text" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed" value="${veic ? `[${veic.prefixo}] ${veic.marca} ${veic.modelo} (${veic.placa})` : 'NÃ£o encontrada'}" disabled>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Agente Condutor</label>
-                        <input type="text" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed" value="${mot ? mot.nome : 'Não encontrado'}" disabled>
+                        <input type="text" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed" value="${mot ? mot.nome : 'NÃ£o encontrado'}" disabled>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Destino / Missão Emergencial</label>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Destino / MissÃ£o Emergencial</label>
                         <input type="text" id="edit-viagem-destino" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${v.destino}" required>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data Saída (Ida)</label>
+                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data SaÃ­da (Ida)</label>
                             <input type="text" id="edit-viagem-data-saida" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${v.data_saida}" required>
                         </div>
                         <div>
@@ -1908,7 +1908,7 @@
                         <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Status do Chamado</label>
                         <select id="edit-viagem-status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500">
                             <option value="Ativa" ${v.status === 'Ativa' ? 'selected' : ''}>Ativa (Viatura em Rota)</option>
-                            <option value="Concluída" ${v.status === 'Concluída' ? 'selected' : ''}>Concluída (Missão Encerrada)</option>
+                            <option value="ConcluÃ­da" ${v.status === 'ConcluÃ­da' ? 'selected' : ''}>ConcluÃ­da (MissÃ£o Encerrada)</option>
                         </select>
                     </div>
                 `;
@@ -1916,30 +1916,30 @@
                 const c = checklists.find(item => item.id === id);
                 if (!c) return;
                 
-                modalTitle.innerText = "Alterar Vistoria Técnica";
+                modalTitle.innerText = "Alterar Vistoria TÃ©cnica";
                 modalSubtitle.innerText = `Checklist ID: ${id}`;
                 
                 container.innerHTML = `
                     <div>
                         <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tipo de Checklist</label>
                         <select id="edit-chk-tipo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500">
-                            <option value="Pré-Viagem (Ida)" ${c.tipo.includes('Pré') ? 'selected' : ''}>Pré-Viagem (Ida)</option>
-                            <option value="Pós-Viagem (Volta)" ${c.tipo.includes('Pós') ? 'selected' : ''}>Pós-Viagem (Volta)</option>
+                            <option value="PrÃ©-Viagem (Ida)" ${c.tipo.includes('PrÃ©') ? 'selected' : ''}>PrÃ©-Viagem (Ida)</option>
+                            <option value="PÃ³s-Viagem (Volta)" ${c.tipo.includes('PÃ³s') ? 'selected' : ''}>PÃ³s-Viagem (Volta)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data/Hora de Realização</label>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data/Hora de RealizaÃ§Ã£o</label>
                         <input type="text" id="edit-chk-data" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${c.data_vistoria}" required>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Diagnóstico Geral das Avarias</label>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">DiagnÃ³stico Geral das Avarias</label>
                         <textarea id="edit-chk-avarias" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" required>${c.avarias_desc}</textarea>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Situação de Liberação</label>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">SituaÃ§Ã£o de LiberaÃ§Ã£o</label>
                         <select id="edit-chk-status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500">
                             <option value="Aprovado" ${c.status_geral === 'Aprovado' ? 'selected' : ''}>Aprovado (Livre de Riscos)</option>
-                            <option value="Atenção" ${c.status_geral === 'Atenção' ? 'selected' : ''}>Atenção (Necessita Revisão / Pequeno Dano)</option>
+                            <option value="AtenÃ§Ã£o" ${c.status_geral === 'AtenÃ§Ã£o' ? 'selected' : ''}>AtenÃ§Ã£o (Necessita RevisÃ£o / Pequeno Dano)</option>
                         </select>
                     </div>
                 `;
@@ -1948,12 +1948,12 @@
                 if (!m) return;
                 
                 modalTitle.innerText = "Alterar Registro de Oficina";
-                modalSubtitle.innerText = `Manutenção ID: ${id}`;
+                modalSubtitle.innerText = `ManutenÃ§Ã£o ID: ${id}`;
                 
                 container.innerHTML = `
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tipo de Serviço</label>
+                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tipo de ServiÃ§o</label>
                             <select id="edit-maint-tipo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500">
                                 <option value="Preventiva" ${m.tipo === 'Preventiva' ? 'selected' : ''}>Preventiva</option>
                                 <option value="Corretiva" ${m.tipo === 'Corretiva' ? 'selected' : ''}>Corretiva</option>
@@ -1969,7 +1969,7 @@
                         <input type="text" id="edit-maint-oficina" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${m.oficina}" required>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Serviços Executados & Diagnósticos</label>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">ServiÃ§os Executados & DiagnÃ³sticos</label>
                         <textarea id="edit-maint-pecas" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" required>${m.pecas}</textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
@@ -1978,7 +1978,7 @@
                             <input type="text" id="edit-maint-entrada" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${m.data_entrada}" required>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data Efetiva de Saída</label>
+                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data Efetiva de SaÃ­da</label>
                             <input type="text" id="edit-maint-saida" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${m.data_saida || ''}" placeholder="Ainda em oficina">
                         </div>
                     </div>
@@ -1988,10 +1988,10 @@
                             <input type="number" step="0.01" id="edit-maint-custo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500" value="${m.custo}">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Situação de Reparo</label>
+                            <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">SituaÃ§Ã£o de Reparo</label>
                             <select id="edit-maint-status" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500">
-                                <option value="Ativa" ${m.status === 'Ativa' ? 'selected' : ''}>Ativa (Em Manutenção)</option>
-                                <option value="Concluída" ${m.status === 'Concluída' ? 'selected' : ''}>Concluída (Liberado p/ Uso)</option>
+                                <option value="Ativa" ${m.status === 'Ativa' ? 'selected' : ''}>Ativa (Em ManutenÃ§Ã£o)</option>
+                                <option value="ConcluÃ­da" ${m.status === 'ConcluÃ­da' ? 'selected' : ''}>ConcluÃ­da (Liberado p/ Uso)</option>
                             </select>
                         </div>
                     </div>
@@ -2020,7 +2020,7 @@
                     const kmFin = kmFinVal ? parseInt(kmFinVal) : null;
 
                     if (kmFin !== null && kmFin < kmIni) {
-                        showToast("Erro: KM Final não pode ser menor do que a Inicial.", "error");
+                        showToast("Erro: KM Final nÃ£o pode ser menor do que a Inicial.", "error");
                         return;
                     }
 
@@ -2036,14 +2036,14 @@
                         if (newStatus === 'Ativa') {
                             veic.status_dispo = 'Em Viagem';
                             veic.km_atual = kmIni;
-                        } else if (newStatus === 'Concluída') {
-                            veic.status_dispo = 'Disponível';
+                        } else if (newStatus === 'ConcluÃ­da') {
+                            veic.status_dispo = 'DisponÃ­vel';
                             if (kmFin !== null) veic.km_atual = kmFin;
                         }
                     }
                     setDb('db_viagens_dc_v2', viagens);
                     setDb('db_veiculos_dc_v2', veiculos);
-                    showToast("Registro de missão operacional atualizado com sucesso!");
+                    showToast("Registro de missÃ£o operacional atualizado com sucesso!");
                 }
             } else if (type === 'checklist') {
                 const c = checklists.find(item => item.id === id);
@@ -2074,15 +2074,15 @@
                     const veic = veiculos.find(car => car.id === m.veiculo_id);
                     if (veic) {
                         if (newStatus === 'Ativa') {
-                            veic.status_dispo = 'Em Manutenção';
+                            veic.status_dispo = 'Em ManutenÃ§Ã£o';
                             veic.km_atual = kmReg;
-                        } else if (newStatus === 'Concluída') {
-                            veic.status_dispo = 'Disponível';
+                        } else if (newStatus === 'ConcluÃ­da') {
+                            veic.status_dispo = 'DisponÃ­vel';
                         }
                     }
                     setDb('db_manutencoes_dc_v2', manutencoes);
                     setDb('db_veiculos_dc_v2', veiculos);
-                    showToast("Entrada técnica de oficina reestruturada!");
+                    showToast("Entrada tÃ©cnica de oficina reestruturada!");
                 }
             }
 
@@ -2090,7 +2090,7 @@
             renderAll();
         }
 
-        // ================= FUNÇÕES OPERACIONAIS DE EXCLUSÃO =================
+        // ================= FUNÃ‡Ã•ES OPERACIONAIS DE EXCLUSÃƒO =================
 
         function excluirViagem(id) {
             if(!confirm("Tem certeza que deseja remover esta viagem operacional?")) return;
@@ -2098,37 +2098,37 @@
             
             if (v && v.status === 'Ativa') {
                 const veic = veiculos.find(car => car.id === v.veiculo_id);
-                if (veic) veic.status_dispo = 'Disponível';
+                if (veic) veic.status_dispo = 'DisponÃ­vel';
                 setDb('db_veiculos_dc_v2', veiculos);
             }
             
             viagens = viagens.filter(item => item.id !== id);
             setDb('db_viagens_dc_v2', viagens);
-            showToast("Missão excluída com sucesso.");
+            showToast("MissÃ£o excluÃ­da com sucesso.");
             renderAll();
         }
 
         function excluirChecklist(id) {
-            if(!confirm("Atenção: Tem certeza que deseja remover este checklist de vistoria?")) return;
+            if(!confirm("AtenÃ§Ã£o: Tem certeza que deseja remover este checklist de vistoria?")) return;
             checklists = checklists.filter(c => c.id !== id);
             setDb('db_checklists_dc_v2', checklists);
-            showToast("Vistoria técnica excluída.");
+            showToast("Vistoria tÃ©cnica excluÃ­da.");
             renderAll();
         }
 
         function excluirManutencao(id) {
-            if(!confirm("Deseja apagar permanentemente esta manutenção técnica?")) return;
+            if(!confirm("Deseja apagar permanentemente esta manutenÃ§Ã£o tÃ©cnica?")) return;
             const m = manutencoes.find(item => item.id === id);
             
             if (m && m.status === 'Ativa') {
                 const veic = veiculos.find(car => car.id === m.veiculo_id);
-                if (veic) veic.status_dispo = 'Disponível';
+                if (veic) veic.status_dispo = 'DisponÃ­vel';
                 setDb('db_veiculos_dc_v2', veiculos);
             }
 
             manutencoes = manutencoes.filter(item => item.id !== id);
             setDb('db_manutencoes_dc_v2', manutencoes);
-            showToast("Manutenção removida da base.");
+            showToast("ManutenÃ§Ã£o removida da base.");
             renderAll();
         }
 
@@ -2148,7 +2148,7 @@
 
             const veicObj = veiculos.find(v => v.id === veicId);
             if (kmIni < veicObj.km_atual) {
-                showToast(`KM Inicial menor do que a KM atual do veículo (${veicObj.km_atual} km).`, "error");
+                showToast(`KM Inicial menor do que a KM atual do veÃ­culo (${veicObj.km_atual} km).`, "error");
                 return;
             }
 
@@ -2166,14 +2166,14 @@
                 status: "Ativa"
             };
 
-            wizardViagemAtiva = { viagem: novaViagem, tipo: "Pré-Viagem (Ida)" };
+            wizardViagemAtiva = { viagem: novaViagem, tipo: "PrÃ©-Viagem (Ida)" };
             switchTab('checklist');
             iniciarChecklistWizard(wizardViagemAtiva);
             document.getElementById('form-saida').reset();
         }
 
         function autocompletarRetorno(viagemId) {
-            // Campo de exibição do KM Saída foi removido
+            // Campo de exibiÃ§Ã£o do KM SaÃ­da foi removido
         }
 
         function registrarRetorno(e) {
@@ -2182,13 +2182,13 @@
             const kmFinal = parseInt(document.getElementById('retorno-km-final').value);
 
             if (!viagemId) {
-                showToast("Selecione a missão em andamento.", "error");
+                showToast("Selecione a missÃ£o em andamento.", "error");
                 return;
             }
 
             const v = viagens.find(item => item.id === viagemId);
             if (kmFinal < v.km_inicial) {
-                showToast(`KM Final não pode ser menor do que a KM de Saída (${v.km_inicial} km).`, "error");
+                showToast(`KM Final nÃ£o pode ser menor do que a KM de SaÃ­da (${v.km_inicial} km).`, "error");
                 return;
             }
 
@@ -2198,9 +2198,9 @@
                     data_retorno: new Date().toISOString().replace('T', ' ').substring(0, 16),
                     km_final: kmFinal,
                     combustivel_retorno: "N/D",
-                    status: "Concluída"
+                    status: "ConcluÃ­da"
                 },
-                tipo: "Pós-Viagem (Volta)"
+                tipo: "PÃ³s-Viagem (Volta)"
             };
 
             switchTab('checklist');
@@ -2217,7 +2217,7 @@
             const container = document.getElementById('wizard-items-container');
 
             badge.innerText = dados.tipo;
-            if (dados.tipo.includes('Pré')) {
+            if (dados.tipo.includes('PrÃ©')) {
                 badge.className = "px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-amber-100 text-amber-800";
             } else {
                 badge.className = "px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-indigo-100 text-indigo-800";
@@ -2295,53 +2295,53 @@
             }
 
             container.innerHTML = `
-                <!-- Seção 1 -->
+                <!-- SeÃ§Ã£o 1 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-2">Seção 1: Identificação dos Ocupantes</h4>
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-2">SeÃ§Ã£o 1: IdentificaÃ§Ã£o dos Ocupantes</h4>
                     <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">NOMES DOS OCUPANTES DO VEICULO</label>
                     <input type="text" id="chk-ocupantes" placeholder="Resposta= (campo para escrever)" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" required>
                 </div>
 
-                <!-- Seção 2 -->
+                <!-- SeÃ§Ã£o 2 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 2: Estado dos itens de Sinalização e Segurança/Comunicação</h4>
-                    ${createVXItem('farois', 'Faróis (Baixo/Alto)')}
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">SeÃ§Ã£o 2: Estado dos itens de SinalizaÃ§Ã£o e SeguranÃ§a/ComunicaÃ§Ã£o</h4>
+                    ${createVXItem('farois', 'FarÃ³is (Baixo/Alto)')}
                     ${createVXItem('setas', 'Setas e Pisca Alerta')}
                     ${createVXItem('freio', 'Luz de Freio')}
                     ${createVXItem('giroflex', 'Giroflex e strobo')}
                     ${createVXItem('sirene', 'Sirene')}
-                    ${createVXItem('radio', 'Rádio Comunicador')}
+                    ${createVXItem('radio', 'RÃ¡dio Comunicador')}
                     ${createVXItem('limpadores', 'Limpadores de Para-brisa')}
                 </div>
 
-                <!-- Seção 3 -->
+                <!-- SeÃ§Ã£o 3 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 3: Itens do veiculo</h4>
-                    ${createVXItem('cartao_prime', 'CARTÃO PRIME')}
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">SeÃ§Ã£o 3: Itens do veiculo</h4>
+                    ${createVXItem('cartao_prime', 'CARTÃƒO PRIME')}
                     ${createVXItem('documento', 'DOCUMENTO DO VEICULO')}
-                    ${createVXItem('ferramentas', 'Ferramentas básicas (Macaco, Chave de roda)')}
+                    ${createVXItem('ferramentas', 'Ferramentas bÃ¡sicas (Macaco, Chave de roda)')}
                 </div>
 
-                <!-- Seção 4 -->
+                <!-- SeÃ§Ã£o 4 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 4: Verificação de Níveis de Fluídos e Combustível</h4>
-                    ${createLevelItem('oleo', 'Nível de Óleo do Motor')}
-                    ${createLevelItem('agua', 'Nível de Água (Radiador)')}
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">SeÃ§Ã£o 4: VerificaÃ§Ã£o de NÃ­veis de FluÃ­dos e CombustÃ­vel</h4>
+                    ${createLevelItem('oleo', 'NÃ­vel de Ã“leo do Motor')}
+                    ${createLevelItem('agua', 'NÃ­vel de Ãgua (Radiador)')}
                     ${createLevelItem('fluido_freio', 'Fluido de Freio')}
-                    ${createLevelItem('combustivel', 'Combustível (Tanque)')}
+                    ${createLevelItem('combustivel', 'CombustÃ­vel (Tanque)')}
                 </div>
 
-                <!-- Seção 5 -->
+                <!-- SeÃ§Ã£o 5 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 5: Estado da Carroceria e Validação</h4>
-                    ${createVXItem('arranhao', 'ARRANHÃO')}
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">SeÃ§Ã£o 5: Estado da Carroceria e ValidaÃ§Ã£o</h4>
+                    ${createVXItem('arranhao', 'ARRANHÃƒO')}
                     ${createVXItem('amassado', 'AMASSADO')}
                     ${createVXItem('quebrado', 'QUEBRADO')}
                 </div>
 
-                <!-- Seção 6 -->
+                <!-- SeÃ§Ã£o 6 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 6: Foto da Avaria (Obrigatório se a resposta anterior for 'V')</h4>
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">SeÃ§Ã£o 6: Foto da Avaria (ObrigatÃ³rio se a resposta anterior for 'V')</h4>
                     <div class="border-2 border-dashed border-slate-200 bg-white hover:border-blue-500 transition-colors p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer text-center" onclick="simularUploadFoto()">
                         <i data-lucide="camera" class="text-slate-400 text-2xl mb-1.5"></i>
                         <span class="text-xs font-semibold text-slate-500 block">Fotografar / Registrar Avaria</span>
@@ -2349,20 +2349,20 @@
                     </div>
                 </div>
 
-                <!-- Seção 7 -->
+                <!-- SeÃ§Ã£o 7 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-2">Seção 7: Observações Gerais</h4>
-                    <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Descreva defeitos, avarias, pendências ou informações relevantes</label>
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-2">SeÃ§Ã£o 7: ObservaÃ§Ãµes Gerais</h4>
+                    <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Descreva defeitos, avarias, pendÃªncias ou informaÃ§Ãµes relevantes</label>
                     <textarea id="chk-observacoes" placeholder="Resposta= (campo para escrever)" rows="2" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"></textarea>
                 </div>
 
-                <!-- Seção 8 -->
+                <!-- SeÃ§Ã£o 8 -->
                 <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">Seção 8: Termo de Responsabilidade de condução</h4>
+                    <h4 class="font-bold text-xs text-slate-800 uppercase mb-3">SeÃ§Ã£o 8: Termo de Responsabilidade de conduÃ§Ã£o</h4>
                     <label class="flex items-start gap-3 cursor-pointer bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm">
                         <input type="checkbox" id="chk-termo" class="mt-1 w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500" required>
                         <span class="text-[11px] text-slate-600 font-medium leading-relaxed">
-                            Declaro que realizei a inspeção conforme as normas da SGI PROTEGE e que os dados acima são verdadeiros. Assumo a responsabilidade pela condução segura e pela comunicação imediata de qualquer falha detectada.
+                            Declaro que realizei a inspeÃ§Ã£o conforme as normas da SGI PROTEGE e que os dados acima sÃ£o verdadeiros. Assumo a responsabilidade pela conduÃ§Ã£o segura e pela comunicaÃ§Ã£o imediata de qualquer falha detectada.
                         </span>
                     </label>
                 </div>
@@ -2372,7 +2372,7 @@
         }
 
         function simularUploadFoto() {
-            document.getElementById('upload-status').innerText = "✓ Registro fotográfico anexado!";
+            document.getElementById('upload-status').innerText = "âœ“ Registro fotogrÃ¡fico anexado!";
             document.getElementById('upload-status').className = "text-[10px] text-green-600 font-bold mt-1";
             showToast("Foto da vistoria registrada!");
         }
@@ -2396,16 +2396,16 @@
             const radios = document.querySelectorAll('#wizard-items-container input[type="radio"]:checked');
             radios.forEach(r => {
                 if (r.value === "X") {
-                    statusGeral = "Atenção";
+                    statusGeral = "AtenÃ§Ã£o";
                 }
             });
 
-            if (tipo.includes('Pré')) {
+            if (tipo.includes('PrÃ©')) {
                 veic.status_dispo = "Em Viagem";
                 veic.km_atual = viagem.km_inicial;
                 viagens.push(viagem);
             } else {
-                veic.status_dispo = "Disponível";
+                veic.status_dispo = "DisponÃ­vel";
                 veic.km_atual = viagem.km_final;
                 
                 const idx = viagens.findIndex(item => item.id === viagem.id);
@@ -2432,11 +2432,11 @@
             document.getElementById('checklist-wizard-card').classList.add('hidden');
             wizardViagemAtiva = null;
 
-            showToast("Vistoria de prontidão salva com sucesso!");
+            showToast("Vistoria de prontidÃ£o salva com sucesso!");
             renderAll();
         }
 
-        // ================= REGISTROS DE OFICINA & MANUTENÇÃO =================
+        // ================= REGISTROS DE OFICINA & MANUTENÃ‡ÃƒO =================
 
         function registrarEntradaMaint(e) {
             e.preventDefault();
@@ -2449,7 +2449,7 @@
 
             const veic = veiculos.find(v => v.id === veicId);
             if (veic && km < veic.km_atual) {
-                showToast(`KM informado é menor que a KM atual da viatura (${veic.km_atual} km).`, "error");
+                showToast(`KM informado Ã© menor que a KM atual da viatura (${veic.km_atual} km).`, "error");
                 return;
             }
 
@@ -2469,7 +2469,7 @@
             manutencoes.push(novaM);
 
             if (veic) {
-                veic.status_dispo = "Em Manutenção";
+                veic.status_dispo = "Em ManutenÃ§Ã£o";
                 veic.km_atual = km;
             }
 
@@ -2499,31 +2499,31 @@
             const servicos = document.getElementById('maint-saida-servicos').value;
 
             if (!maintId) {
-                showToast("Selecione um registro de manutenção ativo.", "error");
+                showToast("Selecione um registro de manutenÃ§Ã£o ativo.", "error");
                 return;
             }
 
             const m = manutencoes.find(item => item.id === maintId);
             if (kmFinal < m.km_registro) {
-                showToast(`KM de saída não pode ser menor que a de entrada (${m.km_registro} km).`, "error");
+                showToast(`KM de saÃ­da nÃ£o pode ser menor que a de entrada (${m.km_registro} km).`, "error");
                 return;
             }
 
             m.custo = custo;
             m.data_saida = dataSaida;
             m.pecas = servicos;
-            m.status = "Concluída";
+            m.status = "ConcluÃ­da";
 
             const veic = veiculos.find(v => v.id === m.veiculo_id);
             if (veic) {
-                veic.status_dispo = "Disponível";
+                veic.status_dispo = "DisponÃ­vel";
                 veic.km_atual = kmFinal;
             }
 
             setDb('db_manutencoes_dc_v2', manutencoes);
             setDb('db_veiculos_dc_v2', veiculos);
 
-            showToast("Saída da oficina registrada! Viatura de volta ao serviço.");
+            showToast("SaÃ­da da oficina registrada! Viatura de volta ao serviÃ§o.");
             document.getElementById('form-maint-saida').reset();
             renderAll();
         }
@@ -2533,10 +2533,10 @@
             const veicId = document.getElementById('alert-veiculo').value;
             const proxKm = document.getElementById('alert-prox-km').value;
             const proxData = document.getElementById('alert-prox-data').value;
-            const desc = document.getElementById('alert-descricao').value || "Revisão preventiva";
+            const desc = document.getElementById('alert-descricao').value || "RevisÃ£o preventiva";
 
             if (!proxKm && !proxData) {
-                showToast("Preencha ao menos uma variável limite (KM ou Data).", "error");
+                showToast("Preencha ao menos uma variÃ¡vel limite (KM ou Data).", "error");
                 return;
             }
 
@@ -2561,7 +2561,7 @@
             }
 
             setDb('db_alertas_dc_v2', alertas);
-            showToast("Alerta de revisão programado!");
+            showToast("Alerta de revisÃ£o programado!");
             document.getElementById('form-agendar-revisao').reset();
             renderAll();
         }
@@ -2584,7 +2584,7 @@
                 const idx = veiculos.findIndex(v => v.id === editingVehicleId);
                 if (idx !== -1) {
                     if (veiculos.some(v => v.placa === placa && v.id !== editingVehicleId)) {
-                        showToast("Outra viatura com esta placa já está cadastrada.", "error");
+                        showToast("Outra viatura com esta placa jÃ¡ estÃ¡ cadastrada.", "error");
                         return;
                     }
                     veiculos[idx] = {
@@ -2596,7 +2596,7 @@
                 }
             } else {
                 if (veiculos.some(v => v.placa === placa)) {
-                    showToast("Viatura com esta placa já cadastrada.", "error");
+                    showToast("Viatura com esta placa jÃ¡ cadastrada.", "error");
                     return;
                 }
                 const novo = {
@@ -2620,7 +2620,7 @@
             editingVehicleId = id;
             document.getElementById('veiculo-form-title').innerText = "Alterar Viatura";
             document.getElementById('veiculo-form-subtitle').innerText = `Editando dados da viatura prefixo ${v.prefixo}`;
-            document.getElementById('btn-submit-veiculo').innerText = "Salvar Alterações";
+            document.getElementById('btn-submit-veiculo').innerText = "Salvar AlteraÃ§Ãµes";
             document.getElementById('btn-cancelar-veiculo').classList.remove('hidden');
 
             document.getElementById('veic-marca').value = v.marca;
@@ -2638,7 +2638,7 @@
             editingVehicleId = null;
             document.getElementById('form-veiculo-gestao').reset();
             document.getElementById('veiculo-form-title').innerText = "Cadastrar Nova Viatura";
-            document.getElementById('veiculo-form-subtitle').innerText = "Insira ou altere os dados técnicos dos carros";
+            document.getElementById('veiculo-form-subtitle').innerText = "Insira ou altere os dados tÃ©cnicos dos carros";
             document.getElementById('btn-submit-veiculo').innerText = "Cadastrar Viatura";
             document.getElementById('btn-cancelar-veiculo').classList.add('hidden');
         }
@@ -2646,7 +2646,7 @@
         function excluirVeiculo(id) {
             const hasActiveViagem = viagens.some(v => v.veiculo_id === id && v.status === 'Ativa');
             if (hasActiveViagem) {
-                showToast("Não é possível excluir uma viatura em missão ativa no momento.", "error");
+                showToast("NÃ£o Ã© possÃ­vel excluir uma viatura em missÃ£o ativa no momento.", "error");
                 return;
             }
             veiculos = veiculos.filter(v => v.id !== id);
@@ -2694,7 +2694,7 @@
             editingDriverId = id;
             document.getElementById('condutor-form-title').innerText = "Alterar Condutor";
             document.getElementById('condutor-form-subtitle').innerText = `Editando dados do condutor: ${m.nome.split(' ')[0]}`;
-            document.getElementById('btn-submit-condutor').innerText = "Salvar Alterações";
+            document.getElementById('btn-submit-condutor').innerText = "Salvar AlteraÃ§Ãµes";
             document.getElementById('btn-cancelar-condutor').classList.remove('hidden');
 
             document.getElementById('cond-nome').value = m.nome;
@@ -2708,7 +2708,7 @@
             editingDriverId = null;
             document.getElementById('form-condutor-gestao').reset();
             document.getElementById('condutor-form-title').innerText = "Cadastrar Novo Condutor";
-            document.getElementById('condutor-form-subtitle').innerText = "Registre novos motoristas ou faça alterações nos atuais";
+            document.getElementById('condutor-form-subtitle').innerText = "Registre novos motoristas ou faÃ§a alteraÃ§Ãµes nos atuais";
             document.getElementById('btn-submit-condutor').innerText = "Cadastrar Condutor";
             document.getElementById('btn-cancelar-condutor').classList.add('hidden');
         }
@@ -2716,7 +2716,7 @@
         function excluirCondutor(id) {
             const hasActiveViagem = viagens.some(v => v.motorista_id === id && v.status === 'Ativa');
             if (hasActiveViagem) {
-                showToast("Não é possível excluir um condutor com missão ativa no momento.", "error");
+                showToast("NÃ£o Ã© possÃ­vel excluir um condutor com missÃ£o ativa no momento.", "error");
                 return;
             }
             motoristas = motoristas.filter(m => m.id !== id);

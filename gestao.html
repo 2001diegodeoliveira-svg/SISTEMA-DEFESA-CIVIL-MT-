@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Gestão por Município | SGI PROTEGE MT</title>
+    <title>GestÃ£o por MunicÃ­pio | SGI PROTEGE MT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -215,7 +215,7 @@
         .ov-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent-orange), var(--blue-glow)); border-radius: 7px; transition: width .4s; }
         @media (max-width: 640px) { .ov-grid { grid-template-columns: 1fr; } }
     </style>
-    <script src="js/demo.js"></script>
+    <script src="js/demo.js"></script><script>try{if(window.DC_DEMO&&!window.DC_DEMO.estado.liberado){var s=localStorage.getItem("dcmt_session")||localStorage.getItem("dcmt_token");if(!s) location.replace("login.html");}}catch(e){}</script>
     <script src="js/protecao.js"></script>
 </head>
 <body>
@@ -225,19 +225,19 @@
             <img src="imagens/logo.png" alt="SGI PROTEGE MT">
             <div class="logo-text">
                 <h1>SGI PROTEGE</h1>
-                <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
+                <span>SISTEMA DE GESTÃƒO INTEGRADA E PROTEÃ‡ÃƒO</span>
             </div>
         </div>
         <nav>
             <ul>
-                <li><a href="index.html">Início</a></li>
+                <li><a href="index.html">InÃ­cio</a></li>
                 <li><a href="mapa.html">Mapa</a></li>
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="painel.html">Painel</a></li>
-                <li><a href="gestao.html" class="active">Gestão</a></li>
+                <li><a href="gestao.html" class="active">GestÃ£o</a></li>
                 <li><a href="gestaodefrota.html">Frota</a></li>
-                <li><a href="el-nino.html">El Niño</a></li>
-                <li><a href="amazonia.html">Amazônia</a></li>
+                <li><a href="el-nino.html">El NiÃ±o</a></li>
+                <li><a href="amazonia.html">AmazÃ´nia</a></li>
             </ul>
         </nav>
         <div id="userArea"></div>
@@ -248,29 +248,29 @@
             <div class="mun-box">
                 <div id="munLockNotice"></div>
                 <div id="munSelWrap">
-                    <label>Município</label>
+                    <label>MunicÃ­pio</label>
                     <select id="munSel" onchange="GESTAO.onMun()">
-                        <option value="">Carregando municípios…</option>
+                        <option value="">Carregando municÃ­piosâ€¦</option>
                     </select>
                 </div>
                 <div id="munFixed"></div>
             </div>
-            <div class="tabs-title" id="tabsTitle">Seções de Gestão</div>
+            <div class="tabs-title" id="tabsTitle">SeÃ§Ãµes de GestÃ£o</div>
             <nav id="tabsNav"></nav>
         </aside>
         <main>
             <div id="veBar" class="ve-bar" style="display:none;">
-                <button class="btn-mini ghost" onclick="GESTAO.voltarVisao()"><i data-lucide="arrow-left"></i> Voltar à visão estadual</button>
+                <button class="btn-mini ghost" onclick="GESTAO.voltarVisao()"><i data-lucide="arrow-left"></i> Voltar Ã  visÃ£o estadual</button>
             </div>
             <div id="panelArea">
-                <div class="loading"><i data-lucide="loader"></i> Carregando dados do município…</div>
+                <div class="loading"><i data-lucide="loader"></i> Carregando dados do municÃ­pioâ€¦</div>
             </div>
         </main>
     </div>
 
     <footer>
-        <span><strong>SGI PROTEGE DO SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</strong> · Gestão por Município</span>
-        <span>Todos os direitos reservados © 2026</span>
+        <span><strong>SGI PROTEGE DO SISTEMA DE GESTÃƒO INTEGRADA E PROTEÃ‡ÃƒO</strong> Â· GestÃ£o por MunicÃ­pio</span>
+        <span>Todos os direitos reservados Â© 2026</span>
     </footer>
 
     <div id="toast" class="toast"></div>

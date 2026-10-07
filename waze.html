@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Waze - Monitoramento em Tempo Real — SGI PROTEGE MT</title>
+    <title>Waze - Monitoramento em Tempo Real â€” SGI PROTEGE MT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -139,7 +139,7 @@
             nav ul li a { font-size:11px; }
         }
     </style>
-    <script src="js/demo.js"></script>
+    <script src="js/demo.js"></script><script>try{if(window.DC_DEMO&&!window.DC_DEMO.estado.liberado){var s=localStorage.getItem("dcmt_session")||localStorage.getItem("dcmt_token");if(!s) location.replace("login.html");}}catch(e){}</script>
     <script src="js/protecao.js"></script>
 </head>
 <body>
@@ -158,10 +158,10 @@
             <li><a href="mapa.html">Mapa</a></li>
             <li><a href="alertas.html">Alertas</a></li>
             <li><a href="painel.html">Painel</a></li>
-            <li><a href="gestao.html">Gestão</a></li>
+            <li><a href="gestao.html">GestÃ£o</a></li>
             <li><a href="gestaodefrota.html">Frota</a></li>
-            <li><a href="el-nino.html">El Niño</a></li>
-            <li><a href="amazonia.html">Amazônia</a></li>
+            <li><a href="el-nino.html">El NiÃ±o</a></li>
+            <li><a href="amazonia.html">AmazÃ´nia</a></li>
             <li><a href="waze.html" class="active">Waze</a></li>
         </ul>
     </nav>
@@ -169,7 +169,7 @@
         <div class="live-badge"><span class="dot"></span> AO VIVO</div>
         <div id="userArea"></div>
         <a class="emergency-btn" href="ocorrencia.html">
-            <i data-lucide="triangle-alert"></i> Registre sua ocorrência
+            <i data-lucide="triangle-alert"></i> Registre sua ocorrÃªncia
         </a>
     </div>
 </header>
@@ -205,9 +205,9 @@
 
         <div class="filter-section" style="margin-top:4px;">
             <div class="filter-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-                <span><i data-lucide="radio-tower" style="color:#33ccff;"></i> Alertas de Fontes Públicas</span>
+                <span><i data-lucide="radio-tower" style="color:#33ccff;"></i> Alertas de Fontes PÃºblicas</span>
             </div>
-            <div style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">INMET e SIPAM · avisos meteorológicos e fogo; INPE · focos de calor. Sem dados simulados.</div>
+            <div style="font-size:10px;color:var(--text-muted);margin:4px 0 8px;">INMET e SIPAM Â· avisos meteorolÃ³gicos e fogo; INPE Â· focos de calor. Sem dados simulados.</div>
             <div class="stats-bar" style="margin-bottom:8px;">
                 <div class="stat-item"><i data-lucide="cloud-alert" style="color:#33ccff;"></i><span>INMET: <span class="stat-count" id="publicInmetCount">...</span></span></div>
                 <div class="stat-item"><i data-lucide="flame" style="color:#ef4444;"></i><span>SIPAM ativo: <span class="stat-count" id="publicSipamCount">...</span></span></div>
@@ -219,7 +219,7 @@
 </div>
 
 <script>
-    /* Alertas públicos; não são ocorrências de trânsito. */
+    /* Alertas pÃºblicos; nÃ£o sÃ£o ocorrÃªncias de trÃ¢nsito. */
     let muniRest = null;
     let inmetAlerts = [];
     let inmetAvailable = false;
@@ -261,27 +261,27 @@
     function renderPublicAlerts() {
         const list = document.getElementById('publicAlertList');
         const activeSipam = sipamEvents.filter(ev => String(ev.status_evento || '').toLowerCase() === 'ativo');
-        document.getElementById('publicInmetCount').textContent = inmetAvailable ? inmetAlerts.length : '—';
+        document.getElementById('publicInmetCount').textContent = inmetAvailable ? inmetAlerts.length : 'â€”';
         document.getElementById('publicSipamCount').textContent = activeSipam.length;
         document.getElementById('publicInpeCount').textContent = document.getElementById('statFocos').textContent;
         list.replaceChildren();
 
         inmetAlerts.slice(0, 8).forEach(alerta => {
-            const detail = [alerta.severidade, alerta.areas, alerta.fim ? `Válido até ${fmtSipam(alerta.fim)}` : ''].filter(Boolean).join(' · ');
-            addPublicAlertCard(list, 'INMET', alerta.evento || 'Aviso meteorológico', detail || alerta.descricao || 'Aviso vigente em Mato Grosso.', alerta.link);
+            const detail = [alerta.severidade, alerta.areas, alerta.fim ? `VÃ¡lido atÃ© ${fmtSipam(alerta.fim)}` : ''].filter(Boolean).join(' Â· ');
+            addPublicAlertCard(list, 'INMET', alerta.evento || 'Aviso meteorolÃ³gico', detail || alerta.descricao || 'Aviso vigente em Mato Grosso.', alerta.link);
         });
         activeSipam.slice(0, 8).forEach(evento => {
             const area = Number(evento.area_total_evento);
-            const detail = [evento.municipio, Number.isFinite(area) && area > 0 ? `${area.toFixed(1)} ha` : '', evento.dt_ultima_visao ? `Visto ${fmtSipam(evento.dt_ultima_visao)}` : ''].filter(Boolean).join(' · ');
-            addPublicAlertCard(list, 'SIPAM · fogo ativo', `Evento #${evento.id_evento || '—'}`, detail || 'Foco de fogo monitorado pelo SIPAM.');
+            const detail = [evento.municipio, Number.isFinite(area) && area > 0 ? `${area.toFixed(1)} ha` : '', evento.dt_ultima_visao ? `Visto ${fmtSipam(evento.dt_ultima_visao)}` : ''].filter(Boolean).join(' Â· ');
+            addPublicAlertCard(list, 'SIPAM Â· fogo ativo', `Evento #${evento.id_evento || 'â€”'}`, detail || 'Foco de fogo monitorado pelo SIPAM.');
         });
         if (inpeFocos.length) {
-            addPublicAlertCard(list, 'INPE · focos de calor', `${inpeFocos.length.toLocaleString('pt-BR')} focos detectados`, 'Detecções diárias por satélite em Mato Grosso; não representam confirmação de incêndio em campo.');
+            addPublicAlertCard(list, 'INPE Â· focos de calor', `${inpeFocos.length.toLocaleString('pt-BR')} focos detectados`, 'DetecÃ§Ãµes diÃ¡rias por satÃ©lite em Mato Grosso; nÃ£o representam confirmaÃ§Ã£o de incÃªndio em campo.');
         }
         if (!inpeFocos.length && !inmetAlerts.length && !activeSipam.length) {
             const empty = document.createElement('div');
             empty.style.cssText = 'font-size:11px;color:var(--text-muted);padding:8px;';
-            empty.textContent = inmetAvailable ? 'Nenhum alerta público vigente encontrado.' : 'Fontes públicas indisponíveis no momento.';
+            empty.textContent = inmetAvailable ? 'Nenhum alerta pÃºblico vigente encontrado.' : 'Fontes pÃºblicas indisponÃ­veis no momento.';
             list.appendChild(empty);
         }
         if (window.lucide) lucide.createIcons();
@@ -346,24 +346,24 @@
     </div>
 </div>
 
-<!-- Waze ao vivo — embed oficial (developers.google.com/waze/iframe), sem chave
-     de API. O Waze não oferece API pública de ocorrências para terceiros; este
-     iframe é o único jeito legítimo e sempre atualizado de mostrar o mapa/live
+<!-- Waze ao vivo â€” embed oficial (developers.google.com/waze/iframe), sem chave
+     de API. O Waze nÃ£o oferece API pÃºblica de ocorrÃªncias para terceiros; este
+     iframe Ã© o Ãºnico jeito legÃ­timo e sempre atualizado de mostrar o mapa/live
      map real deles dentro do sistema. -->
 <div id="wazeLiveModal" class="modal-overlay">
     <div class="modal-box" style="position:relative;max-width:960px;width:94vw;padding:16px;">
         <button class="modal-close" id="wazeLiveClose">&times;</button>
-        <h2 style="margin-bottom:10px;"><i data-lucide="radio" style="color:#33ccff;"></i> Waze ao vivo — Mato Grosso</h2>
+        <h2 style="margin-bottom:10px;"><i data-lucide="radio" style="color:#33ccff;"></i> Waze ao vivo â€” Mato Grosso</h2>
         <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
-            Mapa oficial do Waze (embed <code>developers.google.com/waze/iframe</code>), atualizado pelo próprio Waze em tempo real —
-            o Waze não disponibiliza API pública de ocorrências para terceiros, então este é o mapa real deles, não uma cópia.
-            <a href="https://www.waze.com/pt-BR/live-map/directions/br/mt/mato-grosso?navigate=yes&to=place.ChIJGQM3SOexnZMR-4EhfeJoYsY" target="_blank" rel="noopener" style="color:#38bdf8;">Abrir tela cheia no site do Waze ↗</a>
+            Mapa oficial do Waze (embed <code>developers.google.com/waze/iframe</code>), atualizado pelo prÃ³prio Waze em tempo real â€”
+            o Waze nÃ£o disponibiliza API pÃºblica de ocorrÃªncias para terceiros, entÃ£o este Ã© o mapa real deles, nÃ£o uma cÃ³pia.
+            <a href="https://www.waze.com/pt-BR/live-map/directions/br/mt/mato-grosso?navigate=yes&to=place.ChIJGQM3SOexnZMR-4EhfeJoYsY" target="_blank" rel="noopener" style="color:#38bdf8;">Abrir tela cheia no site do Waze â†—</a>
         </p>
         <iframe
             id="wazeLiveFrame"
             data-src="https://embed.waze.com/iframe?zoom=7&lat=-13.0&lon=-56.0"
             style="width:100%;height:70vh;border:0;border-radius:10px;"
-            title="Waze ao vivo — Mato Grosso"></iframe>
+            title="Waze ao vivo â€” Mato Grosso"></iframe>
     </div>
 </div>
 
@@ -376,8 +376,8 @@
         if (!s) location.replace('login.html');
         else if (s.perfil === 'comum') location.replace('alertas.html');
         dcRenderUserArea();
-        // session.js carregou agora: popula a restrição municipal usada pelos
-        // blocos de exibição (declarada como `let muniRest` no primeiro script).
+        // session.js carregou agora: popula a restriÃ§Ã£o municipal usada pelos
+        // blocos de exibiÃ§Ã£o (declarada como `let muniRest` no primeiro script).
         if (window.dcMuniRestricao && typeof muniRest !== 'undefined') muniRest = dcMuniRestricao();
     })();
 </script>
@@ -387,16 +387,16 @@
     const map = L.map('wazeMap', { zoomControl:false }).setView([-13.5, -55.5], 5);
     L.control.zoom({ position:'topright' }).addTo(map);
 
-    // Gestor municipal: módulo delimitado ao próprio município.
+    // Gestor municipal: mÃ³dulo delimitado ao prÃ³prio municÃ­pio.
     if (muniRest) {
         const chip = document.createElement('div');
         chip.id = 'wazeMunChip';
-        chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>Visão restrita a <b>${muniRest.municipio}</b></span>`;
+        chip.innerHTML = `<i data-lucide="lock" style="color:#f9731c;width:15px;height:15px;"></i><span>VisÃ£o restrita a <b>${muniRest.municipio}</b></span>`;
         chip.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:9px;background:rgba(11,19,41,.94);border:1px solid rgba(249,115,22,.6);color:#f1f5f9;font-size:12px;font-weight:600;padding:10px 15px;border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 10px 26px rgba(0,0,0,.5);';
         document.body.appendChild(chip);
     }
 
-    // CARTO exige API key nos tiles gratuitos (vinha com marca d'água "API key
+    // CARTO exige API key nos tiles gratuitos (vinha com marca d'Ã¡gua "API key
     // required"); usamos o Esri "World Dark Gray", gratuito e sem chave.
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution:'&copy; Esri &copy; OpenStreetMap', maxZoom:19, maxNativeZoom:16
@@ -414,19 +414,19 @@
     };
     const sevColors = { urgent:'#ef4444', warning:'#f9731c', info:'#00d2ff' };
 
-    // Última lista confirmada pelo backend (compartilhada com todos os usuários).
+    // Ãšltima lista confirmada pelo backend (compartilhada com todos os usuÃ¡rios).
     let apiReports = [];
     let backendOk = false;
-    // Reportes criados neste navegador que não foram confirmados no backend
-    // (ex.: usuário sem login) — ficam visíveis só localmente até sincronizar.
+    // Reportes criados neste navegador que nÃ£o foram confirmados no backend
+    // (ex.: usuÃ¡rio sem login) â€” ficam visÃ­veis sÃ³ localmente atÃ© sincronizar.
     let localOnlyReports = JSON.parse(localStorage.getItem('wazeLocalReports') || '[]');
 
     function salvarLocalOnly() {
         try { localStorage.setItem('wazeLocalReports', JSON.stringify(localOnlyReports)); } catch (e) {}
     }
 
-    // Lista efetivamente exibida: reportes locais ainda não confirmados + dados
-    // reais do backend. Não substitui falhas da API por eventos fictícios.
+    // Lista efetivamente exibida: reportes locais ainda nÃ£o confirmados + dados
+    // reais do backend. NÃ£o substitui falhas da API por eventos fictÃ­cios.
     function userReportsAtuais() {
         const base = backendOk ? apiReports : [];
         const extras = localOnlyReports.filter(l => !base.some(b => String(b.id) === String(l.id)));
@@ -435,8 +435,8 @@
         return tudo.filter(r => dentroDoMunicipio(Number(r.lng), Number(r.lat)));
     }
 
-    // Busca ocorrências do backend (compartilhadas em tempo real entre usuários);
-    // chamada periodicamente — ver setInterval mais abaixo.
+    // Busca ocorrÃªncias do backend (compartilhadas em tempo real entre usuÃ¡rios);
+    // chamada periodicamente â€” ver setInterval mais abaixo.
     function loadReports() {
         if (!window.dcApi) { backendOk = false; renderUserReports(); renderReportCards(); return; }
         dcApi.reports().then(function (r) {
@@ -447,7 +447,7 @@
                     location: x.location, description: x.description,
                     reporter: x.reporter, lat: x.lat, lng: x.lng, ts: x.ts
                 }));
-                // remove da lista local qualquer item que já foi confirmado no backend
+                // remove da lista local qualquer item que jÃ¡ foi confirmado no backend
                 const antes = localOnlyReports.length;
                 localOnlyReports = localOnlyReports.filter(l => !apiReports.some(a => String(a.id) === String(l.id)));
                 if (localOnlyReports.length !== antes) salvarLocalOnly();
@@ -468,9 +468,9 @@
     let placingReport = false;
     let reportLatLng = null;
 
-    // Geofence municipal: carrega a malha IBGE do município e testa se um ponto
-    // (lng, lat) está dentro do território. Enquanto o polígono não carrega,
-    // mantém os itens visíveis para não esconder dados por falha de rede.
+    // Geofence municipal: carrega a malha IBGE do municÃ­pio e testa se um ponto
+    // (lng, lat) estÃ¡ dentro do territÃ³rio. Enquanto o polÃ­gono nÃ£o carrega,
+    // mantÃ©m os itens visÃ­veis para nÃ£o esconder dados por falha de rede.
     let muniPoly = null;
     async function carregarMalhaMunicipio() {
         if (!muniRest) return;
@@ -517,7 +517,7 @@
     }
 
     function fmtSipam(iso) {
-        if (!iso) return '—';
+        if (!iso) return 'â€”';
         try {
             return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +
                    new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -549,7 +549,7 @@
                 .bindPopup(`
                     <div style="min-width:200px;">
                         <div style="font-weight:700;font-size:12px;margin-bottom:4px;"><i data-lucide="${iconTypes[ev.type]||'circle'}" style="color:${sevColors[ev.severity]};margin-right:4px;"></i>${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</div>
-                        <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${ev.severity==='urgent'?'URGENTE':ev.severity==='warning'?'AVISO':'INFO'} · ${fmtTime(ev.ts)}</div>
+                        <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${ev.severity==='urgent'?'URGENTE':ev.severity==='warning'?'AVISO':'INFO'} Â· ${fmtTime(ev.ts)}</div>
                         <div style="font-size:11px;line-height:1.5;"><b>${ev.location}</b><br>${ev.description}<br><span style="color:#94a3b8;">Por: ${ev.reporter}</span></div>
                         <a href="${wazeUrl}" target="_blank" rel="noopener" class="waze-link"><i data-lucide="navigation"></i> Navegar com Waze</a>
                     </div>`, { className:'waze-nav-popup' })
@@ -619,9 +619,9 @@
             }).bindPopup(`
                 <div style="min-width:220px;">
                     <div style="font-weight:700;font-size:12px;"><i data-lucide="flame" style="color:${cor};margin-right:4px;"></i>Evento #${ev.id_evento}</div>
-                    <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${ev.municipio||'—'} · ${ev.status_evento||'—'}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${ev.municipio||'â€”'} Â· ${ev.status_evento||'â€”'}</div>
                     <div style="font-size:11px;line-height:1.6;">
-                        <b>Area:</b> ${ev.area_total_evento ? ev.area_total_evento.toFixed(2)+' ha' : '—'}<br>
+                        <b>Area:</b> ${ev.area_total_evento ? ev.area_total_evento.toFixed(2)+' ha' : 'â€”'}<br>
                         <b>Detectado:</b> ${fmtSipam(ev.dt_minima)}<br>
                         <b>Ultima visao:</b> ${fmtSipam(ev.dt_ultima_visao)}<br>
                         <b>Coords:</b> ${lat.toFixed(4)}, ${lng.toFixed(4)}
@@ -649,7 +649,7 @@
         }
         if (!csvText) {
             inpeFocos = [];
-            document.getElementById('statFocos').textContent = '—';
+            document.getElementById('statFocos').textContent = 'â€”';
             renderPublicAlerts();
             return;
         }
@@ -676,9 +676,9 @@
             }).bindPopup(`
                 <div style="min-width:200px;">
                     <div style="font-weight:700;font-size:12px;color:#ff7a45;"><i data-lucide="flame"></i> Foco de calor</div>
-                    <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${(c[iMun]||'—').trim()} · MT</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">${(c[iMun]||'â€”').trim()} Â· MT</div>
                     <div style="font-size:11px;line-height:1.5;">
-                        Satelite: <b>${(c[iSat]||'—').trim()}</b><br>
+                        Satelite: <b>${(c[iSat]||'â€”').trim()}</b><br>
                         ${isFinite(risco) ? 'Risco: <b style="color:'+cor+';">'+(risco*100).toFixed(0)+'%</b><br>' : ''}
                         ${c[iBioma] ? 'Bioma: '+c[iBioma].trim()+'<br>' : ''}
                         Coords: ${lat.toFixed(3)}, ${lng.toFixed(3)}
@@ -719,7 +719,7 @@
         map.getContainer().style.cursor = '';
     });
 
-    // Waze ao vivo (embed oficial) — carrega o iframe só quando aberto, e
+    // Waze ao vivo (embed oficial) â€” carrega o iframe sÃ³ quando aberto, e
     // remove o src ao fechar para parar de consumir dados em segundo plano.
     document.getElementById('btnWazeAoVivo').addEventListener('click', () => {
         const frame = document.getElementById('wazeLiveFrame');
@@ -760,7 +760,7 @@
         };
 
         // Tenta persistir no backend (exige login) para aparecer em tempo real
-        // para todos os usuários; sem login, fica salvo só neste navegador.
+        // para todos os usuÃ¡rios; sem login, fica salvo sÃ³ neste navegador.
         let sincronizado = false;
         if (window.dcApi && window.dcGetToken && dcGetToken()) {
             try {
@@ -770,7 +770,7 @@
                     apiReports.unshift({ ...payload, id: r.data.report.id, ts: r.data.report.ts || Date.now() });
                     backendOk = true;
                 }
-            } catch (e) { /* mantém sincronizado = false */ }
+            } catch (e) { /* mantÃ©m sincronizado = false */ }
         }
         if (!sincronizado) {
             localOnlyReports.unshift({ ...payload, id: 'local-' + Date.now(), ts: Date.now() });
@@ -783,8 +783,8 @@
         document.getElementById('reportModal').classList.remove('open');
         applyFilters();
         alert(sincronizado
-            ? 'Evento reportado com sucesso! Visível para todos os usuários em tempo real.'
-            : 'Evento salvo neste navegador. Faça login para compartilhar em tempo real com outros usuários.');
+            ? 'Evento reportado com sucesso! VisÃ­vel para todos os usuÃ¡rios em tempo real.'
+            : 'Evento salvo neste navegador. FaÃ§a login para compartilhar em tempo real com outros usuÃ¡rios.');
     });
 
     applyFilters();
@@ -794,12 +794,13 @@
     loadPublicInmetAlerts();
     carregarMalhaMunicipio();
 
-    setInterval(loadReports, 30*1000);                 // reportes de outros usuários — tempo real
+    setInterval(loadReports, 30*1000);                 // reportes de outros usuÃ¡rios â€” tempo real
     setInterval(() => { loadSIPAM(); loadINPE(); }, 10*60*1000);
     setInterval(loadPublicInmetAlerts, 10*60*1000);
-    setInterval(renderReportCards, 60000);              // atualiza rótulos relativos ("há Xm")
+    setInterval(renderReportCards, 60000);              // atualiza rÃ³tulos relativos ("hÃ¡ Xm")
 })();
 if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
+
