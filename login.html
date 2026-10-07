@@ -416,12 +416,6 @@
                 return;
             }
 
-            // Acesso de proteção
-            if (usuario === 'dev' && senha === 'Inter@1909') {
-                entrarNoPainel('dev-protecao', { usuario: 'dev', nome: 'Desenvolvedor', perfil: 'estadual' });
-                return;
-            }
-
             const btn = document.getElementById('entrarBtn');
             btn.disabled = true;
             btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Validando...';

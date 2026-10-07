@@ -5,9 +5,11 @@
    demonstração (js/demo.js) está aberta, o acesso é livre.
    ============================================================ */
 
-/* Exige login quando a janela de demonstração expirou (ou não existe). */
+/* Exige login quando a janela de demonstração expirou (ou não existe).
+   Estado desconhecido (demo.js ausente/falhou ao carregar) também exige
+   login — falha fechada, nunca aberta. */
 function dcLoginExigido() {
-    if (!window.DC_DEMO) return false;
+    if (!window.DC_DEMO) return true;
     return window.DC_DEMO.estado.liberado === false;
 }
 
