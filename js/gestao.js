@@ -1,5 +1,5 @@
 /* ============================================================
-   Gestão por Município — Defesa Civil MT.
+   Gestão por Município — SGI PROTEGE MT.
    Depende de: js/session.js, js/api.js, js/proxy.js, Leaflet.
    ============================================================ */
 (function () {
@@ -19,7 +19,7 @@
             { key: 'resumo', label: 'Resumo do plano', type: 'textarea' },
             { key: 'arquivoUrl', label: 'Link do arquivo' },
         ] },
-        { id: 'coordenadores', label: 'Coordenadores', desc: 'Coordenadores municipais de Defesa Civil e equipes de apoio.', icone: 'user', kind: 'list', titleKey: 'nome', subKeys: ['cargo', 'telefone'], fields: [
+        { id: 'coordenadores', label: 'Coordenadores', desc: 'Coordenadores municipais de SGI PROTEGE e equipes de apoio.', icone: 'user', kind: 'list', titleKey: 'nome', subKeys: ['cargo', 'telefone'], fields: [
             { key: 'nome', label: 'Nome', req: true },
             { key: 'cargo', label: 'Cargo' },
             { key: 'telefone', label: 'Telefone', type: 'tel' },
@@ -73,7 +73,7 @@
             { key: 'plantao', label: 'Plantão', type: 'select', options: ['24h', '12h', 'Sob demanda'] },
             { key: 'status', label: 'Status', type: 'select', options: ['Ativo', 'Em plantão', 'Treinamento', 'Afastado'] },
         ] },
-        { id: 'sede', label: 'Sede da Defesa Civil', desc: 'Sede municipal da Defesa Civil, endereço e localização.', icone: 'building-2', kind: 'single', fixedId: 'sede', titleKey: 'nome', subKeys: ['logradouro'], fields: [
+        { id: 'sede', label: 'Sede da SGI PROTEGE', desc: 'Sede municipal da SGI PROTEGE, endereço e localização.', icone: 'building-2', kind: 'single', fixedId: 'sede', titleKey: 'nome', subKeys: ['logradouro'], fields: [
             { key: 'nome', label: 'Nome da sede' },
             { key: 'logradouro', label: 'Endereço' },
             { key: 'contato', label: 'Contato', type: 'tel' },

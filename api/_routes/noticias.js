@@ -1,5 +1,5 @@
 /* ============================================================
-   Notícias diárias — tempo, ações climáticas e Defesa Civil MT.
+   Notícias diárias — tempo, ações climáticas e SGI PROTEGE MT.
    Fonte: Google Notícias (RSS de busca), conteúdo atualizado o dia todo.
 
    GET /api/noticias             → agrega as buscas padrão (diárias)
@@ -10,7 +10,7 @@ const { jsonResponse } = require('../_lib/http');
 const { serve } = require('../_lib/serverless');
 
 const BUSCAS = [
-  'defesa civil mato grosso',
+  'SGI PROTEGE mato grosso',
   'tempo clima mato grosso',
   'ações climáticas mato grosso',
   'cuiabá tempo chuva',
@@ -73,7 +73,7 @@ function tagDaTitulo(titulo) {
     [/calor|temperatura|onda de calor/, 'ONDA DE CALOR'],
     [/seca|estiagem|umidade baixa|baixa umidade/, 'ESTIAGEM / SECA'],
     [/deslizamento|desabamento|desmoronamento|rompimento/, 'RISCO GEOLÓGICO'],
-    [/defesa civil|prote[çc][aã]o e defesa/, 'DEFESA CIVIL'],
+    [/SGI PROTEGE|prote[çc][aã]o e defesa/, 'SGI PROTEGE'],
     [/clim[aá]tic|sustentabilidade|mitiga[çc][aã]o|carbono/, 'AÇÃO CLIMÁTICA'],
     [/previs[aã]o|clima|meteorol/, 'TEMPO / CLIMA'],
   ];
@@ -157,7 +157,7 @@ module.exports = serve(async function handler(req) {
   const res = jsonResponse(200, {
     ok: true,
     geradosEm: agora,
-    fonte: 'Google Notícias — busca recente por clima, ações climáticas e Defesa Civil em Mato Grosso',
+    fonte: 'Google Notícias — busca recente por clima, ações climáticas e SGI PROTEGE em Mato Grosso',
     noticias: itens,
   }, origin);
   // Permite cache curto no CDN/navegador (feed é atualizado continuamente).

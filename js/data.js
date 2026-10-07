@@ -1,5 +1,5 @@
 /* ============================================================
-   Dados operacionais — Defesa Civil MT
+   Dados operacionais — SGI PROTEGE MT
    Estrutura pronta para substituição por API do backend:
    GET /api/alertas  →  mesmo formato de objeto abaixo.
    ============================================================ */
@@ -65,7 +65,7 @@ const ALERTAS_ATIVOS = [
         areasAfetadas: ['Fazendas no entorno do Estrada Park Transpantaneira (km 0–12)', 'Zona rural de Poconé'],
         orientacoes: [
             'Produtores rurais devem abrir aceiros e evitar qualquer uso do fogo.',
-            'Reporte novas frentes de fogo pelo 199 ou pelo aplicativo Defesa Civil MT.',
+            'Reporte novas frentes de fogo pelo 199 ou pelo aplicativo SGI PROTEGE MT.',
             'Moradores de áreas com fumaça densa: use máscaras e evite atividades ao ar livre.',
         ],
     },
@@ -114,7 +114,7 @@ const ALERTAS_ATIVOS = [
         orientacoes: [
             'Uso racional da água para consumo humano prioritário.',
             'Proibida a queima controlada de resíduos até nova avaliação.',
-            'Produtores podem solicitar avaliação técnica via Defesa Civil Municipal.',
+            'Produtores podem solicitar avaliação técnica via SGI PROTEGE Municipal.',
         ],
     },
 ];
@@ -225,7 +225,7 @@ const TIPO_FONTES = {
 
 /* ============================================================
    APIs de ingestão de dados — arquitetura proposta
-   ("Sistema de Monitoramento - Defesa Civil MT.docx", seção 2)
+   ("Sistema de Monitoramento - SGI PROTEGE MT.docx", seção 2)
    ============================================================ */
 const FONTES_API = [
     { cat: 'Meteorologia', fonte: 'INMET — Estações Automáticas', api: 'apitempo.inmet.gov.br', dado: 'Temperatura, umidade, vento e pressão em tempo real', freq: 'Horária' },

@@ -167,6 +167,6 @@ app.get('*', (req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\nDefesa Civil MT — backend rodando em http://localhost:${PORT}`);
+  console.log(`\nSGI PROTEGE MT — backend rodando em http://localhost:${PORT}`);
   console.log('Endpoints: /api/auth/login, /api/alertas, /api/reports, /api/areas\n');
 });

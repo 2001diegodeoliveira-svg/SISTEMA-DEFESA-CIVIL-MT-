@@ -1,5 +1,5 @@
 /* ============================================================
-   Sessão da Defesa Civil MT.
+   Sessão da SGI PROTEGE MT.
    Autenticação real via backend: token JWT (dcmt_token) +
    perfil do usuário (dcmt_session). Enquanto a janela de
    demonstração (js/demo.js) está aberta, o acesso é livre.

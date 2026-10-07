@@ -1,5 +1,5 @@
 /* ============================================================
-   Cliente do proxy CORS — Defesa Civil MT.
+   Cliente do proxy CORS — SGI PROTEGE MT.
    dcProxyFetch(url, opts) envia requisições a APIs externas via
    backend (/api/proxy), evitando bloqueios de CORS no navegador.
    Se o backend estiver indisponível, cai para fetch direto

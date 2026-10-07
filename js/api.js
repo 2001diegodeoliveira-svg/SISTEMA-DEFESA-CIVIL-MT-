@@ -1,5 +1,5 @@
 /* ============================================================
-   Cliente da API do backend — Defesa Civil MT.
+   Cliente da API do backend — SGI PROTEGE MT.
    Centraliza a URL base, o token de sessão e o fallback.
    Usa o mesmo domínio do deploy (Vercel) — /api/*.
    ============================================================ */
@@ -83,7 +83,7 @@
             return request('gestao?municipio=' + encodeURIComponent(municipio) + '&secao=' + encodeURIComponent(secao) + '&id=' + encodeURIComponent(id), { method: 'DELETE' });
         },
 
-        // Notícias diárias (tempo, ações climáticas e Defesa Civil MT)
+        // Notícias diárias (tempo, ações climáticas e SGI PROTEGE MT)
         noticias: function (n) { return request('noticias?n=' + (n || 6)); },
 
         // Alerta de pluviômetro (limiar e ativação são do servidor)

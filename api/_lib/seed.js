@@ -33,7 +33,7 @@ const ALERTAS_SEED = [
     areasAfetadas: ['Fazendas no entorno do Estrada Park Transpantaneira (km 0–12)', 'Zona rural de Poconé'],
     orientacoes: [
       'Produtores rurais devem abrir aceiros e evitar qualquer uso do fogo.',
-      'Reporte novas frentes de fogo pelo 199 ou pelo aplicativo Defesa Civil MT.',
+      'Reporte novas frentes de fogo pelo 199 ou pelo aplicativo SGI PROTEGE MT.',
       'Moradores de áreas com fumaça densa: use máscaras e evite atividades ao ar livre.',
     ],
   },
@@ -67,7 +67,7 @@ const ALERTAS_SEED = [
     orientacoes: [
       'Uso racional da água para consumo humano prioritário.',
       'Proibida a queima controlada de resíduos até nova avaliação.',
-      'Produtores podem solicitar avaliação técnica via Defesa Civil Municipal.',
+      'Produtores podem solicitar avaliação técnica via SGI PROTEGE Municipal.',
     ],
   },
 ];

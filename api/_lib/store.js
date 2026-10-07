@@ -1,5 +1,5 @@
 /* ============================================================
-   Camada de persistência da Defesa Civil MT.
+   Camada de persistência da SGI PROTEGE MT.
    Drivers:
      - 'pg'    : PostgreSQL (Neon) quando DATABASE_URL definido
                 (e FILE_STORE não for igual a "1")

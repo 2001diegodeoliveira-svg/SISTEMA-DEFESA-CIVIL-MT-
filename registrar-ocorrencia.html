@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Registrar Ocorrência — Defesa Civil Digital</title>
+    <title>Registrar Ocorrência — SGI PROTEGE Digital</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -17,7 +17,7 @@
     <header class="bg-blue-900 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <img src="imagens/logo.png" alt="Defesa Civil MT" class="h-10 w-auto" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                <img src="imagens/logo.png" alt="SGI PROTEGE MT" class="h-10 w-auto" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
                 <span class="font-bold text-lg tracking-wide">SGI PROTEGE</span>
             </div>
             <a href="index.html" class="inline-flex items-center space-x-2 bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-full text-sm font-semibold transition">
@@ -204,7 +204,7 @@
                 <h3 class="font-bold text-blue-800 text-sm mb-2 flex items-center gap-2"><i data-lucide="list-checks"></i> O que acontece depois?</h3>
                 <ol class="text-xs text-blue-800 space-y-2 list-decimal list-inside">
                     <li>Sua ocorrência é registrada com data, hora e localização.</li>
-                    <li>A equipe da Defesa Civil analisa a gravidade e prioridade.</li>
+                    <li>A equipe da SGI PROTEGE analisa a gravidade e prioridade.</li>
                     <li>Recursos (vistoria, equipe, apoio) são acionados conforme o risco.</li>
                     <li>Acompanhe o andamento em <a href="meus-chamados.html" class="underline font-bold">Meus Chamados</a>.</li>
                 </ol>
@@ -233,7 +233,7 @@
                 <i data-lucide="check-check" class="w-8 h-8"></i>
             </div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Ocorrência Registrada!</h3>
-            <p id="confirmMsg" class="text-gray-600 text-sm mb-6">Sua ocorrência foi registrada com sucesso. A Defesa Civil irá avaliar o caso.</p>
+            <p id="confirmMsg" class="text-gray-600 text-sm mb-6">Sua ocorrência foi registrada com sucesso. A SGI PROTEGE irá avaliar o caso.</p>
             <div class="flex flex-col gap-2">
                 <button onclick="fecharConfirm()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition">Entendi</button>
                 <a href="meus-chamados.html" class="w-full inline-flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl transition">
@@ -351,8 +351,8 @@
                 salvarOcorrencias(lista);
 
                 document.getElementById('confirmMsg').innerHTML = sincronizado
-                    ? 'Sua ocorrência foi registrada e compartilhada com a Defesa Civil. Guarde o número: <b>#' + (registrada.id || 'local') + '</b>.'
-                    : 'Sua ocorrência foi salva neste navegador. Para enviar diretamente para a Defesa Civil, faça login antes de registrar.';
+                    ? 'Sua ocorrência foi registrada e compartilhada com a SGI PROTEGE. Guarde o número: <b>#' + (registrada.id || 'local') + '</b>.'
+                    : 'Sua ocorrência foi salva neste navegador. Para enviar diretamente para a SGI PROTEGE, faça login antes de registrar.';
                 document.getElementById('confirmModal').classList.remove('hidden');
                 document.getElementById('confirmModal').classList.add('flex');
 

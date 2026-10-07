@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>El Niño · Amazônia - SGI PROTEGE MT</title>
+    <title>Amazônia · Monitoramento - SGI PROTEGE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -13,10 +13,10 @@
             --bg-dark: #0f172a;
             --bg-card: #1e293b;
             --bg-card-hover: #293548;
-            --accent-orange: #f9731c;
-            --accent-blue: #38bdf8;
             --accent-green: #34d399;
-            --accent-red: #f87171;
+            --accent-green-deep: #059669;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f9731c;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --border-color: rgba(148, 163, 184, 0.12);
@@ -47,7 +47,7 @@
         .logo-text h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
         .logo-text span { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 
-        nav ul { display: flex; list-style: none; gap: 28px; }
+        nav ul { display: flex; list-style: none; gap: 26px; }
         nav ul li a {
             text-decoration: none; color: var(--text-muted); font-size: 14px;
             font-weight: 500; transition: color 0.2s; position: relative; padding-bottom: 5px;
@@ -55,7 +55,7 @@
         nav ul li a:hover, nav ul li a.active { color: var(--text-main); }
         nav ul li a.active::after {
             content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, var(--accent-orange), var(--accent-blue));
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
         }
 
         .emergency-btn {
@@ -64,21 +64,21 @@
             padding: 10px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;
             white-space: nowrap;
         }
-        .emergency-btn:hover { background: var(--accent-orange-hover, #ea580c); transform: translateY(-1px); }
+        .emergency-btn:hover { background: #ea580c; transform: translateY(-1px); }
 
         .hero {
             padding: 46px 5% 26px;
             background:
-                radial-gradient(1200px 420px at 20% -10%, rgba(249, 115, 22, 0.16) 0%, transparent 60%),
-                radial-gradient(900px 380px at 85% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 55%);
+                radial-gradient(1200px 420px at 20% -10%, rgba(52, 211, 153, 0.15) 0%, transparent 60%),
+                radial-gradient(900px 380px at 85% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 55%);
             border-bottom: 1px solid var(--border-color);
         }
         .hero .eyebrow {
             display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 2px;
-            font-weight: 700; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 12px;
+            font-weight: 700; color: var(--accent-green); text-transform: uppercase; margin-bottom: 12px;
         }
         .hero h2 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; letter-spacing: -0.5px; }
-        .hero h2 span { background: linear-gradient(90deg, var(--accent-orange), var(--accent-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .hero h2 span { background: linear-gradient(90deg, var(--accent-green), var(--accent-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .hero p { color: var(--text-muted); margin-top: 12px; max-width: 760px; font-size: 15px; line-height: 1.6; }
         .hero .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
         .chip {
@@ -96,17 +96,17 @@
             font-size: 13.5px; font-weight: 600; padding: 10px 18px; border-radius: 10px;
             cursor: pointer; transition: all 0.2s;
         }
-        .tabs button:hover { color: var(--text-main); border-color: var(--accent-blue); }
+        .tabs button:hover { color: var(--text-main); border-color: var(--accent-green); }
         .tabs button.active {
-            color: #fff; border-color: transparent;
-            background: linear-gradient(135deg, var(--accent-orange), #c2410c);
+            color: #052e16; border-color: transparent;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-green-deep));
         }
 
         .tab-view { display: none; padding: 26px 5% 46px; }
         .tab-view.active { display: block; }
 
         .section-title { font-size: 20px; font-weight: 700; margin: 8px 0 18px; display: flex; align-items: center; gap: 10px; }
-        .section-title i { color: var(--accent-blue); }
+        .section-title i { color: var(--accent-green); }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
         .card {
@@ -115,26 +115,14 @@
         }
         .card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
         .card h4 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
-        .card h4 i { color: var(--accent-orange); }
+        .card h4 i { color: var(--accent-green); }
         .card p { color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
         .card ul { list-style: none; color: var(--text-muted); font-size: 13.5px; line-height: 1.7; }
         .card ul li { padding: 5px 0 5px 22px; position: relative; }
         .card ul li::before {
             content: ''; position: absolute; left: 4px; top: 13px; width: 7px; height: 7px;
-            border-radius: 50%; background: var(--accent-orange);
+            border-radius: 50%; background: var(--accent-green);
         }
-
-        .scale {
-            display: flex; justify-content: space-between; align-items: stretch; gap: 8px; margin-top: 14px;
-        }
-        .scale .seg {
-            flex: 1; text-align: center; padding: 12px 6px; border-radius: 10px;
-            font-size: 11.5px; font-weight: 700; color: #0f172a;
-        }
-        .scale .seg.lanina { background: #7dd3fc; }
-        .scale .seg.neutro { background: #94a3b8; }
-        .scale .seg.elnino { background: #fdba74; }
-        .scale .seg small { display: block; font-weight: 500; font-size: 10.5px; margin-top: 3px; }
 
         .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 18px 0; }
         .stat {
@@ -143,7 +131,7 @@
         }
         .stat .s-ico {
             width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            font-size: 20px; flex-shrink: 0; background: rgba(56, 189, 248, 0.12); color: var(--accent-blue);
+            font-size: 20px; flex-shrink: 0; background: rgba(52, 211, 153, 0.12); color: var(--accent-green);
         }
         .stat .s-txt b { display: block; font-size: 16px; font-weight: 800; }
         .stat .s-txt span { font-size: 12px; color: var(--text-muted); }
@@ -154,17 +142,17 @@
             background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
             padding: 14px 16px; text-decoration: none; color: var(--text-main); transition: all 0.2s;
         }
-        .ext-link:hover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+        .ext-link:hover { border-color: var(--accent-green); background: var(--bg-card-hover); }
         .ext-link b { font-size: 13.5px; display: block; }
         .ext-link span { font-size: 11.5px; color: var(--text-muted); }
-        .ext-link i { color: var(--accent-blue); flex-shrink: 0; }
+        .ext-link i { color: var(--accent-green); flex-shrink: 0; }
 
         .alert-note {
             display: flex; gap: 12px; align-items: flex-start;
-            background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.35);
+            background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.35);
             border-radius: 12px; padding: 14px 16px; margin: 16px 0;
         }
-        .alert-note i { color: var(--accent-orange); flex-shrink: 0; margin-top: 2px; }
+        .alert-note i { color: var(--accent-green); flex-shrink: 0; margin-top: 2px; }
         .alert-note p { color: var(--text-main); font-size: 13.5px; line-height: 1.6; }
 
         footer {
@@ -184,7 +172,7 @@
 
     <header>
         <div class="logo-area">
-            <img src="imagens/logo.png" alt="SGI PROTEGE MT">
+            <img src="imagens/logo.png" alt="SGI PROTEGE">
             <div class="logo-text">
                 <h1>SGI PROTEGE</h1>
                 <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
@@ -199,8 +187,8 @@
                 <li><a href="painel.html">Painel</a></li>
                 <li><a href="gestao.html">Gestão</a></li>
                 <li><a href="gestaodefrota.html">Frota</a></li>
-                <li><a href="el-nino.html" class="active">El Niño</a></li>
-                <li><a href="amazonia.html">Amazônia</a></li>
+                <li><a href="el-nino.html">El Niño</a></li>
+                <li><a href="amazonia.html" class="active">Amazônia</a></li>
                 <li><a href="waze.html">Waze</a></li>
             </ul>
         </nav>
@@ -215,161 +203,168 @@
     </header>
 
     <section class="hero">
-        <div class="eyebrow"><i data-lucide="radar"></i> Monitoramento climático - SGI PROTEGE MT</div>
-        <h2>EL NIÑO <span>· AMAZÔNIA</span></h2>
-        <p>Painel informativo sobre o fenômeno El Niño e seus efeitos sobre o bioma amazônico e o Estado de Mato Grosso. Reúne conceitos, impactos esperados e as linhas de atuação da SGI PROTEGE para prevenção, preparação e resposta.</p>
+        <div class="eyebrow"><i data-lucide="leaf"></i> Monitoramento do bioma - SGI PROTEGE</div>
+        <h2>AMAZÔNIA <span>· FLORESTA E RISCOS</span></h2>
+        <p>Painel informativo sobre o bioma amazônico e o seu recorte em Mato Grosso: recursos hídricos, clima, queimadas e o trabalho de monitoramento para prevenção e resposta a desastres no coração do bioma.</p>
         <div class="chips">
-            <span class="chip"><i data-lucide="activity"></i> Fenômeno ENOS</span>
+            <span class="chip"><i data-lucide="leaf"></i> Bioma Amazônia</span>
             <span class="chip"><i data-lucide="droplet"></i> Recursos hídricos</span>
-            <span class="chip"><i data-lucide="flames"></i> Incêndios florestais</span>
-            <span class="chip"><i data-lucide="shield"></i> Proteção e SGI PROTEGE</span>
+            <span class="chip"><i data-lucide="flames"></i> Queimadas</span>
+            <span class="chip"><i data-lucide="shield"></i> Proteção e defesa</span>
             <span class="chip"><i data-lucide="waves"></i> Bacia Amazônica</span>
         </div>
     </section>
 
     <div class="tabs">
         <button class="active" data-tab="visao"><i data-lucide="eye"></i> Visão Geral</button>
-        <button data-tab="impactos"><i data-lucide="flames"></i> Impactos na Amazônia</button>
-        <button data-tab="acao"><i data-lucide="shield"></i> Ação da SGI PROTEGE</button>
+        <button data-tab="rios"><i data-lucide="waves"></i> Rios e Clima</button>
+        <button data-tab="fogo"><i data-lucide="flames"></i> Fogo e Desmatamento</button>
+        <button data-tab="acao"><i data-lucide="shield"></i> Monitoramento</button>
     </div>
 
     <section id="view-visao" class="tab-view active">
-        <h3 class="section-title"><i data-lucide="thermometer"></i> O que é o El Niño</h3>
+        <h3 class="section-title"><i data-lucide="leaf"></i> O bioma Amazônico</h3>
         <div class="grid">
             <div class="card">
-                <h4><i data-lucide="waves"></i> Aquecimento do Pacífico</h4>
-                <p>O El Niño é a fase quente do fenômeno El Niño-Oscilação Sul (ENOS): anomalias de aquecimento das águas superficiais do Oceano Pacífico Equatorial, que alteram a circulação atmosférica e redistribuem chuvas em todo o planeta.</p>
+                <h4><i data-lucide="map-pin"></i> Maior floresta tropical do mundo</h4>
+                <p>A Amazônia concentra a maior floresta tropical contínua do planeta, abrigando biodiversidade única, rios de grande volume e estoques de carbono que influenciam o clima regional e global.</p>
             </div>
             <div class="card">
-                <h4><i data-lucide="droplet"></i> Efeito no regime de chuvas</h4>
-                <p>Na Amazônia e no Centro-Oeste, o El Niño costuma inibir a formação de chuva e prolongar o período de estiagem, aumentando o déficit hídrico, a intensidade da seca e o risco de incêndios florestais.</p>
+                <h4><i data-lucide="droplet"></i> Rios voadores</h4>
+                <p>A evapotranspiração da floresta alimenta os "rios voadores" de vapor d'água responsáveis pelas chuvas no Centro-Oeste, Sudeste e Sul do Brasil. A saúde da floresta define a disponibilidade de água no país.</p>
             </div>
             <div class="card">
-                <h4><i data-lucide="refresh-ccw"></i> Ciclo e duração</h4>
-                <p>O fenômeno dura, em média, de 9 a 12 meses, com intensidade classificada como fraca, moderada ou forte. Entre um episódio e outro há períodos neutros, seguidos ou não da fase fria (La Niña).</p>
+                <h4><i data-lucide="thermometer"></i> Sensibilidade climática</h4>
+                <p>Secas extremas, incêndios e desmatamento alteram o equilíbrio do bioma e amplificam eventos como estiagens prolongadas e ondas de calor, exigindo monitoramento contínuo.</p>
             </div>
         </div>
 
         <div class="card" style="margin-top:16px;">
-            <h4><i data-lucide="activity"></i> Índice ONI — fases do ENOS</h4>
-            <p>O Índice de Oscilação Sul (ONI) organiza as fases do fenômeno segundo as anomalias de temperatura do Pacífico. Abaixo, a escala de classificação utilizada pelos centros de monitoramento:</p>
-            <div class="scale">
-                <div class="seg lanina">LA NIÑA<small>fria · mais chuva na Amazônia</small></div>
-                <div class="seg neutro">NEUTRO<small>condições climatológicas</small></div>
-                <div class="seg elnino">EL NIÑO<small>quente · estiagem e calor</small></div>
-            </div>
+            <h4><i data-lucide="milestone"></i> Amazônia Legal e Mato Grosso</h4>
+            <p>O bioma Amazônia cobre 59% do território de Mato Grosso. Os municípios integrantes da Amazônia Legal no estado possuem fitofisionomia de floresta, cerrado e zonas de transição, todas monitoradas nas ações de proteção e resposta.</p>
         </div>
 
         <h3 class="section-title" style="margin-top:30px;"><i data-lucide="bar-chart-3"></i> Indicadores de acompanhamento</h3>
         <div class="stat-row">
             <div class="stat">
-                <div class="s-ico"><i data-lucide="radar"></i></div>
-                <div class="s-txt"><b>Anomalia térmica do Pacífico</b><span>Índice ENSO / ONI</span></div>
-            </div>
-            <div class="stat">
                 <div class="s-ico"><i data-lucide="droplet"></i></div>
-                <div class="s-txt"><b>Vazão dos rios</b><span>Cota das estações da ANA</span></div>
+                <div class="s-txt"><b>Cotas dos rios</b><span>Estações de referência da bacia</span></div>
             </div>
             <div class="stat">
                 <div class="s-ico"><i data-lucide="cloud-rain"></i></div>
-                <div class="s-txt"><b>Deficit pluviométrico</b><span>Chuva observada × normal</span></div>
+                <div class="s-txt"><b>Precipitação</b><span>Chuva observada × normal</span></div>
             </div>
             <div class="stat">
                 <div class="s-ico"><i data-lucide="flames"></i></div>
-                <div class="s-txt"><b>Focos de calor</b><span>Satélites de referência</span></div>
+                <div class="s-txt"><b>Focos de calor</b><span>Detecção por satélite</span></div>
+            </div>
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="tree-pine"></i></div>
+                <div class="s-txt"><b>Desmatamento</b><span>Alertas DETER / PRODES</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-rios" class="tab-view">
+        <h3 class="section-title"><i data-lucide="waves"></i> Rios da bacia em Mato Grosso</h3>
+        <div class="grid">
+            <div class="card">
+                <h4><i data-lucide="droplet"></i> Juruena e Teles Pires</h4>
+                <p>Rios de águas claras do norte de MT, afluentes do Tapajós, com trechos de alto valor para abastecimento, navegação e biodiversidade.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="droplet"></i> Xingu</h4>
+                <p>Bacia que drena a porção leste da Amazônia mato-grossense, sensível a variações do regime de chuvas e à expansão de atividades no seu entorno.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="droplet"></i> Araguaia</h4>
+                <p>Rio de planalto com planícies de inundação que conectam cerrado e floresta; sua cota é indicador importante para as áreas ribeirinhas.</p>
+            </div>
+        </div>
+
+        <h3 class="section-title" style="margin-top:30px;"><i data-lucide="cloud-rain"></i> Riscos hidroclimáticos</h3>
+        <div class="card">
+            <ul>
+                <li><b>Estiagem:</b> deficit hídrico prolongado afeta abastecimento, agricultura e navegação.</li>
+                <li><b>Secas extremas:</b> ondas de calor e ressecamento da floresta elevam o combustível das queimadas.</li>
+                <li><b>Chuvas concentradas:</b> eventos intensos de curta duração podem causar alagamentos e enxurradas.</li>
+                <li><b>Monitoramento de cotas:</b> acompanhamento dos níveis de referência nas estações da ANA para alerta preventivo.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="view-fogo" class="tab-view">
+        <h3 class="section-title"><i data-lucide="flames"></i> Queimadas e desmatamento</h3>
+        <div class="grid">
+            <div class="card">
+                <h4><i data-lucide="radar"></i> Detecção por satélite</h4>
+                <p>O monitoramento de focos de calor utiliza imagens de satélites de referência em tempo quase real, combinadas com alertas de desmatamento (DETER) e dados de área desflorestada (PRODES).</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="triangle-alert"></i> Temporada de incêndios</h4>
+                <p>O período de estiagem concentra o risco de incêndios florestais. Quando combinado a eventos como o El Niño, a janela crítica se prolonga e exige reforço do efetivo e das ações preventivas.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="heart-pulse"></i> Impacto à saúde</h4>
+                <p>A fumaça proveniente das queimadas degrada a qualidade do ar e agrava doenças respiratórias, especialmente em crianças, idosos e gestantes.</p>
             </div>
         </div>
 
         <div class="alert-note">
             <i data-lucide="info"></i>
-            <p>A classificação oficial do episódio em vigência é atualizada pelos centros nacionais e internacionais (INMET, CPTEC/INPE e NOAA/CPC). Os painéis acima refletem variáveis de monitoramento utilizadas pela SGI PROTEGE, a serem consolidadas com as fontes oficiais.</p>
-        </div>
-    </section>
-
-    <section id="view-impactos" class="tab-view">
-        <h3 class="section-title"><i data-lucide="map-pin"></i> Efeitos esperados na região</h3>
-        <div class="grid">
-            <div class="card">
-                <h4><i data-lucide="sun"></i> Seca e estiagem prolongada</h4>
-                <p>Redução das chuvas por vários meses consecutivos, com municípios em estado de atenção e abastecimento hídrico comprometido em áreas rurais e isoladas.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="flames"></i> Incêndios florestais</h4>
-                <p>Prolonga-se a estação seca na Amazônia, elevando o risco de queimadas e incêndios florestais, com prejuízos à biodiversidade, à qualidade do ar e à saúde pública.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="waves"></i> Nível dos rios</h4>
-                <p>Vazões abaixo da média afetam a navegação, a pesca e o transporte de insumos, além de intensificar a seca nos rios da Bacia Amazônica que cortam o norte de Mato Grosso.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="cloud-lightning"></i> Chuvas intensas e tempestades</h4>
-                <p>Há também eventos de chuva concentrada e tempestades severas em curtos períodos, aumentando o risco de alagamentos, vendavais e danos à infraestrutura.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="heart-pulse"></i> Saúde pública</h4>
-                <p>Ar seco e fumaça agravam doenças respiratórias; a crise hídrica impacta a qualidade da água e amplia riscos sanitários nas regiões afetadas.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="sprout"></i> Agropecuária</h4>
-                <p>Estiagens fora de época afetam as safras, pastagens e a recarga de mananciais, gerando perdas produtivas nos municípios do bioma em Mato Grosso.</p>
-            </div>
-        </div>
-
-        <div class="alert-note">
-            <i data-lucide="triangle-alert"></i>
-            <p>Os efeitos mencionados são típicos de episódios de El Niño e variam conforme a intensidade e a localidade. As medidas e prioridades são definidas nos planos e protocolos de cada município, com apoio do Estado.</p>
+            <p>Os números vigentes de focos de calor e desmatamento são atualizados pelas plataformas oficiais: INPE Queimadas, Terra Brasilis e DETER. As orientações operacionais são emitidas pelos órgãos de monitoramento e resposta do estado.</p>
         </div>
     </section>
 
     <section id="view-acao" class="tab-view">
-        <h3 class="section-title"><i data-lucide="shield"></i> Atuação da SGI PROTEGE</h3>
+        <h3 class="section-title"><i data-lucide="shield"></i> Monitoramento integrado</h3>
         <div class="grid">
             <div class="card">
-                <h4><i data-lucide="radar"></i> Monitoramento contínuo</h4>
-                <p>Acompanhamento das condições climáticas, dos focos de calor e dos níveis dos rios em Mato Grosso, integrando dados de satélites, radares e estações meteorológicas.</p>
+                <h4><i data-lucide="satellite"></i> Imagens e radar</h4>
+                <p>Satélites meteorológicos e sensores de focos de calor ajudam a identificar tendências de seca, chuva e incêndios com antecedência para acionar os alertas.</p>
             </div>
             <div class="card">
                 <h4><i data-lucide="users"></i> Apoio aos municípios</h4>
-                <p>Orientação técnica para elaboração de planos de contingência, decretos de situação de emergência e acionamento dos órgãos de resposta em cada município.</p>
+                <p>Orientação às prefeituras para planos de contingência, decretação de situação de emergência e coordenação das equipes de resposta em cada região.</p>
             </div>
             <div class="card">
-                <h4><i data-lucide="megaphone"></i> Alerta e comunicação</h4>
-                <p>Emissão de alertas e orientações à população sobre os riscos, o uso racional da água e as medidas de prevenção de incêndios e de saúde pública.</p>
+                <h4><i data-lucide="megaphone"></i> Alerta à população</h4>
+                <p>Comunicação de riscos à população, incluindo recomendações sobre o uso da água, queimadas, saúde respiratória e rotas de evacuação em caso de emergência.</p>
             </div>
         </div>
 
         <h3 class="section-title" style="margin-top:30px;"><i data-lucide="external-link"></i> Fontes oficiais de acompanhamento</h3>
         <div class="links-grid">
-            <a class="ext-link" href="https://portal.inmet.gov.br" target="_blank" rel="noopener">
-                <span><b>INMET</b><span>Instituto Nacional de Meteorologia</span></span>
+            <a class="ext-link" href="https://terrabrasilis.dpi.inpe.br" target="_blank" rel="noopener">
+                <span><b>INPE — Terra Brasilis</b><span>Desmatamento e queimadas</span></span>
                 <i data-lucide="external-link"></i>
             </a>
-            <a class="ext-link" href="https://www.cptec.inpe.br" target="_blank" rel="noopener">
-                <span><b>CPTEC / INPE</b><span>Previsões e ENOS</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
-            <a class="ext-link" href="https://www.gov.br/cemaden" target="_blank" rel="noopener">
-                <span><b>CEMADEN</b><span>Centro de Monitoramento de Desastres</span></span>
+            <a class="ext-link" href="https://queimadas.dgi.inpe.br" target="_blank" rel="noopener">
+                <span><b>INPE — Queimadas</b><span>Focos de calor em tempo real</span></span>
                 <i data-lucide="external-link"></i>
             </a>
             <a class="ext-link" href="https://www.snirh.gov.br" target="_blank" rel="noopener">
                 <span><b>ANA / SNIRH</b><span>Níveis e vazões dos rios</span></span>
                 <i data-lucide="external-link"></i>
             </a>
-            <a class="ext-link" href="https://terrabrasilis.dpi.inpe.br" target="_blank" rel="noopener">
-                <span><b>INPE Queimadas</b><span>Focos de calor em tempo real</span></span>
+            <a class="ext-link" href="https://www.gov.br/sipam" target="_blank" rel="noopener">
+                <span><b>SIPAM</b><span>Sistema de Proteção da Amazônia</span></span>
                 <i data-lucide="external-link"></i>
             </a>
-            <a class="ext-link" href="https://www.cpc.ncep.noaa.gov" target="_blank" rel="noopener">
-                <span><b>NOAA / CPC</b><span>Classificação oficial do ENOS</span></span>
+            <a class="ext-link" href="https://www.cptec.inpe.br" target="_blank" rel="noopener">
+                <span><b>CPTEC / INPE</b><span>Previsões e monitoramento</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+            <a class="ext-link" href="https://www.ibge.gov.br" target="_blank" rel="noopener">
+                <span><b>IBGE</b><span>Amazônia Legal e dados territoriais</span></span>
                 <i data-lucide="external-link"></i>
             </a>
         </div>
     </section>
 
     <footer>
-        <span>&copy; 2026 SGI PROTEGE de Mato Grosso — SGI PROTEGE</span>
-        <span><a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a> · <a href="el-nino.html">El Niño</a></span>
+        <span>&copy; 2026 SGI PROTEGE — Monitoramento Integrado</span>
+        <span><a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a> · <a href="amazonia.html">Amazônia</a></span>
     </footer>
 
     <script src="js/data.js"></script>

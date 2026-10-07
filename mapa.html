@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="theme-color" content="#0f172a">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Mapa Integrado — Painel Defesa Civil Mato Grosso</title>
+    <title>Mapa Integrado — Painel SGI PROTEGE Mato Grosso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -1273,7 +1273,7 @@
     <!-- Barra superior -->
     <div id="topbar">
         <a class="brand" href="index.html">
-            <img src="imagens/logo.png" alt="Defesa Civil MT">
+            <img src="imagens/logo.png" alt="SGI PROTEGE MT">
             <div class="txt">
                 <h1>SGI PROTEGE</h1>
                 <span>MAPA INTEGRADO · MT</span>
@@ -1295,6 +1295,7 @@
             <a class="icon-btn" href="waze.html"><i data-lucide="road"></i> <span class="lbl">Waze</span></a>
             <a class="icon-btn" href="satelite.html" title="Satélite &amp; Radar — animação de nuvens"><i data-lucide="orbit"></i> <span class="lbl">Satélite</span></a>
             <a class="icon-btn" href="el-nino.html" title="El Niño · Amazônia"><i data-lucide="activity"></i> <span class="lbl">El Niño</span></a>
+            <a class="icon-btn" href="amazonia.html" title="Amazônia · Floresta e riscos"><i data-lucide="leaf"></i> <span class="lbl">Amazônia</span></a>
             <div id="userArea"></div>
             <a class="icon-btn" href="index.html"><i data-lucide="home"></i> <span class="lbl">Início</span></a>
         </div>
@@ -1518,7 +1519,7 @@
             <label><span class="swatch" style="background:#34d399;border-radius:50%;"></span><i data-lucide="home"></i>Abrigos temporários</label>
             <div class="toggle on" id="abrigosBadge"></div>
         </div>
-        <div class="meta-line" id="metaAbrigos">Defesa Civil MT · abrigos por município</div>
+        <div class="meta-line" id="metaAbrigos">SGI PROTEGE MT · abrigos por município</div>
 
         <div class="group-title"><i data-lucide="calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
         <div id="cptecPanel" style="padding:0 2px;">
@@ -1878,7 +1879,7 @@
         <div class="mp-risk-bar" id="mpRiskBar"></div>
 
         <div class="mp-section"><i data-lucide="phone-call"></i> Contatos</div>
-        <div class="mp-contacts" id="mpContatos">Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192</div>
+        <div class="mp-contacts" id="mpContatos">SGI PROTEGE: 199 · Bombeiros: 193 · SAMU: 192</div>
 
         <div class="mp-footer">
             <span id="mpFontes"></span>
@@ -1888,7 +1889,7 @@
 
     <!-- Aviso técnico obrigatório (proposta, item 10) -->
     <div id="techNotice">
-        <b>Aviso técnico:</b> dados de satélite, radar e modelos meteorológicos são suporte à decisão e exigem validação operacional da Defesa Civil em casos críticos. Fonte e horário de atualização indicados por camada.
+        <b>Aviso técnico:</b> dados de satélite, radar e modelos meteorológicos são suporte à decisão e exigem validação operacional da SGI PROTEGE em casos críticos. Fonte e horário de atualização indicados por camada.
     </div>
 
     <div id="toast"></div>
@@ -2340,7 +2341,7 @@ async function loadServicosProximos(lat, lon) {
             .sort((a, b) => a.dist - b.dist)
             .slice(0, 4);
         if (!itens.length) throw new Error('sem resultados');
-        el.innerHTML = 'Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192<br>' +
+        el.innerHTML = 'SGI PROTEGE: 199 · Bombeiros: 193 · SAMU: 192<br>' +
             itens.map(i => `<span style="display:inline-block;margin-top:4px;">${i.tipo}: <b>${i.nome}</b> — ${i.dist.toFixed(1)} km</span>`).join('<br>');
     } catch (e) {
         // Sem cobertura do OSM na região: mantém apenas os números gerais.
@@ -2361,7 +2362,7 @@ window.previsaoMun = function (cod) {
     });
     document.getElementById('mpRiskBar').innerHTML = '';
     document.getElementById('mpAtualizado').textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-    document.getElementById('mpContatos').textContent = 'Defesa Civil: 199 · Bombeiros: 193 · SAMU: 192';
+    document.getElementById('mpContatos').textContent = 'SGI PROTEGE: 199 · Bombeiros: 193 · SAMU: 192';
     loadServicosProximos(c.lat, c.lng);
 
     // ===== DADOS IBGE =====
@@ -2905,7 +2906,7 @@ async function loadBarragens() {
     }
 }
 
-/* ================= Abrigos temporários (Defesa Civil MT) ================= */
+/* ================= Abrigos temporários (SGI PROTEGE MT) ================= */
 const ABRIGO_TIPO_LBL = { ginasio: 'Ginásio Poliesportivo', escola: 'Escola', centro: 'Centro comunitário' };
 async function loadAbrigos() {
     if (abrigosLoading) return;
@@ -2941,7 +2942,7 @@ async function loadAbrigos() {
                         <div><b>Contato:</b> ${a.contato || '—'}</div>
                         <div><b>Status:</b> <span style="color:${statusCor};">${statusLbl}</span></div>
                         ${a.observacoes ? '<div style="margin-top:4px;color:#cbd5e1;"><b>Obs.:</b> ' + a.observacoes + '</div>' : ''}
-                        <div style="margin-top:4px;color:#94a3b8;font-size:9.5px;">Fonte: ${a.fonte || 'Defesa Civil MT'}</div>
+                        <div style="margin-top:4px;color:#94a3b8;font-size:9.5px;">Fonte: ${a.fonte || 'SGI PROTEGE MT'}</div>
                     </div>
                     ${reportMarkerBtn(lat, lng)}
                 </div>`).addTo(abrigosLayer);
@@ -3177,7 +3178,7 @@ function rainAlertShowNext() {
     document.getElementById('rainTitle').textContent = 'Aviso de ' + alert.evento;
     document.getElementById('rainSev').textContent = alert.sev.lbl;
     document.getElementById('rainKicker').textContent = 'Alerta meteorológico · INMET · ' + alturaSeveridade(alert.sev);
-    document.getElementById('rainDesc').textContent = alert.descricao || 'Previsão de chuvas intensas para Mato Grosso. Defesa Civil recomenda atenção e acompanhamento.';
+    document.getElementById('rainDesc').textContent = alert.descricao || 'Previsão de chuvas intensas para Mato Grosso. SGI PROTEGE recomenda atenção e acompanhamento.';
     document.getElementById('rainMeta').innerHTML = `
         <span><b>Início:</b> ${rainFmtDh(alert.inicio)}</span>
         <span><b>Válido até:</b> ${rainFmtDh(alert.fim)}</span>
