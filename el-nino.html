@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="imagens/logo.png">
+    <title>El Niño · Amazônia - Defesa Civil MT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="css/animated-icons.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #293548;
+            --accent-orange: #f9731c;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        [data-lucide] { width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2; }
+
+        body { background: var(--bg-dark); color: var(--text-main); overflow-x: hidden; }
+        html { background: var(--bg-dark); }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background: linear-gradient(180deg, rgba(11, 19, 41, 0.97) 0%, rgba(11, 19, 41, 0.85) 100%);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { height: 50px; }
+        .logo-text h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-text span { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+
+        nav ul { display: flex; list-style: none; gap: 28px; }
+        nav ul li a {
+            text-decoration: none; color: var(--text-muted); font-size: 14px;
+            font-weight: 500; transition: color 0.2s; position: relative; padding-bottom: 5px;
+        }
+        nav ul li a:hover, nav ul li a.active { color: var(--text-main); }
+        nav ul li a.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-blue));
+        }
+
+        .emergency-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--accent-orange); color: #fff; font-weight: 700; font-size: 13px;
+            padding: 10px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .emergency-btn:hover { background: var(--accent-orange-hover, #ea580c); transform: translateY(-1px); }
+
+        .hero {
+            padding: 46px 5% 26px;
+            background:
+                radial-gradient(1200px 420px at 20% -10%, rgba(249, 115, 22, 0.16) 0%, transparent 60%),
+                radial-gradient(900px 380px at 85% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 55%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .hero .eyebrow {
+            display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 2px;
+            font-weight: 700; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 12px;
+        }
+        .hero h2 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; letter-spacing: -0.5px; }
+        .hero h2 span { background: linear-gradient(90deg, var(--accent-orange), var(--accent-blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .hero p { color: var(--text-muted); margin-top: 12px; max-width: 760px; font-size: 15px; line-height: 1.6; }
+        .hero .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+        .chip {
+            font-size: 12px; font-weight: 600; color: var(--text-muted);
+            border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 999px;
+            display: inline-flex; align-items: center; gap: 6px; background: rgba(30, 41, 59, 0.6);
+        }
+
+        .tabs {
+            display: flex; gap: 8px; padding: 18px 5% 0; flex-wrap: wrap;
+        }
+        .tabs button {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color);
+            font-size: 13.5px; font-weight: 600; padding: 10px 18px; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .tabs button:hover { color: var(--text-main); border-color: var(--accent-blue); }
+        .tabs button.active {
+            color: #fff; border-color: transparent;
+            background: linear-gradient(135deg, var(--accent-orange), #c2410c);
+        }
+
+        .tab-view { display: none; padding: 26px 5% 46px; }
+        .tab-view.active { display: block; }
+
+        .section-title { font-size: 20px; font-weight: 700; margin: 8px 0 18px; display: flex; align-items: center; gap: 10px; }
+        .section-title i { color: var(--accent-blue); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 20px; transition: all 0.2s;
+        }
+        .card:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+        .card h4 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+        .card h4 i { color: var(--accent-orange); }
+        .card p { color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
+        .card ul { list-style: none; color: var(--text-muted); font-size: 13.5px; line-height: 1.7; }
+        .card ul li { padding: 5px 0 5px 22px; position: relative; }
+        .card ul li::before {
+            content: ''; position: absolute; left: 4px; top: 13px; width: 7px; height: 7px;
+            border-radius: 50%; background: var(--accent-orange);
+        }
+
+        .scale {
+            display: flex; justify-content: space-between; align-items: stretch; gap: 8px; margin-top: 14px;
+        }
+        .scale .seg {
+            flex: 1; text-align: center; padding: 12px 6px; border-radius: 10px;
+            font-size: 11.5px; font-weight: 700; color: #0f172a;
+        }
+        .scale .seg.lanina { background: #7dd3fc; }
+        .scale .seg.neutro { background: #94a3b8; }
+        .scale .seg.elnino { background: #fdba74; }
+        .scale .seg small { display: block; font-weight: 500; font-size: 10.5px; margin-top: 3px; }
+
+        .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 18px 0; }
+        .stat {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px;
+            padding: 18px; display: flex; align-items: center; gap: 14px;
+        }
+        .stat .s-ico {
+            width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0; background: rgba(56, 189, 248, 0.12); color: var(--accent-blue);
+        }
+        .stat .s-txt b { display: block; font-size: 16px; font-weight: 800; }
+        .stat .s-txt span { font-size: 12px; color: var(--text-muted); }
+
+        .links-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .ext-link {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 14px 16px; text-decoration: none; color: var(--text-main); transition: all 0.2s;
+        }
+        .ext-link:hover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+        .ext-link b { font-size: 13.5px; display: block; }
+        .ext-link span { font-size: 11.5px; color: var(--text-muted); }
+        .ext-link i { color: var(--accent-blue); flex-shrink: 0; }
+
+        .alert-note {
+            display: flex; gap: 12px; align-items: flex-start;
+            background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.35);
+            border-radius: 12px; padding: 14px 16px; margin: 16px 0;
+        }
+        .alert-note i { color: var(--accent-orange); flex-shrink: 0; margin-top: 2px; }
+        .alert-note p { color: var(--text-main); font-size: 13.5px; line-height: 1.6; }
+
+        footer {
+            border-top: 1px solid var(--border-color); padding: 22px 5%; color: var(--text-muted);
+            font-size: 12.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+        }
+        footer a { color: var(--text-muted); text-decoration: none; }
+        footer a:hover { color: var(--text-main); }
+
+        @media (max-width: 860px) {
+            nav ul { display: none; }
+            header { flex-wrap: wrap; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <img src="imagens/logo.png" alt="Defesa Civil MT">
+            <div class="logo-text">
+                <h1>SGI PROTEGE</h1>
+                <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li><a href="mapa.html">Mapa</a></li>
+                <li><a href="alertas.html">Alertas</a></li>
+                <li><a href="painel.html">Painel</a></li>
+                <li><a href="gestao.html">Gestão</a></li>
+                <li><a href="gestaodefrota.html">Frota</a></li>
+                <li><a href="el-nino.html" class="active">El Niño</a></li>
+                <li><a href="waze.html">Waze</a></li>
+            </ul>
+        </nav>
+
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div id="userArea"></div>
+            <a href="ocorrencia.html" class="emergency-btn">
+                <i data-lucide="triangle-alert"></i>
+                Registre sua ocorrência
+            </a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="eyebrow"><i data-lucide="radar"></i> Monitoramento climático - Defesa Civil MT</div>
+        <h2>EL NIÑO <span>· AMAZÔNIA</span></h2>
+        <p>Painel informativo sobre o fenômeno El Niño e seus efeitos sobre o bioma amazônico e o Estado de Mato Grosso. Reúne conceitos, impactos esperados e as linhas de atuação da Defesa Civil para prevenção, preparação e resposta.</p>
+        <div class="chips">
+            <span class="chip"><i data-lucide="activity"></i> Fenômeno ENOS</span>
+            <span class="chip"><i data-lucide="droplet"></i> Recursos hídricos</span>
+            <span class="chip"><i data-lucide="flames"></i> Incêndios florestais</span>
+            <span class="chip"><i data-lucide="shield"></i> Proteção e defesa civil</span>
+            <span class="chip"><i data-lucide="waves"></i> Bacia Amazônica</span>
+        </div>
+    </section>
+
+    <div class="tabs">
+        <button class="active" data-tab="visao"><i data-lucide="eye"></i> Visão Geral</button>
+        <button data-tab="impactos"><i data-lucide="flames"></i> Impactos na Amazônia</button>
+        <button data-tab="acao"><i data-lucide="shield"></i> Ação da Defesa Civil</button>
+    </div>
+
+    <section id="view-visao" class="tab-view active">
+        <h3 class="section-title"><i data-lucide="thermometer"></i> O que é o El Niño</h3>
+        <div class="grid">
+            <div class="card">
+                <h4><i data-lucide="waves"></i> Aquecimento do Pacífico</h4>
+                <p>O El Niño é a fase quente do fenômeno El Niño-Oscilação Sul (ENOS): anomalias de aquecimento das águas superficiais do Oceano Pacífico Equatorial, que alteram a circulação atmosférica e redistribuem chuvas em todo o planeta.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="droplet"></i> Efeito no regime de chuvas</h4>
+                <p>Na Amazônia e no Centro-Oeste, o El Niño costuma inibir a formação de chuva e prolongar o período de estiagem, aumentando o déficit hídrico, a intensidade da seca e o risco de incêndios florestais.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="refresh-ccw"></i> Ciclo e duração</h4>
+                <p>O fenômeno dura, em média, de 9 a 12 meses, com intensidade classificada como fraca, moderada ou forte. Entre um episódio e outro há períodos neutros, seguidos ou não da fase fria (La Niña).</p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+            <h4><i data-lucide="activity"></i> Índice ONI — fases do ENOS</h4>
+            <p>O Índice de Oscilação Sul (ONI) organiza as fases do fenômeno segundo as anomalias de temperatura do Pacífico. Abaixo, a escala de classificação utilizada pelos centros de monitoramento:</p>
+            <div class="scale">
+                <div class="seg lanina">LA NIÑA<small>fria · mais chuva na Amazônia</small></div>
+                <div class="seg neutro">NEUTRO<small>condições climatológicas</small></div>
+                <div class="seg elnino">EL NIÑO<small>quente · estiagem e calor</small></div>
+            </div>
+        </div>
+
+        <h3 class="section-title" style="margin-top:30px;"><i data-lucide="bar-chart-3"></i> Indicadores de acompanhamento</h3>
+        <div class="stat-row">
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="radar"></i></div>
+                <div class="s-txt"><b>Anomalia térmica do Pacífico</b><span>Índice ENSO / ONI</span></div>
+            </div>
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="droplet"></i></div>
+                <div class="s-txt"><b>Vazão dos rios</b><span>Cota das estações da ANA</span></div>
+            </div>
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="cloud-rain"></i></div>
+                <div class="s-txt"><b>Deficit pluviométrico</b><span>Chuva observada × normal</span></div>
+            </div>
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="flames"></i></div>
+                <div class="s-txt"><b>Focos de calor</b><span>Satélites de referência</span></div>
+            </div>
+        </div>
+
+        <div class="alert-note">
+            <i data-lucide="info"></i>
+            <p>A classificação oficial do episódio em vigência é atualizada pelos centros nacionais e internacionais (INMET, CPTEC/INPE e NOAA/CPC). Os painéis acima refletem variáveis de monitoramento utilizadas pela Defesa Civil, a serem consolidadas com as fontes oficiais.</p>
+        </div>
+    </section>
+
+    <section id="view-impactos" class="tab-view">
+        <h3 class="section-title"><i data-lucide="map-pin"></i> Efeitos esperados na região</h3>
+        <div class="grid">
+            <div class="card">
+                <h4><i data-lucide="sun"></i> Seca e estiagem prolongada</h4>
+                <p>Redução das chuvas por vários meses consecutivos, com municípios em estado de atenção e abastecimento hídrico comprometido em áreas rurais e isoladas.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="flames"></i> Incêndios florestais</h4>
+                <p>Prolonga-se a estação seca na Amazônia, elevando o risco de queimadas e incêndios florestais, com prejuízos à biodiversidade, à qualidade do ar e à saúde pública.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="waves"></i> Nível dos rios</h4>
+                <p>Vazões abaixo da média afetam a navegação, a pesca e o transporte de insumos, além de intensificar a seca nos rios da Bacia Amazônica que cortam o norte de Mato Grosso.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="cloud-lightning"></i> Chuvas intensas e tempestades</h4>
+                <p>Há também eventos de chuva concentrada e tempestades severas em curtos períodos, aumentando o risco de alagamentos, vendavais e danos à infraestrutura.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="heart-pulse"></i> Saúde pública</h4>
+                <p>Ar seco e fumaça agravam doenças respiratórias; a crise hídrica impacta a qualidade da água e amplia riscos sanitários nas regiões afetadas.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="sprout"></i> Agropecuária</h4>
+                <p>Estiagens fora de época afetam as safras, pastagens e a recarga de mananciais, gerando perdas produtivas nos municípios do bioma em Mato Grosso.</p>
+            </div>
+        </div>
+
+        <div class="alert-note">
+            <i data-lucide="triangle-alert"></i>
+            <p>Os efeitos mencionados são típicos de episódios de El Niño e variam conforme a intensidade e a localidade. As medidas e prioridades são definidas nos planos e protocolos de cada município, com apoio do Estado.</p>
+        </div>
+    </section>
+
+    <section id="view-acao" class="tab-view">
+        <h3 class="section-title"><i data-lucide="shield"></i> Atuação da Defesa Civil</h3>
+        <div class="grid">
+            <div class="card">
+                <h4><i data-lucide="radar"></i> Monitoramento contínuo</h4>
+                <p>Acompanhamento das condições climáticas, dos focos de calor e dos níveis dos rios em Mato Grosso, integrando dados de satélites, radares e estações meteorológicas.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="users"></i> Apoio aos municípios</h4>
+                <p>Orientação técnica para elaboração de planos de contingência, decretos de situação de emergência e acionamento dos órgãos de resposta em cada município.</p>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="megaphone"></i> Alerta e comunicação</h4>
+                <p>Emissão de alertas e orientações à população sobre os riscos, o uso racional da água e as medidas de prevenção de incêndios e de saúde pública.</p>
+            </div>
+        </div>
+
+        <h3 class="section-title" style="margin-top:30px;"><i data-lucide="external-link"></i> Fontes oficiais de acompanhamento</h3>
+        <div class="links-grid">
+            <a class="ext-link" href="https://portal.inmet.gov.br" target="_blank" rel="noopener">
+                <span><b>INMET</b><span>Instituto Nacional de Meteorologia</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+            <a class="ext-link" href="https://www.cptec.inpe.br" target="_blank" rel="noopener">
+                <span><b>CPTEC / INPE</b><span>Previsões e ENOS</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+            <a class="ext-link" href="https://www.gov.br/cemaden" target="_blank" rel="noopener">
+                <span><b>CEMADEN</b><span>Centro de Monitoramento de Desastres</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+            <a class="ext-link" href="https://www.snirh.gov.br" target="_blank" rel="noopener">
+                <span><b>ANA / SNIRH</b><span>Níveis e vazões dos rios</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+            <a class="ext-link" href="https://terrabrasilis.dpi.inpe.br" target="_blank" rel="noopener">
+                <span><b>INPE Queimadas</b><span>Focos de calor em tempo real</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+            <a class="ext-link" href="https://www.cpc.ncep.noaa.gov" target="_blank" rel="noopener">
+                <span><b>NOAA / CPC</b><span>Classificação oficial do ENOS</span></span>
+                <i data-lucide="external-link"></i>
+            </a>
+        </div>
+    </section>
+
+    <footer>
+        <span>&copy; 2026 Defesa Civil de Mato Grosso — SGI PROTEGE</span>
+        <span><a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a> · <a href="el-nino.html">El Niño</a></span>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/proxy.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/session.js"></script>
+    <script>dcRenderUserArea();</script>
+    <script>
+        document.querySelectorAll('.tabs button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.remove('active'); });
+                document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
+                btn.classList.add('active');
+                document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+</html>
