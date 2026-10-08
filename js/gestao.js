@@ -1,5 +1,5 @@
 /* ============================================================
-   Gestão por Município — SGI PROTEGE MT.
+   Gestão por Município — SGI PROTEGE.
    Depende de: js/session.js, js/api.js, js/proxy.js, Leaflet.
    ============================================================ */
 (function () {

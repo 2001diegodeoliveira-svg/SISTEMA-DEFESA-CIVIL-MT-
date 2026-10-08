@@ -106,7 +106,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // Initialize Sequelize
-const sequelize = new Sequelize('postgres://user:password@localhost:5432/defesa_civil');
+const sequelize = new Sequelize('postgres://user:password@localhost:5432/sgi_protege');
 
 // Define User model
 const User = sequelize.define('User', {

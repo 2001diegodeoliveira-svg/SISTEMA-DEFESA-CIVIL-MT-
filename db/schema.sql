@@ -1,5 +1,5 @@
 -- ============================================================
--- Schema PostgreSQL — Sistema SGI PROTEGE MT (Neon)
+-- Schema PostgreSQL — Sistema SGI PROTEGE (Neon)
 -- Idempotente: pode ser executado repetidamente.
 -- Uso:  psql "$DATABASE_URL" -f db/schema.sql
 --       (ou: node db/migrate.js  — aplica este arquivo + migra os JSONs)

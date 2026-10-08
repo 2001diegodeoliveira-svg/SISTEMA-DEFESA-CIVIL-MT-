@@ -1,5 +1,5 @@
 /* ============================================================
-   Notícias diárias — tempo, ações climáticas e SGI PROTEGE MT.
+   Notícias diárias — tempo, ações climáticas e SGI PROTEGE.
    Fonte: Google Notícias (RSS de busca), conteúdo atualizado o dia todo.
 
    GET /api/noticias             → agrega as buscas padrão (diárias)
@@ -10,7 +10,7 @@ const { jsonResponse } = require('../_lib/http');
 const { serve } = require('../_lib/serverless');
 
 const BUSCAS = [
-  'SGI PROTEGE mato grosso',
+  'SGI PROTEGE | Mato Grosso',
   'tempo clima mato grosso',
   'ações climáticas mato grosso',
   'cuiabá tempo chuva',
@@ -108,7 +108,7 @@ function parseItens(xml) {
 async function buscar(q) {
   const url = RSS_URL.replace('%s', encodeURIComponent(q));
   const r = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DefesaCivilMT/1.0; +https://sistema-defesa-civil-mt.vercel.app)' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SGIProtege/1.0)' },
   });
   if (!r.ok) throw new Error('http ' + r.status);
   return parseItens(await r.text());

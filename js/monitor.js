@@ -1,5 +1,5 @@
 /* ============================================================
-   Monitor inteligente de alertas — SGI PROTEGE MT.
+   Monitor inteligente de alertas — SGI PROTEGE.
    Roda em qualquer página (requer js/proxy.js para dcProxyFetch).
    - Monitora clima em 8 cidades de MT, novos focos INPE e novos
      eventos SIPAM a cada 5 min.
@@ -365,7 +365,7 @@
         if (firstRun) {
             firstRun = false;
             const okCities = MON_CITIES.filter(c => prevByCity[c.nome]).length;
-            queueAlert({ type: 'event', severity: 'info', title: 'Monitoramento Ativo', desc: `${okCities} de ${MON_CITIES.length} cidades conectadas · Ciclo a cada 5 min`, city: 'SGI PROTEGE MT', ts: Date.now() });
+            queueAlert({ type: 'event', severity: 'info', title: 'Monitoramento Ativo', desc: `${okCities} de ${MON_CITIES.length} cidades conectadas · Ciclo a cada 5 min`, city: 'SGI PROTEGE', ts: Date.now() });
         }
         setTimeout(runCycle, 5 * 60 * 1000);
     }

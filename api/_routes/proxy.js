@@ -36,7 +36,7 @@ async function fetchUpstream(target, attempts = 2) {
         try {
             return await fetch(rewriteUrl(target), {
                 headers: {
-                    'User-Agent': 'DefesaCivilMT/1.0 (+painel-operacional)',
+                    'User-Agent': 'SGIProtege/1.0 (+painel-operacional)',
                     'Accept': '*/*',
                 },
                 redirect: 'manual',

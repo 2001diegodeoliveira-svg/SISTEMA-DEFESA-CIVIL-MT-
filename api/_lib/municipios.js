@@ -155,7 +155,7 @@ function normUsuario(nome) {
 }
 
 var MUNICIPIOS_SEED = MUNICIPIOS_MT.map(function (nome) {
-  return { usuario: normUsuario(nome), senha: "defesa123", nome: "SGI PROTEGE de " + nome, perfil: "municipal", municipio: nome };
+  return { usuario: normUsuario(nome), senha: "defesa123", nome: "SGI PROTEGE " + nome, perfil: "municipal", municipio: nome };
 });
 
 module.exports = { MUNICIPIOS_MT: MUNICIPIOS_MT, MUNICIPIOS_SEED: MUNICIPIOS_SEED, normUsuario: normUsuario };

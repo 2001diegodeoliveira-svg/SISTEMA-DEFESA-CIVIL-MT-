@@ -374,8 +374,6 @@
         .om-head i { color: var(--accent-orange); margin-right: 8px; }
         .om-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
         .om-close:hover { color: var(--text-main); }
-        .om-video-wrap { margin: 16px 20px 0; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 16/9; }
-        .om-video-wrap video { width: 100%; height: 100%; display: block; }
         .om-info { padding: 12px 20px 0; }
         .om-info p { font-size: 12.5px; color: var(--text-muted); margin: 0; line-height: 1.6; }
         .om-actions { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 16px; }
@@ -481,28 +479,6 @@
             justify-items: center;
             gap: 30px;
             padding: 0 5% 40px 5%;
-        }
-
-        /* Figura de apoio (Bombeiro/SGI PROTEGE) ao lado da frase do Hero */
-        .hero-zeca {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-            align-self: start;
-            margin-top: 58px;
-        }
-        .hero-zeca img {
-            width: 100%;
-            max-width: 330px;
-            height: auto;
-            filter: drop-shadow(0 0 22px rgba(249, 99, 28, 0.35)) drop-shadow(0 14px 34px rgba(0, 0, 0, 0.55));
-        }
-
-        @keyframes heroZecaRise {
-            0% { transform: translateY(110px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
         }
 
         /* Atalhos RÃ¡pidos (Cards Inferiores ao Hero) */
@@ -804,10 +780,6 @@
                 grid-template-columns: 1fr;
                 text-align: center;
             }
-            .hero-zeca {
-                order: 2;
-                margin-top: 30px;
-            }
             .hero-content {
                 order: 1;
             }
@@ -853,7 +825,7 @@
     <!-- CabeÃ§alho Principal -->
     <header>
         <div class="logo-area">
-            <img src="imagens/logo.png" alt="SGI PROTEGE MT" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+            <img src="imagens/logo.png" alt="SGI PROTEGE" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
             <div class="logo-text">
                 <h1>SGI PROTEGE</h1>
                 <span>SISTEMA DE GESTÃƒO INTEGRADA E PROTEÃ‡ÃƒO</span>
@@ -871,7 +843,7 @@
                 <li><a href="el-nino.html">El NiÃ±o</a></li>
                 <li><a href="amazonia.html">AmazÃ´nia</a></li>
                 <li><a href="#" onclick="document.getElementById('orientModal').classList.add('open'); return false;">OrientaÃ§Ãµes</a></li>
-                <li><a href="waze.html">Waze</a></li>
+                <li><a href="">Waze</a></li>
             </ul>
         </nav>
 
@@ -888,7 +860,7 @@
     <section class="hero">
         <div class="hero-content">
             <h2>PROTEGER VIDAS,<br><span>PRESERVAR O FUTURO.</span></h2>
-            <p>Painel geoespacial integrado para monitoramento, anÃ¡lise situacional e apoio Ã  decisÃ£o da SGI PROTEGE de Mato Grosso.</p>
+            <p>Painel geoespacial integrado para monitoramento, anÃ¡lise situacional e apoio Ã  decisÃ£o da SGI PROTEGE em Mato Grosso.</p>
 
             <div class="hero-action">
                 <a href="alertas.html" class="btn-main-alert">
@@ -902,10 +874,6 @@
                 <div class="hstat"><b id="hsAlertas">6</b><span>Alertas ativos agora</span></div>
                 <div class="hstat"><b id="hsEstacoes">8</b><span>EstaÃ§Ãµes na rede</span></div>
             </div>
-        </div>
-
-        <div class="hero-zeca">
-            <img src="zeca/76253-removebg-preview.png" alt="Equipe de SGI PROTEGE de Mato Grosso">
         </div>
 
         <div class="hero-map-container">
@@ -1029,7 +997,7 @@
     <!-- RodapÃ© -->
     <footer>
         <div>
-            <strong>SGI PROTEGE DO SISTEMA DE GESTÃƒO INTEGRADA E PROTEÃ‡ÃƒO</strong><br>
+            <strong>SGI PROTEGE</strong><br>
             Todos os direitos reservados Â© 2026
         </div>
         <div class="footer-social">
@@ -1040,7 +1008,7 @@
             <a href="#"><i data-lucide="youtube"></i></a>
         </div>
         <div class="footer-apps">
-            <span style="font-size: 11px;">Aplicativo SGI PROTEGE MT</span>
+            <span style="font-size: 11px;">Aplicativo SGI PROTEGE</span>
             <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="App Store">
             <img src="https://play.google.com/intl/pt-br/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Google Play">
         </div>
@@ -1053,24 +1021,18 @@
         </div>
     </footer>
 
-    <!-- Modal OrientaÃ§Ãµes com VÃ­deo -->
+    <!-- Modal de orientações -->
     <div id="orientModal" class="orient-modal">
         <div class="om-box">
             <div class="om-head">
                 <h3><i data-lucide="shield"></i> OrientaÃ§Ãµes de SeguranÃ§a</h3>
                 <button class="om-close" onclick="document.getElementById('orientModal').classList.remove('open')"><i data-lucide="x"></i></button>
             </div>
-            <div class="om-video-wrap">
-                <video id="orientVideo" controls preload="metadata" poster="imagens/logo.png">
-                    <source src="orienta%C3%A7%C3%A3o/orienta%C3%A7%C3%A3o%20zeca.mp4" type="video/mp4">
-                    Seu navegador nÃ£o suporta vÃ­deos HTML5.
-                </video>
-            </div>
             <div class="om-info">
-                <p>Assista ao vÃ­deo de orientaÃ§Ãµes da SGI PROTEGE de Mato Grosso. Saiba como agir antes, durante e depois de cada tipo de emergÃªncia.</p>
+                <p>Acompanhe os alertas ativos para receber orientações atualizadas. Em uma emergência, ligue para 199 e informe o município, o local e o risco observado.</p>
             </div>
             <div class="om-actions">
-                <a href="index.html" class="om-home"><i data-lucide="home"></i> Voltar ao InÃ­cio</a>
+                <a href="alertas.html" class="om-home"><i data-lucide="triangle-alert"></i> Ver alertas</a>
                 <button class="om-close-btn" onclick="document.getElementById('orientModal').classList.remove('open')">Fechar</button>
             </div>
         </div>
@@ -1163,7 +1125,7 @@
                     <div class="main-news-card" style="background:linear-gradient(135deg,#0a1b33 0%,#123a63 62%,#f97316 180%);opacity:.9;">
                         <span class="badge-destaque">ATUALIZAÃ‡ÃƒO DIÃRIA</span>
                         <h4>Nenhuma notÃ­cia publicada nas Ãºltimas 24h.</h4>
-                        <p>O feed Ã© atualizado automaticamente â€” notÃ­cias de tempo, aÃ§Ãµes climÃ¡ticas e SGI PROTEGE de Mato Grosso aparecerÃ£o aqui assim que forem publicadas.</p>
+                        <p>O feed Ã© atualizado automaticamente â€” notÃ­cias de tempo, aÃ§Ãµes climÃ¡ticas e SGI PROTEGE em Mato Grosso aparecerÃ£o aqui assim que forem publicadas.</p>
                     </div>
                 `;
                 return;
@@ -1733,14 +1695,9 @@
                 gsap.fromTo('.hero-content p', { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .8, delay: .15, ease: 'power3.out' });
                 gsap.fromTo('.hero-action', { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .8, delay: .3, ease: 'power3.out' });
                 gsap.fromTo('.hero-stats', { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .8, delay: .45, stagger: .1, ease: 'power3.out' });
-                gsap.fromTo('.hero-zeca img', { y: 90, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.05, delay: .35, ease: 'power3.out' });
                 gsap.fromTo('.map-frame', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.0, delay: .5, ease: 'power3.out' });
 
-                // Parallax suave: imagem da equipe e mapa sobem mais devagar que o scroll
-                gsap.to('.hero-zeca img', {
-                    yPercent: -14, ease: 'none',
-                    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
-                });
+                // Parallax suave no mapa durante o scroll
                 gsap.to('.map-frame', {
                     yPercent: 8, ease: 'none',
                     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }

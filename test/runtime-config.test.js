@@ -16,7 +16,7 @@ function validProductionEnv(overrides = {}) {
     VERCEL: '1',
     VERCEL_ENV: 'production',
     JWT_SECRET: 'a-secure-production-secret-with-more-than-32-bytes',
-    CORS_ORIGIN: 'https://defesacivil.mt.gov.br',
+    CORS_ORIGIN: 'https://sgi-protege.example',
     PROXY_HOSTS: 'apiprevmet3.inmet.gov.br,panorama.sipam.gov.br',
     AUTH_LOGIN_ENABLED: 'true',
     DEMO_HORAS: '0',
@@ -144,10 +144,10 @@ test('handler Vercel aceita headers do Node e aplica a origem CORS permitida', a
     const response = await apiHandler({
       method: 'OPTIONS',
       url: '/api/alertas',
-      headers: { origin: 'https://defesacivil.mt.gov.br' },
+      headers: { origin: 'https://sgi-protege.example' },
     });
     assert.equal(response.status, 204);
-    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://defesacivil.mt.gov.br');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://sgi-protege.example');
   } finally {
     for (const [key, value] of previous) {
       if (value === undefined) delete process.env[key];
@@ -166,7 +166,7 @@ test('produção retorna manutenção para login suspenso mesmo sem admin seedad
     const response = await apiHandler({
       method: 'POST',
       url: '/api/auth/login',
-      headers: { origin: 'https://defesacivil.mt.gov.br', 'content-type': 'application/json' },
+      headers: { origin: 'https://sgi-protege.example', 'content-type': 'application/json' },
       text: async () => JSON.stringify({ usuario: 'admin', senha: 'nao-usada' }),
     });
 
@@ -216,10 +216,10 @@ test('rota serverless propaga CORS com headers Node e serve alertas sem fetch ex
     const response = await apiHandler({
       method: 'GET',
       url: '/api/alertas?inmet=0',
-      headers: { origin: 'https://defesacivil.mt.gov.br' },
+      headers: { origin: 'https://sgi-protege.example' },
     });
     assert.equal(response.status, 200);
-    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://defesacivil.mt.gov.br');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://sgi-protege.example');
     assert.ok(Array.isArray((await response.json()).alertas));
   } finally {
     for (const [key, value] of previous) {
@@ -327,12 +327,12 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
       });
     };
     await writeCollection('users', [{
-      id: 'legacy-defense', usuario: 'defesa', senhaHash: bcrypt.hashSync('defesa123', 4),
+      id: 'legacy-user', usuario: 'old-user', senhaHash: bcrypt.hashSync('old-user-pass', 4),
       nome: 'Conta demo', perfil: 'admin', ativo: false, cadastroId: null,
     }]);
-    const demoLogin = await request('auth/login', 'POST', { usuario: 'defesa', senha: 'defesa123' });
+    const demoLogin = await request('auth/login', 'POST', { usuario: 'old-user', senha: 'old-user-pass' });
     assert.equal(demoLogin.status, 401);
-    const legacyToken = jwt.sign({ sub: 'legacy-defense', perfil: 'admin', usuario: 'defesa' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const legacyToken = jwt.sign({ sub: 'legacy-user', perfil: 'admin', usuario: 'old-user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const revokedSession = await request('auth/me', 'GET', null, legacyToken);
     assert.equal(revokedSession.status, 401);
 
@@ -372,7 +372,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
       perfil: 'Estadual',
       estado: 'MT',
       nivel: 'Gestao',
-      orgao: 'Defesa Civil Teste',
+      orgao: 'SGI PROTEGE Teste',
       declaracao: true,
     });
     assert.equal(invalidLongPassword.status, 400);
@@ -387,7 +387,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
       perfil: 'Estadual',
       estado: 'MT',
       nivel: 'Gestao',
-      orgao: 'Defesa Civil Teste',
+      orgao: 'SGI PROTEGE Teste',
       declaracao: true,
       role: 'admin',
       perfilSistema: 'admin',
@@ -404,7 +404,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
 
     const edited = await request(`user-registrations/${encodeURIComponent(registrationPayload.registration.id)}`, 'PUT', {
       nome: 'Solicitante Atualizado', email: `${pendingUsername}@example.test`, cpf: '529.982.247-25',
-      perfil: 'Estadual', estado: 'MT', nivel: 'Gestao', orgao: 'Defesa Civil Teste', declaracao: true,
+      perfil: 'Estadual', estado: 'MT', nivel: 'Gestao', orgao: 'SGI PROTEGE Teste', declaracao: true,
     }, adminPayload.token);
     assert.equal(edited.status, 200);
     assert.equal((await edited.json()).registration.nome, 'Solicitante Atualizado');

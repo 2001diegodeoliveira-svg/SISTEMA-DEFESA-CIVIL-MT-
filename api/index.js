@@ -155,7 +155,7 @@ module.exports = serve(async function handler(req) {
   }
 
   if (route === '') {
-    return new Response(JSON.stringify({ erro: 'API SGI PROTEGE MT.' }), {
+    return new Response(JSON.stringify({ erro: 'API SGI PROTEGE.' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
     });

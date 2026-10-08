@@ -1,5 +1,5 @@
 /* ============================================================
-   Sessão da SGI PROTEGE MT.
+   Sessão da SGI PROTEGE.
    Autenticação real via backend: token JWT (dcmt_token) +
    perfil do usuário (dcmt_session). Enquanto a janela de
    demonstração (js/demo.js) está aberta, o acesso é livre.

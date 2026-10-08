@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="theme-color" content="#0f172a">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Mapa Integrado â€” Painel SGI PROTEGE Mato Grosso</title>
+    <title>Mapa Integrado â€” Painel SGI PROTEGE | Mato Grosso</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -1273,7 +1273,7 @@
     <!-- Barra superior -->
     <div id="topbar">
         <a class="brand" href="index.html">
-            <img src="imagens/logo.png" alt="SGI PROTEGE MT">
+            <img src="imagens/logo.png" alt="SGI PROTEGE">
             <div class="txt">
                 <h1>SGI PROTEGE</h1>
                 <span>MAPA INTEGRADO Â· MT</span>
@@ -1519,7 +1519,7 @@
             <label><span class="swatch" style="background:#34d399;border-radius:50%;"></span><i data-lucide="home"></i>Abrigos temporÃ¡rios</label>
             <div class="toggle on" id="abrigosBadge"></div>
         </div>
-        <div class="meta-line" id="metaAbrigos">SGI PROTEGE MT Â· abrigos por municÃ­pio</div>
+        <div class="meta-line" id="metaAbrigos">SGI PROTEGE Â· abrigos por municÃ­pio</div>
 
         <div class="group-title"><i data-lucide="calendar-days"></i> PrevisÃ£o 6 Dias (CPTEC/INPE)</div>
         <div id="cptecPanel" style="padding:0 2px;">
@@ -2906,7 +2906,7 @@ async function loadBarragens() {
     }
 }
 
-/* ================= Abrigos temporÃ¡rios (SGI PROTEGE MT) ================= */
+/* ================= Abrigos temporÃ¡rios (SGI PROTEGE) ================= */
 const ABRIGO_TIPO_LBL = { ginasio: 'GinÃ¡sio Poliesportivo', escola: 'Escola', centro: 'Centro comunitÃ¡rio' };
 async function loadAbrigos() {
     if (abrigosLoading) return;
@@ -2942,7 +2942,7 @@ async function loadAbrigos() {
                         <div><b>Contato:</b> ${a.contato || 'â€”'}</div>
                         <div><b>Status:</b> <span style="color:${statusCor};">${statusLbl}</span></div>
                         ${a.observacoes ? '<div style="margin-top:4px;color:#cbd5e1;"><b>Obs.:</b> ' + a.observacoes + '</div>' : ''}
-                        <div style="margin-top:4px;color:#94a3b8;font-size:9.5px;">Fonte: ${a.fonte || 'SGI PROTEGE MT'}</div>
+                        <div style="margin-top:4px;color:#94a3b8;font-size:9.5px;">Fonte: ${a.fonte || 'SGI PROTEGE'}</div>
                     </div>
                     ${reportMarkerBtn(lat, lng)}
                 </div>`).addTo(abrigosLayer);

@@ -1,8 +1,8 @@
 {
-  "name": "defesa-civil-mt-backend",
+  "name": "sgi-protege",
   "version": "1.0.0",
   "private": true,
-  "description": "Backend da SGI PROTEGE MT — autenticação, ocorrências, áreas de risco e alertas (compatível com Vercel serverless).",
+  "description": "Backend do SGI PROTEGE — autenticação, ocorrências, áreas de risco e alertas (compatível com Vercel serverless).",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
