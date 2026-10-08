@@ -156,34 +156,6 @@ app.use((req, res, next) => {
   return next();
 });
 
-/* Serve os estÃ¡ticos do frontend (mesmo diretÃ³rio) para testes locais */
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) return next();
-  const caminho = decodeURIComponent(req.path || '').split('?')[0];
-  let pagina = caminho === '/' ? 'index.html' : caminho.replace(/^\\//, '');
-  if (!pagina.endsWith('.html')) return next();
-  const RESTRITAS = new Set(['index.html','painel.html','mapa.html','gestao.html','waze.html','gestaodefrota.html']);
-  if (RESTRITAS.has(pagina)) {
-    const auth = (req.headers.authorization || req.headers.Authorization || '');
-    const m = auth.match(/^Bearer\\s+(.+)$/i);
-    let ok = false;
-    if (m && m[1]) {
-      try {
-        const jwt = require('jsonwebtoken');
-        const { JWT_SECRET } = require('./api/_lib/auth');
-        jwt.verify(m[1], JWT_SECRET);
-        ok = true;
-      } catch (e) {}
-    }
-    if (ok) return next();
-    if ((req.headers.accept || '').toLowerCase().indexOf('text/html') >= 0) {
-      return res.redirect(302, '/login.html');
-    }
-    return res.status(401).json({ erro: 'Nao autorizado.' });
-  }
-  return next();
-});
-
 app.use(express.static(path.join(__dirname)));
 
 // Fallback: pÃ¡ginas .html
@@ -197,4 +169,3 @@ app.listen(PORT, () => {
   console.log(`\nSGI PROTEGE MT â€” backend rodando em http://localhost:${PORT}`);
   console.log('Endpoints: /api/auth/login, /api/alertas, /api/reports, /api/areas\n');
 });
-
