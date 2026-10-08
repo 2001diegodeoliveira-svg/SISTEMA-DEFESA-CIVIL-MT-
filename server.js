@@ -184,36 +184,6 @@ app.use((req, res, next) => {
   return next();
 });
 
-/* server-side auth guard for static pages */
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) return next();
-  const path = decodeURIComponent(req.path || '').split('?')[0];
-  let pagina = path === '/' ? 'index.html' : path.replace(/^\//, '');
-  if (pagina.indexOf('.') === -1) return next();
-  if (pagina.endsWith('.html')) {
-    const RESTRITAS = new Set(['index.html','painel.html','mapa.html','gestao.html','waze.html','gestaodefrota.html']);
-    if (RESTRITAS.has(pagina)) {
-      const auth = req.headers.authorization || req.headers.Authorization || '';
-      const m = /^Bearer\s+(.+)$/i.exec(auth);
-      let ok = false;
-      if (m && m[1]) {
-        try {
-          const jwt = require('jsonwebtoken');
-          const { JWT_SECRET } = require('./api/_lib/auth');
-          jwt.verify(m[1], JWT_SECRET);
-          ok = true;
-        } catch (e) {}
-      }
-      if (ok) return next();
-      if ((req.headers.accept || '').toLowerCase().includes('text/html')) {
-        return res.redirect(302, '/login.html');
-      }
-      return res.status(401).json({ erro: 'Nao autorizado.' });
-    }
-  }
-  return next();
-});
-
 app.use(express.static(path.join(__dirname)));
 
 // Fallback: pÃ¡ginas .html
