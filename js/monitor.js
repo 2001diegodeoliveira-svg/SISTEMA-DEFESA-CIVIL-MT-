@@ -37,6 +37,8 @@
     let prevByCity = {};
     let queue = [];
     let showing = false;
+    let monitorActive = false;
+    let cycleTimer = null;
     let cooldowns = {};
     let sipamIds = [];
     let focoKeys = [];
@@ -95,6 +97,7 @@
         .dcm-hempty { text-align:center; color:#64748b; font-size:11px; padding:18px; }
         `;
         const style = document.createElement('style');
+        style.id = 'dcm-styles';
         style.textContent = css;
         document.head.appendChild(style);
     }
@@ -119,6 +122,11 @@
     }
 
     let els = {};
+    function isMtScope() {
+        return global.DC_ORGANIZACAO &&
+            global.DC_ORGANIZACAO.normalizarCodigoUf(global.DC_ORGANIZACAO.obterUfInicial()) === '51';
+    }
+
     function ensureUI() {
         if (document.getElementById('dcm-popup')) return;
         injectStyles();
@@ -211,6 +219,7 @@
 
     /* ================= Fila / exibição ================= */
     function queueAlert(alert) {
+        if (!monitorActive || !isMtScope()) return;
         const key = alert.type + '|' + alert.city + '|' + alert.severity;
         const now = Date.now();
         if (cooldowns[key] && now - cooldowns[key] < COOLDOWN_MS) return; // evita repetir o mesmo alerta
@@ -351,7 +360,9 @@
     }
 
     async function runCycle() {
+        if (!monitorActive || !isMtScope()) return;
         const results = await Promise.all(MON_CITIES.map(fetchCityWeather));
+        if (!monitorActive || !isMtScope()) return;
         MON_CITIES.forEach((city, i) => {
             const curr = results[i];
             if (!curr) return;
@@ -361,20 +372,39 @@
         });
 
         await Promise.all([detectNewFocos(), detectNewSipam()]);
+        if (!monitorActive || !isMtScope()) return;
 
         if (firstRun) {
             firstRun = false;
             const okCities = MON_CITIES.filter(c => prevByCity[c.nome]).length;
             queueAlert({ type: 'event', severity: 'info', title: 'Monitoramento Ativo', desc: `${okCities} de ${MON_CITIES.length} cidades conectadas · Ciclo a cada 5 min`, city: 'SGI PROTEGE', ts: Date.now() });
         }
-        setTimeout(runCycle, 5 * 60 * 1000);
+        cycleTimer = setTimeout(runCycle, 5 * 60 * 1000);
+    }
+
+    function setScope() {
+        if (!isMtScope()) {
+            monitorActive = false;
+            queue = [];
+            showing = false;
+            clearTimeout(cycleTimer);
+            ['dcm-popup', 'dcm-bell', 'dcm-history', 'dcm-styles'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.remove();
+            });
+            els = {};
+            return;
+        }
+        if (monitorActive || typeof global.dcProxyFetch !== 'function') return;
+        monitorActive = true;
+        ensureUI();
+        updateBadge();
+        cycleTimer = setTimeout(runCycle, 4000);
     }
 
     function init() {
-        if (typeof dcProxyFetch === 'undefined') return; // requer js/proxy.js na página
-        ensureUI();
-        updateBadge();
-        setTimeout(runCycle, 4000);
+        global.addEventListener('dc:organization-scope', setScope);
+        setScope();
     }
 
     if (document.readyState === 'loading') {
@@ -386,5 +416,6 @@
     global.dcMonitor = {
         getHistory: loadHistory,
         queueAlert,
+        setScope,
     };
 })(window);

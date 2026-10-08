@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>Alertas Ativos — SGI PROTEGE | Mato Grosso</title>
+    <title>Alertas — SGI PROTEGE | Brasil</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -346,7 +346,7 @@
 
     <header>
         <div class="logo-area">
-            <img src="imagens/logo.png" alt="SGI PROTEGE">
+            <img data-org-logo src="imagens/logo.png" alt="SGI PROTEGE">
             <div class="logo-text">
                 <h1>SGI PROTEGE</h1>
                 <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
@@ -364,7 +364,6 @@
                 <li><a href="el-nino.html">El Niño</a></li>
                 <li><a href="amazonia.html">Amazônia</a></li>
                 <li><a href="#">Orientações</a></li>
-                <li><a href="waze.html">Waze</a></li>
             </ul>
         </nav>
 
@@ -380,33 +379,33 @@
     <!-- Cabeçalho -->
     <section class="page-head">
         <h2>ALERTAS ATIVOS</h2>
-        <p>Acompanhe os alertas e avisos emitidos pela SGI PROTEGE em Mato Grosso.
+        <p>Acompanhe avisos oficiais disponíveis para o território selecionado.
            Clique em um alerta para ver áreas afetadas e orientações à população.</p>
 
         <div class="stats-row">
             <div class="stat-chip" style="--chip:#ef4444;">
                 <i data-lucide="radio-tower" style="color:#ef4444;"></i>
-                <div><b id="stEmergencia">0</b><span>Emergências</span></div>
+                <div><b id="stEmergencia">—</b><span>Emergências validadas</span></div>
             </div>
             <div class="stat-chip">
                 <i data-lucide="circle-alert" style="color:var(--accent-orange);"></i>
-                <div><b id="stAlerta">0</b><span>Alertas</span></div>
+                <div><b id="stAlerta">—</b><span>Alertas validados</span></div>
             </div>
             <div class="stat-chip">
                 <i data-lucide="triangle-alert" style="color:#eab308;"></i>
-                <div><b id="stAtencao">0</b><span>Atenções</span></div>
+                <div><b id="stAtencao">—</b><span>Atenções validadas</span></div>
             </div>
             <div class="stat-chip">
                 <i data-lucide="building-2" style="color:#38bdf8;"></i>
-                <div><b id="stMunicipios">0</b><span>Municípios afetados</span></div>
+                <div><b id="stMunicipios">—</b><span>Municípios afetados</span></div>
             </div>
             <div class="stat-chip">
                 <i data-lucide="cloud-sun-rain" style="color:#4ade80;"></i>
-                <div><b id="stInmet">0</b><span>Avisos INMET (tempo real)</span></div>
+                <div><b id="stInmet">—</b><span>Avisos INMET (tempo real)</span></div>
             </div>
             <div class="stat-chip">
                 <i data-lucide="zap" style="color:#38bdf8;"></i>
-                <div><b id="stOm">0</b><span>Alertas automáticos (Open-Meteo)</span></div>
+                <div><b id="stOm">—</b><span>Sinais meteorológicos (Open-Meteo)</span></div>
             </div>
             <div class="stat-chip">
                 <i data-lucide="clock" style="color:#94a3b8;"></i>
@@ -446,7 +445,7 @@
                 <h3><i data-lucide="zap" style="color:#38bdf8;margin-right:6px;"></i>Alertas automáticos por município</h3>
                 <span class="om-autobadge"><i data-lucide="satellite-dish"></i>OPEN-METEO</span>
             </div>
-            <div class="om-meta" id="omMeta">Preparando varredura dos 141 municípios de MT...</div>
+            <div class="om-meta" id="omMeta">Verificando a cobertura disponível...</div>
             <button class="om-refresh" id="omRefresh" title="Atualizar previsão agora"><i data-lucide="refresh-cw"></i></button>
         </div>
         <div class="om-grid" id="omGrid"></div>
@@ -454,7 +453,7 @@
 
     <div id="omPopup"></div>
 
-    <div class="section-divider"><span>Alertas emitidos pela <b>SGI PROTEGE</b> — conteúdo operacional curado</span></div>
+    <div class="section-divider"><span>Alertas operacionais validados</span></div>
 
     <!-- Lista -->
     <div class="alerts-container" id="alertsContainer"></div>
@@ -473,6 +472,15 @@
         </div>
     </footer>
 
+    <script src="js/organizacao.js"></script>
+    <script>
+    DC_ORGANIZACAO.obterOrganizacaoInicial().then(function (organizacao) {
+        DC_ORGANIZACAO.aplicarIdentidade(document, organizacao);
+        document.title = 'Alertas — SGI PROTEGE | ' + (organizacao.uf || 'Brasil');
+    }).catch(function (error) {
+        console.error('[alertas] não foi possível carregar a configuração de organização:', error);
+    });
+    </script>
     <script src="js/data.js"></script>
     <script src="js/proxy.js"></script>
     <script src="js/api.js"></script>
@@ -481,6 +489,7 @@
     <script src="js/monitor.js"></script>
     <script>
         let filtroAtual = 'todos';
+        const scopeUf = DC_ORGANIZACAO.normalizarCodigoUf(DC_ORGANIZACAO.obterUfInicial());
         // Gestor municipal: alertas curados delimitados ao próprio município
         // (avisos INMET permanecem estaduais por cobrirem mesorregiões).
         const muniRest = (window.dcMuniRestricao) ? dcMuniRestricao() : null;
@@ -490,7 +499,7 @@
         }
         // Começa com a lista local (sempre válida); é substituída pelos alertas
         // reais do backend assim que /api/alertas responder com sucesso.
-        let curadosAtuais = filtrarCurados(alertasVigentes());
+        let curadosAtuais = [];
         const container = document.getElementById('alertsContainer');
         if (muniRest) {
             const sb = document.querySelector('.search-mini');
@@ -505,18 +514,15 @@
 
         function renderStats() {
             const ativos = curadosAtuais;
-            const count = n => ativos.filter(a => a.nivel === n).length;
-            document.getElementById('stEmergencia').textContent = count('emergencia');
-            document.getElementById('stAlerta').textContent = count('alerta');
-            document.getElementById('stAtencao').textContent = count('atencao');
-            document.getElementById('stMunicipios').textContent =
-                new Set(ativos.map(a => a.municipio)).size;
-            document.getElementById('stUpdate').textContent =
-                new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('stEmergencia').textContent = '—';
+            document.getElementById('stAlerta').textContent = '—';
+            document.getElementById('stAtencao').textContent = '—';
+            document.getElementById('stMunicipios').textContent = '—';
+            document.getElementById('stUpdate').textContent = '—';
 
-            document.getElementById('cTodos').textContent = ativos.length;
+            document.getElementById('cTodos').textContent = '—';
             ['emergencia', 'alerta', 'atencao'].forEach(n => {
-                document.getElementById('c' + n.charAt(0).toUpperCase() + n.slice(1)).textContent = count(n);
+                document.getElementById('c' + n.charAt(0).toUpperCase() + n.slice(1)).textContent = '—';
             });
         }
 
@@ -533,7 +539,7 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <i data-lucide="bell-off"></i>
-                        <p>Nenhum alerta encontrado com os filtros atuais.</p>
+                        <p>Não há uma fonte operacional de alertas integrada para este escopo.</p>
                     </div>`;
                 if (window.lucide) lucide.createIcons();
                 return;
@@ -651,6 +657,9 @@
         }
 
         async function fetchInmetAvisos() {
+            if (scopeUf && scopeUf !== '51') {
+                return { avisos: [], error: 'Não há correspondência territorial validada para esta UF.' };
+            }
             try {
                 const r = await dcProxyFetch(INMET_RSS);
                 if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -663,8 +672,7 @@
                     if (!descMat) continue;
                     const html = descMat[1];
                     const area = campoTabela(html, 'Área');
-                    // Mantém apenas avisos cujas áreas cobrem Mato Grosso
-                    if (!REGIOES_MT.test(area)) continue;
+                    if (scopeUf === '51' && !REGIOES_MT.test(area)) continue;
 
                     const inicio = campoTabela(html, 'Início');
                     const fim = campoTabela(html, 'Fim');
@@ -680,7 +688,7 @@
 
                     avisos.push({
                         id, evento, severidade,
-                        inicio, fim, descricao, area: filtrarAreasMT(area), link,
+                        inicio, fim, descricao, area: scopeUf === '51' ? filtrarAreasMT(area) : area, link,
                         sev: INMET_SEV[severidade] !== undefined ? INMET_SEV[severidade] : 2,
                     });
                 }
@@ -702,13 +710,16 @@
             const meta = document.getElementById('inmetMeta');
             inmetCount = g.avisos.length;
             const st = document.getElementById('stInmet');
-            if (st) st.textContent = inmetCount;
-            document.getElementById('stUpdate').textContent =
-                new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            if (st) st.textContent = g.error ? '—' : inmetCount;
+            document.getElementById('stUpdate').textContent = g.error
+                ? '—'
+                : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            meta.innerHTML = inmetCount
-                ? `<i data-lucide="satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) cobrindo MT · fonte <span class="src">INMET (apiprevmet3.inmet.gov.br)</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-                : 'Nenhum aviso INMET cobrindo Mato Grosso no momento.';
+            meta.innerHTML = g.error
+                ? 'Avisos indisponíveis · fonte <span class="src">INMET</span>'
+                : inmetCount
+                    ? `<i data-lucide="satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) · ${scopeUf === '51' ? 'Mato Grosso · ' : 'Brasil · '}fonte <span class="src">INMET</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    : `Nenhum aviso vigente retornado pelo INMET para ${scopeUf === '51' ? 'Mato Grosso' : 'o Brasil'}.`;
             if (window.lucide) lucide.createIcons();
 
             if (g.error) {
@@ -717,7 +728,7 @@
                 return;
             }
             if (!g.avisos.length) {
-                grid.innerHTML = `<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para Mato Grosso neste momento.</div>`;
+                grid.innerHTML = `<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para ${scopeUf === '51' ? 'Mato Grosso' : 'o Brasil'} neste momento.</div>`;
                 if (window.lucide) lucide.createIcons();
                 return;
             }
@@ -771,34 +782,13 @@
         }
 
         async function loadInmet() {
-            const backend = await carregarDoBackend();
-            let g;
-            if (backend) {
-                curadosAtuais = filtrarCurados(backend.alertas);
-                g = { avisos: backend.avisos };
-            } else {
-                curadosAtuais = filtrarCurados(alertasVigentes()); // sem backend: mantém local sempre em dia
-                g = await fetchInmetAvisos();
-            }
+            curadosAtuais = [];
+            const g = await fetchInmetAvisos();
             renderInmet(g);
-            // mantém datas dos curados e contadores atualizados
+            renderStats();
+            renderAlerts();
 // ================= Alertas automáticos Open-Meteo por município =================
         // Varre todos os municípios de MT e gera alertas pela previsão diária do Open-Meteo.
-        const OM_GEOJSON = 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json';
-        const OM_FALLBACK = [
-            { id: '5103403', nome: 'Cuiabá', lat: -15.601, lon: -56.097 },
-            { id: '5107877', nome: 'Sinop', lat: -11.860, lon: -55.502 },
-            { id: '5107927', nome: 'Rondonópolis', lat: -16.470, lon: -54.635 },
-            { id: '5107922', nome: 'Sorriso', lat: -12.545, lon: -55.728 },
-            { id: '5102504', nome: 'Cáceres', lat: -16.076, lon: -57.681 },
-            { id: '5101803', nome: 'Barra do Garças', lat: -15.890, lon: -52.257 },
-            { id: '5107067', nome: 'Primavera do Leste', lat: -15.360, lon: -54.280 },
-            { id: '5107950', nome: 'Tangará da Serra', lat: -14.620, lon: -57.430 },
-            { id: '5105259', nome: 'Lucas do Rio Verde', lat: -13.058, lon: -55.927 },
-            { id: '5108401', nome: 'Várzea Grande', lat: -15.647, lon: -56.133 },
-            { id: '5103502', nome: 'Alta Floresta', lat: -9.876, lon: -56.086 },
-            { id: '5106225', nome: 'Juína', lat: -11.377, lon: -58.741 },
-        ];
         const OM_PESO = { emergencia: 0, alerta: 1, atencao: 2 };
         const OM_COR = { emergencia: '#ef4444', alerta: '#f97316', atencao: '#eab308' };
         const OM_TEMPESTADE = new Set([95, 96, 99]);
@@ -824,28 +814,35 @@
         }
 
         async function obterMunicipiosMT() {
-            const cached = omCacheGet('om_mun_mt_v1');
+            const cached = omCacheGet('om_mun_mt_ibge_v1');
             if (cached && cached.list && cached.list.length > 20 && Date.now() - cached.ts < 30 * 24 * 3600 * 1000) {
                 return cached.list;
             }
             try {
-                const r = await dcProxyFetch(OM_GEOJSON);
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                const gj = await r.json();
-                const list = (gj.features || []).map(f => {
+                const [municipios, malha] = await Promise.all([
+                    DC_ORGANIZACAO.obterMunicipios('51'),
+                    DC_ORGANIZACAO.obterMalhaMunicipios('51')
+                ]);
+                const nomePorCodigo = new Map(municipios.map(item => [String(item.id), item.nome]));
+                const list = (malha.features || []).map(f => {
+                    const codigo = String(f.properties && f.properties.codarea || '');
+                    const nome = nomePorCodigo.get(codigo);
+                    if (!nome) return null;
                     const c = centroideMT(f);
-                    const props = f.properties || {};
                     return {
-                        id: String(props.id ?? f.id ?? 'm' + Math.random()),
-                        nome: props.name || props.nome || 'Município',
+                        id: codigo,
+                        nome,
                         lat: +c.lat.toFixed(4), lon: +c.lon.toFixed(4),
                     };
-                }).filter(m => isFinite(m.lat) && isFinite(m.lon) && m.lat !== 0 && m.lon !== 0);
-                if (list.length < 20) throw new Error('poucos municípios');
-                omCacheSet('om_mun_mt_v1', { list, ts: Date.now() });
+                }).filter(m => m && isFinite(m.lat) && isFinite(m.lon) && m.lat !== 0 && m.lon !== 0);
+                if (list.length !== municipios.length) {
+                    throw new Error('A malha municipal do IBGE não corresponde ao catálogo de municípios.');
+                }
+                omCacheSet('om_mun_mt_ibge_v1', { list, ts: Date.now() });
                 return list;
             } catch (e) {
-                return OM_FALLBACK.slice();
+                console.error('[alertas] não foi possível carregar a malha municipal do IBGE:', e);
+                return null;
             }
         }
 
@@ -964,6 +961,18 @@
             const refreshBtn = document.getElementById('omRefresh');
             if (!grid || !meta) return;
 
+            if (scopeUf !== '51') {
+                const status = scopeUf
+                    ? 'Não há cobertura municipal validada para esta UF.'
+                    : 'A varredura municipal ainda não possui cobertura nacional; os dados de MT não são apresentados como nacionais.';
+                meta.textContent = status;
+                grid.innerHTML = '<div class="inmet-empty">' + status + '</div>';
+                const st = document.getElementById('stOm');
+                if (st) st.textContent = '—';
+                if (refreshBtn) refreshBtn.disabled = true;
+                return;
+            }
+
             grid.innerHTML = '';
             meta.innerHTML = '<i data-lucide="loader-2" style="font-size:11px;"></i>Carregando lista de municípios...</meta>';
             const refreshIcon = refreshBtn && refreshBtn.querySelector('[data-lucide]');
@@ -974,14 +983,15 @@
                 const eu = munic.find(m => dcNorm(m.nome) === muniRest.norm);
                 munic = eu ? [eu] : [];
             }
-            if (!munic.length) {
-                meta.textContent = 'Nenhum município disponível para varredura.';
+            if (!munic || !munic.length) {
+                meta.textContent = 'Não foi possível carregar o catálogo oficial de municípios do IBGE.';
+                grid.innerHTML = '<div class="inmet-empty">A varredura foi interrompida: sem catálogo oficial, não serão usados municípios de exemplo.</div>';
                 if (refreshIcon) refreshIcon.classList.remove('spin');
                 if (refreshBtn) refreshBtn.disabled = false;
                 return;
             }
 
-            let feitos = 0, emAlerta = 0;
+            let feitos = 0, validas = 0, emAlerta = 0;
             let piorNivel = null;
             const nomesAlerta = [];
             const total = munic.length;
@@ -991,6 +1001,7 @@
                 const d = await fetchOmegaPrevisao(m, force);
                 feitos++;
                 if (!d) return;
+                validas++;
                 const al = avaliarOmega(m, d);
                 if (al) {
                     emAlerta++;
@@ -1010,9 +1021,12 @@
 
             omAlertas = emAlerta;
             const st = document.getElementById('stOm');
-            if (st) st.textContent = emAlerta;
+            if (st) st.textContent = validas ? emAlerta : '—';
 
-            if (!emAlerta) {
+            if (!validas) {
+                meta.textContent = 'Previsões do Open-Meteo indisponíveis; não é possível concluir a varredura.';
+                grid.innerHTML = '<div class="inmet-empty">A fonte meteorológica não retornou dados válidos para os municípios consultados.</div>';
+            } else if (!emAlerta) {
                 grid.innerHTML = `<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Nenhum alerta automático ${muniRest ? 'para ' + muniRest.municipio : 'para os municípios de MT'} no momento — previsão sem extremos nas próximas horas.</div>`;
             } else {
                 const nE = grid.querySelectorAll('.om-card').length;

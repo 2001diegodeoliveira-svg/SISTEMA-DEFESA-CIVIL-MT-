@@ -1,17 +1,7 @@
-/* ============================================================
-   Controle de acesso — espelho no cliente.
-
-   O sistema NÃO abre sem login por padrão: o estado inicial é
-   FECHADO e qualquer página (exceto login.html) é redirecionada
-   para o login até existir uma sessão válida.
-
-   O servidor é a autoridade (GET /api/demo): se ele declarar a
-   janela de demonstração ABERTA (DEMO_HORAS > 0), o acesso livre
-   é permitido. Sem resposta do servidor o sistema permanece
-   fechado (falha fechada, nunca aberta).
-
-   Páginas públicas mesmo sem sessão: nenhuma (apenas login.html).
-   ============================================================ */
+/* Access control mirrors the server configuration.
+   AUTH_LOGIN_ENABLED=false opens all pages and protected API operations.
+   The client starts open to avoid redirecting before the server responds;
+   the server then applies the configured login or demo-window state. */
 (function (global) {
     'use strict';
 
@@ -20,7 +10,7 @@
     var TIMEOUT_SYNC_MS = 4000;
     var LIMITE_TIMEOUT_MS = 2147483647;
 
-    /* Serviços que não exigem sessão — por padrão, só a página de login. */
+    /* Login remains available as a public page when authentication is enabled. */
     var PUBLICAS = ['login.html'];
 
     function nomePagina() {
@@ -60,7 +50,7 @@
         duracaoMs: 0,
         expiraEm: inicio,
         aberto: false,
-        loginHabilitado: true,
+        loginHabilitado: false,
         liberado: false,
         sincronizado: false,
         concluido: false

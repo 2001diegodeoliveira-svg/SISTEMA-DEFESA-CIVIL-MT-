@@ -10,7 +10,7 @@
    sem acrescentar informação.
    ============================================================ */
 
-/* Respecto a preferência do usuário por menos animação */
+/* Respeito à preferência do usuário por menos animação */
 @media (prefers-reduced-motion: reduce) {
   .lucide {
     animation: none !important;

@@ -402,7 +402,7 @@
 
   /* ============ MODO PÚBLICO X ADMINISTRAÇÃO ============ */
   /* Por padrão a página é pública (só formulário de cadastro).
-     O administrador abre com ?admin=1 para ver login, análise e configurações. */
+     O administrador abre com ?admin=1 para ver análise e configurações. */
   .admin-link, .pub-link {
     display: inline-flex; align-items: center; gap: 7px;
     color: var(--muted); font-size: .78rem; text-decoration: none;
@@ -419,7 +419,7 @@
   html.modo-admin .pub-link { display: inline-flex; }
 </style>
 <script>
-  /* Página pública por padrão; ?admin=1 libera a área administrativa. */
+  /* ?admin=1 mostra a navegação da área administrativa. */
   document.documentElement.classList.add(/[?&]admin=1/.test(location.search) ? 'modo-admin' : 'somente-cadastro');
 </script>
     <script src="js/demo.js"></script>
@@ -998,9 +998,10 @@
 
   /* ============================================================
      AUTENTICAÇÃO DO ADMINISTRADOR
-     A aba "Cadastrar-se" é pública. As demais exigem login.
+     A administração acompanha o modo configurado no backend.
      ============================================================ */
   function autenticado() {
+    if (!window.DC_DEMO || !window.DC_DEMO.estado.loginHabilitado) return true;
     return !!(adminUser && adminUser.perfil === "admin" && dcApi.getToken());
   }
   async function carregarUsuarios() {
@@ -1063,7 +1064,7 @@
     $("btnSair").classList.remove("hidden");
     $("btnEntrar").classList.add("hidden");
     $("quemSou").querySelector("b").textContent = user.nome || user.usuario;
-    $("sessionInfo").textContent = "Administrador";
+    $("sessionInfo").textContent = user.demo ? "Acesso livre" : "Administrador";
     Array.prototype.forEach.call(document.querySelectorAll(".tab[data-restrito]"), function (t) {
       t.classList.remove("locked");
     });
@@ -1093,7 +1094,7 @@
   };
 
   /* ============================================================
-     NAVEGAÇÃO COM TRAVA POR SENHA
+     NAVEGAÇÃO CONFORME MODO CONFIGURADO
      ============================================================ */
   function irAba(nome) {
     var tab = document.querySelector('.tab[data-view="' + nome + '"]');
@@ -1621,6 +1622,14 @@
   sincronizarPerfil();
   render();
   (async function restaurarSessao() {
+    if (!window.DC_DEMO || !window.DC_DEMO.estado.loginHabilitado) {
+      aplicarSessao({ usuario: "visitante", nome: "Acesso livre", perfil: "admin", demo: true });
+      $("btnSair").classList.add("hidden");
+      $("btnEntrar").classList.add("hidden");
+      try { await carregarUsuarios(); }
+      catch (error) { avisar(error.message, "err"); }
+      return;
+    }
     if (!dcApi.getToken()) { encerrarSessao(); return; }
     try {
       var response = await dcApi.me();

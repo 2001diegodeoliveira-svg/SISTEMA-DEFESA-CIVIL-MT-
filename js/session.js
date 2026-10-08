@@ -5,12 +5,9 @@
    demonstração (js/demo.js) está aberta, o acesso é livre.
    ============================================================ */
 
-/* Exige login quando a janela de demonstração expirou (ou não existe).
-   Estado desconhecido (demo.js ausente/falhou ao carregar) também exige
-   login — falha fechada, nunca aberta. */
+/* Exige login apenas quando a autenticação estiver habilitada no servidor. */
 function dcLoginExigido() {
-    if (!window.DC_DEMO) return true;
-    return window.DC_DEMO.estado.liberado === false;
+    return Boolean(window.DC_DEMO && window.DC_DEMO.estado.loginHabilitado);
 }
 
 /* A reativação exige também AUTH_LOGIN_ENABLED=true no backend. */
@@ -83,11 +80,9 @@ function dcRenderUserArea() {
     const s = dcGetSession();
     if (!s) {
         el.innerHTML = `
-            <a href="login.html" style="display:flex;align-items:center;gap:7px;color:var(--text-muted);text-decoration:none;font-size:12.5px;font-weight:600;padding:8px 14px;border:1px solid var(--border-color);border-radius:6px;transition:all .2s;"
-               onmouseover="this.style.color='#fff';this.style.borderColor='rgba(249,99,28,.5)'"
-               onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
-                <i data-lucide="log-in" style="width:14px;height:14px;"></i> Área restrita
-            </a>`;
+            <span style="color:var(--text-muted);font-size:12.5px;font-weight:600;padding:8px 14px;">
+                Acesso livre
+            </span>`;
         if (window.lucide) lucide.createIcons();
         return;
     }
