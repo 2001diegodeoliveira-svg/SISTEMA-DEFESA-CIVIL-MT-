@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { isLoginEnabled, validateProductionConfig } = require('../api/_lib/runtime-config');
+const { isLoginEnabled, isSeedOnlyLoginEnabled, validateProductionConfig } = require('../api/_lib/runtime-config');
+const { isLoginEligible } = require('../api/_lib/auth');
 const { corsHeaders } = require('../api/_lib/http');
 const apiHandler = require('../api/index');
 const { readCollection } = require('../api/_lib/store');
@@ -64,7 +65,17 @@ test('produção recusa senha de bootstrap acima do limite do bcrypt', () => {
     SEED_USERS: JSON.stringify([{ usuario: 'admin', senha: 'a'.repeat(73), perfil: 'admin' }]),
   }));
 
-  assert.ok(problems.some((problem) => problem.includes('12 a 72 bytes UTF-8')));
+  assert.ok(problems.some((problem) => problem.includes('10 a 72 bytes UTF-8')));
+});
+
+test('produção aceita senha de bootstrap com 10 bytes e recusa senhas menores', () => {
+  const seed = (senha) => JSON.stringify([{ usuario: 'admin', senha, perfil: 'admin' }]);
+  assert.deepEqual(validateProductionConfig(validProductionEnv({
+    SEED_USERS: seed('a'.repeat(10)),
+  })), []);
+  assert.ok(validateProductionConfig(validProductionEnv({
+    SEED_USERS: seed('a'.repeat(9)),
+  })).some((problem) => problem.includes('10 a 72 bytes UTF-8')));
 });
 
 test('desenvolvimento mantém os padrões locais', () => {
@@ -75,6 +86,33 @@ test('login só é habilitado por configuração explícita', () => {
   assert.equal(isLoginEnabled({}), false);
   assert.equal(isLoginEnabled({ AUTH_LOGIN_ENABLED: 'false' }), false);
   assert.equal(isLoginEnabled({ AUTH_LOGIN_ENABLED: 'true' }), true);
+});
+
+test('modo seed-only permite apenas a conta configurada e preserva cadastros existentes', () => {
+  const keys = ['AUTH_SEED_ONLY', 'SEED_USERS'];
+  const previous = new Map(keys.map((key) => [key, process.env[key]]));
+  const existingAccount = {
+    id: 'existing-user', usuario: 'usuario-aprovado', perfil: 'municipal',
+    ativo: true, cadastroId: 'REG-1',
+  };
+  try {
+    process.env.AUTH_SEED_ONLY = 'true';
+    process.env.SEED_USERS = JSON.stringify([{ usuario: 'dev', perfil: 'admin' }]);
+    assert.equal(isSeedOnlyLoginEnabled(), true);
+    assert.equal(isLoginEligible({ id: 'seed-admin', usuario: 'DEV', perfil: 'admin', ativo: true }), true);
+    assert.equal(isLoginEligible({ id: 'old-admin', usuario: 'outro-admin', perfil: 'admin', ativo: true, bootstrapAdmin: true }), false);
+    assert.equal(isLoginEligible(existingAccount), false);
+    assert.equal(existingAccount.ativo, true);
+    assert.equal(existingAccount.cadastroId, 'REG-1');
+    process.env.AUTH_SEED_ONLY = 'false';
+    assert.equal(isSeedOnlyLoginEnabled(), false);
+    assert.equal(isLoginEligible(existingAccount), true);
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test('handler da API falha fechado com HTTP 503 se produção está incompleta', async () => {

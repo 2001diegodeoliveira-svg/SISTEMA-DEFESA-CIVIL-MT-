@@ -5,7 +5,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
-const { isLoginEnabled } = require('./runtime-config');
+const { isLoginEnabled, isSeedOnlyLoginEnabled } = require('./runtime-config');
 const { demoAberto } = require('./demo');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
@@ -58,6 +58,12 @@ async function findByCredentials(usuario, senha) {
 
 function isLoginEligible(user) {
   if (!user || user.ativo === false) return false;
+  if (isSeedOnlyLoginEnabled()) {
+    return seedUsers().some((seed) =>
+      seed && String(seed.usuario || '').trim().toLowerCase() === String(user.usuario || '').trim().toLowerCase() &&
+      String(seed.perfil || '').toLowerCase() === String(user.perfil || '').toLowerCase()
+    );
+  }
   if (user.perfil === 'admin') {
     return user.bootstrapAdmin === true || seedUsers().some((seed) => seed.perfil === 'admin' &&
       String(seed.usuario).toLowerCase() === String(user.usuario).toLowerCase());

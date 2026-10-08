@@ -5,6 +5,10 @@ function isLoginEnabled(env = process.env) {
   return ['1', 'true', 'yes', 'on'].includes(String(env.AUTH_LOGIN_ENABLED || '').trim().toLowerCase());
 }
 
+function isSeedOnlyLoginEnabled(env = process.env) {
+  return ['1', 'true', 'yes', 'on'].includes(String(env.AUTH_SEED_ONLY || '').trim().toLowerCase());
+}
+
 function parseList(value) {
   return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
 }
@@ -61,10 +65,10 @@ function validateProductionConfig(env = process.env) {
   const hasKv = hasKvUrl && hasKvToken;
   if (isLoginEnabled(env) && seedUsers && (!Array.isArray(seedUsers) || !seedUsers.every((user) =>
     user && typeof user.usuario === 'string' && user.usuario.trim() &&
-    typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 12 && Buffer.byteLength(user.senha, 'utf8') <= 72 &&
+    typeof user.senha === 'string' && Buffer.byteLength(user.senha, 'utf8') >= 10 && Buffer.byteLength(user.senha, 'utf8') <= 72 &&
     VALID_PROFILES.has(user.perfil)
   ))) {
-    problems.push('SEED_USERS, quando definido, deve conter usuários com senhas de 12 a 72 bytes UTF-8 e perfis válidos.');
+    problems.push('SEED_USERS, quando definido, deve conter usuários com senhas de 10 a 72 bytes UTF-8 e perfis válidos.');
   } else if (isLoginEnabled(env) && Array.isArray(seedUsers) && seedUsers.length && !seedUsers.some((user) => user.perfil === 'admin')) {
     problems.push('SEED_USERS deve incluir pelo menos um administrador.');
   }
@@ -98,4 +102,4 @@ function validateProductionConfig(env = process.env) {
   return problems;
 }
 
-module.exports = { isLoginEnabled, validateProductionConfig };
+module.exports = { isLoginEnabled, isSeedOnlyLoginEnabled, validateProductionConfig };
