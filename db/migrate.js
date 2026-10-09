@@ -13,6 +13,12 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const { MUNICIPIOS_MT } = require('../api/_lib/municipios');
+const { applyMigrations } = require('./migrate-versioned');
+const {
+  carregarCatalogoIbge,
+  carregarCatalogoPersistido,
+  seedOrganizacoes
+} = require('./seed-organizations');
 
 const DIR_DADOS = path.join(__dirname, '..', 'data');
 const SCHEMA = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
@@ -89,7 +95,7 @@ loadDotEnv();
 const DATABASE_URL = process.env.DATABASE_URL || process.env.PG_DATABASE_URL;
 if (!DATABASE_URL) {
   console.error('Defina DATABASE_URL (variável de ambiente ou no arquivo .env).');
-  console.error('Obtida no Painel do projeto Neon → Connect → string de conexão.');
+  console.error('Obtida na configuração do banco PostgreSQL.');
   process.exit(1);
 }
 
@@ -113,8 +119,40 @@ async function main() {
     const munPorNorm = new Map(muns.map(m => [norm(m.nome), m.id]));
     console.log(`  ${muns.length} municípios`);
 
+    console.log('Aplicando migrações versionadas...');
+    await applyMigrations(cli);
+    console.log('Carregando catálogo oficial do IBGE...');
+    let catalogoIbge;
+    try {
+      catalogoIbge = await carregarCatalogoIbge();
+    } catch (error) {
+      console.error(`  IBGE indisponível (${error.message}); verificando catálogo oficial previamente gravado.`);
+      catalogoIbge = await carregarCatalogoPersistido(cli);
+      await cli.query(
+        `UPDATE fontes_dados SET status = 'desatualizada'
+         WHERE id = 'ibge-localidades'`
+      );
+      console.warn('  usando catálogo IBGE previamente validado; dados marcados como desatualizados.');
+    }
+    if (catalogoIbge) {
+      await cli.query('BEGIN');
+      try {
+        await seedOrganizacoes(cli, catalogoIbge);
+        await cli.query(
+          `UPDATE fontes_dados
+           SET ultima_leitura_valida = now(), status = 'online'
+           WHERE id = 'ibge-localidades'`
+        );
+        await cli.query('COMMIT');
+      } catch (error) {
+        await cli.query('ROLLBACK');
+        throw error;
+      }
+    }
+    console.log(`  organizações e territórios atualizados; municípios de MT: ${catalogoIbge.municipios.length}`);
+
     if (APENAS_SCHEMA) {
-      console.log('--schema-only: encerrando antes da migração de dados.');
+      console.log('--schema-only: encerrando antes da migração de dados legados.');
       return;
     }
 
