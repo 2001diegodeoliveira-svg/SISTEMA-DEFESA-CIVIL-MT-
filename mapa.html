@@ -1416,6 +1416,11 @@
             <div class="toggle" id="barragensBadge"></div>
         </div>
         <div class="meta-line" id="metaBarragens">ANA/SNISB · 1.274 em MT</div>
+        <div class="check-row" data-check="anaHydrology">
+            <label><span class="swatch" style="background:#2dd4bf;border-radius:50%;"></span><i data-lucide="waves"></i>Estações telemétricas ANA</label>
+            <div class="toggle" id="anaHydrologyBadge"></div>
+        </div>
+        <div class="meta-line" id="metaAnaHydrology">ANA/Telemetria · ative para carregar o cadastro de MT</div>
         <a class="ext-row" href="https://www.gov.br/funai/pt-br/assuntos/terras-indigenas" target="_blank" rel="noopener">
             <i data-lucide="external-link"></i> Terras Indígenas — portal FUNAI
         </a>
@@ -1756,6 +1761,9 @@
                 <span style="color:#f97316;">Médio</span> ·
                 <span style="color:#3b82f6;">Baixo</span>
             </span>
+        </div>
+        <div id="legAnaHydrology" class="leg-row" style="display:none;">
+            <span style="width:10px;height:10px;border-radius:50%;background:#2dd4bf;border:2px solid #e6fffb;display:inline-block;margin-right:5px;"></span> Estações telemétricas ANA
         </div>
         <div id="legInmet" class="leg-row" style="display:none;">
             <span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;border:2px solid #fff;display:inline-block;margin-right:5px;"></span> Estações INMET (EAM)
@@ -2723,9 +2731,10 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, barragens: () => barragensLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, barragens: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, barragens: () => barragensLayer, anaHydrology: () => anaHydrologyLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, focos: false, barragens: false, anaHydrology: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true, camsSinfra: true, chuvaInmet: false };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
+let anaHydrologyLayer = null, anaHydrologyLoaded = false, anaHydrologyLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
 let chuvaInmetLayer = null, chuvaInmetLoaded = false, chuvaInmetLoading = false;
         let sipamLayer = null, sipamLoaded = false, sipamLoading = false;
@@ -2758,6 +2767,7 @@ function setCheck(key, val) {
     if (row) row.querySelector('.toggle').classList.toggle('on', val);
     if (key === 'focos' && val && !focosLoaded && !focosLoading) loadFocos();
     if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
+    if (key === 'anaHydrology' && val && !anaHydrologyLoaded && !anaHydrologyLoading) loadAnaHydrology();
     if (key === 'inmetStations' && val && !inmetLoaded && !inmetLoading) loadInmetStations();
     if (key === 'chuvaInmet' && val && !chuvaInmetLoaded && !chuvaInmetLoading) loadChuvaInmet();
     if (key === 'sipam' && val && !sipamLoaded && !sipamLoading) loadSIPAM();
@@ -2783,6 +2793,7 @@ function applyChecks() {
         if (focosFilteredLayer) map.removeLayer(focosFilteredLayer);
     }
     if (barragensLayer) checkState.barragens ? barragensLayer.addTo(map) : map.removeLayer(barragensLayer);
+    if (anaHydrologyLayer) checkState.anaHydrology ? anaHydrologyLayer.addTo(map) : map.removeLayer(anaHydrologyLayer);
     if (inmetLayer) checkState.inmetStations ? inmetLayer.addTo(map) : map.removeLayer(inmetLayer);
     if (chuvaInmetLayer) checkState.chuvaInmet ? chuvaInmetLayer.addTo(map) : map.removeLayer(chuvaInmetLayer);
     if (sipamLayer) checkState.sipam ? sipamLayer.addTo(map) : map.removeLayer(sipamLayer);
@@ -2806,6 +2817,7 @@ function refreshLegend() {
     document.getElementById('legMun').style.display = checkState.municipios && munLayer ? '' : 'none';
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
     document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
+    document.getElementById('legAnaHydrology').style.display = checkState.anaHydrology && anaHydrologyLayer ? '' : 'none';
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
     document.getElementById('legChuvaInmet').style.display = checkState.chuvaInmet && chuvaInmetLayer ? '' : 'none';
     document.getElementById('legSipam').style.display = checkState.sipam && sipamLayer ? '' : 'none';
@@ -2813,7 +2825,7 @@ function refreshLegend() {
     document.getElementById('legVigiaMais').style.display = checkState.vigiaMais && vigiaMaisLayer ? '' : 'none';
     document.getElementById('legAbrigos').style.display = checkState.abrigos && abrigosLayer ? '' : 'none';
     document.getElementById('legCamsSinfra').style.display = checkState.camsSinfra && camSinfraLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.inmetStations || checkState.chuvaInmet || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.anaHydrology || checkState.inmetStations || checkState.chuvaInmet || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
     box.classList.toggle('show', anyVisible);
 }
 
@@ -3101,6 +3113,66 @@ async function loadBarragens() {
     } catch (e) {
         barragensLoading = false;
         meta.textContent = 'Erro ao carregar barragens';
+    }
+}
+
+/* ================= Cadastro hidrométrico da ANA ================= */
+function escapeAnaHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
+}
+
+async function loadAnaHydrology() {
+    anaHydrologyLoading = true;
+    const meta = document.getElementById('metaAnaHydrology');
+    if (meta) meta.textContent = 'ANA/Telemetria · consultando estações de Mato Grosso...';
+    try {
+        if (!window.dcApi || typeof window.dcApi.anaHidrologia !== 'function') {
+            throw new Error('Cliente da API indisponível.');
+        }
+        const response = await window.dcApi.anaHidrologia();
+        if (!response || !response.ok) {
+            throw new Error(response && response.data && response.data.erro
+                ? response.data.erro
+                : 'Serviço da ANA indisponível.');
+        }
+        const stations = response.data && Array.isArray(response.data.estacoes)
+            ? response.data.estacoes
+            : [];
+        anaHydrologyLayer = L.layerGroup();
+        stations.forEach(station => {
+            const lat = Number(station.latitude), lon = Number(station.longitude);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+            const name = escapeAnaHtml(station.nome || 'Estação sem nome');
+            const river = escapeAnaHtml(station.rio || 'Não informado');
+            const municipality = escapeAnaHtml(station.municipio || 'Não informado');
+            const code = escapeAnaHtml(station.codigo || '—');
+            const popup = `
+                <div style="min-width:205px;font-size:11px;line-height:1.7;">
+                    <div style="font-weight:700;color:#0f766e;font-size:12px;margin-bottom:4px;">${name}</div>
+                    <div><b>Rio:</b> ${river}</div>
+                    <div><b>Município:</b> ${municipality} · MT</div>
+                    <div><b>Código ANA:</b> ${code}</div>
+                    <div style="margin-top:6px;color:#64748b;font-size:10px;">Cadastro de estação telemétrica. O serviço de catálogo não informa nível medido.</div>
+                </div>`;
+            L.circleMarker([lat, lon], {
+                radius: 5,
+                color: '#e6fffb',
+                weight: 1.5,
+                fillColor: '#2dd4bf',
+                fillOpacity: .9,
+                title: station.nome || station.codigo,
+            }).bindPopup(popup).addTo(anaHydrologyLayer);
+        });
+        if (checkState.anaHydrology) anaHydrologyLayer.addTo(map);
+        anaHydrologyLoaded = true;
+        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em MT · cadastro`;
+        refreshLegend();
+    } catch (error) {
+        if (meta) meta.textContent = `ANA/Telemetria · ${error.message || 'falha ao carregar estações'}`;
+    } finally {
+        anaHydrologyLoading = false;
     }
 }
 

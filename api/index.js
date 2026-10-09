@@ -36,11 +36,13 @@ const handlers = {
   'gestao': require('./_routes/gestao'),
   'noticias': require('./_routes/noticias'),
   'inmet-chuva': require('./_routes/inmet-chuva'),
+  'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
 };
 
 const areasIdHandler = require('./_routes/areas/[id]');
+const occurrencesIdHandler = require('./_routes/occurrences/[id]');
 
 /* Extrai { route, query } a partir do req.url.
    A Vercel preserva o URL original E adiciona "?path=" com a rota;
@@ -164,7 +166,7 @@ module.exports = serve(async function handler(req) {
   /* Request clonado com URL canônica "/api/<rota>?<query original>".
      Garante que os sub-handlers leiam id do pathname e queries corretos
      tanto no Express quanto na Vercel. */
-  const clone = Object.create(req);
+  const clone = { method: req.method };
   clone.url = '/api/' + route + (query ? '?' + query : '');
   const authorization = readHeader(req.headers, 'authorization') ||
     (loginEnabled && !acessoAberto ? undefined : 'Bearer access-without-login');
@@ -173,6 +175,8 @@ module.exports = serve(async function handler(req) {
       ? authorization || null
       : readHeader(req.headers, name) || null,
   };
+  if (typeof req.text === 'function') clone.text = req.text.bind(req);
+  if (typeof req.json === 'function') clone.json = req.json.bind(req);
 
   let target = null;
   if (handlers[route]) target = handlers[route];
@@ -180,6 +184,7 @@ module.exports = serve(async function handler(req) {
   else {
     const m = route.match(/^areas\/([^/]+)$/);
     if (m) target = areasIdHandler;
+    else if (/^occurrences\/[^/]+$/.test(route)) target = occurrencesIdHandler;
   }
 
   if (target) return target(clone);

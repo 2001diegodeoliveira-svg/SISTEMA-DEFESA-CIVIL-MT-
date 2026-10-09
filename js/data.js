@@ -263,6 +263,6 @@ const LIMIARES_ALERTA = [
 const ROADMAP = [
     { fase: 1, titulo: 'Protótipo (MVP)', itens: ['API do INMET (estações e avisos)', 'Focos de calor do INPE Queimadas', 'Mapa interativo básico'] },
     { fase: 2, titulo: 'Motor de alertas', itens: ['PostgreSQL + PostGIS', 'Validação de limiares com equipe técnica', 'Painel administrativo de alertas'] },
-    { fase: 3, titulo: 'Notificação e hidrologia', itens: ['Integração ANA para rios', 'SMS/WhatsApp à população', 'Testes de carga e contingência 24/7'] },
+    { fase: 3, titulo: 'Notificação e hidrologia', itens: ['Cadastro de estações ANA no mapa; níveis medidos pendentes', 'SMS/WhatsApp à população', 'Testes de carga e contingência 24/7'] },
     { fase: 4, titulo: 'Operação contínua', itens: ['Treinamento das equipes', 'Revisão de limiares com eventos reais', 'Novas fontes (ar, sensores locais)'] },
 ];

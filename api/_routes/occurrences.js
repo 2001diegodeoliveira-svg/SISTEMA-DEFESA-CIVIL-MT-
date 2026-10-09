@@ -5,7 +5,7 @@
    GET /api/occurrences?view=waze   -> só ocorrências source=WAZE
    Rota única (Vercel/serverless não tem sub-rotas dinâmicas fáceis
    sem arquivos extra) ” usamos ?view= para as variações, e
-   frontend/api/occurrences/[id].js para o detalhe/patch por id.
+   _routes/occurrences/[id].js para o detalhe/patch por id.
 */
 const { jsonResponse, reqUrl } = require('../_lib/http');
 const { readCollection } = require('../_lib/store');
