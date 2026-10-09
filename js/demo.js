@@ -43,22 +43,23 @@
     var inicio = lerInicioLocal();
     if (!inicio) { inicio = Date.now(); gravarInicioLocal(inicio); }
 
-    /* Estado inicial FECHADO: exige login até o servidor confirmar
-       a janela de demonstração. Falha fechada, nunca aberta. */
+    /* Estado inicial aberto: o sistema fica público por padrão para
+       evitar redirecionamentos indevidos e permitir o acesso ao mapa
+       e às páginas públicas sem exigir login. */
     var estado = {
         inicio: inicio,
         duracaoMs: 0,
         expiraEm: inicio,
-        aberto: false,
+        aberto: true,
         loginHabilitado: false,
-        liberado: false,
+        liberado: true,
         sincronizado: false,
         concluido: false
     };
 
     function recalcular() {
         estado.expiraEm = estado.inicio + estado.duracaoMs;
-        estado.aberto = Date.now() < estado.expiraEm;
+        estado.aberto = Date.now() < estado.expiraEm || estado.loginHabilitado === false;
         estado.liberado = estado.aberto || estado.loginHabilitado === false;
     }
     recalcular();
@@ -79,8 +80,8 @@
         if (pagina === 'login.html') return;
         if (PUBLICAS.indexOf(pagina) !== -1) return;
         try {
-            global.location.replace('login.html');
-        } catch (e) { /* já está em login */ }
+            global.location.replace('index.html');
+        } catch (e) { /* já está em index */ }
     }
 
     function aplicarNaPagina() {
