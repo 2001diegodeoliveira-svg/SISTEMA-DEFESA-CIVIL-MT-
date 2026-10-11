@@ -9,6 +9,7 @@ const { writeCollection } = require('../api/_lib/store');
 const { demoReset } = require('../api/_lib/demo');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { totp } = require('../api/_lib/mfa');
 
 function validProductionEnv(overrides = {}) {
   return {
@@ -16,6 +17,7 @@ function validProductionEnv(overrides = {}) {
     VERCEL: '1',
     VERCEL_ENV: 'production',
     JWT_SECRET: 'a-secure-production-secret-with-more-than-32-bytes',
+    MFA_ENCRYPTION_KEY: 'a'.repeat(64),
     CORS_ORIGIN: 'https://sgi-protege.example',
     PROXY_HOSTS: 'apiprevmet3.inmet.gov.br,panorama.sipam.gov.br',
     AUTH_LOGIN_ENABLED: 'true',
@@ -68,6 +70,13 @@ test('produção recusa senha de bootstrap acima do limite do bcrypt', () => {
   assert.ok(problems.some((problem) => problem.includes('10 a 72 bytes UTF-8')));
 });
 
+test('produção exige chave MFA criptográfica com tamanho correto quando login está habilitado', () => {
+  for (const key of ['', 'abc', 'z'.repeat(64)]) {
+    const problems = validateProductionConfig(validProductionEnv({ MFA_ENCRYPTION_KEY: key }));
+    assert.ok(problems.some((problem) => problem.includes('MFA_ENCRYPTION_KEY')));
+  }
+});
+
 test('produção aceita senha de bootstrap com 10 bytes e recusa senhas menores', () => {
   const seed = (senha) => JSON.stringify([{ usuario: 'admin', senha, perfil: 'admin' }]);
   assert.deepEqual(validateProductionConfig(validProductionEnv({
@@ -116,7 +125,7 @@ test('modo seed-only permite apenas a conta configurada e preserva cadastros exi
 });
 
 test('handler da API falha fechado com HTTP 503 se produção está incompleta', async () => {
-  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'JWT_SECRET', 'CORS_ORIGIN', 'PROXY_HOSTS', 'SEED_USERS', 'DATABASE_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN'];
+  const keys = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'JWT_SECRET', 'MFA_ENCRYPTION_KEY', 'CORS_ORIGIN', 'PROXY_HOSTS', 'SEED_USERS', 'DATABASE_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN'];
   const previous = new Map(keys.map((key) => [key, process.env[key]]));
   try {
     process.env.NODE_ENV = 'production';
@@ -308,6 +317,7 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     process.env.NODE_ENV = 'test';
     process.env.FILE_STORE = '0';
     process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters';
+    process.env.MFA_ENCRYPTION_KEY = 'a'.repeat(64);
     process.env.SEED_USERS = '';
     process.env.AUTH_LOGIN_ENABLED = 'true';
     process.env.DEMO_HORAS = '0';
@@ -341,13 +351,21 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     }]);
 
     const loginAdmin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
-    const adminPayload = await loginAdmin.json();
+    const setupPayload = await loginAdmin.json();
     assert.equal(loginAdmin.status, 200);
-    assert.ok(adminPayload.token, 'login válido deve emitir o token de sessão');
-    assert.equal(adminPayload.desafio, undefined);
-    assert.equal(adminPayload.exigeTotp, undefined);
-    assert.equal(adminPayload.user.perfil, 'admin');
+    assert.equal(setupPayload.mfaSetupRequired, true);
+    assert.ok(setupPayload.challengeToken, 'coordenação deve concluir cadastro MFA antes de acessar');
 
+    const setupResponse = await request('auth/mfa/enroll', 'POST', null, setupPayload.challengeToken);
+    const setup = await setupResponse.json();
+    assert.equal(setupResponse.status, 200);
+    assert.match(setup.otpauthUri, /^otpauth:\/\/totp\//);
+    const code = totp(setup.secret);
+    const confirmResponse = await request('auth/mfa/confirm', 'POST', { codigo: code }, setupPayload.challengeToken);
+    const adminPayload = await confirmResponse.json();
+    assert.equal(confirmResponse.status, 200);
+    assert.ok(adminPayload.token, 'MFA válido deve emitir a sessão');
+    assert.equal(adminPayload.user.perfil, 'admin');
     const adminSession = await request('auth/me', 'GET', null, adminPayload.token);
     assert.equal(adminSession.status, 200);
 
@@ -358,7 +376,14 @@ test('solicitação pública fica pendente e só cria conta após aprovação ad
     const legacyTotpLogin = await request('auth/login', 'POST', { usuario: 'bootstrap-admin', senha: 'senha-forte-para-admin' });
     const legacyTotpPayload = await legacyTotpLogin.json();
     assert.equal(legacyTotpLogin.status, 200);
-    assert.ok(legacyTotpPayload.token, 'dados TOTP legados não devem bloquear o login');
+    assert.equal(legacyTotpPayload.mfaRequired, true, 'TOTP legado não deve dispensar MFA atual');
+    const reusedCode = await request(
+      'auth/mfa/verify',
+      'POST',
+      { codigo: code },
+      legacyTotpPayload.challengeToken
+    );
+    assert.equal(reusedCode.status, 401, 'um código TOTP já usado não pode ser reutilizado');
 
     const removedTotpRoute = await request('auth/totp/verify', 'POST', { codigo: '000000' });
     assert.equal(removedTotpRoute.status, 404);

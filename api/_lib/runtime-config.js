@@ -22,6 +22,9 @@ function validateProductionConfig(env = process.env) {
   if (isLoginEnabled(env) && (Buffer.byteLength(secret, 'utf8') < 32 || secret === DEFAULT_JWT_SECRET)) {
     problems.push('JWT_SECRET forte é obrigatório.');
   }
+  if (isLoginEnabled(env) && !/^[a-f0-9]{64}$/i.test(env.MFA_ENCRYPTION_KEY || '')) {
+    problems.push('MFA_ENCRYPTION_KEY deve conter 64 caracteres hexadecimais (32 bytes).');
+  }
 
   const origins = parseList(env.CORS_ORIGIN);
   if (!origins.length || origins.includes('*')) {

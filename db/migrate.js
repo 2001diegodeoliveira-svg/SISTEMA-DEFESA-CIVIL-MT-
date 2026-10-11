@@ -17,8 +17,10 @@ const { applyMigrations } = require('./migrate-versioned');
 const {
   carregarCatalogoIbge,
   carregarCatalogoPersistido,
-  seedOrganizacoes
+  seedOrganizacoes,
+  associarUsuariosLegados
 } = require('./seed-organizations');
+const { runWithDbContext } = require('../api/_lib/db-context');
 
 const DIR_DADOS = path.join(__dirname, '..', 'data');
 const SCHEMA = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
@@ -135,19 +137,25 @@ async function main() {
       console.warn('  usando catálogo IBGE previamente validado; dados marcados como desatualizados.');
     }
     if (catalogoIbge) {
-      await cli.query('BEGIN');
-      try {
-        await seedOrganizacoes(cli, catalogoIbge);
-        await cli.query(
-          `UPDATE fontes_dados
-           SET ultima_leitura_valida = now(), status = 'online'
-           WHERE id = 'ibge-localidades'`
-        );
-        await cli.query('COMMIT');
-      } catch (error) {
-        await cli.query('ROLLBACK');
-        throw error;
-      }
+      await runWithDbContext({ operation: 'service' }, async () => {
+        await cli.query('BEGIN');
+        try {
+          await cli.query(
+            `SELECT set_config('app.operation', 'service', true)`
+          );
+          await seedOrganizacoes(cli, catalogoIbge);
+          await associarUsuariosLegados(cli);
+          await cli.query(
+            `UPDATE fontes_dados
+             SET ultima_leitura_valida = now(), status = 'online'
+             WHERE id = 'ibge-localidades'`
+          );
+          await cli.query('COMMIT');
+        } catch (error) {
+          await cli.query('ROLLBACK');
+          throw error;
+        }
+      });
     }
     console.log(`  organizações e territórios atualizados; municípios de MT: ${catalogoIbge.municipios.length}`);
 

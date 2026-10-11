@@ -106,17 +106,27 @@ test('migrações são versionadas por checksum e aplicadas dentro de transaçã
   await applyMigrations(client);
 
   const files = fs.readdirSync(MIGRATIONS_DIR).filter(file => file.endsWith('.sql'));
-  assert.equal(files.length, 1);
-  const version = files[0].slice(0, -4);
-  const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, files[0]), 'utf8');
-  assert.equal(aplicada.get(version), crypto.createHash('sha256').update(sql).digest('hex'));
-  assert.ok(log.includes('BEGIN'));
-  assert.ok(log.includes('COMMIT'));
+  assert.equal(files.length, 2);
+  for (const file of files) {
+    const version = file.slice(0, -4);
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
+    assert.equal(aplicada.get(version), crypto.createHash('sha256').update(sql).digest('hex'));
+  }
+  assert.equal(log.filter(line => line === 'BEGIN').length, 2);
+  assert.equal(log.filter(line => line === 'COMMIT').length, 2);
+  const rbacMigration = fs.readFileSync(
+    path.join(MIGRATIONS_DIR, '000000000002_rbac_mfa_rls.sql'),
+    'utf8'
+  );
+  for (const table of ['usuarios', 'solicitacoes_usuarios', 'usuario_mfa', 'convites_usuarios', 'usuario_organizacao_papel']) {
+    assert.match(rbacMigration, new RegExp(`ALTER TABLE ${table}[\\s\\S]*?FORCE ROW LEVEL SECURITY`));
+  }
+  assert.match(rbacMigration, /CREATE POLICY auditoria_log_immutable_insert/);
   assert.ok(log.includes('SELECT pg_advisory_unlock(73104211)'));
 
   const countBeforeRerun = log.length;
   await applyMigrations(client);
-  assert.equal(log.filter(line => line === 'BEGIN').length, 1);
+  assert.equal(log.filter(line => line === 'BEGIN').length, 2);
   assert.ok(log.length > countBeforeRerun);
 });
 

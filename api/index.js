@@ -8,7 +8,9 @@ const { corsHeaders, bearerToken } = require('./_lib/http');
 const { isLoginEnabled, validateProductionConfig } = require('./_lib/runtime-config');
 const { verifyToken, isLoginEligible, isSessaoLiberada } = require('./_lib/auth');
 const { demoAtualizar, demoAberto } = require('./_lib/demo');
-const { readCollection } = require('./_lib/store');
+const { readCollection, loadUserAccess, driver } = require('./_lib/store');
+const { runWithDbContext } = require('./_lib/db-context');
+const { apiPolicy, canAccessPolicy, databaseRolesForUser, isCoordinator } = require('./_lib/access-control');
 
 function readHeader(headers, name) {
   if (!headers) return undefined;
@@ -107,6 +109,8 @@ module.exports = serve(async function handler(req) {
   }
 
   const { route, query } = parseRoute(req);
+  const routeKey = route.startsWith('user-registrations/') ? 'user-registrations' :
+    route.replace(/\/(enroll|confirm|verify)$/, '');
   const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
   const loginEnabled = isLoginEnabled();
   /* Registra/consulta o marco do primeiro acesso e mantém a janela de
@@ -120,7 +124,10 @@ module.exports = serve(async function handler(req) {
   } catch {}
   if (production && loginEnabled && !configuredAdmin) {
     try {
-      const users = await readCollection('users');
+      const users = await runWithDbContext(
+        { operation: 'authentication' },
+        () => readCollection('users')
+      );
       if (!users.some((user) => user.perfil === 'admin' && isLoginEligible(user))) {
         return new Response(JSON.stringify({
           erro: 'Backend não configurado para produção.',
@@ -145,11 +152,103 @@ module.exports = serve(async function handler(req) {
 
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
-  if (payload && loginEnabled && !isSessaoLiberada(payload)) {
-    const users = await readCollection('users');
-    const user = users.find((item) => String(item.id) === String(payload.sub));
-    if (!isLoginEligible(user)) {
-      return new Response(JSON.stringify({ erro: 'Conta suspensa ou sem cadastro aprovado.' }), {
+  let user = null;
+  let access = null;
+  let requestContext = loginEnabled
+    ? { operation: 'public', isPublic: true }
+    : { operation: 'service' };
+  let routeAccess = null;
+
+  const isMfaRoute = route.startsWith('auth/mfa/');
+  if (route === 'auth/login') {
+    requestContext = { operation: 'authentication' };
+  } else if (route === 'user-registrations' && req.method === 'POST' && !payload) {
+    requestContext = { operation: 'public_registration', isPublic: true };
+  } else if (payload && loginEnabled && !isSessaoLiberada(payload)) {
+    const isChallenge = payload.purpose === 'mfa_login' || payload.purpose === 'mfa_setup';
+    if (isChallenge && !isMfaRoute) {
+      return new Response(JSON.stringify({ erro: 'Conclua a verificação multifator antes de continuar.', mfaRequired: true }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+    const identityContext = { userId: payload.sub, operation: isMfaRoute ? 'mfa' : 'identity' };
+    if (!isChallenge) {
+      user = await runWithDbContext(identityContext, async () => {
+        const users = await readCollection('users');
+        return users.find(item => String(item.id) === String(payload.sub)) || null;
+      });
+      if (!isLoginEligible(user)) {
+        return new Response(JSON.stringify({ erro: 'Conta suspensa ou sem cadastro aprovado.' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
+    } else if (!isMfaRoute) {
+      return new Response(JSON.stringify({ erro: 'Desafio multifator inválido.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    } else {
+      user = await runWithDbContext(identityContext, async () => {
+        const users = await readCollection('users');
+        return users.find(item => String(item.id) === String(payload.sub)) || null;
+      });
+      if (!isLoginEligible(user)) {
+        return new Response(JSON.stringify({ erro: 'Conta suspensa ou sem cadastro aprovado.' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
+    }
+
+    if (driver() === 'pg') {
+      try {
+        access = await runWithDbContext(identityContext, () => loadUserAccess(payload.sub));
+      } catch (error) {
+        console.error('[rbac] não foi possível carregar escopo organizacional:', error.message);
+        return new Response(JSON.stringify({
+          erro: 'Controle de acesso indisponível. Verifique a migração da Fase 3.',
+        }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
+    }
+
+    const roles = databaseRolesForUser(user, access);
+    const requiresMfa = isCoordinator(user, access);
+    if (requiresMfa && payload.mfa !== true && !isMfaRoute) {
+      return new Response(JSON.stringify({
+        erro: 'Autenticação multifator obrigatória.',
+        mfaRequired: true,
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    requestContext = {
+      userId: payload.sub,
+      organizationIds: access && access.organizationIds,
+      directOrganizationIds: access && access.directOrganizationIds,
+      writableOrganizationIds: access && access.writableOrganizationIds,
+      operation: isMfaRoute ? 'mfa' : (route.startsWith('user-registrations') ? 'registration_approval' : 'request'),
+    };
+    routeAccess = {
+      authenticated: true,
+      roles,
+      access: access || { organizationIds: [], directOrganizationIds: [], writableOrganizationIds: [], roles },
+      requiresMfa,
+      user,
+      mfaVerified: payload.mfa === true,
+    };
+  } else if (loginEnabled && !acessoAberto && !payload && route !== 'auth/login' &&
+      route !== 'auth/me' && route !== 'auth/logout' && route !== 'demo' &&
+      !(route === 'user-registrations' && req.method === 'POST')) {
+    const policy = apiPolicy(routeKey, req.method);
+    if (!policy.public) {
+      return new Response(JSON.stringify({ erro: 'Autenticação necessária.' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
       });
@@ -175,11 +274,13 @@ module.exports = serve(async function handler(req) {
       ? authorization || null
       : readHeader(req.headers, name) || null,
   };
+  clone.accessContext = routeAccess;
   if (typeof req.text === 'function') clone.text = req.text.bind(req);
   if (typeof req.json === 'function') clone.json = req.json.bind(req);
 
   let target = null;
   if (handlers[route]) target = handlers[route];
+  else if (route.startsWith('auth/mfa/')) target = require('./_routes/auth/mfa');
   else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
   else {
     const m = route.match(/^areas\/([^/]+)$/);
@@ -187,10 +288,35 @@ module.exports = serve(async function handler(req) {
     else if (/^occurrences\/[^/]+$/.test(route)) target = occurrencesIdHandler;
   }
 
-  if (target) return target(clone);
+  if (target) {
+    if (loginEnabled && !acessoAberto && !isSessaoLiberada(payload)) {
+      const policy = apiPolicy(routeKey, req.method);
+      if (!canAccessPolicy(policy, routeAccess)) {
+        return new Response(JSON.stringify({ erro: 'Seu papel não permite executar esta operação.' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
+    }
+    const operation = route === 'auth/login'
+      ? 'authentication'
+      : route.startsWith('user-registrations') && routeAccess
+        ? 'registration_approval'
+        : route.startsWith('auth/mfa/')
+          ? 'mfa'
+        : routeContextOperation(route, req.method, requestContext.operation);
+    requestContext.operation = operation;
+    return runWithDbContext(requestContext, () => target(clone));
+  }
 
   return new Response(JSON.stringify({ erro: 'Rota não encontrada: /api/' + route }), {
     status: 404,
     headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
   });
+
+  function routeContextOperation(route, method, fallback) {
+    if (route.startsWith('auth/mfa/')) return 'mfa';
+    if (route === 'user-registrations' && method === 'POST') return 'public_registration';
+    return fallback;
+  }
 });

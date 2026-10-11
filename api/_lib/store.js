@@ -14,6 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const { currentDbContext, setDbContext } = require('./db-context');
 
 const dataDir = path.join(__dirname, '..', '..', 'data');
 
@@ -45,6 +46,25 @@ function getPool() {
     opts.ssl = { rejectUnauthorized: false };
   }
   pool = new Pool(opts);
+  const queryWithoutContext = pool.query.bind(pool);
+  pool.query = function queryWithContext(text, values) {
+    const context = currentDbContext();
+    if (!context) return queryWithoutContext(text, values);
+    return pool.connect().then(async (client) => {
+      try {
+        await client.query('BEGIN');
+        await setDbContext(client, context);
+        const result = await client.query(text, values);
+        await client.query('COMMIT');
+        return result;
+      } catch (error) {
+        try { await client.query('ROLLBACK'); } catch {}
+        throw error;
+      } finally {
+        client.release();
+      }
+    });
+  };
   return pool;
 }
 
@@ -105,6 +125,7 @@ async function inTx(fn) {
   const c = await getPool().connect();
   try {
     await c.query('BEGIN');
+    await setDbContext(c);
     const out = await fn(c);
     await c.query('COMMIT');
     return out;
@@ -224,6 +245,9 @@ function registrationFromRow(row) {
     atualizadoEm: tsMs(row.atualizado_em),
     avaliadoEm: tsMs(row.avaliado_em),
     avaliadoPor: row.avaliado_por,
+    organizacaoId: row.organizacao_id || null,
+    conviteId: row.convite_id || null,
+    papelCodigo: row.papel_codigo || null,
   };
 }
 
@@ -233,16 +257,41 @@ async function pgReadUserRegistrations() {
 }
 
 async function pgCreateUserRegistration(registration) {
-  const { rows } = await getPool().query(
-    `INSERT INTO solicitacoes_usuarios
-       (id, usuario, senha_hash, email, cpf, dados, status, situacao, parecer, criado_em, atualizado_em)
-     VALUES ($1,$2,$3,$4,$5,$6::jsonb,'Pendente','Ativo','',$7,$7)
-     RETURNING *`,
-    [registration.id, registration.usuario, registration.senhaHash,
-      registration.email.toLowerCase(), registration.cpf.replace(/\D/g, ''),
-      JSON.stringify(registration.dados), tsPg(registration.criadoEm)]
-  );
-  return registrationFromRow(rows[0]);
+  return inTx(async client => {
+    if (registration.conviteId) {
+      const invite = await client.query(
+        `SELECT id FROM convites_usuarios
+         WHERE id = $1 AND status = 'pendente' AND expira_em > now()
+         FOR UPDATE`,
+        [registration.conviteId]
+      );
+      if (!invite.rows[0]) {
+        const error = new Error('Convite inexistente, expirado ou já utilizado.');
+        error.code = 'INVITATION_INVALID';
+        throw error;
+      }
+    }
+    const { rows } = await client.query(
+      `INSERT INTO solicitacoes_usuarios
+         (id, usuario, senha_hash, email, cpf, dados, organizacao_id, convite_id,
+          papel_codigo, status, situacao, parecer, criado_em, atualizado_em)
+       VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9,'Pendente','Ativo','',$10,$10)
+       RETURNING *`,
+      [registration.id, registration.usuario, registration.senhaHash,
+        registration.email.toLowerCase(), registration.cpf.replace(/\D/g, ''),
+        JSON.stringify(registration.dados), registration.organizacaoId || null,
+        registration.conviteId || null, registration.papelCodigo || null,
+        tsPg(registration.criadoEm)]
+    );
+    if (registration.conviteId) {
+      await client.query(
+        `UPDATE convites_usuarios SET status = 'utilizado', utilizado_em = now()
+         WHERE id = $1`,
+        [registration.conviteId]
+      );
+    }
+    return registrationFromRow(rows[0]);
+  });
 }
 
 async function pgUpdateUserRegistration(id, changes) {
@@ -277,11 +326,30 @@ async function pgUpdateUserRegistration(id, changes) {
         throw error;
       }
 
-      await client.query(
+      const insertedUser = await client.query(
         `INSERT INTO usuarios (usuario, senha_hash, nome, perfil, municipio_id, ativo, cadastro_id, bootstrap_admin, criado_em)
-         VALUES ($1,$2,$3,$4,$5,TRUE,$6,FALSE,now())`,
+         VALUES ($1,$2,$3,$4,$5,TRUE,$6,FALSE,now())
+         RETURNING id`,
         [current.usuario, current.senhaHash, data.nome || '', perfil, municipality ? municipality.id : null, current.id]
       );
+      const roleCode = current.papelCodigo || (data.perfil === 'Municipal'
+        ? (data.nivel === 'Consulta' ? 'leitura' : (data.nivel === 'Gestao' ? 'coordenador' : 'operador_campo'))
+        : (data.nivel === 'Consulta' ? 'leitura' : (data.nivel === 'Gestao' ? 'coordenador' : 'analista')));
+      await client.query(
+        `INSERT INTO usuario_organizacao_papel
+           (usuario_id, organizacao_id, papel_codigo, concedido_por)
+         VALUES ($1,$2,$3,NULLIF(current_setting('app.user_id', TRUE), '')::integer)
+         ON CONFLICT (usuario_id, organizacao_id, papel_codigo) DO NOTHING`,
+        [insertedUser.rows[0].id, current.organizacaoId, roleCode]
+      );
+      if (current.conviteId) {
+        await client.query(
+          `UPDATE convites_usuarios
+           SET status = 'aprovado', aprovado_por = NULLIF(current_setting('app.user_id', TRUE), '')::integer
+           WHERE id = $1 AND status = 'utilizado'`,
+          [current.conviteId]
+        );
+      }
     }
 
     const { rows } = await client.query(
@@ -768,6 +836,231 @@ async function deleteUserRegistration(id) {
   return true;
 }
 
+function requirePostgres(operation) {
+  if (driver() !== 'pg') {
+    throw new Error(`${operation} exige PostgreSQL e a migração versionada da Fase 3.`);
+  }
+}
+
+async function loadUserAccess(userId) {
+  if (driver() !== 'pg') {
+    return { organizationIds: [], directOrganizationIds: [], writableOrganizationIds: [], roles: [] };
+  }
+  const { rows } = await getPool().query(
+    `WITH RECURSIVE atribuicoes AS (
+       SELECT organizacao_id, papel_codigo
+       FROM usuario_organizacao_papel
+       WHERE usuario_id = $1 AND ativo = TRUE
+     ),
+     escopo(organizacao_id) AS (
+       SELECT organizacao_id FROM atribuicoes
+       UNION
+       SELECT filha.id
+       FROM organizacoes filha
+       JOIN escopo pai ON filha.parent_id = pai.organizacao_id
+       WHERE filha.ativo = TRUE
+     )
+     SELECT
+       COALESCE((SELECT array_agg(DISTINCT organizacao_id ORDER BY organizacao_id)
+                 FROM escopo), ARRAY[]::text[]) AS organizacoes,
+       COALESCE((SELECT array_agg(DISTINCT organizacao_id ORDER BY organizacao_id)
+                 FROM atribuicoes), ARRAY[]::text[]) AS organizacoes_diretas,
+       COALESCE((SELECT array_agg(DISTINCT papel_codigo ORDER BY papel_codigo)
+                 FROM atribuicoes), ARRAY[]::text[]) AS papeis,
+       COALESCE((SELECT array_agg(DISTINCT organizacao_id ORDER BY organizacao_id)
+                 FROM atribuicoes
+                 WHERE papel_codigo IN (
+                   'administrador_orgao', 'coordenador', 'analista', 'operador_campo'
+                 )), ARRAY[]::text[]) AS organizacoes_gravaveis`
+    , [userId]
+  );
+  const row = rows[0];
+  return {
+    organizationIds: row.organizacoes || [],
+    directOrganizationIds: row.organizacoes_diretas || [],
+    writableOrganizationIds: row.organizacoes_gravaveis || [],
+    roles: row.papeis || [],
+  };
+}
+
+async function getMfaRecord(userId) {
+  if (driver() !== 'pg') {
+    const entries = await readCollection('user_mfa');
+    return entries.find(item => String(item.userId) === String(userId)) || null;
+  }
+  const { rows } = await getPool().query(
+    `SELECT ciphertext, nonce, auth_tag, enabled_at
+     FROM usuario_mfa WHERE usuario_id = $1`,
+    [userId]
+  );
+  const row = rows[0];
+  return row ? {
+    ciphertext: row.ciphertext,
+    nonce: row.nonce,
+    tag: row.auth_tag,
+    enabledAt: row.enabled_at,
+    lastVerifiedStep: row.last_verified_step,
+  } : null;
+}
+
+async function savePendingMfa(userId, encrypted) {
+  if (driver() !== 'pg') {
+    const entries = await readCollection('user_mfa');
+    const next = entries.filter(item => String(item.userId) !== String(userId));
+    next.push({ userId, ...encrypted, enabledAt: null, updatedAt: Date.now() });
+    await writeCollection('user_mfa', next);
+    return;
+  }
+  await getPool().query(
+    `INSERT INTO usuario_mfa (usuario_id, ciphertext, nonce, auth_tag, enabled_at, atualizado_em)
+     VALUES ($1, $2, $3, $4, NULL, now())
+     ON CONFLICT (usuario_id) DO UPDATE SET
+       ciphertext = EXCLUDED.ciphertext,
+       nonce = EXCLUDED.nonce,
+       auth_tag = EXCLUDED.auth_tag,
+       enabled_at = NULL,
+       atualizado_em = now()`,
+    [userId, encrypted.ciphertext, encrypted.nonce, encrypted.tag]
+  );
+}
+
+async function enableMfa(userId) {
+  if (driver() !== 'pg') {
+    const entries = await readCollection('user_mfa');
+    const entry = entries.find(item => String(item.userId) === String(userId));
+    if (!entry || entry.enabledAt) return false;
+    entry.enabledAt = new Date().toISOString();
+    entry.updatedAt = Date.now();
+    await writeCollection('user_mfa', entries);
+    return true;
+  }
+  const { rowCount } = await getPool().query(
+    `UPDATE usuario_mfa SET enabled_at = now(), atualizado_em = now()
+     WHERE usuario_id = $1 AND enabled_at IS NULL`,
+    [userId]
+  );
+  return rowCount > 0;
+}
+
+async function consumeMfaStep(userId, step) {
+  if (driver() !== 'pg') {
+    const entries = await readCollection('user_mfa');
+    const entry = entries.find(item => String(item.userId) === String(userId));
+    if (!entry || Number(entry.lastVerifiedStep || 0) >= step) return false;
+    entry.lastVerifiedStep = step;
+    await writeCollection('user_mfa', entries);
+    return true;
+  }
+  const { rowCount } = await getPool().query(
+    `UPDATE usuario_mfa SET last_verified_step = $2, atualizado_em = now()
+     WHERE usuario_id = $1 AND last_verified_step < $2`,
+    [userId, step]
+  );
+  return rowCount > 0;
+}
+
+async function findOrganizationForRequest(profile, municipality) {
+  requirePostgres('Vínculo territorial');
+  const code = profile === 'Municipal' ? '51' : null;
+  if (profile === 'Estadual') {
+    const { rows } = await getPool().query(
+      `SELECT id, nome, nivel FROM organizacoes
+       WHERE codigo_ibge = '51' AND nivel = 'estadual' AND ativo = TRUE`
+    );
+    return rows[0] || null;
+  }
+  if (profile === 'Municipal') {
+    if (!municipality) return null;
+    const { rows } = await getPool().query(
+      `SELECT o.id, o.nome, o.nivel
+       FROM organizacoes o
+       JOIN municipios m ON m.id = o.municipio_id
+       WHERE o.nivel = 'municipal'
+         AND o.parent_id = 'UF-51'
+         AND lower(m.nome) = lower($1)
+         AND o.ativo = TRUE`,
+      [String(municipality).trim()]
+    );
+    return rows[0] || null;
+  }
+  return code ? null : null;
+}
+
+async function getOrganization(id) {
+  requirePostgres('Escopo organizacional');
+  const { rows } = await getPool().query(
+    `SELECT id, nome, sigla, parent_id, nivel, codigo_ibge
+     FROM organizacoes WHERE id = $1 AND ativo = TRUE`,
+    [String(id)]
+  );
+  return rows[0] || null;
+}
+
+async function getOrganizationsByIds(ids, { children = false } = {}) {
+  requirePostgres('Organizações vinculadas');
+  const organizationIds = [...new Set((ids || []).map(String))];
+  if (!organizationIds.length) return [];
+  const { rows } = await getPool().query(
+    `SELECT id, nome, nivel
+     FROM organizacoes
+     WHERE (id = ANY($1::text[])
+       OR ($2::boolean AND parent_id = ANY($1::text[])))
+       AND ativo = TRUE
+     ORDER BY nome`,
+    [organizationIds, children]
+  );
+  return rows;
+}
+
+async function createOrganizationInvite(invite) {
+  requirePostgres('Convites de usuário');
+  const { rows } = await getPool().query(
+    `INSERT INTO convites_usuarios
+       (token_hash, organizacao_id, papel_codigo, email, criado_por, expira_em)
+     VALUES ($1,$2,$3,$4,$5,$6)
+     RETURNING id, organizacao_id, papel_codigo, email, status, expira_em`,
+    [invite.tokenHash, invite.organizationId, invite.roleCode, invite.email.toLowerCase(),
+      invite.createdBy, invite.expiresAt]
+  );
+  return rows[0];
+}
+
+async function findInviteByHash(tokenHash) {
+  requirePostgres('Convites de usuário');
+  const { rows } = await getPool().query(
+    `SELECT id, organizacao_id, papel_codigo, email, expira_em
+     FROM convites_usuarios
+     WHERE token_hash = $1 AND status = 'pendente' AND expira_em > now()`,
+    [tokenHash]
+  );
+  return rows[0] || null;
+}
+
+async function writeAuditRecord(record) {
+  if (driver() !== 'pg') {
+    return push('audit_logs', {
+      id: `security-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      action: record.action,
+      metadata: { userId: record.userId, organizationId: record.organizationId, ...(record.details || {}) },
+      createdAt: Date.now(),
+    });
+  }
+  await getPool().query(
+    `INSERT INTO auditoria_log
+       (usuario_id, organizacao_id, acao, entidade, entidade_id, endereco_ip, detalhes)
+     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)`,
+    [
+      record.userId || null,
+      record.organizationId || null,
+      record.action,
+      record.entity || 'autenticacao',
+      record.entityId || null,
+      record.ip || null,
+      JSON.stringify(record.details || {}),
+    ]
+  );
+}
+
 module.exports = {
   readCollection,
   writeCollection,
@@ -778,6 +1071,17 @@ module.exports = {
   editUserRegistration,
   deleteUserRegistration,
   driver,
+  loadUserAccess,
+  getMfaRecord,
+  savePendingMfa,
+  enableMfa,
+  consumeMfaStep,
+  findOrganizationForRequest,
+  getOrganization,
+  getOrganizationsByIds,
+  createOrganizationInvite,
+  findInviteByHash,
+  writeAuditRecord,
   resumoGestao: async function () {
     if (driver() === 'pg') return pgResumoGestao();
     return [];

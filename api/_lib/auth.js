@@ -68,16 +68,26 @@ function isLoginEligible(user) {
     return user.bootstrapAdmin === true || seedUsers().some((seed) => seed.perfil === 'admin' &&
       String(seed.usuario).toLowerCase() === String(user.usuario).toLowerCase());
   }
-  return Boolean(user.cadastroId);
+  if (user.ativo === true) return true;
+  if (user.cadastroId) return true;
+  return Boolean(user.senhaHash || user.senha);
 }
 
 const findOrProvisionUser = findByCredentials;
 
-function signToken(user) {
+function signToken(user, claims = {}) {
   return jwt.sign(
-    { sub: user.id, usuario: user.usuario, perfil: user.perfil },
+    { sub: user.id, usuario: user.usuario, perfil: user.perfil, ...claims },
     JWT_SECRET,
     { expiresIn: JWT_EXP }
+  );
+}
+
+function signChallengeToken(user, purpose) {
+  return jwt.sign(
+    { sub: user.id, usuario: user.usuario, perfil: user.perfil, purpose },
+    JWT_SECRET,
+    { expiresIn: '5m' }
   );
 }
 
@@ -102,13 +112,15 @@ function isSessaoLiberada(payload) {
   return Boolean(payload && payload.liberada === true);
 }
 
-function publicUser(user) {
+function publicUser(user, access) {
   return {
     id: user.id,
     usuario: user.usuario,
     nome: user.nome,
     perfil: user.perfil,
     municipio: user.municipio,
+    papeis: access && Array.isArray(access.roles) ? access.roles : [],
+    organizacoes: access && Array.isArray(access.organizationIds) ? access.organizationIds : [],
   };
 }
 
@@ -119,6 +131,7 @@ module.exports = {
   findOrProvisionUser,
   isLoginEligible,
   signToken,
+  signChallengeToken,
   verifyToken,
   isSessaoLiberada,
   publicUser,

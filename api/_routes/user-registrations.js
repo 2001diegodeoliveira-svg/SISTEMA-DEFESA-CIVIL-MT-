@@ -1,12 +1,99 @@
 /* Solicitações públicas de acesso; consulta e análise restritas a administradores. */
 const bcrypt = require('bcryptjs');
+const crypto = require('node:crypto');
+const { isIP } = require('node:net');
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
 const { verifyToken, isLoginEligible, isLoginEnabled, isSessaoLiberada } = require('../_lib/auth');
-const { readCollection, createUserRegistration, updateUserRegistration, editUserRegistration, deleteUserRegistration } = require('../_lib/store');
+const {
+  readCollection, createUserRegistration, updateUserRegistration, editUserRegistration,
+  deleteUserRegistration, getOrganization, getOrganizationsByIds, driver,
+  createOrganizationInvite, findInviteByHash, writeAuditRecord
+} = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
+const { canManageOrganization } = require('../_lib/access-control');
 
 const LEVELS = new Set(['Consulta', 'Operacao', 'Gestao']);
 const PROFILES = new Set(['Estadual', 'Municipal']);
+const INVITABLE_ROLES = new Set([
+  'administrador_orgao', 'coordenador', 'analista', 'operador_campo', 'voluntario', 'leitura'
+]);
+
+function routeQuery(req) {
+  try { return new URL(req.url, 'http://localhost').searchParams; }
+  catch { return new URLSearchParams(); }
+}
+
+function normalizarTexto(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim().toLowerCase();
+}
+
+function requestIp(req) {
+  const forwarded = req.headers.get && (req.headers.get('x-vercel-forwarded-for') ||
+    req.headers.get('x-forwarded-for'));
+  const candidate = String(forwarded || '').split(',')[0].trim();
+  return isIP(candidate) ? candidate : null;
+}
+
+function auditActor(req) {
+  const id = Number(req.accessContext && req.accessContext.user && req.accessContext.user.id);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+async function createInvite(req, origin) {
+  const accessContext = req.accessContext;
+  if (!accessContext || !accessContext.authenticated) {
+    return jsonResponse(401, { erro: 'Autenticação necessária para emitir convites.' }, origin);
+  }
+  if (driver() !== 'pg') {
+    return jsonResponse(503, { erro: 'Convites exigem PostgreSQL e a migração versionada da Fase 3.' }, origin);
+  }
+
+  const body = await readJson(req);
+  const organizationId = String(body.organizacaoId || '').trim();
+  const roleCode = String(body.papel || '').trim();
+  const email = String(body.email || '').trim().toLowerCase();
+  if (!organizationId || !INVITABLE_ROLES.has(roleCode) ||
+      email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return jsonResponse(400, { erro: 'Informe organização, e-mail válido e um papel permitido.' }, origin);
+  }
+  const organization = await getOrganization(organizationId);
+  if (!organization) return jsonResponse(404, { erro: 'Organização não encontrada.' }, origin);
+  if (!canManageOrganization(accessContext.access, organizationId, organization.parent_id)) {
+    return jsonResponse(403, { erro: 'Você só pode convidar pessoas para uma organização sob sua administração.' }, origin);
+  }
+
+  const rawToken = crypto.randomBytes(32).toString('base64url');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const invite = await createOrganizationInvite({
+    tokenHash,
+    organizationId,
+    roleCode,
+    email,
+    createdBy: accessContext.user.id,
+    expiresAt,
+  });
+  await writeAuditRecord({
+    userId: auditActor(req),
+    organizationId,
+    action: 'convite_usuario_criado',
+    entity: 'convite_usuario',
+    entityId: invite.id,
+    ip: requestIp(req),
+    details: { papel: roleCode, email },
+  });
+  return jsonResponse(201, {
+    convite: {
+      id: invite.id,
+      organizacaoId: invite.organizacao_id,
+      papel: invite.papel_codigo,
+      email: invite.email,
+      expiraEm: invite.expira_em,
+      token: rawToken,
+    },
+  }, origin);
+}
 
 function validCpf(value) {
   const cpf = String(value || '').replace(/\D/g, '');
@@ -26,6 +113,14 @@ function publicRegistration(registration) {
   return publicData;
 }
 
+function publicRegistrationReceipt(registration) {
+  return {
+    id: registration.id,
+    status: registration.status,
+    parecer: registration.parecer || '',
+  };
+}
+
 async function requireAdmin(req) {
   if (!isLoginEnabled()) {
     return { id: 'anon', usuario: 'Acesso livre', perfil: 'admin', ativo: true };
@@ -39,7 +134,11 @@ async function requireAdmin(req) {
   }
   const users = await readCollection('users');
   const user = users.find((item) => String(item.id) === String(payload.sub));
-  return user && user.perfil === 'admin' && isLoginEligible(user) ? user : null;
+  if (!user || !isLoginEligible(user)) return null;
+  const roles = req.accessContext && req.accessContext.roles || [];
+  return user.perfil === 'admin' || roles.some(role =>
+    ['administrador_orgao', 'coordenador'].includes(role)
+  ) ? user : null;
 }
 
 function routeId(req) {
@@ -73,6 +172,8 @@ function validateData(body, { editing = false } = {}) {
   const data = { ...body };
   delete data.senha;
   delete data.senhaHash;
+  delete data.inviteToken;
+  delete data.convite;
   delete data.id;
   delete data.status;
   delete data.situacao;
@@ -98,9 +199,44 @@ module.exports = serve(async function handler(req) {
 
   const id = routeId(req);
   if (req.method === 'POST' && !id) {
+    if (routeQuery(req).get('acao') === 'convite') return createInvite(req, origin);
+
     const body = await readJson(req);
     const validated = validateData(body);
     if (validated.erro) return jsonResponse(400, { erro: validated.erro }, origin);
+
+    let invitation = null;
+    if (driver() === 'pg') {
+      const inviteToken = String(body.inviteToken || body.convite || '');
+      if (!inviteToken || inviteToken.length > 200) {
+        return jsonResponse(400, { erro: 'Informe um convite válido emitido pela organização responsável.' }, origin);
+      }
+      const tokenHash = crypto.createHash('sha256').update(inviteToken).digest('hex');
+      invitation = await findInviteByHash(tokenHash);
+      if (!invitation) return jsonResponse(400, { erro: 'Convite inválido, expirado ou já utilizado.' }, origin);
+      if (invitation.email.toLowerCase() !== validated.email) {
+        return jsonResponse(400, { erro: 'O convite foi emitido para outro e-mail.' }, origin);
+      }
+      const organization = await getOrganization(invitation.organizacao_id);
+      const expectedProfile = organization && organization.nivel === 'municipal' ? 'Municipal' : 'Estadual';
+      const territorialMatch = organization && (expectedProfile === 'Municipal'
+        ? normalizarTexto(validated.dados.municipio) === normalizarTexto(organization.nome) &&
+          String(validated.dados.ibge || '').replace(/\D/g, '') === String(organization.codigo_ibge)
+        : normalizarTexto(validated.dados.estado) === normalizarTexto(organization.sigla));
+      if (!organization || validated.dados.perfil !== expectedProfile ||
+          !territorialMatch) {
+        return jsonResponse(400, { erro: 'Os dados territoriais não correspondem à organização do convite.' }, origin);
+      }
+      const levelByRole = {
+        leitura: 'Consulta',
+        voluntario: 'Consulta',
+        operador_campo: 'Operacao',
+        analista: 'Operacao',
+        coordenador: 'Gestao',
+        administrador_orgao: 'Gestao',
+      };
+      validated.dados.nivel = levelByRole[invitation.papel_codigo];
+    }
 
     const users = await readCollection('users');
     if (users.some((user) => String(user.usuario).toLowerCase() === validated.usuario.toLowerCase())) {
@@ -114,6 +250,7 @@ module.exports = serve(async function handler(req) {
     ))) return jsonResponse(409, { erro: 'Já existe uma solicitação ativa com esse usuário, e-mail ou CPF.' }, origin);
 
     try {
+      const organization = invitation ? { id: invitation.organizacao_id } : null;
       const now = new Date().toISOString();
       const registration = await createUserRegistration({
         id: `REG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -121,8 +258,12 @@ module.exports = serve(async function handler(req) {
         senhaHash: await bcrypt.hash(validated.senha, 12),
         email: validated.email,
         cpf: validated.cpf,
+        organizacaoId: organization && organization.id,
+        conviteId: invitation && invitation.id,
+        papelCodigo: invitation && invitation.papel_codigo,
         dados: {
           ...validated.dados,
+          organizacaoId: organization && organization.id,
           origem: 'Solicitante',
           historico: [{ data: now, autor: 'Solicitante', acao: 'Cadastro recebido' }],
         },
@@ -132,7 +273,15 @@ module.exports = serve(async function handler(req) {
         criadoEm: now,
         atualizadoEm: now,
       });
-      return jsonResponse(201, { ok: true, registration: publicRegistration(registration) }, origin);
+      await writeAuditRecord({
+        organizationId: organization && organization.id,
+        action: 'solicitacao_usuario_criada',
+        entity: 'solicitacao_usuario',
+        entityId: registration.id,
+        ip: requestIp(req),
+        details: { conviteId: registration.conviteId },
+      });
+      return jsonResponse(201, { ok: true, registration: publicRegistrationReceipt(registration) }, origin);
     } catch (error) {
       if (error.code === '23505') return jsonResponse(409, { erro: 'Já existe uma solicitação ativa com esse usuário, e-mail ou CPF.' }, origin);
       throw error;
@@ -143,8 +292,38 @@ module.exports = serve(async function handler(req) {
   if (!admin) return jsonResponse(401, { erro: 'Acesso exclusivo de administrador.' }, origin);
 
   if (req.method === 'GET' && !id) {
+    if (routeQuery(req).get('acao') === 'organizacoes') {
+      const access = req.accessContext && req.accessContext.access;
+      const roles = req.accessContext && req.accessContext.roles || [];
+      if (driver() !== 'pg' || !access ||
+          !roles.some(role => ['admin', 'administrador_orgao', 'coordenador'].includes(role))) {
+        return jsonResponse(403, { erro: 'Você não pode emitir convites para organizações.' }, origin);
+      }
+      const organizations = await getOrganizationsByIds(access.directOrganizationIds || [], { children: true });
+      return jsonResponse(200, { organizations }, origin);
+    }
     const registrations = await readCollection('user_registrations');
-    return jsonResponse(200, { registrations: registrations.map(publicRegistration) }, origin);
+    if (driver() !== 'pg' || !req.accessContext || !req.accessContext.access) {
+      return jsonResponse(200, { registrations: registrations.map(publicRegistration) }, origin);
+    }
+    const direct = req.accessContext.access.directOrganizationIds || [];
+    const visible = [];
+    for (const registration of registrations) {
+      if (!registration.organizacaoId) continue;
+      const organization = await getOrganization(registration.organizacaoId);
+      if (organization && direct.includes(organization.parent_id)) visible.push(registration);
+    }
+    if (direct.length) {
+      await writeAuditRecord({
+        userId: auditActor(req),
+        organizationId: direct[0],
+        action: 'solicitacoes_usuarios_consultadas',
+        entity: 'solicitacoes_usuarios',
+        ip: requestIp(req),
+        details: { ids: visible.map(item => String(item.id)) },
+      });
+    }
+    return jsonResponse(200, { registrations: visible.map(publicRegistration) }, origin);
   }
 
   if (req.method === 'PUT' && id) {
@@ -152,10 +331,21 @@ module.exports = serve(async function handler(req) {
     const registrations = await readCollection('user_registrations');
     const current = registrations.find((item) => String(item.id) === id);
     if (!current) return jsonResponse(404, { erro: 'Solicitação não encontrada.' }, origin);
+    if (!await canApproveRegistration(req, current)) {
+      return jsonResponse(403, { erro: 'A solicitação deve ser analisada pela organização do nível imediatamente superior.' }, origin);
+    }
     const validated = validateData({ ...body, usuario: current.usuario }, { editing: true });
     if (validated.erro) return jsonResponse(400, { erro: validated.erro }, origin);
     try {
       const updated = await editUserRegistration(id, validated.dados);
+      await writeAuditRecord({
+        userId: auditActor(req),
+        organizationId: current.organizacaoId,
+        action: 'solicitacao_usuario_alterada',
+        entity: 'solicitacao_usuario',
+        entityId: id,
+        ip: requestIp(req),
+      });
       return jsonResponse(200, { ok: true, registration: publicRegistration(updated) }, origin);
     } catch (error) {
       if (error.code === 'REGISTRATION_NOT_PENDING') return jsonResponse(409, { erro: error.message }, origin);
@@ -169,6 +359,12 @@ module.exports = serve(async function handler(req) {
     if (!['Aprovado', 'Recusado'].includes(body.status)) return jsonResponse(400, { erro: 'Status deve ser Aprovado ou Recusado.' }, origin);
     const parecer = String(body.parecer || '').trim();
     if (parecer.length < 5 || parecer.length > 2000) return jsonResponse(400, { erro: 'Informe um parecer de 5 a 2000 caracteres.' }, origin);
+    const current = (await readCollection('user_registrations'))
+      .find(registration => String(registration.id) === id);
+    if (!current) return jsonResponse(404, { erro: 'Solicitação não encontrada.' }, origin);
+    if (!await canApproveRegistration(req, current)) {
+      return jsonResponse(403, { erro: 'A solicitação deve ser analisada pela organização do nível imediatamente superior.' }, origin);
+    }
     try {
       const updated = await updateUserRegistration(id, {
         status: body.status,
@@ -177,6 +373,15 @@ module.exports = serve(async function handler(req) {
         avaliadoPor: admin.usuario,
       });
       if (!updated) return jsonResponse(404, { erro: 'Solicitação não encontrada.' }, origin);
+      await writeAuditRecord({
+        userId: auditActor(req),
+        organizationId: current.organizacaoId,
+        action: body.status === 'Aprovado' ? 'solicitacao_usuario_aprovada' : 'solicitacao_usuario_recusada',
+        entity: 'solicitacao_usuario',
+        entityId: id,
+        ip: requestIp(req),
+        details: { parecer },
+      });
       return jsonResponse(200, { ok: true, registration: publicRegistration(updated) }, origin);
     } catch (error) {
       if (error.code === 'REGISTRATION_NOT_PENDING') return jsonResponse(409, { erro: error.message }, origin);
@@ -187,10 +392,37 @@ module.exports = serve(async function handler(req) {
   }
 
   if (req.method === 'DELETE' && id) {
+    const current = (await readCollection('user_registrations'))
+      .find(registration => String(registration.id) === id);
+    if (current && !await canApproveRegistration(req, current)) {
+      return jsonResponse(403, { erro: 'A solicitação deve ser administrada pela organização do nível imediatamente superior.' }, origin);
+    }
     const deleted = await deleteUserRegistration(id);
     if (!deleted) return jsonResponse(409, { erro: 'Solicitação inexistente ou já aprovada; contas aprovadas não podem ser apagadas por esta ação.' }, origin);
+    await writeAuditRecord({
+      userId: auditActor(req),
+      organizationId: current && current.organizacaoId,
+      action: 'solicitacao_usuario_excluida',
+      entity: 'solicitacao_usuario',
+      entityId: id,
+      ip: requestIp(req),
+    });
     return jsonResponse(200, { ok: true }, origin);
   }
 
   return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
 });
+
+async function canApproveRegistration(req, registration) {
+  if (!registration || !registration.organizacaoId) {
+    return driver() !== 'pg' && Boolean(req.accessContext && req.accessContext.user &&
+      req.accessContext.user.perfil === 'admin');
+  }
+  if (driver() !== 'pg') return true;
+  const organization = await getOrganization(registration.organizacaoId);
+  const access = req.accessContext && req.accessContext.access;
+  const roles = req.accessContext && req.accessContext.roles || [];
+  return Boolean(organization && access &&
+    access.directOrganizationIds.includes(organization.parent_id) &&
+    roles.some(role => ['admin', 'administrador_orgao', 'coordenador'].includes(role)));
+}

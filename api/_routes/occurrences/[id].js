@@ -6,6 +6,20 @@ const { readCollection, writeCollection, push } = require('../../_lib/store');
 const { serve } = require('../../_lib/serverless');
 
 const STATUSES = ['NOVA', 'EM_ANALISE', 'EM_ATENDIMENTO', 'ENCAMINHADA', 'RESOLVIDA', 'ENCERRADA'];
+const PUBLIC_FIELDS = [
+  'id', 'type', 'priority', 'status', 'source', 'city', 'reportedAt', 'receivedAt', 'updatedAt',
+];
+
+function publicOccurrence(occurrence) {
+  const safe = Object.fromEntries(PUBLIC_FIELDS
+    .filter(field => occurrence[field] !== undefined)
+    .map(field => [field, occurrence[field]]));
+  if (Number.isFinite(occurrence.latitude) && Number.isFinite(occurrence.longitude)) {
+    safe.latitude = Math.round(occurrence.latitude * 100) / 100;
+    safe.longitude = Math.round(occurrence.longitude * 100) / 100;
+  }
+  return safe;
+}
 
 function normalize(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -31,7 +45,12 @@ module.exports = serve(async function handler(req) {
   const occurrences = await readCollection('occurrences');
   const index = occurrences.findIndex((item) => String(item.id) === id);
   if (index < 0) return jsonResponse(404, { erro: 'Ocorrência não encontrada.' }, origin);
-  if (req.method === 'GET') return jsonResponse(200, { occurrence: occurrences[index] }, origin);
+  if (req.method === 'GET') {
+    const occurrence = req.accessContext && req.accessContext.authenticated
+      ? occurrences[index]
+      : publicOccurrence(occurrences[index]);
+    return jsonResponse(200, { occurrence }, origin);
+  }
 
   const token = bearerToken(req);
   const payload = token && verifyToken(token);

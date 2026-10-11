@@ -7,6 +7,19 @@ const { verifyToken } = require('../_lib/auth');
 const { readCollection, push } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 
+function publicReport(report) {
+  const roundedLocation = Number.isFinite(report.lat) && Number.isFinite(report.lng)
+    ? { lat: Math.round(report.lat * 100) / 100, lng: Math.round(report.lng * 100) / 100 }
+    : {};
+  return {
+    id: report.id,
+    type: report.type,
+    severity: report.severity,
+    ...roundedLocation,
+    createdAt: report.createdAt,
+  };
+}
+
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
 
@@ -15,7 +28,7 @@ module.exports = serve(async function handler(req) {
   if (req.method === 'GET') {
     const reports = await readCollection('reports');
     return jsonResponse(200, {
-      reports: reports.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
+      reports: reports.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(publicReport),
       total: reports.length,
     }, origin);
   }

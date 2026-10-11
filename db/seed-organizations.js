@@ -110,6 +110,57 @@ async function inserirOrganizacoes(client, rows) {
   );
 }
 
+async function associarUsuariosLegados(client) {
+  const { rows } = await client.query(
+    `SELECT u.id, u.perfil::text AS perfil, u.municipio_id, o.id AS municipio_org_id
+     FROM usuarios u
+     LEFT JOIN organizacoes o ON o.municipio_id = u.municipio_id`
+  );
+  const assignments = [];
+  for (const user of rows) {
+    let organizationId = null;
+    let roleCode = null;
+    switch (user.perfil) {
+      case 'admin':
+        organizationId = 'UF-51';
+        roleCode = 'administrador_orgao';
+        break;
+      case 'avancado':
+        organizationId = 'UF-51';
+        roleCode = 'coordenador';
+        break;
+      case 'municipal':
+        organizationId = user.municipio_org_id;
+        roleCode = 'operador_campo';
+        break;
+      case 'comum':
+        organizationId = user.municipio_org_id;
+        roleCode = 'leitura';
+        break;
+      default:
+        break;
+    }
+    if (organizationId && roleCode) {
+      assignments.push([String(user.id), organizationId, roleCode]);
+    }
+  }
+  if (assignments.length) {
+    await client.query(
+      `INSERT INTO usuario_organizacao_papel (usuario_id, organizacao_id, papel_codigo)
+       SELECT usuario_id::integer, organizacao_id, papel_codigo
+       FROM unnest($1::text[], $2::text[], $3::text[])
+         AS seed(usuario_id, organizacao_id, papel_codigo)
+       ON CONFLICT (usuario_id, organizacao_id, papel_codigo) DO NOTHING`,
+      [
+        assignments.map(item => item[0]),
+        assignments.map(item => item[1]),
+        assignments.map(item => item[2])
+      ]
+    );
+  }
+  return assignments.length;
+}
+
 async function seedOrganizacoes(client, catalogo) {
   const municipios = await client.query('SELECT id, nome, codigo_ibge FROM municipios');
   const existentes = new Map(municipios.rows.map(row => [normalizarNome(row.nome), row]));
@@ -212,6 +263,25 @@ async function seedOrganizacoes(client, catalogo) {
     parentId: 'UF-51',
     organizacaoId: municipio.id
   })));
+  await client.query(
+    `UPDATE solicitacoes_usuarios AS solicitacao
+     SET organizacao_id = CASE
+       WHEN solicitacao.dados ->> 'perfil' = 'Estadual' THEN 'UF-51'
+       ELSE organizacao.id
+     END
+     FROM organizacoes organizacao
+     LEFT JOIN municipios municipio ON municipio.id = organizacao.municipio_id
+     WHERE solicitacao.organizacao_id IS NULL
+       AND (
+         (solicitacao.dados ->> 'perfil' = 'Estadual'
+           AND organizacao.id = 'UF-51')
+         OR
+         (solicitacao.dados ->> 'perfil' = 'Municipal'
+           AND organizacao.nivel = 'municipal'
+           AND lower(btrim(municipio.nome)) =
+               lower(btrim(solicitacao.dados ->> 'municipio')))
+       )`
+  );
 }
 
 async function carregarCatalogoPersistido(client) {
@@ -245,5 +315,6 @@ module.exports = {
   carregarCatalogoIbge,
   carregarCatalogoPersistido,
   seedOrganizacoes,
+  associarUsuariosLegados,
   normalizarNome
 };

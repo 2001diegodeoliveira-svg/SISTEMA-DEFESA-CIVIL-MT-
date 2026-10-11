@@ -43,8 +43,32 @@ solicitações de apoio, fontes de dados, câmeras e auditoria. O seed mantém a
 vêm da API oficial, não de nomes presumidos. Geometrias territoriais não são
 carregadas por este seed.
 
-RLS, autorização multi-organização nas rotas, MFA, ingestão periódica e cadastro
-de fontes/câmeras não fazem parte desta etapa; permanecem para as fases
-seguintes. O trigger de histórico reconhece o usuário da conexão quando o
-backend definir `app.user_id`; até a integração de RBAC, o identificador pode
-ficar nulo, sem perder o registro da mudança de status.
+## Fase 3: autenticação, escopo e convites
+
+A migração `000000000002_rbac_mfa_rls.sql` habilita RLS forçada nas tabelas
+organizacionais e de acesso que ela protege, cria persistência de MFA e convites
+e adiciona o vínculo organizacional e o papel às solicitações de cadastro. O
+backend estabelece o escopo por transação PostgreSQL. As rotas de solicitação
+de cadastro validam a organização e a análise pelo nível imediatamente superior.
+As coleções legadas ainda precisam ser migradas e ligadas às novas tabelas antes
+de todo o conjunto de endpoints operacionais herdar o mesmo escopo.
+
+Papéis de coordenação e administração exigem TOTP. Em produção com login
+habilitado, configure `MFA_ENCRYPTION_KEY` como 64 caracteres hexadecimais
+(32 bytes) em variável de ambiente do servidor. Gere e guarde esse segredo
+fora do repositório, por exemplo com `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
+Não reutilize a chave JWT. Perder ou trocar a chave impede a descriptografia
+dos autenticadores registrados; faça rotação coordenada e redefina o MFA dos
+usuários afetados.
+
+Organizações autorizadas emitem convites de uso único vinculados ao papel e
+e-mail, com validade de sete dias. O token aparece apenas na emissão; compartilhe
+por canal institucional e não o grave em tickets ou logs. O cadastro público
+exige esse convite quando usa PostgreSQL. O código IBGE do município e a UF
+precisam corresponder à organização do convite.
+
+Antes de migrar, valide a execução em banco/branch de desenvolvimento e
+confirme suporte a PostGIS. `npm run db:migrate` aplica também a migração da
+Fase 3; não execute contra produção sem aprovação e backup. Esta entrega não
+migra dados reais nem verifica RLS em um banco remoto, e o fluxo de autenticação
+gov.br permanece pendente.

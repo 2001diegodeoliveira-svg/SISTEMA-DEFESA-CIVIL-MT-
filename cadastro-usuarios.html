@@ -472,13 +472,21 @@
     <p style="text-align:center" id="loginSub">Digite as credenciais de administrador para acessar esta área.</p>
 
     <form id="formLogin" autocomplete="off">
-      <div class="field" style="margin-bottom:13px">
+      <div class="field" id="loginCredenciais" style="margin-bottom:13px">
         <label><svg class="ico" viewBox="0 0 24 24"><use href="#s-user" /></svg> Login</label>
         <input id="loginUser" placeholder="Digite seu login" autocomplete="username" />
       </div>
-      <div class="field" style="margin-bottom:6px">
+      <div class="field" id="loginSenhaWrap" style="margin-bottom:6px">
         <label><svg class="ico" viewBox="0 0 24 24"><use href="#s-lock" /></svg> Senha</label>
         <input id="loginSenha" type="password" placeholder="Digite sua senha" autocomplete="current-password" />
+      </div>
+      <div id="loginMfa" class="hidden">
+        <p id="loginMfaInstrucao">Informe o código do aplicativo autenticador.</p>
+        <p id="loginMfaSegredo" class="sub hidden"></p>
+        <div class="field">
+          <label for="loginMfaCodigo">Código temporário</label>
+          <input id="loginMfaCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />
+        </div>
       </div>
       <span class="msg-erro" id="loginErro"></span>
 
@@ -486,9 +494,10 @@
         <button type="button" class="btn ghost" id="loginCancelar">
           <svg class="ico" viewBox="0 0 24 24"><use href="#s-x" /></svg>Cancelar
         </button>
-        <button class="btn" type="submit">
+        <button class="btn" id="btnLoginSubmit" type="submit">
           <svg class="ico" viewBox="0 0 24 24"><use href="#s-key" /></svg>Entrar
         </button>
+        <button class="btn hidden" id="loginMfaConfirmar" type="button">Confirmar código</button>
       </div>
     </form>
   </div>
@@ -555,7 +564,13 @@
         </div>
 
         <form id="formUser" autocomplete="off" novalidate>
-          <!-- Perfil -->
+              <div class="field full" style="margin-bottom:18px">
+                <label for="conviteUsuario">Código do convite <span class="req">*</span></label>
+                <input id="conviteUsuario" name="inviteToken" autocomplete="off" required />
+                <span class="hint">Solicite o código à administração da sua organização.</span>
+                <span class="msg-erro" data-erro="inviteToken"></span>
+              </div>
+              <!-- Perfil -->
           <div class="field full" style="margin-bottom:18px">
             <label>Esfera de acesso <span class="req">*</span></label>
             <div class="radio-row">
@@ -822,6 +837,40 @@
         </div>
       </div>
 
+      <div class="card hidden" id="painelConvites">
+        <div class="card-head">
+          <div>
+            <h2 class="sec-title"><svg class="ico lg"><use href="#s-user-plus" /></svg>Convidar usuário</h2>
+            <div class="sub">O convite é vinculado à organização, papel e e-mail informados; expira em sete dias e pode ser usado uma vez.</div>
+          </div>
+        </div>
+        <form id="formConvite" class="grid">
+          <div class="field">
+            <label for="conviteOrganizacao">Organização</label>
+            <select id="conviteOrganizacao" required></select>
+          </div>
+          <div class="field">
+            <label for="convitePapel">Papel</label>
+            <select id="convitePapel" required>
+              <option value="leitura">Leitura</option>
+              <option value="voluntario">Voluntário</option>
+              <option value="operador_campo">Operador de campo</option>
+              <option value="analista">Analista</option>
+              <option value="coordenador">Coordenador (MFA obrigatório)</option>
+              <option value="administrador_orgao">Administrador do órgão (MFA obrigatório)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="conviteEmail">E-mail do usuário</label>
+            <input id="conviteEmail" type="email" required />
+          </div>
+          <div class="field" style="align-self:end">
+            <button class="btn" id="btnCriarConvite" type="submit">Gerar convite</button>
+          </div>
+        </form>
+        <p id="conviteResultado" class="sub" aria-live="polite"></p>
+      </div>
+
       <div class="card">
         <div class="card-head">
           <div>
@@ -1002,7 +1051,7 @@
      ============================================================ */
   function autenticado() {
     if (!window.DC_DEMO || !window.DC_DEMO.estado.loginHabilitado) return true;
-    return !!(adminUser && adminUser.perfil === "admin" && dcApi.getToken());
+    return !!(podeAdministrarCadastros(adminUser) && dcApi.getToken());
   }
   async function carregarUsuarios() {
     var response = await dcApi.userRegistrations();
@@ -1012,6 +1061,15 @@
   }
   function abrirLogin(destino) {
     abaDestino = destino;
+    mfaAdminChallenge = null;
+    mfaAdminSetup = false;
+    $("loginCredenciais").classList.remove("hidden");
+    $("loginSenhaWrap").classList.remove("hidden");
+    $("btnLoginSubmit").classList.remove("hidden");
+    $("loginMfaConfirmar").classList.add("hidden");
+    $("loginMfa").classList.add("hidden");
+    $("loginMfaSegredo").classList.add("hidden");
+    $("loginMfaCodigo").value = "";
     $("loginSub").textContent = "Digite as credenciais de administrador para acessar \"" +
       (destino === "config" ? "Configurações" : "Análise de Cadastros") + "\".";
     $("loginErro").classList.remove("on");
@@ -1021,6 +1079,14 @@
     $("loginSenha").focus();
   }
   var abaDestino = "analise";
+  var mfaAdminChallenge = null;
+  var mfaAdminSetup = false;
+
+  function podeAdministrarCadastros(user) {
+    var roles = user && Array.isArray(user.papeis) ? user.papeis : [];
+    return Boolean(user && (user.perfil === "admin" ||
+      roles.some(function (role) { return ["admin", "administrador_orgao", "coordenador"].indexOf(role) !== -1; })));
+  }
 
   function mostrarErroLogin(msg) {
     $("loginErro").textContent = msg;
@@ -1034,6 +1100,7 @@
     aplicarSessao(data.user);
     $("modalLogin").classList.remove("open");
     carregarUsuarios().catch(function (error) { avisar(error.message, "err"); });
+    carregarOrganizacoesConvite();
     irAba(abaDestino);
     avisar("Bem-vindo, " + data.user.nome + ".", "ok");
   }
@@ -1045,18 +1112,73 @@
     $("loginErro").classList.remove("on");
     var response = await dcApi.login(u, s);
     var data = response.data || {};
-    if (!response.ok || !data.user || !data.token) {
+    if (!response.ok) {
       mostrarErroLogin(data.erro || "Login ou senha incorretos.");
       return;
     }
-    if (data.user.perfil !== "admin") {
+    if (data.challengeToken && (data.mfaRequired || data.mfaSetupRequired)) {
+      mfaAdminChallenge = data.challengeToken;
+      mfaAdminSetup = data.mfaSetupRequired === true;
+      $("loginCredenciais").classList.add("hidden");
+      $("loginSenhaWrap").classList.add("hidden");
+      $("btnLoginSubmit").classList.add("hidden");
+      $("loginMfaConfirmar").classList.remove("hidden");
+      $("loginMfa").classList.remove("hidden");
+      if (mfaAdminSetup) {
+        $("loginMfaInstrucao").textContent = "Cadastre esta chave no aplicativo autenticador. A configuração será ativada após confirmar um código válido.";
+        var setup = await dcApi.mfaEnroll(mfaAdminChallenge);
+        if (!setup.ok || !setup.data.secret) {
+          mostrarErroLogin(setup.data.erro || "Não foi possível iniciar o MFA.");
+          return;
+        }
+        $("loginMfaSegredo").textContent = "Chave: " + setup.data.secret + " | URI: " + setup.data.otpauthUri;
+        $("loginMfaSegredo").classList.remove("hidden");
+      } else {
+        $("loginMfaInstrucao").textContent = "Abra seu aplicativo autenticador e informe o código atual.";
+      }
+      $("loginMfaCodigo").focus();
+      return;
+    }
+    if (!data.user || !data.token) {
+      mostrarErroLogin(data.erro || "Resposta inesperada do servidor.");
+      return;
+    }
+    if (!podeAdministrarCadastros(data.user)) {
       mostrarErroLogin("Esta área é exclusiva de administradores.");
       return;
     }
     concluirLoginAdmin(data);
   };
 
-  $("loginCancelar").onclick = function () { $("modalLogin").classList.remove("open"); };
+  $("loginMfaCodigo").addEventListener("input", function () {
+    this.value = this.value.replace(/\D/g, "").slice(0, 6);
+  });
+  async function confirmarMfaAdmin() {
+    var code = $("loginMfaCodigo").value.trim();
+    if (!/^\d{6}$/.test(code)) return mostrarErroLogin("Informe um código de seis dígitos.");
+    var response = mfaAdminSetup
+      ? await dcApi.mfaConfirm(mfaAdminChallenge, code)
+      : await dcApi.mfaVerify(mfaAdminChallenge, code);
+    if (!response.ok || !response.data.token || !response.data.user) {
+      return mostrarErroLogin(response.data.erro || "A verificação multifator falhou.");
+    }
+    if (!podeAdministrarCadastros(response.data.user)) {
+      return mostrarErroLogin("Esta área é exclusiva de administradores.");
+    }
+    concluirLoginAdmin(response.data);
+  }
+  $("loginMfaConfirmar").addEventListener("click", confirmarMfaAdmin);
+  $("loginMfaCodigo").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      confirmarMfaAdmin();
+    }
+  });
+
+  $("loginCancelar").onclick = function () {
+    $("modalLogin").classList.remove("open");
+    mfaAdminChallenge = null;
+  };
 
   function aplicarSessao(user) {
     adminUser = user;
@@ -1064,7 +1186,8 @@
     $("btnSair").classList.remove("hidden");
     $("btnEntrar").classList.add("hidden");
     $("quemSou").querySelector("b").textContent = user.nome || user.usuario;
-    $("sessionInfo").textContent = user.demo ? "Acesso livre" : "Administrador";
+    $("sessionInfo").textContent = user.demo ? "Acesso livre" : (user.papeis || []).join(", ") || "Administrador";
+    $("painelConvites").classList.toggle("hidden", !podeAdministrarCadastros(user));
     Array.prototype.forEach.call(document.querySelectorAll(".tab[data-restrito]"), function (t) {
       t.classList.remove("locked");
     });
@@ -1072,6 +1195,7 @@
   function encerrarSessao() {
     localStorage.removeItem("dcmt_token");
     adminUser = null;
+    $("painelConvites").classList.add("hidden");
     lista = [];
     $("quemSou").classList.add("hidden");
     $("btnSair").classList.add("hidden");
@@ -1080,6 +1204,48 @@
       t.classList.add("locked");
     });
   }
+
+  async function carregarOrganizacoesConvite() {
+    if (!autenticado() || !podeAdministrarCadastros(adminUser)) return;
+    var response = await dcApi.userRegistrationOrganizations();
+    if (!response.ok) {
+      avisar(response.data.erro || "Não foi possível carregar as organizações.", "err");
+      return;
+    }
+    var select = $("conviteOrganizacao");
+    select.innerHTML = '<option value="">Selecione uma organização</option>' +
+      (response.data.organizations || []).map(function (organization) {
+        return '<option value="' + esc(organization.id) + '">' + esc(organization.nome) +
+          " (" + esc(organization.nivel) + ")</option>";
+      }).join("");
+  }
+
+  $("formConvite").onsubmit = async function (ev) {
+    ev.preventDefault();
+    var button = $("btnCriarConvite");
+    button.disabled = true;
+    $("conviteResultado").textContent = "";
+    try {
+      var response = await dcApi.createUserInvite({
+        organizacaoId: $("conviteOrganizacao").value,
+        papel: $("convitePapel").value,
+        email: $("conviteEmail").value.trim(),
+      });
+      if (!response.ok) {
+        avisar(response.data.erro || "Não foi possível gerar o convite.", "err");
+        return;
+      }
+      var invite = response.data.convite;
+      $("conviteResultado").textContent = "Código de uso único: " + invite.token +
+        " — válido até " + dataBR(invite.expiraEm) + ". Copie agora; ele não será exibido novamente.";
+      $("formConvite").reset();
+      await carregarOrganizacoesConvite();
+    } catch (error) {
+      avisar(error.message || "Falha ao gerar convite.", "err");
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   $("btnEntrar").onclick = function () { abrirLogin("analise"); };
 
@@ -1209,6 +1375,7 @@
       nome: nome,
       email: email,
       cpf: cpf,
+      inviteToken: f.inviteToken.value.trim(),
       nascimento: f.nascimento.value,
       telefone: f.telefone.value.trim(),
       telefoneAlt: f.telefoneAlt.value.trim(),
@@ -1633,12 +1800,13 @@
     if (!dcApi.getToken()) { encerrarSessao(); return; }
     try {
       var response = await dcApi.me();
-      if (!response.ok || !response.data.user || response.data.user.perfil !== "admin") {
+      if (!response.ok || !podeAdministrarCadastros(response.data.user)) {
         encerrarSessao();
         return;
       }
       aplicarSessao(response.data.user);
       await carregarUsuarios();
+      await carregarOrganizacoesConvite();
     } catch (error) {
       encerrarSessao();
       avisar("Não foi possível validar a sessão administrativa.", "err");

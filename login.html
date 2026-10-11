@@ -244,6 +244,14 @@
                 <p class="sub">Entre com suas credenciais para acessar as ferramentas disponíveis ao seu perfil.</p>
 
                 <div class="box-msg" id="boxMsg"></div>
+                <section class="passo" id="passoMfa" aria-labelledby="mfaTitulo">
+                    <h3 id="mfaTitulo">Verificação multifator</h3>
+                    <p class="sub" id="mfaInstrucao">Informe o código temporário do aplicativo autenticador.</p>
+                    <p id="mfaSegredo" class="sub" hidden></p>
+                    <label for="mfaCodigo" style="display:block;margin:16px 0 7px;font-size:11px;font-weight:600;">CÓDIGO DE SEIS DÍGITOS</label>
+                    <input id="mfaCodigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" aria-describedby="mfaInstrucao">
+                    <button class="btn" id="mfaConfirmar" type="button">CONFIRMAR CÓDIGO</button>
+                </section>
 
                 <!-- PASSO 1 — Credenciais -->
                 <div class="passo ativo" id="passo-01">
@@ -296,6 +304,8 @@
     <script>
         let perfilSelecionado = null;
         let municipios = [];
+        let mfaChallengeToken = null;
+        let mfaSetupRequired = false;
         const grid = document.getElementById('perfisGrid');
         Object.entries(PERFIS).forEach(([key, p]) => {
             const btn = document.createElement('button');
@@ -395,6 +405,46 @@
             location.href = (user.perfil === 'municipal') ? 'gestao.html' : 'index.html';
         }
 
+        async function iniciarMfa(desafio, configuracao) {
+            mfaChallengeToken = desafio;
+            mfaSetupRequired = configuracao;
+            document.getElementById('passo-01').classList.remove('ativo');
+            const passo = document.getElementById('passoMfa');
+            passo.classList.add('ativo');
+            const instrucao = document.getElementById('mfaInstrucao');
+            const segredo = document.getElementById('mfaSegredo');
+            if (!configuracao) {
+                instrucao.textContent = 'Abra seu aplicativo autenticador e informe o código atual.';
+                return;
+            }
+            instrucao.textContent = 'Cadastre esta chave no aplicativo autenticador. A configuração só será ativada após confirmar um código válido.';
+            const resultado = await dcApi.mfaEnroll(desafio);
+            if (!resultado.ok || !resultado.data || !resultado.data.secret) {
+                mostrarMsg(resultado.data && resultado.data.erro || 'Não foi possível iniciar a configuração multifator.');
+                passo.classList.remove('ativo');
+                document.getElementById('passo-01').classList.add('ativo');
+                return;
+            }
+            segredo.hidden = false;
+            segredo.textContent = 'Chave de configuração: ' + resultado.data.secret + ' | URI: ' + resultado.data.otpauthUri;
+        }
+
+        document.getElementById('mfaConfirmar').addEventListener('click', async function () {
+            const codigo = document.getElementById('mfaCodigo').value.trim();
+            if (!/^\d{6}$/.test(codigo)) {
+                mostrarMsg('Informe o código de seis dígitos do aplicativo.');
+                return;
+            }
+            const resultado = mfaSetupRequired
+                ? await dcApi.mfaConfirm(mfaChallengeToken, codigo)
+                : await dcApi.mfaVerify(mfaChallengeToken, codigo);
+            if (!resultado.ok || !resultado.data || !resultado.data.token || !resultado.data.user) {
+                mostrarMsg(resultado.data && resultado.data.erro || 'A verificação multifator falhou.');
+                return;
+            }
+            entrarNoPainel(resultado.data.token, resultado.data.user);
+        });
+
         document.getElementById('entrarBtn').addEventListener('click', async () => {
             const usuario = document.getElementById('usuarioInput').value.trim();
             const senha = document.getElementById('senhaInput').value;
@@ -427,6 +477,11 @@
 
             if (!res.ok) {
                 mostrarMsg(res.data && res.data.erro || 'Falha na autenticação.');
+                return;
+            }
+            if (res.data && res.data.challengeToken &&
+                (res.data.mfaRequired || res.data.mfaSetupRequired)) {
+                await iniciarMfa(res.data.challengeToken, res.data.mfaSetupRequired === true);
                 return;
             }
             if (!res.data || !res.data.token || !res.data.user) {

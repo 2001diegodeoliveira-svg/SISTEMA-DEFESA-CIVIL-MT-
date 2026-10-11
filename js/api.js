@@ -16,7 +16,7 @@
         opts = opts || {};
         opts.method = opts.method || 'GET';
         var headers = Object.assign({}, opts.headers || {});
-        var tok = token();
+        var tok = opts.tokenOverride || token();
         if (tok) headers['Authorization'] = 'Bearer ' + tok;
         if (opts.body) headers['Content-Type'] = 'application/json';
 
@@ -39,6 +39,23 @@
                     return { status: 0, ok: false, data: { erro: 'Falha ao conectar com o servidor de autenticação.' } };
                 });
         },
+        mfaEnroll: function (challengeToken) {
+            return request('auth/mfa/enroll', { method: 'POST', tokenOverride: challengeToken });
+        },
+        mfaConfirm: function (challengeToken, codigo) {
+            return request('auth/mfa/confirm', {
+                method: 'POST',
+                tokenOverride: challengeToken,
+                body: { codigo: codigo },
+            });
+        },
+        mfaVerify: function (challengeToken, codigo) {
+            return request('auth/mfa/verify', {
+                method: 'POST',
+                tokenOverride: challengeToken,
+                body: { codigo: codigo },
+            });
+        },
         me: function () { return request('auth/me'); },
         logout: function () {
             try { localStorage.removeItem('dcmt_token'); } catch (e) {}
@@ -54,6 +71,12 @@
 
         // Solicitações de acesso e administração de usuários
         userRegistrations: function () { return request('user-registrations'); },
+        userRegistrationOrganizations: function () {
+            return request('user-registrations?acao=organizacoes');
+        },
+        createUserInvite: function (data) {
+            return request('user-registrations?acao=convite', { method: 'POST', body: data });
+        },
         createUserRegistration: function (data) {
             return request('user-registrations', { method: 'POST', body: data });
         },

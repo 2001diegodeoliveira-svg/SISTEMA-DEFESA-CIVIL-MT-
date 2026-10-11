@@ -13,6 +13,18 @@ const { serve } = require('../_lib/serverless');
 
 const STATUSES = ['NOVA', 'EM_ANALISE', 'EM_ATENDIMENTO', 'ENCAMINHADA', 'RESOLVIDA', 'ENCERRADA'];
 
+function publicOccurrence(occurrence) {
+  const fields = ['id', 'type', 'priority', 'status', 'source', 'city', 'reportedAt', 'receivedAt', 'updatedAt'];
+  const safe = Object.fromEntries(fields
+    .filter(field => occurrence[field] !== undefined)
+    .map(field => [field, occurrence[field]]));
+  if (Number.isFinite(occurrence.latitude) && Number.isFinite(occurrence.longitude)) {
+    safe.latitude = Math.round(occurrence.latitude * 100) / 100;
+    safe.longitude = Math.round(occurrence.longitude * 100) / 100;
+  }
+  return safe;
+}
+
 function withinPeriod(o, period) {
   if (!period || period === 'all') return true;
   const hours = { '1h': 1, '6h': 6, '24h': 24, '7d': 24 * 7 }[period];
@@ -81,9 +93,14 @@ module.exports = serve(async function handler(req) {
   if (view === 'map') {
     const points = filtered
       .filter((o) => o.latitude != null && o.longitude != null)
-      .map((o) => ({ id: o.id, type: o.type, priority: o.priority, status: o.status, source: o.source, latitude: o.latitude, longitude: o.longitude, street: o.street, city: o.city, reportedAt: o.reportedAt }));
+      .map((o) => req.accessContext && req.accessContext.authenticated
+        ? ({ id: o.id, type: o.type, priority: o.priority, status: o.status, source: o.source, latitude: o.latitude, longitude: o.longitude, street: o.street, city: o.city, reportedAt: o.reportedAt })
+        : publicOccurrence(o));
     return jsonResponse(200, { points, total: points.length }, origin);
   }
 
-  return jsonResponse(200, { occurrences: filtered, total: filtered.length, statusesDisponiveis: STATUSES }, origin);
+  const occurrences = req.accessContext && req.accessContext.authenticated
+    ? filtered
+    : filtered.map(publicOccurrence);
+  return jsonResponse(200, { occurrences, total: filtered.length, statusesDisponiveis: STATUSES }, origin);
 });

@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const jwt = require('jsonwebtoken');
 const { readCollection, writeCollection } = require('../api/_lib/store');
 const occurrenceHandler = require('../api/_routes/occurrences/[id]');
+const occurrencesHandler = require('../api/_routes/occurrences');
+const reportsHandler = require('../api/_routes/reports');
 const apiHandler = require('../api/index');
 const { demoReset } = require('../api/_lib/demo');
 
@@ -58,7 +60,8 @@ test('ocorrências podem ser consultadas e atualizadas com trilha de auditoria',
     await writeCollection('users', [{
       id: 'operator-1',
       usuario: 'operador',
-      perfil: 'admin',
+      perfil: 'municipal',
+      municipio: 'Cuiabá',
       ativo: true,
     }]);
 
@@ -71,7 +74,7 @@ test('ocorrências podem ser consultadas e atualizadas com trilha de auditoria',
     }));
     assert.equal(anonymousResponse.status, 401);
 
-    const token = jwt.sign({ sub: 'operator-1', usuario: 'operador', perfil: 'admin' }, process.env.JWT_SECRET);
+    const token = jwt.sign({ sub: 'operator-1', usuario: 'operador', perfil: 'municipal' }, process.env.JWT_SECRET);
     const updateResponse = await apiHandler(request('PATCH', `occurrences/${id}`, {
       token,
       body: { status: 'EM_ATENDIMENTO' },
@@ -175,5 +178,87 @@ test('atualização recusa status inválido, perfil sem permissão e ocorrência
       else process.env[key] = value;
     }
     demoReset();
+  }
+});
+
+test('respostas públicas de ocorrências e relatos omitem dados pessoais e reduzem a precisão da localização', async () => {
+  const previousEnv = new Map(ENV_KEYS.map((key) => [key, process.env[key]]));
+  let originalOccurrences = [];
+  let originalReports = [];
+  let storeReady = false;
+  try {
+    process.env.VERCEL = '1';
+    process.env.VERCEL_ENV = 'preview';
+    process.env.NODE_ENV = 'test';
+    process.env.FILE_STORE = '0';
+    delete process.env.DATABASE_URL;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    originalOccurrences = await readCollection('occurrences');
+    originalReports = await readCollection('reports');
+    storeReady = true;
+    await writeCollection('occurrences', [{
+      id: 'privacy-check',
+      type: 'ALAGAMENTO',
+      priority: 'ALTA',
+      status: 'NOVA',
+      source: 'PUBLIC',
+      city: 'Cuiabá',
+      street: 'Rua residencial, 123',
+      description: 'Pessoa vulnerável em residência identificável',
+      reporter: 'Nome de pessoa',
+      email: 'pessoa@example.test',
+      latitude: -15.601,
+      longitude: -56.097,
+      reportedAt: 100,
+    }]);
+    await writeCollection('reports', [{
+      id: 'privacy-report',
+      type: 'ALAGAMENTO',
+      severity: 'alta',
+      location: 'Rua residencial, 123',
+      description: 'Relato de saúde identificável',
+      reporter: 'Nome de pessoa',
+      authoredBy: 42,
+      lat: -15.601,
+      lng: -56.097,
+      createdAt: 100,
+    }]);
+
+    const list = await occurrencesHandler(request('GET', 'occurrences'));
+    const occurrence = (await list.json()).occurrences[0];
+    assert.equal(occurrence.city, 'Cuiabá');
+    assert.equal(occurrence.latitude, -15.6);
+    assert.equal(occurrence.longitude, -56.1);
+    for (const field of ['street', 'description', 'reporter', 'email']) {
+      assert.equal(Object.hasOwn(occurrence, field), false);
+    }
+
+    const detail = await occurrenceHandler(request('GET', 'occurrences/privacy-check'));
+    const detailOccurrence = (await detail.json()).occurrence;
+    assert.equal(Object.hasOwn(detailOccurrence, 'description'), false);
+    assert.equal(Object.hasOwn(detailOccurrence, 'reporter'), false);
+
+    const map = await occurrencesHandler(request('GET', 'occurrences?view=map'));
+    const point = (await map.json()).points[0];
+    assert.equal(point.latitude, -15.6);
+    assert.equal(Object.hasOwn(point, 'street'), false);
+
+    const reportResponse = await reportsHandler(request('GET', 'reports'));
+    const report = (await reportResponse.json()).reports[0];
+    assert.equal(report.lat, -15.6);
+    assert.equal(report.lng, -56.1);
+    for (const field of ['location', 'description', 'reporter', 'authoredBy']) {
+      assert.equal(Object.hasOwn(report, field), false);
+    }
+  } finally {
+    if (storeReady) {
+      await writeCollection('occurrences', originalOccurrences);
+      await writeCollection('reports', originalReports);
+    }
+    for (const [key, value] of previousEnv) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });
