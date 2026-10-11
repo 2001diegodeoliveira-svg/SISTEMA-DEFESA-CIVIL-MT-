@@ -504,8 +504,19 @@
         function carregarEstado() {
             api('enso').then(function (r) {
                 if (!r.ok) {
-                    document.getElementById('statusTitle').textContent = 'Falha ao carregar (HTTP ' + r.status + ')';
-                    document.getElementById('statusSub').textContent = 'O módulo segue disponível; tente novamente. Conteúdo estático abaixo permanece válido.';
+                    var detalhe = '';
+                    if (r.data && r.data.erro) detalhe = r.data.erro + ' ';
+                    // 503 = backend em produção sem configuração completa: o
+                    // servidor já diz exatamente o que falta (detalhes).
+                    if (r.status === 503 && r.data && Array.isArray(r.data.detalhes) && r.data.detalhes.length) {
+                        detalhe += 'Pendências: ' + r.data.detalhes.join(' | ');
+                    } else if (r.data && r.data.erro) {
+                        detalhe = r.data.erro;
+                    } else {
+                        detalhe = 'HTTP ' + r.status;
+                    }
+                    document.getElementById('statusTitle').textContent = 'Falha ao carregar (' + detalhe + ')';
+                    document.getElementById('statusSub').textContent = 'O módulo segue disponível; verifique a configuração do servidor (.env.producao via iniciar-producao.js) e tente novamente. Conteúdo estático abaixo permanece válido.';
                     return;
                 }
                 renderEstado(r.data);
