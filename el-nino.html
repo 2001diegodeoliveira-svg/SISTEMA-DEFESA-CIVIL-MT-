@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="imagens/logo.png">
-    <title>El Niño · Amazônia - SGI PROTEGE</title>
+    <title>El Niño · Monitoramento ENOS - SGI PROTEGE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
@@ -86,6 +86,8 @@
             border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 999px;
             display: inline-flex; align-items: center; gap: 6px; background: rgba(30, 41, 59, 0.6);
         }
+        .chip.ok { color: var(--accent-green); border-color: rgba(52, 211, 153, 0.35); }
+        .chip.warn { color: var(--accent-orange); border-color: rgba(249, 115, 22, 0.35); }
 
         .tabs {
             display: flex; gap: 8px; padding: 18px 5% 0; flex-wrap: wrap;
@@ -167,6 +169,48 @@
         .alert-note i { color: var(--accent-orange); flex-shrink: 0; margin-top: 2px; }
         .alert-note p { color: var(--text-main); font-size: 13.5px; line-height: 1.6; }
 
+        .status-banner {
+            display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 18px 20px; margin: 0 5% 4px;
+        }
+        .status-banner .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+        .status-banner .dot.elnino { background: var(--accent-orange); }
+        .status-banner .dot.lanina { background: var(--accent-blue); }
+        .status-banner .dot.neutro { background: var(--text-muted); }
+        .status-banner b { font-size: 17px; }
+        .status-banner span { font-size: 12.5px; color: var(--text-muted); }
+        .mock-badge {
+            font-size: 11px; font-weight: 700; color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 999px; padding: 3px 10px;
+        }
+
+        table.audit { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        table.audit th, table.audit td {
+            text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border-color);
+            color: var(--text-muted); vertical-align: top;
+        }
+        table.audit th { color: var(--text-main); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        table.audit td code { color: var(--accent-blue); font-size: 11.5px; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+            border: 1px solid var(--border-color); background: var(--bg-card-hover);
+            color: var(--text-main); font-size: 12.5px; font-weight: 700;
+            padding: 8px 14px; border-radius: 8px; transition: all 0.2s;
+        }
+        .btn:hover { border-color: var(--accent-blue); }
+        .btn.primary { background: linear-gradient(135deg, var(--accent-orange), #c2410c); border-color: transparent; color: #fff; }
+        .btn.danger { border-color: rgba(248, 113, 113, 0.4); color: var(--accent-red); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-top: 12px; }
+        .form-row label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .form-row input, .form-row select {
+            background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main);
+            border-radius: 8px; padding: 9px 12px; font-size: 13.5px; min-width: 160px;
+        }
+
         footer {
             border-top: 1px solid var(--border-color); padding: 22px 5%; color: var(--text-muted);
             font-size: 12.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
@@ -214,155 +258,131 @@
     </header>
 
     <section class="hero">
-        <div class="eyebrow"><i data-lucide="radar"></i> Monitoramento climático - SGI PROTEGE</div>
-        <h2>EL NIÑO <span>· AMAZÔNIA</span></h2>
-        <p>Painel informativo sobre o fenômeno El Niño e seus efeitos sobre o bioma amazônico e o Estado de Mato Grosso. Reúne conceitos, impactos esperados e as linhas de atuação da SGI PROTEGE para prevenção, preparação e resposta.</p>
-        <div class="chips">
-            <span class="chip"><i data-lucide="activity"></i> Fenômeno ENOS</span>
-            <span class="chip"><i data-lucide="droplet"></i> Recursos hídricos</span>
-            <span class="chip"><i data-lucide="flames"></i> Incêndios florestais</span>
-            <span class="chip"><i data-lucide="shield"></i> Proteção e SGI PROTEGE</span>
-            <span class="chip"><i data-lucide="waves"></i> Bacia Amazônica</span>
+        <div class="eyebrow"><i data-lucide="radar"></i> Monitoramento ENOS - SGI PROTEGE</div>
+        <h2>EL NIÑO <span>· MONITORAMENTO ENOS</span></h2>
+        <p>Painel operacional do fenômeno El Niño–Oscilação Sul (ENOS): estado atual, classificação de intensidade, regras de alerta e trilha de auditoria. Os valores são indicativos e estão sujeitos a revisão — este painel é apoio à decisão e <b>não substitui os alertas oficiais do INMET, do CEMADEN e da Defesa Civil</b>.</p>
+        <div class="chips" id="heroChips">
+            <span class="chip"><i data-lucide="activity"></i> Carregando estado…</span>
         </div>
     </section>
 
-    <div class="tabs">
-        <button class="active" data-tab="visao"><i data-lucide="eye"></i> Visão Geral</button>
-        <button data-tab="impactos"><i data-lucide="flames"></i> Impactos na Amazônia</button>
-        <button data-tab="acao"><i data-lucide="shield"></i> Ação da SGI PROTEGE</button>
+    <div class="status-banner" id="statusBanner" style="margin-top:18px;">
+        <span class="dot" id="statusDot"></span>
+        <div>
+            <b id="statusTitle">Carregando estado do ENOS…</b><br>
+            <span id="statusSub">Buscando a última medição registrada no servidor.</span>
+        </div>
+        <span class="mock-badge" id="mockBadge" style="display:none;">MOCK — dados fictícios</span>
     </div>
 
-    <section id="view-visao" class="tab-view active">
-        <h3 class="section-title"><i data-lucide="thermometer"></i> O que é o El Niño</h3>
-        <div class="grid">
-            <div class="card">
-                <h4><i data-lucide="waves"></i> Aquecimento do Pacífico</h4>
-                <p>O El Niño é a fase quente do fenômeno El Niño-Oscilação Sul (ENOS): anomalias de aquecimento das águas superficiais do Oceano Pacífico Equatorial, que alteram a circulação atmosférica e redistribuem chuvas em todo o planeta.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="droplet"></i> Efeito no regime de chuvas</h4>
-                <p>Na Amazônia e no Centro-Oeste, o El Niño costuma inibir a formação de chuva e prolongar o período de estiagem, aumentando o déficit hídrico, a intensidade da seca e o risco de incêndios florestais.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="refresh-ccw"></i> Ciclo e duração</h4>
-                <p>O fenômeno dura, em média, de 9 a 12 meses, com intensidade classificada como fraca, moderada ou forte. Entre um episódio e outro há períodos neutros, seguidos ou não da fase fria (La Niña).</p>
-            </div>
-        </div>
+    <div class="tabs">
+        <button class="active" data-tab="estado"><i data-lucide="eye"></i> Estado atual</button>
+        <button data-tab="niveis"><i data-lucide="layers"></i> Classificação e níveis</button>
+        <button data-tab="fontes"><i data-lucide="external-link"></i> Boletins e fontes</button>
+        <button data-tab="auditoria"><i data-lucide="clipboard-list"></i> Auditoria e confirmações</button>
+    </div>
 
-        <div class="card" style="margin-top:16px;">
-            <h4><i data-lucide="activity"></i> Índice ONI — fases do ENOS</h4>
-            <p>O Índice de Oscilação Sul (ONI) organiza as fases do fenômeno segundo as anomalias de temperatura do Pacífico. Abaixo, a escala de classificação utilizada pelos centros de monitoramento:</p>
-            <div class="scale">
-                <div class="seg lanina">LA NIÑA<small>fria · mais chuva na Amazônia</small></div>
-                <div class="seg neutro">NEUTRO<small>condições climatológicas</small></div>
-                <div class="seg elnino">EL NIÑO<small>quente · estiagem e calor</small></div>
-            </div>
-        </div>
-
-        <h3 class="section-title" style="margin-top:30px;"><i data-lucide="bar-chart-3"></i> Indicadores de acompanhamento</h3>
-        <div class="stat-row">
+    <section id="view-estado" class="tab-view active">
+        <h3 class="section-title"><i data-lucide="thermometer"></i> Estado atual do ENOS</h3>
+        <div class="stat-row" id="estadoStats">
             <div class="stat">
                 <div class="s-ico"><i data-lucide="radar"></i></div>
-                <div class="s-txt"><b>Anomalia térmica do Pacífico</b><span>Índice ENSO / ONI</span></div>
+                <div class="s-txt"><b id="stFase">—</b><span>Fase (El Niño / Neutro / La Niña)</span></div>
             </div>
             <div class="stat">
-                <div class="s-ico"><i data-lucide="droplet"></i></div>
-                <div class="s-txt"><b>Vazão dos rios</b><span>Cota das estações da ANA</span></div>
+                <div class="s-ico"><i data-lucide="gauge"></i></div>
+                <div class="s-txt"><b id="stIntensidade">—</b><span>Intensidade</span></div>
             </div>
             <div class="stat">
-                <div class="s-ico"><i data-lucide="cloud-rain"></i></div>
-                <div class="s-txt"><b>Deficit pluviométrico</b><span>Chuva observada × normal</span></div>
+                <div class="s-ico"><i data-lucide="thermometer"></i></div>
+                <div class="s-txt"><b id="stValor">—</b><span>Anomalia (°C) · índice</span></div>
             </div>
             <div class="stat">
-                <div class="s-ico"><i data-lucide="flames"></i></div>
-                <div class="s-txt"><b>Focos de calor</b><span>Satélites de referência</span></div>
+                <div class="s-ico"><i data-lucide="satellite-dish"></i></div>
+                <div class="s-txt"><b id="stFonte">—</b><span>Fonte da medição</span></div>
+            </div>
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="clock"></i></div>
+                <div class="s-txt"><b id="stAtualizado">—</b><span>Atualizado em</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4><i data-lucide="activity"></i> Escala de classificação (limiares configuráveis no servidor)</h4>
+            <p id="escalaTexto">Carregando limiares…</p>
+            <div class="scale" id="escalaSegs">
+                <div class="seg lanina">LA NIÑA<small>anomalia negativa</small></div>
+                <div class="seg neutro">NEUTRO<small>próximo de zero</small></div>
+                <div class="seg elnino">EL NIÑO<small>anomalia positiva</small></div>
             </div>
         </div>
 
         <div class="alert-note">
             <i data-lucide="info"></i>
-            <p>A classificação oficial do episódio em vigência é atualizada pelos centros nacionais e internacionais (INMET, CPTEC/INPE e NOAA/CPC). Os painéis acima refletem variáveis de monitoramento utilizadas pela SGI PROTEGE, a serem consolidadas com as fontes oficiais.</p>
+            <p>A classificação oficial do episódio em vigência é publicada pelos centros nacionais e internacionais (INMET, CPTEC/INPE, NOAA/CPC). Este painel reflete a última medição registrada no servidor da SGI PROTEGE e pode divergir das publicações oficiais mais recentes.</p>
         </div>
     </section>
 
-    <section id="view-impactos" class="tab-view">
-        <h3 class="section-title"><i data-lucide="map-pin"></i> Efeitos esperados na região</h3>
-        <div class="grid">
-            <div class="card">
-                <h4><i data-lucide="sun"></i> Seca e estiagem prolongada</h4>
-                <p>Redução das chuvas por vários meses consecutivos, com municípios em estado de atenção e abastecimento hídrico comprometido em áreas rurais e isoladas.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="flames"></i> Incêndios florestais</h4>
-                <p>Prolonga-se a estação seca na Amazônia, elevando o risco de queimadas e incêndios florestais, com prejuízos à biodiversidade, à qualidade do ar e à saúde pública.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="waves"></i> Nível dos rios</h4>
-                <p>Vazões abaixo da média afetam a navegação, a pesca e o transporte de insumos, além de intensificar a seca nos rios da Bacia Amazônica que cortam o norte de Mato Grosso.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="cloud-lightning"></i> Chuvas intensas e tempestades</h4>
-                <p>Há também eventos de chuva concentrada e tempestades severas em curtos períodos, aumentando o risco de alagamentos, vendavais e danos à infraestrutura.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="heart-pulse"></i> Saúde pública</h4>
-                <p>Ar seco e fumaça agravam doenças respiratórias; a crise hídrica impacta a qualidade da água e amplia riscos sanitários nas regiões afetadas.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="sprout"></i> Agropecuária</h4>
-                <p>Estiagens fora de época afetam as safras, pastagens e a recarga de mananciais, gerando perdas produtivas nos municípios do bioma em Mato Grosso.</p>
-            </div>
+    <section id="view-niveis" class="tab-view">
+        <h3 class="section-title"><i data-lucide="layers"></i> Níveis de alerta e regras</h3>
+        <p style="color:var(--text-muted);font-size:13.5px;margin-bottom:14px;">Regras declarativas avaliadas no servidor, com histerese (evita liga/desliga na borda) e deduplicação (sem reenvio dentro da janela). Níveis altos exigem confirmação humana antes de qualquer envio externo.</p>
+        <div class="grid" id="regrasGrid">
+            <div class="card"><p>Carregando regras…</p></div>
         </div>
+    </section>
 
+    <section id="view-fontes" class="tab-view">
+        <h3 class="section-title"><i data-lucide="external-link"></i> Boletins e fontes oficiais</h3>
+        <div class="links-grid" id="fontesGrid">
+            <div class="card"><p>Carregando fontes…</p></div>
+        </div>
         <div class="alert-note">
             <i data-lucide="triangle-alert"></i>
-            <p>Os efeitos mencionados são típicos de episódios de El Niño e variam conforme a intensidade e a localidade. As medidas e prioridades são definidas nos planos e protocolos de cada município, com apoio do Estado.</p>
+            <p>Boletins consolidados (Painel El Niño, notas técnicas e previsões probabilísticas) entram na Fase 2. Previsões numéricas são probabilísticas e estão sujeitas a revisão — acompanhe sempre os canais oficiais acima.</p>
         </div>
     </section>
 
-    <section id="view-acao" class="tab-view">
-        <h3 class="section-title"><i data-lucide="shield"></i> Atuação da SGI PROTEGE</h3>
-        <div class="grid">
-            <div class="card">
-                <h4><i data-lucide="radar"></i> Monitoramento contínuo</h4>
-                <p>Acompanhamento das condições climáticas, dos focos de calor e dos níveis dos rios em Mato Grosso, integrando dados de satélites, radares e estações meteorológicas.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="users"></i> Apoio aos municípios</h4>
-                <p>Orientação técnica para elaboração de planos de contingência, decretos de situação de emergência e acionamento dos órgãos de resposta em cada município.</p>
-            </div>
-            <div class="card">
-                <h4><i data-lucide="megaphone"></i> Alerta e comunicação</h4>
-                <p>Emissão de alertas e orientações à população sobre os riscos, o uso racional da água e as medidas de prevenção de incêndios e de saúde pública.</p>
-            </div>
+    <section id="view-auditoria" class="tab-view">
+        <h3 class="section-title"><i data-lucide="clipboard-list"></i> Auditoria e confirmações (gestores)</h3>
+        <div id="auditLoginAviso" class="alert-note">
+            <i data-lucide="lock"></i>
+            <p>Entre com perfil <b>admin</b> ou <b>avancado</b> para ver a trilha de auditoria, registrar avaliações e confirmar alertas pendentes.</p>
         </div>
-
-        <h3 class="section-title" style="margin-top:30px;"><i data-lucide="external-link"></i> Fontes oficiais de acompanhamento</h3>
-        <div class="links-grid">
-            <a class="ext-link" href="https://portal.inmet.gov.br" target="_blank" rel="noopener">
-                <span><b>INMET</b><span>Instituto Nacional de Meteorologia</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
-            <a class="ext-link" href="https://www.cptec.inpe.br" target="_blank" rel="noopener">
-                <span><b>CPTEC / INPE</b><span>Previsões e ENOS</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
-            <a class="ext-link" href="https://www.gov.br/cemaden" target="_blank" rel="noopener">
-                <span><b>CEMADEN</b><span>Centro de Monitoramento de Desastres</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
-            <a class="ext-link" href="https://www.snirh.gov.br" target="_blank" rel="noopener">
-                <span><b>ANA / SNIRH</b><span>Níveis e vazões dos rios</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
-            <a class="ext-link" href="https://terrabrasilis.dpi.inpe.br" target="_blank" rel="noopener">
-                <span><b>INPE Queimadas</b><span>Focos de calor em tempo real</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
-            <a class="ext-link" href="https://www.cpc.ncep.noaa.gov" target="_blank" rel="noopener">
-                <span><b>NOAA / CPC</b><span>Classificação oficial do ENOS</span></span>
-                <i data-lucide="external-link"></i>
-            </a>
+        <div id="auditArea" style="display:none;">
+            <div class="card" style="margin-bottom:16px;">
+                <h4><i data-lucide="flask-conical"></i> Registrar avaliação (medição manual)</h4>
+                <p>Classifica a anomalia informada, avalia as regras e registra alertas + auditoria. Níveis altos ficam <b>pendentes de confirmação</b>.</p>
+                <div class="form-row">
+                    <label>Anomalia (°C)
+                        <input id="avValor" type="number" step="0.1" placeholder="Ex.: 1.6">
+                    </label>
+                    <label>Índice
+                        <select id="avIndice">
+                            <option>ONI</option>
+                            <option>NINO34</option>
+                            <option>NINO3</option>
+                            <option>NINO4</option>
+                            <option>NINO12</option>
+                            <option>SOI</option>
+                        </select>
+                    </label>
+                    <button class="btn primary" id="btnAvaliar"><i data-lucide="play"></i> Avaliar</button>
+                </div>
+                <p id="avResultado" style="margin-top:10px;font-size:13px;"></p>
+            </div>
+            <div class="card" style="margin-bottom:16px;">
+                <h4><i data-lucide="bell-ring"></i> Alertas pendentes de confirmação</h4>
+                <div id="pendentesLista"><p>Carregando…</p></div>
+            </div>
+            <div class="card">
+                <h4><i data-lucide="history"></i> Trilha de auditoria (regra · gatilho · canal · horário · resultado)</h4>
+                <div style="overflow-x:auto;">
+                    <table class="audit">
+                        <thead><tr><th>Quando</th><th>Ação</th><th>Detalhe</th></tr></thead>
+                        <tbody id="auditCorpo"><tr><td colspan="3">Carregando…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -384,9 +404,184 @@
                 document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
                 btn.classList.add('active');
                 document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+                if (btn.dataset.tab === 'auditoria') carregarAuditoria();
             });
         });
+
+        function tokenSessao() {
+            try { return localStorage.getItem('dcmt_token'); } catch (e) { return null; }
+        }
+        function api(path, opts) {
+            opts = opts || {};
+            var headers = { 'Content-Type': 'application/json' };
+            var t = tokenSessao();
+            if (t) headers['Authorization'] = 'Bearer ' + t;
+            return fetch('/api/' + path, {
+                method: opts.method || 'GET',
+                headers: headers,
+                body: opts.body ? JSON.stringify(opts.body) : undefined,
+            }).then(function (r) {
+                return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, ok: r.ok, data: d }; });
+            });
+        }
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function fmtData(iso) {
+            if (!iso) return '—';
+            try { return new Date(iso).toLocaleString('pt-BR'); } catch (e) { return String(iso); }
+        }
+
+        var ESTADO = null;
+
+        function renderEstado(j) {
+            ESTADO = j;
+            var chips = [];
+            var dot = document.getElementById('statusDot');
+            var title = document.getElementById('statusTitle');
+            var sub = document.getElementById('statusSub');
+            var mockBadge = document.getElementById('mockBadge');
+            dot.className = 'dot';
+            mockBadge.style.display = 'none';
+
+            if (!j || !j.classificacao) {
+                title.textContent = 'Sem medição registrada';
+                sub.textContent = 'Nenhuma amostra no servidor. Um gestor pode registrar uma avaliação na aba Auditoria ou rodar a coleta.';
+                document.getElementById('stFase').textContent = '—';
+                document.getElementById('stIntensidade').textContent = '—';
+                document.getElementById('stValor').textContent = '—';
+                document.getElementById('stFonte').textContent = '—';
+                document.getElementById('stAtualizado').textContent = '—';
+                chips.push('<span class="chip"><i data-lucide="activity"></i> Sem dados</span>');
+            } else {
+                var c = j.classificacao;
+                var nomes = { EL_NINO: 'El Niño', LA_NINA: 'La Niña', NEUTRO: 'Neutro' };
+                var intens = { NEUTRO: 'Neutra', FRACO: 'Fraca', MODERADO: 'Moderada', FORTE: 'Forte', MUITO_FORTE: 'Muito forte' };
+                dot.classList.add(c.fase === 'EL_NINO' ? 'elnino' : (c.fase === 'LA_NINA' ? 'lanina' : 'neutro'));
+                title.textContent = nomes[c.fase] + ' · intensidade ' + (intens[c.intensidade] || c.intensidade).toLowerCase();
+                var fonte = (j.amostra && j.amostra.fonte) || '—';
+                sub.textContent = 'Fonte: ' + fonte + ' · atualizado em ' + fmtData(j.atualizadoEm) + (j.dryRun ? ' · dry-run ativo (sem envios reais)' : '');
+                document.getElementById('stFase').textContent = nomes[c.fase] || c.fase;
+                document.getElementById('stIntensidade').textContent = intens[c.intensidade] || c.intensidade;
+                document.getElementById('stValor').textContent = c.valor + ' °C · ' + ((j.amostra && j.amostra.indice) || 'ONI');
+                document.getElementById('stFonte').textContent = fonte;
+                document.getElementById('stAtualizado').textContent = fmtData(j.atualizadoEm);
+                if (j.amostra && j.amostra.mock) mockBadge.style.display = '';
+                chips.push('<span class="chip ' + (c.fase === 'NEUTRO' ? 'ok' : 'warn') + '"><i data-lucide="activity"></i> ' + esc(nomes[c.fase] || '') + '</span>');
+                chips.push('<span class="chip"><i data-lucide="database"></i> Limiares: ' + esc(j.limiares.origem) + '</span>');
+                if (j.alertasPendentes) chips.push('<span class="chip warn"><i data-lucide="bell-ring"></i> ' + j.alertasPendentes + ' pendente(s)</span>');
+            }
+            chips.push('<span class="chip"><i data-lucide="shield-alert"></i> Não substitui INMET · CEMADEN · Defesa Civil</span>');
+            document.getElementById('heroChips').innerHTML = chips.join('');
+
+            if (j && j.limiares) {
+                var l = j.limiares.valores;
+                document.getElementById('escalaTexto').textContent =
+                    'Neutro entre −' + l.neutroBanda + ' e +' + l.neutroBanda + ' °C · ' +
+                    'fraco ≥ ' + l.fraco + ' · moderado ≥ ' + l.moderado + ' · forte ≥ ' + l.forte +
+                    ' · muito forte ≥ ' + l.muitoForte + ' °C (espelhado p/ La Niña). Origem: ' + j.limiares.origem + '.';
+            }
+            if (j && j.regras) {
+                document.getElementById('regrasGrid').innerHTML = j.regras.lista.map(function (r) {
+                    return '<div class="card"><h4><i data-lucide="bell"></i> ' + esc(r.nivel) +
+                        (r.exigeConfirmacao ? ' · <span class="mock-badge">exige confirmação</span>' : '') + '</h4>' +
+                        '<p>' + esc(r.descricao || '') + '</p>' +
+                        '<ul><li>Gatilho: |anomalia| ' + esc(r.condicao.operador) + ' ' + esc(r.condicao.limiarAbs) +
+                        ' °C (' + esc(r.condicao.indice) + ')</li>' +
+                        '<li>Canais: ' + esc((r.canais || []).join(', ')) + '</li></ul></div>';
+                }).join('');
+            }
+            if (j && j.fontes) {
+                document.getElementById('fontesGrid').innerHTML = j.fontes.fontes.map(function (f) {
+                    return '<a class="ext-link" href="' + esc(f.url) + '" target="_blank" rel="noopener">' +
+                        '<span><b>' + esc(f.nome) + '</b><span>' + esc(f.descricao || '') + '</span></span>' +
+                        '<i data-lucide="external-link"></i></a>';
+                }).join('');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function carregarEstado() {
+            api('enso').then(function (r) {
+                if (!r.ok) {
+                    document.getElementById('statusTitle').textContent = 'Falha ao carregar (HTTP ' + r.status + ')';
+                    document.getElementById('statusSub').textContent = 'O módulo segue disponível; tente novamente. Conteúdo estático abaixo permanece válido.';
+                    return;
+                }
+                renderEstado(r.data);
+            }).catch(function () {
+                document.getElementById('statusTitle').textContent = 'Servidor indisponível';
+                document.getElementById('statusSub').textContent = 'Não foi possível contatar /api/enso. O módulo segue disponível; tente novamente.';
+            });
+        }
+
+        function carregarAuditoria() {
+            if (!tokenSessao()) return;
+            document.getElementById('auditLoginAviso').style.display = 'none';
+            document.getElementById('auditArea').style.display = '';
+            api('enso?visao=pendentes').then(function (r) {
+                var el = document.getElementById('pendentesLista');
+                if (!r.ok) { el.innerHTML = '<p>Sem permissão ou falha (HTTP ' + r.status + ').</p>'; return; }
+                if (!r.data.pendentes.length) { el.innerHTML = '<p>Nenhum alerta pendente.</p>'; return; }
+                el.innerHTML = r.data.pendentes.map(function (a) {
+                    return '<p style="margin-bottom:10px;"><b>' + esc(a.nivel) + '</b> · ' + esc(a.regraId) +
+                        ' · ' + esc(a.valor) + ' °C · ' + fmtData(a.criadoEm) +
+                        ' <button class="btn primary" data-conf="' + esc(a.id) + '">Confirmar e enviar</button> ' +
+                        '<button class="btn danger" data-disp="' + esc(a.id) + '">Dispensar</button></p>';
+                }).join('');
+                el.querySelectorAll('[data-conf]').forEach(function (b) {
+                    b.addEventListener('click', function () { confirmar(b.getAttribute('data-conf'), true, b); });
+                });
+                el.querySelectorAll('[data-disp]').forEach(function (b) {
+                    b.addEventListener('click', function () { confirmar(b.getAttribute('data-disp'), false, b); });
+                });
+            });
+            api('enso?visao=auditoria').then(function (r) {
+                var tb = document.getElementById('auditCorpo');
+                if (!r.ok) { tb.innerHTML = '<tr><td colspan="3">Sem permissão ou falha (HTTP ' + r.status + ').</td></tr>'; return; }
+                if (!r.data.auditoria.length) { tb.innerHTML = '<tr><td colspan="3">Sem eventos auditados.</td></tr>'; return; }
+                tb.innerHTML = r.data.auditoria.map(function (e) {
+                    var m = e.metadata || {};
+                    var det = 'regra=' + esc(m.regra || '—') + ' · gatilho=' + esc(JSON.stringify(m.gatilho || {})) +
+                        ' · canal=' + esc(m.canal || '—') + ' · resultado=' + esc(m.resultado || '—') +
+                        (m.dryRun ? ' · dry-run' : '');
+                    return '<tr><td>' + fmtData(e.createdAt) + '</td><td><code>' + esc(e.action) + '</code></td><td>' + det + '</td></tr>';
+                }).join('');
+            });
+        }
+
+        function confirmar(id, aprovar, btn) {
+            btn.disabled = true;
+            api('enso/avaliar', { method: 'POST', body: { acao: 'confirmar', alertaId: id, aprovar: aprovar } }).then(function (r) {
+                if (!r.ok) { alert('Falha: ' + ((r.data && r.data.erro) || r.status)); btn.disabled = false; return; }
+                carregarAuditoria();
+                carregarEstado();
+            });
+        }
+
+        var btnAv = document.getElementById('btnAvaliar');
+        if (btnAv) {
+            btnAv.addEventListener('click', function () {
+                var v = parseFloat(document.getElementById('avValor').value);
+                var out = document.getElementById('avResultado');
+                if (!isFinite(v)) { out.textContent = 'Informe um valor numérico (anomalia em °C).'; return; }
+                btnAv.disabled = true;
+                api('enso/avaliar', { method: 'POST', body: { valor: v, indice: document.getElementById('avIndice').value, fonte: 'manual:el-nino.html' } }).then(function (r) {
+                    btnAv.disabled = false;
+                    if (!r.ok) { out.textContent = 'Falha: ' + ((r.data && r.data.erro) || r.status); return; }
+                    var d = r.data;
+                    out.textContent = 'Fase ' + d.classificacao.fase + ' · ' + d.classificacao.intensidade +
+                        ' · transições: ' + (d.transicoes.map(function (t) { return t.regraId + ':' + t.tipo; }).join(', ') || 'nenhuma') +
+                        (d.exigeConfirmacao.length ? ' · PENDENTE de confirmação: ' + d.exigeConfirmacao.length : '') +
+                        (d.dryRun ? ' · dry-run (nada enviado de verdade)' : '');
+                    carregarAuditoria();
+                    carregarEstado();
+                });
+            });
+        }
+
+        carregarEstado();
         if (window.lucide) lucide.createIcons();
     </script>
-<iframe src="https://elninoobservatory.com/pt" style="width:100%;height:calc(100vh - 160px);border:1px solid #334155;border-radius:8px;margin:20px 0;" title="El Niño Observatory"></iframe></body>
+</body>
 </html>

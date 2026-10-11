@@ -123,6 +123,17 @@
             return request('pluv-alerta/avaliar', { method: 'POST', body: { estacoes: estacoes } });
         },
 
+        // ENOS / El Niño (estado, avaliação, auditoria — ver docs/enso.md)
+        enso: function () { return request('enso'); },
+        ensoSalvar: function (cfg) {
+            return request('enso', { method: 'POST', body: cfg });
+        },
+        ensoAvaliar: function (data) {
+            return request('enso/avaliar', { method: 'POST', body: data });
+        },
+        ensoPendentes: function () { return request('enso?visao=pendentes'); },
+        ensoAuditoria: function () { return request('enso?visao=auditoria'); },
+
         // Utilidades
         getToken: token,
     };

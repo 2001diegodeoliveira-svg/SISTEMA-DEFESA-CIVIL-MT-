@@ -346,7 +346,7 @@ test('POST /api/enso exige gestor; avaliar valida e cria pendente p/ nível alto
     const cj = await conf.json();
     assert.equal(cj.alerta.estado, 'ENVIADO');
     assert.ok(cj.envios.length > 0);
-    assert.ok(cj.envios.every((e) => e.dryRun === true));
+    assert.ok(cj.envios.flatMap((e) => e.envios).every((e) => e.dryRun === true));
     const logs = await readCollection('audit_logs');
     assert.ok(logs.some((l) => l.action === 'enso.avaliacao'));
     assert.ok(logs.some((l) => l.action === 'enso.alerta_confirmado'));
@@ -373,6 +373,31 @@ test('rota enso registrada no roteador e com política de acesso correta', async
     assert.equal(res.status, 200);
     const j = await res.json();
     assert.ok(j.disclaimer);
+  } finally {
+    await restore(snap);
+    for (const [k, v] of prev) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    demoReset();
+  }
+});
+
+test('visões auditoria e pendentes exigem gestor', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  try {
+    setupEnv();
+    await limparEnso();
+    const anon = await ensoHandler(request('GET', 'enso?visao=auditoria'));
+    assert.equal(anon.status, 403);
+    const token = adminToken();
+    const vazia = await ensoHandler(request('GET', 'enso?visao=auditoria', { token }));
+    assert.equal(vazia.status, 200);
+    assert.ok(Array.isArray((await vazia.json()).auditoria));
+    const pend = await ensoHandler(request('GET', 'enso?visao=pendentes', { token }));
+    assert.equal(pend.status, 200);
+    assert.ok(Array.isArray((await pend.json()).pendentes));
   } finally {
     await restore(snap);
     for (const [k, v] of prev) {

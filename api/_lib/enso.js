@@ -104,9 +104,10 @@ function normalizarLimiares(obj) {
     muitoForte: clampNum(obj && obj.muitoForte, LIMIARES_LIMITES.min, LIMIARES_LIMITES.max, base.muitoForte),
   };
   // Ordem exigida: banda <= fraco <= moderado <= forte <= muitoForte.
+  // Violações são elevadas ao patamar anterior (nunca quebram o módulo).
   const seq = ['neutroBanda', 'fraco', 'moderado', 'forte', 'muitoForte'];
   for (let i = 1; i < seq.length; i += 1) {
-    if (!(l[seq[i]] >= l[seq[i - 1]])) l[seq[i]] = LIMIARES_PADRAO[seq[i]];
+    if (!(l[seq[i]] >= l[seq[i - 1]])) l[seq[i]] = l[seq[i - 1]];
   }
   return l;
 }

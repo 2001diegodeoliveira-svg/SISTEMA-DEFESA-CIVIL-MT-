@@ -14,6 +14,7 @@
 const { jsonResponse, readJson, bearerToken, reqUrl } = require('../_lib/http');
 const { verifyToken } = require('../_lib/auth');
 const { serve } = require('../_lib/serverless');
+const { readCollection } = require('../_lib/store');
 const enso = require('../_lib/enso');
 
 function perfilPode(payload) {
@@ -26,6 +27,31 @@ module.exports = serve(async function handler(req) {
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
 
   if (req.method === 'GET') {
+    const ru = reqUrl(req);
+    const visao = ru ? ru.searchParams.get('visao') : null;
+    // Visões restritas: auditoria e pendentes exigem gestor.
+    if (visao === 'auditoria' || visao === 'pendentes') {
+      const token = bearerToken(req);
+      const payload = token && verifyToken(token);
+      if (!perfilPode(payload)) {
+        return jsonResponse(403, { erro: 'Somente gestores (admin/avancado) podem ver esta visão.' }, origin);
+      }
+      if (visao === 'pendentes') {
+        const alertas = await enso.lerAlertas();
+        return jsonResponse(200, { pendentes: alertas.filter((a) => a.estado === 'PENDENTE') }, origin);
+      }
+      let logs = [];
+      try {
+        logs = await readCollection('audit_logs');
+      } catch {
+        logs = [];
+      }
+      const itens = (Array.isArray(logs) ? logs : [])
+        .filter((l) => l && typeof l.action === 'string' && l.action.startsWith('enso.'))
+        .slice(-100)
+        .reverse();
+      return jsonResponse(200, { auditoria: itens }, origin);
+    }
     const [limiares, regrasInfo, fontesInfo, amostra, fonteStatus, alertas] = await Promise.all([
       enso.lerLimiares(),
       enso.lerRegras(),
