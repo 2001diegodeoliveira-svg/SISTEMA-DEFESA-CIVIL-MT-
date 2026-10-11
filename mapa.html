@@ -2311,15 +2311,15 @@ function atualizarContextoOrganizacao(codigoUf) {
 }
 
 function aplicarDisponibilidadeRegional(codigoUf) {
-    const somenteMt = new Set([
+    const somenteEstadoSelecionado = new Set([
         'focos', 'barragens', 'wmsFocos48h', 'reports', 'inmetStations',
         'chuvaInmet', 'sipam', 'vigiaMais', 'camsSinfra', 'abrigos'
     ]);
-    const disponivel = codigoUf === '51';
+    const disponivel = Boolean(codigoUf);
     document.querySelectorAll('.ov-btn[data-ov="temp"], .ov-btn[data-ov="fire"]').forEach(button => {
         button.hidden = !disponivel;
     });
-    somenteMt.forEach(key => {
+    somenteEstadoSelecionado.forEach(key => {
         const row = document.querySelector('.check-row[data-check="' + key + '"]');
         if (row) row.hidden = !disponivel;
         if (!disponivel && checkState[key]) {

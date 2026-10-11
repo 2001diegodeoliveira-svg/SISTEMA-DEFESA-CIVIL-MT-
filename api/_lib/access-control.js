@@ -67,7 +67,9 @@ function apiPolicy(route, method) {
       /^occurrences\/[^/]+$/.test(route) && verb !== 'GET' ||
       route === 'reports' && verb !== 'GET' ||
       route === 'pluv-alerta' && verb !== 'GET' ||
-      route === 'pluv-alerta/avaliar') {
+      route === 'pluv-alerta/avaliar' ||
+      route === 'enso' && verb !== 'GET' ||
+      route === 'enso/avaliar') {
     return { public: false, roles: [...WRITE_ROLES], write: true };
   }
   return { public: true, write: false };

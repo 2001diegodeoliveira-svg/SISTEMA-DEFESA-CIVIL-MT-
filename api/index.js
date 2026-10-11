@@ -41,6 +41,8 @@ const handlers = {
   'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
+  'enso': require('./_routes/enso'),
+  'enso/avaliar': require('./_routes/enso-avaliar'),
 };
 
 const areasIdHandler = require('./_routes/areas/[id]');
