@@ -89,6 +89,33 @@ module.exports = serve(async function handler(req) {
   if (req.method === 'POST' || req.method === 'DELETE') {
     const token = bearerToken(req);
     const payload = token && verifyToken(token);
+    const body = await readJson(req);
+    // Coleta manual é pública (só lê a fonte oficial e registra):
+    // dispensa login, mas respeita intervalo mínimo anti-abuso.
+    if (req.method === 'POST' && body && body.acao === 'coletar') {
+      const fontes = await enso.lerFonteStatus();
+      const ultima = fontes && fontes.noaa && fontes.noaa.ultimoSucesso
+        ? Date.parse(fontes.noaa.ultimoSucesso) : 0;
+      const intervaloMs = enso.intervaloColetaMs();
+      if (Date.now() - ultima < intervaloMs) {
+        const esperaMin = Math.ceil((intervaloMs - (Date.now() - ultima)) / 60000);
+        await enso.auditar('coleta_limitada', {
+          por: (payload && payload.sub) || 'anonimo', horario: new Date().toISOString(),
+          resultado: `IGNORADA (intervalo mínimo; aguarde ~${esperaMin} min)`,
+        });
+        return jsonResponse(200, {
+          coletado: false,
+          motivo: `Última coleta há pouco tempo; aguarde ~${esperaMin} min.`,
+          amostras: [], fontes,
+        }, origin);
+      }
+      const r = await enso.executarColeta({ usarMock: body.usarMock !== false, timeoutMs: 8000 });
+      await enso.auditar('coleta_manual', {
+        por: (payload && payload.sub) || 'anonimo', horario: new Date().toISOString(),
+        resultado: `OK (${r.amostras.length} amostra(s))`, usarMock: body.usarMock !== false,
+      });
+      return jsonResponse(200, { coletado: true, amostras: r.amostras, fontes: r.fontes }, origin);
+    }
     if (!perfilPode(payload)) {
       return jsonResponse(403, { erro: 'Somente gestores (admin/avancado) podem alterar o módulo ENOS.' }, origin);
     }
@@ -96,15 +123,6 @@ module.exports = serve(async function handler(req) {
       const [limiares, regrasInfo] = await Promise.all([enso.limparLimiares(), enso.limparRegras()]);
       await enso.auditar('config_limpa', { por: payload.sub, horario: new Date().toISOString(), resultado: 'OK' });
       return jsonResponse(200, { limiares, regras: regrasInfo }, origin);
-    }
-    const body = await readJson(req);
-    if (body && body.acao === 'coletar') {
-      const r = await enso.executarColeta({ usarMock: body.usarMock !== false });
-      await enso.auditar('coleta_manual', {
-        por: payload.sub, horario: new Date().toISOString(),
-        resultado: `OK (${r.amostras.length} amostra(s))`, usarMock: body.usarMock !== false,
-      });
-      return jsonResponse(200, { amostras: r.amostras, fontes: r.fontes }, origin);
     }
     if (!body || (body.limiares === undefined && body.regras === undefined)) {
       return jsonResponse(400, { erro: 'Informe limiares, regras ou {acao:"coletar"}.' }, origin);

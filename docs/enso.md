@@ -40,6 +40,7 @@ fase futura, se o volume justificar.
 | `ENSO_NOAA_ENABLED` | `1` | `0` desliga o coletor real (só MOCK) |
 | `ENSO_NOAA_ONI_URL` | `https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt` | ONI (verificado ao vivo em 2026-10-11) |
 | `ENSO_NOAA_SST_URL` | `https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices` | Niño 1+2/3/4/3.4 (verificado ao vivo em 2026-10-11) |
+| `ENSO_COLETA_INTERVALO_MIN` | `10` | Intervalo mínimo entre coletas manuais (a coleta manual `POST /api/enso {acao:"coletar"}` **dispensa login**; o intervalo evita abuso contra a fonte oficial) |
 | `ENSO_FONTE_STALE_HORAS` | `72` | Idade máxima de fonte saudável |
 | `ENSO_FONTES_JSON` | (6 fontes oficiais) | Links exibidos na UI (configuráveis) |
 

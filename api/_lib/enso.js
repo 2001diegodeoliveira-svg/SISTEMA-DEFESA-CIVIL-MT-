@@ -732,6 +732,11 @@ function staleHoras() {
   return clampNum(process.env.ENSO_FONTE_STALE_HORAS, 1, 720, 72);
 }
 
+/** Intervalo mínimo entre coletas manuais (anti-abuso da rota pública). */
+function intervaloColetaMs() {
+  return clampNum(process.env.ENSO_COLETA_INTERVALO_MIN, 1, 1440, 10) * 60000;
+}
+
 async function lerFonteStatus() {
   try {
     const col = await readCollection('system_config');
@@ -750,19 +755,29 @@ async function gravarFonteStatus(fontes) {
   return fontes;
 }
 
-/** Upsert idempotente por (fonte, observadoEm) no doc "enso-indice". */
-async function registrarAmostra(amostra) {
+/** Upsert em lote (1 leitura + 1 escrita) — evita N roundtrips ao
+ *  banco quando um coletor devolve dezenas de amostras. */
+async function registrarAmostras(lote) {
   const col = await readCollection('system_config');
   const resto = (Array.isArray(col) ? col : []).filter((d) => !d || d.id !== 'enso-indice');
   const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-indice');
   const lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
-  const chave = `${amostra.fonte}|${amostra.observadoEm}`;
-  if (!lista.some((a) => `${a.fonte}|${a.observadoEm}` === chave)) {
-    lista.push({ ...amostra, registradoEm: new Date().toISOString() });
+  const vistos = new Set(lista.map((a) => `${a.fonte}|${a.observadoEm}`));
+  const agoraIso = new Date().toISOString();
+  for (const amostra of lote || []) {
+    const chave = `${amostra.fonte}|${amostra.observadoEm}`;
+    if (vistos.has(chave)) continue;
+    vistos.add(chave);
+    lista.push({ ...amostra, registradoEm: agoraIso });
   }
-  resto.push({ id: 'enso-indice', lista: lista.slice(-500), updatedAt: new Date().toISOString() });
+  resto.push({ id: 'enso-indice', lista: lista.slice(-500), updatedAt: agoraIso });
   await writeCollection('system_config', resto);
   return lista;
+}
+
+/** Upsert idempotente por (fonte, observadoEm) no doc "enso-indice". */
+async function registrarAmostra(amostra) {
+  return registrarAmostras([amostra]);
 }
 
 async function ultimaAmostra(indice) {
@@ -794,10 +809,8 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
     try {
       const resultado = await c.coletar({ timeoutMs });
       const lote = Array.isArray(resultado) ? resultado : [resultado];
-      for (const amostra of lote) {
-        await registrarAmostra(amostra);
-        amostras.push(amostra);
-      }
+      await registrarAmostras(lote);
+      amostras.push(...lote);
       const resumo = lote.map((a) => `${a.indice}=${a.valor}`).join(', ');
       fontes[c.id] = { ok: true, ultimoSucesso: new Date().toISOString(), ultimoErro: null, mensagem: `OK (${resumo}°C)` };
       logger.info('enso.coleta.ok', `${c.id}: ${lote.length} amostra(s).`, { fonte: c.id });
@@ -858,7 +871,8 @@ module.exports = {
   // canais
   canais, despachar, dryRunAtivo, webhookUrl, CANAIS_IMPLEMENTADOS, CANAIS_STUB,
   // coletores
-  executarColeta, registrarAmostra, ultimaAmostra, lerFonteStatus, coletorMock, coletorNoaa,
+  executarColeta, registrarAmostra, registrarAmostras, ultimaAmostra, lerFonteStatus, coletorMock, coletorNoaa,
+  intervaloColetaMs,
   parseOniAscii, parseSstoi, dataDoTrimestre, urlNoaaOni, urlNoaaSst, noaaEnabled,
   lerFontes,
   logger,

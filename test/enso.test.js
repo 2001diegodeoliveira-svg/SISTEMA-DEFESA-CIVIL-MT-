@@ -440,7 +440,8 @@ test('POST /api/enso exige gestor; avaliar valida e cria pendente p/ nível alto
 
 test('rota enso registrada no roteador e com política de acesso correta', async () => {
   assert.equal(apiPolicy('enso', 'GET').public, true);
-  assert.equal(apiPolicy('enso', 'POST').public, false);
+  assert.equal(apiPolicy('enso', 'POST').public, true); // coleta pública; config exige gestor no handler
+  assert.equal(apiPolicy('enso', 'DELETE').public, false);
   assert.equal(apiPolicy('enso/avaliar', 'POST').public, false);
   const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
   const snap = await snapshot();
@@ -452,6 +453,44 @@ test('rota enso registrada no roteador e com política de acesso correta', async
     const j = await res.json();
     assert.ok(j.disclaimer);
   } finally {
+    await restore(snap);
+    for (const [k, v] of prev) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    demoReset();
+  }
+});
+
+test('coleta manual é pública, com intervalo mínimo; config segue exigindo gestor', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  const fetchOrig = stubFetchNoaa();
+  try {
+    setupEnv();
+    process.env.AUTH_LOGIN_ENABLED = 'true';
+    process.env.DEMO_HORAS = '0';
+    process.env.SEED_USERS = JSON.stringify([{ usuario: 'gestor', senha: 'test-password', perfil: 'admin' }]);
+    await limparEnso();
+    // anônimo pode coletar
+    const r1 = await ensoHandler(request('POST', 'enso', { body: { acao: 'coletar', usarMock: false } }));
+    assert.equal(r1.status, 200);
+    assert.equal((await r1.json()).coletado, true);
+    // segunda coleta imediata é adiada pelo intervalo mínimo
+    const r2 = await ensoHandler(request('POST', 'enso', { body: { acao: 'coletar', usarMock: false } }));
+    assert.equal(r2.status, 200);
+    const j2 = await r2.json();
+    assert.equal(j2.coletado, false);
+    assert.ok(j2.motivo);
+    // anônimo NÃO pode alterar config
+    const r3 = await ensoHandler(request('POST', 'enso', { body: { limiares: { forte: 1.6 } } }));
+    assert.equal(r3.status, 403);
+    // gestor pode
+    const r4 = await ensoHandler(request('POST', 'enso', { token: adminToken(), body: { limiares: { forte: 1.6 } } }));
+    assert.equal(r4.status, 200);
+    assert.equal((await r4.json()).limiares.forte, 1.6);
+  } finally {
+    global.fetch = fetchOrig;
     await restore(snap);
     for (const [k, v] of prev) {
       if (v === undefined) delete process.env[k];

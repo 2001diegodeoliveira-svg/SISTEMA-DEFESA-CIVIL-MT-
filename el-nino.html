@@ -334,8 +334,8 @@
     <section id="view-fontes" class="tab-view">
         <h3 class="section-title"><i data-lucide="external-link"></i> Boletins e fontes oficiais</h3>
         <div class="card" style="margin-bottom:16px;">
-            <h4><i data-lucide="refresh-ccw"></i> Atualizar da fonte oficial (gestores)</h4>
-            <p>Coleta agora os índices NOAA/CPC (ONI + regiões Niño) e registra no servidor, com auditoria. Falha de fonte não derruba o módulo.</p>
+                <h4><i data-lucide="refresh-ccw"></i> Atualizar da fonte oficial</h4>
+                <p>Coleta agora os índices NOAA/CPC (ONI + regiões Niño) e registra no servidor, com auditoria. Sem login. Falha de fonte não derruba o módulo.</p>
             <div class="form-row">
                 <button class="btn primary" id="btnColetar"><i data-lucide="download"></i> Coletar agora</button>
             </div>
@@ -608,7 +608,8 @@
                 out.textContent = 'Coletando da NOAA/CPC…';
                 api('enso', { method: 'POST', body: { acao: 'coletar', usarMock: false } }).then(function (r) {
                     btnColetar.disabled = false;
-                    if (!r.ok) { out.textContent = 'Falha: ' + ((r.data && r.data.erro) || r.status) + ' (gestores: admin/avancado).'; return; }
+                    if (!r.ok) { out.textContent = 'Falha: ' + ((r.data && r.data.erro) || r.status); return; }
+                    if (r.data.coletado === false) { out.textContent = r.data.motivo || 'Coleta adiada pelo intervalo mínimo.'; return; }
                     var n = (r.data.amostras || []).length;
                     out.textContent = 'Coleta concluída: ' + n + ' amostra(s) da NOAA/CPC registradas.';
                     carregarEstado();
