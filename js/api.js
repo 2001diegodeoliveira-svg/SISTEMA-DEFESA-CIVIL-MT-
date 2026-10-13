@@ -64,9 +64,12 @@
 
         // Alertas
         alertas: function () { return request('alertas'); },
-        // Hidrologia — cadastro oficial de estações telemétricas ANA
-        anaHidrologia: function (refresh) {
-            return request('ana-hidrologia' + (refresh ? '?refresh=1' : ''));
+        // Hidrologia — cadastro oficial de estações telemétricas ANA (nacional; ?uf=)
+        anaHidrologia: function (refresh, uf) {
+            var q = [];
+            if (refresh) q.push('refresh=1');
+            if (uf) q.push('uf=' + encodeURIComponent(uf));
+            return request('ana-hidrologia' + (q.length ? '?' + q.join('&') : ''));
         },
 
         // Solicitações de acesso e administração de usuários

@@ -40,8 +40,9 @@ function metaValor(linha) {
   return v || null;
 }
 
-/* Extrai os arquivos _MT_ do zip e devolve estações parseadas. */
-function extrairMT(buf) {
+/* Extrai os arquivos _UF_ do zip e devolve estações parseadas. */
+function extrairUF(buf, uf) {
+  const alvo = `_${String(uf || 'MT').trim().toUpperCase()}_`;
   const sig = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
   const eocd = buf.lastIndexOf(sig);
   if (eocd < 0) throw new Error('EOCD não encontrado no zip.');
@@ -61,7 +62,7 @@ function extrairMT(buf) {
     const nomeArq = buf.toString('utf8', p + 46, p + 46 + nameLen);
     p += 46 + nameLen + extraLen + commentLen;
 
-    if (!nomeArq.includes('_MT_') || comp !== 8) continue;
+    if (!nomeArq.includes(alvo) || comp !== 8) continue;
 
     const lNameLen = buf.readUInt16LE(localOff + 26);
     const lExtraLen = buf.readUInt16LE(localOff + 28);
@@ -141,10 +142,11 @@ function consolidar(estacoes) {
   return { cobertura: new Date(refTs).toISOString(), estacoes: out };
 }
 
-async function obterDados(ano, force) {
+async function obterDados(ano, uf, force) {
+  const chave = `${ano}:${uf}`;
   if (
     !force &&
-    cache.ano === ano &&
+    cache.chave === chave &&
     cache.dados &&
     Date.now() - cache.ts < CACHE_TTL_MS
   ) {
@@ -163,10 +165,10 @@ async function obterDados(ano, force) {
     clearTimeout(timer);
   }
 
-  const estacoes = extrairMT(buf);
+  const estacoes = extrairUF(buf, uf);
   const dados = consolidar(estacoes);
 
-  cache = { ano, ts: Date.now(), dados };
+  cache = { chave, ano, ts: Date.now(), dados };
   return dados;
 }
 
@@ -179,11 +181,17 @@ module.exports = serve(async function handler(req) {
   let ano = ru ? ru.searchParams.get('ano') : null;
   if (!ano || !/^\d{4}$/.test(ano)) ano = String(new Date().getUTCFullYear());
   const force = ru ? ru.searchParams.get('refresh') === '1' : false;
+  let uf = (ru && ru.searchParams.get('uf')) || 'MT';
+  uf = String(uf).trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(uf)) {
+    return jsonResponse(400, { erro: 'UF inválida: use a sigla com 2 letras.' }, origin);
+  }
 
   try {
-    const dados = await obterDados(ano, force);
+    const dados = await obterDados(ano, uf, force);
     return jsonResponse(200, {
       ano,
+      uf,
       atualizadoEm: new Date().toISOString(),
       cobertura: dados.cobertura,
       observacao: 'Dados históricos oficiais do INMET (zip anual). A cobertura depende da última publicação do portal.',

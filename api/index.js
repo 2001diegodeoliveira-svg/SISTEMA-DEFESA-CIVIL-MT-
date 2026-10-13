@@ -35,6 +35,8 @@ const handlers = {
   'proxy': require('./_routes/proxy'),
   'fontes': require('./_routes/fontes'),
   'fontes/saude': require('./_routes/fontes'),
+  'barragens': require('./_routes/barragens'),
+  'avisos': require('./_routes/avisos'),
   'waze': require('./_routes/waze'),
   'tomtom': require('./_routes/tomtom'),
   'gestao': require('./_routes/gestao'),

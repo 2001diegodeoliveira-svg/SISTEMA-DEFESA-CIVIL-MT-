@@ -59,11 +59,20 @@ function parseStations(xml) {
     };
   }).filter((station) =>
     station.codigo &&
-    station.uf === 'MT' &&
-    station.status.toLowerCase() === 'ativo' &&
     station.latitude !== null &&
     station.longitude !== null
   );
+}
+
+function filtrarUF(stations, uf) {
+  const alvo = String(uf || 'MT').trim().toUpperCase();
+  if (alvo !== 'MT' && !/^[A-Z]{2}$/.test(alvo)) {
+    throw new Error('UF inválida: use a sigla com 2 letras.');
+  }
+  // Níveis são publicados em outro serviço e não são inferidos aqui.
+  const ativas = stations.filter((s) => s.status.toLowerCase() === 'ativo');
+  if (alvo === 'BR') return ativas;
+  return ativas.filter((s) => s.uf === alvo);
 }
 
 async function fetchStations(force) {
@@ -104,14 +113,22 @@ module.exports = serve(async function handler(req) {
 
   const url = new URL(req.url, 'http://localhost');
   const force = url.searchParams.get('refresh') === '1';
+  const uf = url.searchParams.get('uf') || 'MT';
   try {
     const result = await fetchStations(force);
+    let estacoes;
+    try {
+      estacoes = filtrarUF(result.stations, uf);
+    } catch (e) {
+      return jsonResponse(400, { erro: e.message }, origin);
+    }
     return jsonResponse(200, {
       fonte: 'ANA — Telemetria',
       atualizadoEm: new Date(result.updatedAt).toISOString(),
-      totalEstacoes: result.stations.length,
-      observacao: 'Cadastro de estações telemétricas ativas em Mato Grosso; este serviço não fornece os níveis medidos.',
-      estacoes: result.stations,
+      uf: String(uf).toUpperCase(),
+      totalEstacoes: estacoes.length,
+      observacao: 'Cadastro de estações telemétricas ativas; este serviço não fornece os níveis medidos.',
+      estacoes,
     }, origin);
   } catch (error) {
     console.error('[ana-hidrologia] falha ao consultar a ANA:', error && error.message);

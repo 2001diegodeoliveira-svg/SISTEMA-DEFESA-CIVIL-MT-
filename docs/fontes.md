@@ -61,6 +61,30 @@ requisição). Fallback "último válido" em `system_config`
 - `GET /api/enso`, `/api/enso/avaliar` — módulo ENOS.
 - `GET /api/pluv-alerta`, `/api/pluv-alerta/avaliar` — limiar de chuva.
 
+## Fase 3 — cobertura nacional (verificado ao vivo em 2026-10-13)
+
+- `GET /api/ana-hidrologia?uf=` — mesmo XML nacional
+  (`telemetriaws1.ana.gov.br`), filtro por UF no servidor
+  (`BR` = todas ativas). Níveis não incluídos (outro serviço).
+- `GET /api/inmet-chuva?uf=` — mesmo zip anual BDMEP (91 MB);
+  extrai arquivos `_UF_` (mesmo custo de MT por UF).
+- `GET /api/avisos` + `GET /api/avisos?id=` — RSS nacional +
+  detalhe CAP 1.2 com `<polygon>`, severidade e vigência.
+- `GET /api/barragens?uf=&bbox=&limit=&offset=` — ArcGIS REST
+  oficial do SNISB (`portal1.snirh.gov.br/.../Barragens_SNISB`),
+  paginado (MaxRecordCount 2000), cache 24h.
+- Previsão por município: BrasilAPI CPTEC **fora do ar (HTTP 500)** —
+  substituída por Open-Meteo por coordenada (nacional, verificada).
+- **CEMADEN: sem API legível por máquina encontrada** (Painel de
+  Alertas é HTML server-side; dados via Mapa Interativo com
+  download manual). Mantidos links oficiais; revisitar se surgir
+  endpoint documentado.
+- **Terras Indígenas: camada real inviável por ora** (geoserver
+  FUNAI com TLS inválido a partir daqui; portal no ar). Mantido
+  link ao portal FUNAI; revisitar.
+- Focos 48h WFS: filtro por UF + `bbox` da viewport (WFS 1.1.0,
+  ordem lat,lon em EPSG:4326).
+
 ## Fontes com problema conhecido
 
 - **CPTEC via BrasilAPI** (`/cptec/v1/clima/previsao/226/6`): HTTP 500

@@ -1544,9 +1544,9 @@
         </div>
         <div class="meta-line" id="metaAbrigos">SGI PROTEGE · abrigos por município</div>
 
-        <div class="group-title"><i data-lucide="calendar-days"></i> Previsão 6 Dias (CPTEC/INPE)</div>
+        <div class="group-title"><i data-lucide="calendar-days"></i> Previsão 6 Dias</div>
         <div id="cptecPanel" style="padding:0 2px;">
-            <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;"><i data-lucide="link" style="font-size:9px;"></i> Fonte: CPTEC/INPE via BrasilAPI</div>
+            <div id="cptecFonte" style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;"><i data-lucide="link" style="font-size:9px;"></i> Fonte: Open-Meteo</div>
             <div id="cptecCards" style="display:flex;flex-direction:column;gap:5px;"></div>
         </div>
 
@@ -2280,6 +2280,7 @@ async function loadTerritorio() {
         ufSelect.addEventListener('change', () => selecionarUf(ufSelect.value));
         document.getElementById('territoryMunicipio').addEventListener('change', evento => {
             focarMunicipioPorCodigo(evento.target.value);
+            if (typeof loadCptec === 'function') loadCptec();
         });
         document.getElementById('territoryStatus').textContent =
             'Fonte: IBGE · malhas territoriais oficiais. Selecione uma UF para carregar seus municípios.';
@@ -2288,7 +2289,7 @@ async function loadTerritorio() {
             const ativo = checkState.wmsFocos48h;
             map.removeLayer(wmsFocos48hLayer);
             wmsFocos48hLayer = null;
-            if (ativo && selectedUfCode === '51') loadWmsFocos48h();
+            if (ativo) loadWmsFocos48h();
         }
     } catch (e) {
         console.error('[territorio] falha ao carregar dados oficiais do IBGE:', e);
@@ -2488,6 +2489,7 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
                 if (checkState.wmsFocos48h) loadWmsFocos48h();
             }
         }
+        recarregarCamadasUF();
     } catch (error) {
         console.error('[territorio] falha ao carregar municípios da UF:', error);
         if (munLayer) {
@@ -2497,6 +2499,34 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
         atualizarStatusTerritorio('Não foi possível carregar os municípios no IBGE. A camada municipal permanece indisponível; tente novamente.');
         toast('Falha ao carregar os municípios do IBGE.');
     }
+}
+
+/* Fase 3: ao trocar de UF, recarrega as camadas visíveis que dependem
+   da UF (focos, INMET, chuva, ANA, SIPAM, barragens, previsão). */
+function recarregarCamadasUF() {
+    const alvos = [
+        ['focos', 'loadFocos', () => { focosLoaded = false; }],
+        ['anaHydrology', 'loadAnaHydrology', () => { anaHydrologyLoaded = false; }],
+        ['inmetStations', 'loadInmetStations', () => { inmetLoaded = false; }],
+        ['chuvaInmet', 'loadChuvaInmet', () => { chuvaInmetLoaded = false; }],
+        ['sipam', 'loadSIPAM', () => { sipamLoaded = false; }],
+        ['barragens', 'loadBarragens', () => { barragensLoaded = false; }],
+    ];
+    try {
+        alvos.forEach(([check, loader, reset]) => {
+            if (!checkState[check]) return;
+            try { reset(); } catch (e) {}
+            const fn = window[loader];
+            if (typeof fn === 'function') {
+                try {
+                    const r = fn();
+                    if (r && typeof r.catch === 'function') r.catch(() => {});
+                } catch (e) {}
+            }
+        });
+    } catch (e) {}
+    try { if (typeof loadCptec === 'function') loadCptec(); } catch (e) {}
+    try { if (typeof loadWmsFocos48hDetalhe === 'function') loadWmsFocos48hDetalhe(); } catch (e) {}
 }
 
 function focarMunicipioPorCodigo(codigo) {
@@ -2760,6 +2790,18 @@ let reportsLayer = null, reportsLoaded = false, reportsLoading = false;
 let reportSeenIds = new Set(), reportMarkerIds = new Map(), reportsTimer = null;
 let selectedUfCode = '';
 let ibgeStates = [];
+/* UF corrente a partir do seletor de território (Fase 3: cobertura
+   nacional). Sem UF selecionada, mantém MT (comportamento anterior). */
+function ufSiglaCorrente() {
+    const cod = String(selectedUfCode || '51').padStart(2, '0');
+    const e = (ibgeStates || []).find(x => String(x.id).padStart(2, '0') === cod);
+    return (e && e.sigla) ? String(e.sigla).toUpperCase() : 'MT';
+}
+function ufNomeCorrente() {
+    const cod = String(selectedUfCode || '51').padStart(2, '0');
+    const e = (ibgeStates || []).find(x => String(x.id).padStart(2, '0') === cod);
+    return (e && e.nome) ? String(e.nome).toUpperCase() : 'MATO GROSSO';
+}
 let ibgeMunicipiosDaUf = [];
 /* Limites aproximados do território de Mato Grosso (malha IBGE) */
 const MT_LAT_MIN = -18.1, MT_LAT_MAX = -7.3, MT_LON_MIN = -62.0, MT_LON_MAX = -50.0;
@@ -2985,16 +3027,22 @@ async function loadFocosPeriodo(dias) {
     }
 
     if (!collect.length) {
-        meta.textContent = 'INPE indisponível — usando pontos ilustrativos';
+        meta.textContent = 'INPE indisponível — sem dados no momento (tente recarregar a camada)';
         toast('Não foi possível obter os focos do INPE agora.');
         focosLoading = false;
         return;
     }
 
-    // Remove duplicados e aplica teto de pontos
+    // Remove duplicados, filtra pela UF selecionada e aplica teto de pontos.
+    // Sem UF (visão Brasil), mantém cobertura nacional até o teto.
+    const siglaUF = ufSiglaCorrente();
+    const nomeUF = ufNomeCorrente();
+    const base = (selectedUfCode && selectedUfCode !== '')
+        ? collect.filter(f => (f.estado || '').trim().toUpperCase() === nomeUF)
+        : collect.filter(f => (f.estado || '').trim().toUpperCase() === 'MATO GROSSO');
     const seen = new Set();
     const rows = [];
-    for (const f of collect) {
+    for (const f of base) {
         const k = f.lat.toFixed(4) + ',' + f.lon.toFixed(4) + ',' + f.data;
         if (seen.has(k)) continue;
         seen.add(k);
@@ -3013,7 +3061,8 @@ async function loadFocosPeriodo(dias) {
 
     const rotulo = nDias <= 1 ? '24h' : nDias + 'd';
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    meta.innerHTML = `INPE BDQueimadas · <b>${rows.length.toLocaleString('pt-BR')} focos em MT</b> · ${rotulo} · ${horaCsv}`;
+    const rotuloUF = (selectedUfCode && selectedUfCode !== '') ? ' em ' + siglaUF : ' no Brasil';
+    meta.innerHTML = `INPE BDQueimadas · <b>${rows.length.toLocaleString('pt-BR')} focos${rotuloUF}</b> · ${rotulo} · ${horaCsv}`;
     const lbl = document.querySelector('.check-row[data-check="focos"] label');
     if (lbl) lbl.innerHTML =
         `<span class="swatch" style="background:#ff4d00;border-radius:50%;"></span><i data-lucide="flame"></i>Focos de calor ${rotulo} <b style="color:#ff7a45;">(${rows.length.toLocaleString('pt-BR')})</b> <span style="font-size:9px;color:#94a3b8;font-weight:400;">· ${horaCsv}</span>`;
@@ -3106,10 +3155,15 @@ async function loadBarragens() {
     const meta = document.getElementById('metaBarragens');
     meta.innerHTML = 'ANA/SNISB · <b>carregando...</b>';
     try {
-        const res = await fetch('js/barragens_mt.json');
-        const data = await res.json();
+        // Fase 3: SNISB nacional via /api/barragens (substitui o snapshot js/barragens_mt.json).
+        const siglaUF = ufSiglaCorrente();
+        const res = await fetch('/api/barragens?uf=' + siglaUF + '&limit=2000');
+        const j = await res.json();
+        if (!res.ok) throw new Error((j && j.erro) || ('HTTP ' + res.status));
+        const data = Array.isArray(j.barragens) ? j.barragens : [];
         barragensLayer = L.layerGroup();
         data.forEach(b => {
+            if (!isFinite(b.lat) || !isFinite(b.lon)) return;
             L.marker([b.lat, b.lon], {
                 icon: barragemIcon(b.risco),
                 title: b.nome,
@@ -3119,7 +3173,7 @@ async function loadBarragens() {
         barragensLayer.addTo(map);
         barragensLoaded = true;
         barragensLoading = false;
-        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em MT · dados na barragem`;
+        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em ${siglaUF}${j.parcial ? ' (parcial — refine a busca)' : ''} · ${j.atualizadoEm ? 'atualizado ' + new Date(j.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'dados na barragem'}`;
         if (window.lucide) lucide.createIcons();
         refreshLegend();
     } catch (e) {
@@ -3138,12 +3192,13 @@ function escapeAnaHtml(value) {
 async function loadAnaHydrology() {
     anaHydrologyLoading = true;
     const meta = document.getElementById('metaAnaHydrology');
-    if (meta) meta.textContent = 'ANA/Telemetria · consultando estações de Mato Grosso...';
+    const siglaUF = ufSiglaCorrente();
+    if (meta) meta.textContent = `ANA/Telemetria · consultando estações de ${siglaUF}...`;
     try {
         if (!window.dcApi || typeof window.dcApi.anaHidrologia !== 'function') {
             throw new Error('Cliente da API indisponível.');
         }
-        const response = await window.dcApi.anaHidrologia();
+        const response = await window.dcApi.anaHidrologia(false, siglaUF);
         if (!response || !response.ok) {
             throw new Error(response && response.data && response.data.erro
                 ? response.data.erro
@@ -3164,7 +3219,7 @@ async function loadAnaHydrology() {
                 <div style="min-width:205px;font-size:11px;line-height:1.7;">
                     <div style="font-weight:700;color:#0f766e;font-size:12px;margin-bottom:4px;">${name}</div>
                     <div><b>Rio:</b> ${river}</div>
-                    <div><b>Município:</b> ${municipality} · MT</div>
+                    <div><b>Município:</b> ${municipality} · ${siglaUF}</div>
                     <div><b>Código ANA:</b> ${code}</div>
                     <div style="margin-top:6px;color:#64748b;font-size:10px;">Cadastro de estação telemétrica. O serviço de catálogo não informa nível medido.</div>
                 </div>`;
@@ -3179,7 +3234,7 @@ async function loadAnaHydrology() {
         });
         if (checkState.anaHydrology) anaHydrologyLayer.addTo(map);
         anaHydrologyLoaded = true;
-        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em MT · cadastro`;
+        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em ${siglaUF} · cadastro`;
         refreshLegend();
     } catch (error) {
         if (meta) meta.textContent = `ANA/Telemetria · ${error.message || 'falha ao carregar estações'}`;
@@ -3351,11 +3406,12 @@ async function loadCamerasSinfra() {
 }
 
 /* ================= Popup central: alertas de chuva + câmeras próximas =================
-   Varre os avisos vigentes do INMET (apiprevmet3.inmet.gov.br/avisos/rss) filtrando
-   eventos de chuva/tempestade que cobrem Mato Grosso. Ao detectar um aviso ainda não
-   exibido nesta sessão, abre um modal central com o aviso e, se houver câmeras SINFRA
-   online nas proximidades da área afetada, embute o vídeo ao vivo.                  */
+   Fase 3: nacional via /api/avisos (INMET CAP oficial, com polígonos).
+   Varre os avisos vigentes de chuva/tempestade em todo o Brasil, desenha
+   os polígonos no mapa e abre o modal central para avisos ainda não
+   exibidos nesta sessão (com câmeras SINFRA próximas quando houver). */
 const RAIN_RSS_URL = 'https://apiprevmet3.inmet.gov.br/avisos/rss';
+let avisosLayer = null;
 const RAIN_MESO_CENTROID = {
     'Centro-Sul Mato-grossense': [-15.60, -55.80],
     'Norte Mato-grossense': [-11.20, -55.50],
@@ -3364,6 +3420,7 @@ const RAIN_MESO_CENTROID = {
     'Centro-Oeste de Mato Grosso': [-14.20, -57.70],
     'Sudoeste Mato-grossense': [-15.70, -58.90],
 };
+// (Legado MT: mantido para compatibilidade; o fluxo nacional usa polígonos CAP.)
 const RAIN_AVISO_KEYWORDS = /chuvas?\s+intensas|acumulado\s+de\s+chuva|tempestade|granizo|vendaval/i;
 const RAIN_SEV_INFO = {
     'Grande Perigo': { lbl: 'Grande Perigo', cor: '#ef4444', peso: 0, icon: 'cloud-lightning' },
@@ -3397,55 +3454,65 @@ function rainCamsProximas(lat, lng, n) {
         .sort((a, b) => a.km - b.km);
     return cands.slice(0, n || 3);
 }
-async function checkRainAlerts() {
-    if (selectedUfCode !== '51') return;
+function centroidePoligono(anel) {
+    if (!anel || !anel.length) return null;
+    let la = 0, lo = 0;
+    anel.forEach(p => { la += p[0]; lo += p[1]; });
+    return { lat: la / anel.length, lng: lo / anel.length };
+}
+function desenharPoligonoAviso(aviso) {
+    if (!aviso.poligono || !aviso.poligono.length) return;
     try {
-        const r = await dcProxyFetch(RAIN_RSS_URL);
+        if (!avisosLayer) {
+            avisosLayer = L.layerGroup();
+            avisosLayer.addTo(map);
+        }
+        const cor = (aviso.sev && aviso.sev.cor) || '#eab308';
+        L.polygon(aviso.poligono, {
+            color: cor, weight: 2, opacity: .9,
+            fillColor: cor, fillOpacity: .15,
+        }).bindTooltip(`${aviso.evento} · ${aviso.severidade}`, { sticky: true }).addTo(avisosLayer);
+    } catch (e) {}
+}
+async function checkRainAlerts() {
+    try {
+        const r = await fetch('/api/avisos');
         if (!r.ok) return;
-        const xml = await r.text();
-        const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+        const j = await r.json();
+        const vigentes = (j.avisos || []).filter(a => a.vigente && RAIN_AVISO_KEYWORDS.test(a.evento || ''));
+        if (!vigentes.length) return;
+        // Detalhe CAP (polígono) só para avisos novos, com teto por ciclo.
+        const novos = vigentes.filter(a => !(a.id in rainAlertShown)).slice(0, 8);
         const alerts = [];
-        for (const item of items) {
-            const descMat = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/);
-            if (!descMat) continue;
-            const html = descMat[1];
-            const area = String(rainCampo(html, 'Área') || '').replace(/^Aviso para as Áreas:\s*/i, '');
-            const mesos = area.split(/\s*,\s*/).map(s => s.trim()).filter(s => RAIN_MESO_CENTROID[s]);
-            if (!mesos.length) continue;
-            const fim = rainCampo(html, 'Fim');
-            const inicio = rainCampo(html, 'Início');
-            /* Filtro de DATA ATUAL: só gera alerta quando o aviso está valendo AGORA
-               e suas datas inicial/final caem dentro do intervalo de hoje (±1 dia).
-               Avisos antigos ou futuros (datas longe da data atual) são ignorados —
-               "mais ou menos" da data atual o sistema não dispara alerta.        */
-            const DAY_MS = 86400000;
-            const diaHoje = Math.floor(Date.now() / DAY_MS);
-            const inicioDate = new Date(String(inicio).replace(' ', 'T'));
-            const fimDate = new Date(String(fim).replace(' ', 'T'));
-            if (isNaN(inicioDate) || isNaN(fimDate)) continue;
-            if (inicioDate.getTime() > Date.now()) continue;            // ainda não começou
-            if (fimDate.getTime() < Date.now()) continue;               // já terminou
-            if (Math.abs(Math.floor(inicioDate.getTime() / DAY_MS) - diaHoje) > 1) continue;
-            if (Math.abs(Math.floor(fimDate.getTime() / DAY_MS) - diaHoje) > 1) continue;
-            const evento = rainCampo(html, 'Evento');
-            if (!RAIN_AVISO_KEYWORDS.test(evento)) continue;
-            const severidade = rainCampo(html, 'Severidade');
-            const descricao = rainCampo(html, 'Descrição');
-            const link = (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '';
-            const id = (link.match(/rss\/(\d+)/) || [])[1] || 'e' + Math.abs([...html].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7));
-            let la = 0, lo = 0;
-            mesos.forEach(m => { const c = RAIN_MESO_CENTROID[m]; la += c[0]; lo += c[1]; });
+        for (const item of vigentes) {
+            const jaVisto = (item.id in rainAlertShown);
+            let poligono = null, centro = null;
+            if (!jaVisto && novos.includes(item)) {
+                try {
+                    const rd = await fetch('/api/avisos?id=' + encodeURIComponent(item.id));
+                    if (rd.ok) {
+                        const det = await rd.json();
+                        poligono = det.poligono || null;
+                        centro = centroidePoligono(poligono);
+                    }
+                } catch (e) {}
+            }
             alerts.push({
-                id, evento, severidade,
-                inicio, fim, descricao, link, mesos,
-                centro: { lat: la / mesos.length, lng: lo / mesos.length },
-                sev: RAIN_SEV_INFO[severidade] || { peso: 2, cor: '#eab308', lbl: 'Atenção', icon: 'cloud-drizzle' },
+                id: item.id, evento: item.evento, severidade: item.severidade,
+                inicio: item.inicio, fim: item.fim, descricao: item.descricao,
+                areas: item.areas, poligono, centro,
+                link: 'https://apiprevmet3.inmet.gov.br/avisos/rss/' + item.id,
+                sev: RAIN_SEV_INFO[item.severidade] || { peso: 2, cor: '#eab308', lbl: 'Atenção', icon: 'cloud-drizzle' },
             });
         }
-        alerts.sort((a, b) => a.sev.peso - b.sev.peso || new Date(b.inicio.replace(' ', 'T')) - new Date(a.inicio.replace(' ', 'T')));
-        const novos = alerts.filter(a => !(a.id in rainAlertShown));
-        if (!novos.length) return;
-        novos.forEach(a => { rainAlertShown[a.id] = Date.now(); rainAlertQueue.push(a); });
+        alerts.sort((a, b) => a.sev.peso - b.sev.peso);
+        const mostrar = alerts.filter(a => !(a.id in rainAlertShown));
+        if (!mostrar.length) return;
+        mostrar.forEach(a => {
+            rainAlertShown[a.id] = Date.now();
+            desenharPoligonoAviso(a);
+            rainAlertQueue.push(a);
+        });
         rainAlertShowNext();
     } catch (e) {}
 }
@@ -3461,13 +3528,20 @@ function rainAlertShowNext() {
     document.getElementById('rainTitle').textContent = 'Aviso de ' + alert.evento;
     document.getElementById('rainSev').textContent = alert.sev.lbl;
     document.getElementById('rainKicker').textContent = 'Alerta meteorológico · INMET · ' + alturaSeveridade(alert.sev);
-    document.getElementById('rainDesc').textContent = alert.descricao || 'Previsão de chuvas intensas para Mato Grosso. SGI PROTEGE recomenda atenção e acompanhamento.';
+    document.getElementById('rainDesc').textContent = alert.descricao || 'Aviso meteorológico do INMET. SGI PROTEGE recomenda atenção e acompanhamento.';
     document.getElementById('rainMeta').innerHTML = `
         <span><b>Início:</b> ${rainFmtDh(alert.inicio)}</span>
         <span><b>Válido até:</b> ${rainFmtDh(alert.fim)}</span>
         <span><b>ID:</b> ${alert.id}</span>`;
-    document.getElementById('rainRegioes').innerHTML = `<b>Regiões afetadas (MT):</b> ${alert.mesos.join(', ')}`;
-    rainPintarCams(alert.centro.lat, alert.centro.lng, 'do centro do aviso');
+    const areasTxt = alert.areas ? String(alert.areas).replace(/^Aviso para as Áreas:\s*/i, '') : '';
+    document.getElementById('rainRegioes').innerHTML = areasTxt
+        ? `<b>Áreas afetadas:</b> ${areasTxt}`
+        : '<b>Áreas afetadas:</b> ver polígono no mapa';
+    if (alert.centro) rainPintarCams(alert.centro.lat, alert.centro.lng, 'do centro do aviso');
+    else {
+        const grid = document.getElementById('rainCamsGrid');
+        if (grid) grid.innerHTML = '<div class="rain-empty-cams">Sem polígono — sem referência para câmeras próximas.</div>';
+    }
     if (window.lucide) lucide.createIcons();
     modal.classList.add('open');
 }
@@ -3515,7 +3589,7 @@ function rainCloseModal() {
 }
 function rainCenterMap() {
     if (pluvAlertaAtual) { pluvAlertaCentralizar(); return; }
-    if (rainCurAlert) {
+    if (rainCurAlert && rainCurAlert.centro) {
         map.setView([rainCurAlert.centro.lat, rainCurAlert.centro.lng], 7);
         if (camSinfraLayer && checkState.camsSinfra) { try { camSinfraLayer.addTo(map); } catch (e) {} }
     }
@@ -3534,7 +3608,22 @@ function rainBindModal() {
     modal.addEventListener('keydown', e => { if (e.key === 'Escape') rainCloseModal(); });
 }
 
-/* ================= CPTEC/INPE — Previsão 6 dias ================= */
+/* ================= Previsão 6 dias — Open-Meteo (nacional) =================
+   Substitui o CPTEC via BrasilAPI (fora do ar — HTTP 500): previsão por
+   coordenada, válida para qualquer município do Brasil. Usa o município
+   selecionado ou, sem seleção, o centro do mapa. */
+const WMO_INFO = {
+    0: ['sun', 'Limpo'], 1: ['cloud-sun', 'Quase limpo'], 2: ['cloud-sun', 'Parcial nublado'],
+    3: ['cloud', 'Nublado'], 45: ['cloud-fog', 'Nevoeiro'], 48: ['cloud-fog', 'Nevoeiro'],
+    51: ['cloud-drizzle', 'Garoa leve'], 53: ['cloud-drizzle', 'Garoa'], 55: ['cloud-drizzle', 'Garoa forte'],
+    56: ['cloud-drizzle', 'Garoa congelante'], 57: ['cloud-drizzle', 'Garoa congelante'],
+    61: ['cloud-rain', 'Chuva fraca'], 63: ['cloud-rain', 'Chuva'], 65: ['cloud-rain', 'Chuva forte'],
+    66: ['cloud-rain', 'Chuva congelante'], 67: ['cloud-rain', 'Chuva congelante'],
+    71: ['snowflake', 'Neve fraca'], 73: ['snowflake', 'Neve'], 75: ['snowflake', 'Neve forte'],
+    77: ['snowflake', 'Granizo'], 80: ['cloud-rain', 'Pancadas fracas'], 81: ['cloud-rain', 'Pancadas'],
+    82: ['cloud-rain', 'Pancadas fortes'], 95: ['cloud-lightning', 'Tempestade'],
+    96: ['cloud-lightning', 'Tempestade'], 99: ['cloud-lightning', 'Tempestade com granizo'],
+};
 const CPTEC_CIDADES = [
     { nome: 'Cuiabá', id: 226 },
     { nome: 'Rondonópolis', id: 5251 },
@@ -3542,6 +3631,7 @@ const CPTEC_CIDADES = [
     { nome: 'Sorriso', id: 5251 },
     { nome: 'Cáceres', id: 218 }
 ];
+// (Legado: códigos CPTEC/BrasilAPI, fora do ar — mantidos para referência.)
 const CPTEC_ICONE = {
     'ci': 'sun', 'cv': 'cloud-sun', 'ec': 'cloud-lightning', 'eq': 'zap', 'er': 'cloud-rain',
     'os': 'cloud', 'pc': 'cloud-drizzle', 'pp': 'cloud-rain', 'ps': 'cloud-sun', 'pn': 'cloud',
@@ -3551,24 +3641,54 @@ const CPTEC_ICONE = {
 };
 
 let cpTecGlobal = [];
+function previsaoAlvo() {
+    try {
+        const sel = document.getElementById('territoryMunicipio');
+        const cod = sel && sel.value;
+        const c = cod && centroidByCod[cod];
+        if (c && isFinite(c.lat) && isFinite(c.lng)) {
+            const nome = (sel.options[sel.selectedIndex] || {}).text || 'Município';
+            return { lat: c.lat, lng: c.lng, nome };
+        }
+    } catch (e) {}
+    try {
+        const centro = map.getCenter();
+        return { lat: centro.lat, lng: centro.lng, nome: 'Centro do mapa' };
+    } catch (e) {
+        return { lat: -15.588, lng: -56.097, nome: 'Cuiabá' };
+    }
+}
 async function loadCptec() {
     const container = document.getElementById('cptecCards');
     if (!container) return;
     container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;padding:6px;">Carregando...</div>';
     try {
-        const res = await dcProxyFetch('https://brasilapi.com.br/api/cptec/v1/clima/previsao/226/6');
+        const alvo = previsaoAlvo();
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${alvo.lat.toFixed(4)}&longitude=${alvo.lng.toFixed(4)}`
+            + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=6&timezone=auto`;
+        const res = await dcProxyFetch(url);
         const data = await res.json();
-        if (!data.clima || !data.clima.length) { container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Sem dados</div>'; return; }
+        const dias = (data.daily && data.daily.time) || [];
+        if (!dias.length) { container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Sem dados</div>'; return; }
         const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        cpTecGlobal = data.clima.map(d => {
-            const dt = new Date(d.data + 'T12:00:00');
-            return { dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth()+1}`, icone: CPTEC_ICONE[d.condicao] || 'cloud-sun', desc: d.condicao_desc, tmax: d.max, tmin: d.min };
+        cpTecGlobal = dias.map((iso, i) => {
+            const dt = new Date(iso + 'T12:00:00');
+            const info = WMO_INFO[(data.daily.weather_code || [])[i]] || ['cloud-sun', '—'];
+            return {
+                dia: diaSem[dt.getDay()], data: `${dt.getDate()}/${dt.getMonth() + 1}`,
+                icone: info[0], desc: info[1],
+                tmax: Math.round((data.daily.temperature_2m_max || [])[i]),
+                tmin: Math.round((data.daily.temperature_2m_min || [])[i]),
+                chuva: (data.daily.precipitation_sum || [])[i] ?? 0,
+            };
         });
+        const fonte = document.getElementById('cptecFonte');
+        if (fonte) fonte.innerHTML = `<i data-lucide="link" style="font-size:9px;"></i> Fonte: Open-Meteo · ${alvo.nome}`;
         container.innerHTML = cpTecGlobal.map(c =>
             `<div class="cptec-card">
                 <span class="dia">${c.dia}<br><span style="font-weight:400;font-size:9px;color:var(--text-muted);">${c.data}</span></span>
                 <span class="icone"><i data-lucide="${c.icone}"></i></span>
-                <span class="desc">${c.desc}</span>
+                <span class="desc">${c.desc}${c.chuva > 0 ? ' · ' + c.chuva + ' mm' : ''}</span>
                 <span class="temps"><span class="tmax">${c.tmax}°</span><span class="tmin">${c.tmin}°</span></span>
             </div>`
         ).join('');
@@ -3588,20 +3708,30 @@ async function loadInmetStations() {
     try {
         const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
         const data = await res.json();
-        const mtStations = data.filter(s => s.SG_ESTADO === 'MT' && s.CD_SITUACAO === 'Operante');
+        // Fase 3: nacional — filtra pela UF selecionada (default MT);
+        // exibe operantes e em pane (situação real da estação).
+        const siglaUF = ufSiglaCorrente();
+        const nomeUF = ufNomeCorrente();
+        const ufStations = (selectedUfCode && selectedUfCode !== '')
+            ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF && s.VL_LATITUDE && s.VL_LONGITUDE)
+            : data.filter(s => (s.SG_ESTADO || '').toUpperCase() === 'MT' && s.VL_LATITUDE && s.VL_LONGITUDE);
         inmetLayer = L.layerGroup();
-        mtStations.forEach(s => {
+        let nOper = 0, nPane = 0;
+        ufStations.forEach(s => {
             const lat = parseFloat(s.VL_LATITUDE);
             const lon = parseFloat(s.VL_LONGITUDE);
             if (!lat || !lon) return;
             const codigo = s.CD_ESTACAO;
+            const operante = String(s.CD_SITUACAO || '').toLowerCase() === 'operante';
+            if (operante) nOper++; else nPane++;
+            const cor = operante ? '#22d3ee' : '#64748b';
             const tipo = s.TP_ESTACAO || '—';
             const situacao = s.CD_SITUACAO || '—';
             const ini = s.DT_INICIO_OPERACAO ? new Date(s.DT_INICIO_OPERACAO).toLocaleDateString('pt-BR') : '—';
             const fim = s.DT_FIM_OPERACAO ? new Date(s.DT_FIM_OPERACAO).toLocaleDateString('pt-BR') : null;
             const isCapital = String(s.FL_CAPITAL || 'N').toUpperCase() === 'S';
             const mk = L.marker([lat, lon], {
-                icon: iconDivMarker('radio-tower', '#22d3ee', 24),
+                icon: iconDivMarker('radio-tower', cor, 24),
                 title: s.DC_NOME + ' · ' + codigo
             });
             mk.bindTooltip(`${s.DC_NOME} <span style="color:#22d3ee;">(${codigo})</span>`, { direction: 'top', offset: [0, -14], className: 'inmet-tooltip' });
@@ -3612,7 +3742,7 @@ async function loadInmetStations() {
                         <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(160deg,rgba(34,211,238,.25),rgba(34,211,238,.08));border:1px solid rgba(34,211,238,.5);display:flex;align-items:center;justify-content:center;"><i data-lucide="radio-tower" style="color:#22d3ee;width:16px;height:16px;"></i></span>
                         <div>
                             <div style="font-weight:700;font-size:13px;color:#fff;line-height:1.2;">${s.DC_NOME}</div>
-                            <div style="color:#94a3b8;font-size:9.5px;">Estação Meteorológica Automática · MT</div>
+                            <div style="color:#94a3b8;font-size:9.5px;">Estação Meteorológica Automática · ${siglaUF}</div>
                         </div>
                     </div>
                     <div style="display:flex;gap:5px;margin-bottom:7px;">
@@ -3646,7 +3776,7 @@ async function loadInmetStations() {
         inmetLayer.addTo(map);
         inmetLoaded = true;
         inmetLoading = false;
-        meta.innerHTML = `INMET · <b>${mtStations.length}</b> EAM operantes em MT`;
+        meta.innerHTML = `INMET · <b>${ufStations.length}</b> EAM em ${siglaUF} · <b style="color:#4ade80;">${nOper} operantes</b> · <b style="color:#94a3b8;">${nPane} em pane</b>`;
     } catch (e) {
         inmetLoading = false;
         meta.textContent = 'INMET · indisponível';
@@ -3654,8 +3784,8 @@ async function loadInmetStations() {
 }
 
 /* ================= Chuva INMET 24h/7d — BDMEP (zip oficial anual) =================
-   Consome o endpoint próprio /api/inmet-chuva, que baixa o zip de dados
-   históricos do INMET, extrai as estações automáticas de MT e calcula os
+   Consome o endpoint próprio /api/inmet-chuva (?uf=), que baixa o zip de dados
+   históricos do INMET, extrai as estações automáticas da UF e calcula os
    acumulados das últimas 24h e 7 dias por estação. */
 async function loadChuvaInmet() {
     if (chuvaInmetLoading) return;
@@ -3665,7 +3795,8 @@ async function loadChuvaInmet() {
     try {
         const apiBase = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
         const ano = new Date().getUTCFullYear();
-        const res = await fetch(apiBase + '/api/inmet-chuva?ano=' + ano);
+        const siglaUF = ufSiglaCorrente();
+        const res = await fetch(apiBase + '/api/inmet-chuva?ano=' + ano + '&uf=' + siglaUF);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!Array.isArray(data.estacoes)) throw new Error('Resposta inválida');
@@ -3691,7 +3822,7 @@ async function loadChuvaInmet() {
                         <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(160deg,rgba(14,165,233,.25),rgba(14,165,233,.08));border:1px solid rgba(14,165,233,.5);display:flex;align-items:center;justify-content:center;"><i data-lucide="cloud-rain" style="color:#0ea5e9;width:16px;height:16px;"></i></span>
                         <div>
                             <div style="font-weight:700;font-size:13px;color:#fff;line-height:1.2;">${s.nome}</div>
-                            <div style="color:#94a3b8;font-size:9.5px;">${s.codigo} · INMET BDMEP · MT</div>
+                            <div style="color:#94a3b8;font-size:9.5px;">${s.codigo} · INMET BDMEP · ${siglaUF}</div>
                         </div>
                     </div>
                     <div class="bar-grid" style="grid-template-columns:repeat(2,1fr);margin-top:4px;">
@@ -4080,10 +4211,14 @@ async function loadInmetPluvio() {
     try {
         const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
         const data = await res.json();
-        const mtStations = data.filter(s => s.SG_ESTADO === 'MT' && s.VL_LATITUDE && s.VL_LONGITUDE);
+        // Fase 3: nacional — mesma base de estações da camada INMET.
+        const siglaUF = ufSiglaCorrente();
+        const ufStations = (selectedUfCode && selectedUfCode !== '')
+            ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF && s.VL_LATITUDE && s.VL_LONGITUDE)
+            : data.filter(s => (s.SG_ESTADO || '').toUpperCase() === 'MT' && s.VL_LATITUDE && s.VL_LONGITUDE);
         // Agrupa em lotes (Open-Meteo aceita até ~50 pontos por chamada)
         const chunks = [];
-        for (let i = 0; i < mtStations.length; i += 40) chunks.push(mtStations.slice(i, i + 40));
+        for (let i = 0; i < ufStations.length; i += 40) chunks.push(ufStations.slice(i, i + 40));
         const meteor = [];
         for (const chunk of chunks) {
             const lats = chunk.map(s => parseFloat(s.VL_LATITUDE)).join(',');
@@ -4138,7 +4273,7 @@ async function loadInmetPluvio() {
         // Monta array de estações enriquecidas
         pluvStations = [];
         idx = 0;
-        for (const s of mtStations) {
+        for (const s of ufStations) {
             const lat = parseFloat(s.VL_LATITUDE);
             const lon = parseFloat(s.VL_LONGITUDE);
             const leg = leituras[idx] || {};
@@ -4565,12 +4700,23 @@ async function loadSIPAM() {
     sipamLoading = true;
     const meta = document.getElementById('metaSipam');
     meta.innerHTML = 'CENSIPAM · <b>carregando eventos...</b>';
+    // Fase 3: CENSIPAM cobre a Amazônia Legal — parametriza a UF;
+    // fora dela, explica em vez de mostrar vazio.
+    const UF_AMZ = ['AC', 'AP', 'AM', 'MA', 'MT', 'PA', 'RO', 'RR', 'TO'];
+    const siglaUF = ufSiglaCorrente();
+    if (!UF_AMZ.includes(siglaUF)) {
+        meta.textContent = `CENSIPAM · fora da área de cobertura (Amazônia Legal) para ${siglaUF}`;
+        sipamLoading = false;
+        sipamLoaded = true;
+        sipamData = [];
+        return;
+    }
     try {
-        const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+        const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=' + siglaUF);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const eventos = await res.json();
         if (!Array.isArray(eventos) || !eventos.length) {
-            meta.textContent = 'CENSIPAM · nenhum evento ativo em MT';
+            meta.textContent = `CENSIPAM · nenhum evento ativo em ${siglaUF}`;
             sipamLoading = false;
             sipamLoaded = true;
             sipamData = [];
@@ -4619,7 +4765,7 @@ async function loadSIPAM() {
         sipamLoaded = true;
         sipamLoading = false;
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        meta.innerHTML = `CENSIPAM · <b>${eventos.length.toLocaleString('pt-BR')} evento(s)</b> em MT · atualizado ${hora}`;
+        meta.innerHTML = `CENSIPAM · <b>${eventos.length.toLocaleString('pt-BR')} evento(s)</b> em ${siglaUF} · atualizado ${hora}`;
         refreshLegend();
         setTimeout(loadSIPAM, 10 * 60 * 1000);
     } catch (e) {
@@ -5585,12 +5731,23 @@ async function loadWmsFocos48hDetalhe() {
     if (wmsFocoDetalheLoading) return;
     wmsFocoDetalheLoading = true;
     try {
-        const url = 'https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/ows' +
+        // Fase 3: nacional por padrão + recorte pela viewport (bbox) para
+        // não baixar o Brasil inteiro de uma vez.
+        const siglaUF = ufSiglaCorrente();
+        const nomeUF = ufNomeCorrente();
+        const filtros = [];
+        if (selectedUfCode && selectedUfCode !== '') filtros.push(`estado='${nomeUF.replace(/'/g, "''")}'`);
+        let url = 'https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/ows' +
             '?service=WFS&version=1.1.0&request=GetFeature' +
             '&typeName=dados_abertos:focos_48h_br_todosats' +
             '&outputFormat=application/json&srsName=EPSG:4326' +
-            '&maxFeatures=' + FOCO_MAX_PONTOS +
-            '&CQL_FILTER=' + encodeURIComponent("estado='MATO GROSSO'");
+            '&maxFeatures=' + FOCO_MAX_PONTOS;
+        try {
+            // WFS 1.1.0 + EPSG:4326: bbox em ordem lat,lon.
+            const b = map.getBounds();
+            url += '&bbox=' + [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => v.toFixed(3)).join(',') + ',EPSG:4326';
+        } catch (e) {}
+        if (filtros.length) url += '&CQL_FILTER=' + encodeURIComponent(filtros.join(' AND '));
         const res = await dcProxyFetch(url);
         if (!res.ok) return;
         const j = await res.json();
@@ -5630,7 +5787,6 @@ function parseFocosCSV(csvText) {
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',');
         if (cols.length < header.length - 2) continue;
-        if ((cols[idx.estado] || '').trim().toUpperCase() !== 'MATO GROSSO') continue;
         const lat = parseFloat(cols[idx.lat]);
         const lon = parseFloat(cols[idx.lon]);
         if (!isFinite(lat) || !isFinite(lon)) continue;
