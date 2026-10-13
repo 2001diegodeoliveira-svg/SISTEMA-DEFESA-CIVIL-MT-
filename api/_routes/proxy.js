@@ -89,6 +89,34 @@ async function readUpstreamBody(response, maxBytes) {
   return Buffer.concat(chunks, size);
 }
 
+/* Saúde por fonte (lido por GET /api/fontes/saude).
+   Escrita com throttle: no máximo 1 vez/min por fonte, exceto
+   quando o estado ok<->falha vira (registra na hora). */
+const SAUDE_THROTTLE_MS = 60000;
+const saudeCache = {}; // { [origemId]: { ok, ts } }
+
+async function registrarSaude(origemId, ok, latenciaMs) {
+  const agora = Date.now();
+  const anterior = saudeCache[origemId];
+  if (anterior && anterior.ok === ok && agora - anterior.ts < SAUDE_THROTTLE_MS) return;
+  saudeCache[origemId] = { ok, ts: agora };
+  try {
+    const col = await readCollection('system_config');
+    const resto = (Array.isArray(col) ? col : []).filter((d) => !d || d.id !== 'fonte-saude');
+    const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'fonte-saude');
+    const fontes = (doc && doc.fontes && typeof doc.fontes === 'object') ? { ...doc.fontes } : {};
+    const atual = fontes[origemId] || {};
+    const iso = new Date(agora).toISOString();
+    fontes[origemId] = ok
+      ? { ...atual, ultimoSucesso: iso, latenciaMs: latenciaMs != null ? latenciaMs : (atual.latenciaMs ?? null) }
+      : { ...atual, ultimaFalha: iso };
+    resto.push({ id: 'fonte-saude', fontes, updatedAt: iso });
+    await writeCollection('system_config', resto);
+  } catch (e) {
+    console.error('[proxy] falha ao registrar saúde:', e && e.message);
+  }
+}
+
 /* Fallback "último válido": doc em system_config (mapeado no pg).
    Chave por host+path (query ignorada p/ não explodir o volume). */
 function chaveFallback(parsed) {
@@ -153,8 +181,7 @@ module.exports = serve(async function handler(req) {
 
     // Guarda o último válido para fallback (X-Stale) — corpos
     // grandes demais pulam o fallback, mas ainda são servidos.
-    if (upstream.ok && buf.length <= MAX_FALLBACK_BYTES) {
-      try {
+    if (upstream.ok && buf.length <= MAX_FALLBACK_BYTES) {      try {
         await salvarFallback(chaveFallback(parsed), {
           status: upstream.status,
           contentType,
