@@ -27,6 +27,14 @@ function jsonResponse(status, body, origin) {
   });
 }
 
+/* Cabeçalhos de cache CDN (Vercel): s-maxage + stale-while-revalidate.
+   HIT/MISS real aparece no header x-vercel-cache do deploy. */
+function cacheHeaders(ttlSeg, staleSeg) {
+  const ttl = Math.max(0, Number(ttlSeg) || 0);
+  const stale = Math.max(0, Number(staleSeg) || 0);
+  return { 'Cache-Control': `public, s-maxage=${ttl}, stale-while-revalidate=${stale}` };
+}
+
 /* Lê o corpo da requisição de forma robusta.
    Aceita tanto o Web Request da Vercel (req.text()) quanto o Node
    IncomingMessage (stream de chunks) usado em alguns runtimes. */
@@ -77,4 +85,4 @@ function bearerToken(req) {
   return m ? m[1].trim() : null;
 }
 
-module.exports = { corsHeaders, jsonResponse, readJson, readBody, reqUrl, bearerToken };
+module.exports = { corsHeaders, jsonResponse, cacheHeaders, readJson, readBody, reqUrl, bearerToken };

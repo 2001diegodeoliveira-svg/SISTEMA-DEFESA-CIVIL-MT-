@@ -2,6 +2,9 @@
    Cliente do proxy CORS — SGI PROTEGE.
    dcProxyFetch(url, opts) envia requisições a APIs externas via
    backend (/api/proxy), evitando bloqueios de CORS no navegador.
+   O backend aplica cache por fonte (s-maxage) e fallback para o
+   último dado válido (sinalizado em response._stale); use-o para
+   exibir "dado antigo" na interface.
    Se o backend estiver indisponível, cai para fetch direto
    (mantendo funcionamento em hospedagem estática pura).
    ============================================================ */
@@ -26,7 +29,10 @@
         throw error;
     }
 
-    // Faz fetch via proxy; fallback direto se o proxy falhar.
+    // Faz fetch via proxy; fallback direto APENAS se o próprio /api
+    // estiver inalcançável (backend fora do ar). Quando o proxy
+    // responde (mesmo com erro), NÃO chama a origem direto: isso
+    // contornaria rate-limit/allowlist e esconderia falhas reais.
     function dcProxyFetch(url, opts) {
         opts = opts || {};
         var proxied = proxyUrl(url);
@@ -36,13 +42,27 @@
             headers: opts.headers || {},
             body: opts.body || undefined,
         }).then(function (r) {
-            if (r.ok) return r;
-            return directFetch(url, opts).then(function (direct) {
-                return assertOk(direct, url);
-            }, function () {
-                return assertOk(r, url);
+            if (r.ok) {
+                try {
+                    if (r.headers.get('X-Stale') === '1') {
+                        r._stale = { ageSeg: Number(r.headers.get('X-Stale-Age-Seg')) || null };
+                    }
+                } catch (e) {}
+                return r;
+            }
+            return r.text().then(function (t) {
+                var message = 'Proxy respondeu HTTP ' + r.status;
+                try {
+                    var j = JSON.parse(t);
+                    if (j && j.erro) message = 'Proxy: ' + j.erro;
+                } catch (e) {}
+                var error = new Error(message + ' para ' + url);
+                error.status = r.status;
+                error.url = url;
+                throw error;
             });
         }).catch(function (proxyError) {
+            if (proxyError && proxyError.status) throw proxyError;
             return directFetch(url, opts).then(function (direct) {
                 return assertOk(direct, url);
             }, function () {
