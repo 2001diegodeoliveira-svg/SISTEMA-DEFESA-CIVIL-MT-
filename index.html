@@ -199,10 +199,11 @@
         }
 
         .hero-content h2 {
-            font-size: 44px;
+            font-size: 60px;
             font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 20px;
+            line-height: 1.08;
+            margin-bottom: 22px;
+            letter-spacing: -0.5px;
         }
 
         .hero-content h2 span {
@@ -210,10 +211,11 @@
         }
 
         .hero-content p {
-            font-size: 16px;
+            font-size: 19px;
+            line-height: 1.6;
             color: var(--text-muted);
-            margin: 0 auto 30px;
-            max-width: 640px;
+            margin: 0 auto 32px;
+            max-width: 680px;
             text-align: center;
         }
 
@@ -228,10 +230,11 @@
         .btn-main-alert {
             background-color: var(--accent-orange);
             color: white;
-            padding: 14px 28px;
+            padding: 16px 34px;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
+            font-size: 17px;
             display: inline-flex;
             align-items: center;
             gap: 10px;
@@ -244,7 +247,7 @@
         }
 
         .hero-subinfo {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-muted);
             display: flex;
             align-items: center;
@@ -357,9 +360,9 @@
         }
         @keyframes shimmer { to { background-position: 200% center; } }
 
-        .hero-stats { display: flex; gap: 28px; margin-top: 28px; flex-wrap: wrap; justify-content: center; }
-        .hstat b { font-size: 24px; font-weight: 800; color: var(--text-main); display: block; line-height: 1; }
-        .hstat span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; display: block; margin-top: 5px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+        .hstat b { font-size: 30px; font-weight: 800; color: var(--text-main); display: block; line-height: 1; }
+        .hstat span { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; display: block; margin-top: 6px; }
         .hstat:nth-child(2) b { color: var(--accent-orange); }
         .hstat:nth-child(3) b { color: var(--blue-glow); }
 
@@ -798,6 +801,12 @@
             .hero {
                 text-align: center;
                 padding: 50px 5% 40px;
+            }
+            .hero-content h2 {
+                font-size: 40px;
+            }
+            .hero-content p {
+                font-size: 17px;
             }
             .hero-grid-layout {
                 grid-template-columns: 1fr;
