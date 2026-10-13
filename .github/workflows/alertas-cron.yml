@@ -1,0 +1,29 @@
+# Agendador de alertas (Fase 5): avalia as regras a cada 15 min.
+# Alternativa gratuita ao cron da Vercel. Requer o secret
+# ALERTAS_CRON_SECRET cadastrado nos Secrets do repositório e
+# a variável PROD_URL apontando para o deploy (ex.:
+# https://sgi-protege.vercel.app).
+name: alertas-cron
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  avaliar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar avaliação de alertas
+        run: |
+          code=$(curl -sS -o /tmp/avaliar.json -w "%{http_code}" \
+            -X POST "$PROD_URL/api/alertas-motor/avaliar" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{}' --max-time 120)
+          echo "HTTP $code"
+          cat /tmp/avaliar.json
+          test "$code" = "200"
+        env:
+          PROD_URL: ${{ secrets.PROD_URL }}
+          CRON_SECRET: ${{ secrets.ALERTAS_CRON_SECRET }}

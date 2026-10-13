@@ -1564,6 +1564,29 @@
             <button class="mini-btn" id="drawBtn"><i data-lucide="pencil"></i> Desenhar área</button>
         </div>
         <div id="areasList"></div>
+
+        <div class="group-title"><i data-lucide="bell-ring"></i> Alertas ativos</div>
+        <div style="padding:0 2px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="mini-btn" id="pushBtn"><i data-lucide="bell-plus"></i> Ativar notificações</button>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <select class="filter-select" id="evFiltroUf" title="Filtrar por UF">
+                    <option value="">Todas UFs</option>
+                </select>
+                <select class="filter-select" id="evFiltroTipo" title="Filtrar por tipo">
+                    <option value="">Todos tipos</option>
+                    <option value="foco_novo">Foco novo</option>
+                    <option value="chuva_24h">Chuva 24h</option>
+                    <option value="aviso_inmet">Aviso INMET</option>
+                    <option value="estacao_pane">Estação em pane</option>
+                </select>
+            </div>
+            <div id="eventosLista" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto;">
+                <div style="color:#94a3b8;font-size:11px;">Carregando eventos…</div>
+            </div>
+        </div>
+        <div id="alertaBanner" style="display:none;"></div>
     </aside>
     <button class="layers-toggle" id="layersToggle" title="Mostrar/ocultar filtros"><i data-lucide="chevrons-left"></i></button>
     <button class="pluv-toggle" id="pluvToggle" title="Estações INMET — Pluviômetro"><i data-lucide="droplets"></i></button>
@@ -5181,8 +5204,14 @@ function renderAreas() {
                 <span>${a.areaKm2.toLocaleString('pt-BR')} km² · ${a.estacoes} estação(ões)</span>
             </div>
             <button title="Centralizar" aria-label="Centralizar"><i data-lucide="crosshair"></i></button>
-            <button title="Excluir" aria-label="Excluir"><i data-lucide="trash-2"></i></button>`;
-        const [zoomBtn, delBtn] = div.querySelectorAll('button');
+            <button title="Excluir" aria-label="Excluir"><i data-lucide="trash-2"></i></button>
+            <button title="Monitorar no servidor" aria-label="Monitorar"><i data-lucide="bell-ring"></i></button>`;
+        const [zoomBtn, delBtn, monBtn] = div.querySelectorAll('button');
+        if (a.serverId) monBtn.style.cssText += ';color:#4ade80;border-color:rgba(74,222,128,.4);';
+        monBtn.addEventListener('click', () => {
+            if (a.serverId) desmonitorarArea(a);
+            else monitorarArea(a);
+        });
         zoomBtn.addEventListener('click', () => {
             const poly = L.polygon(a.coords);
             map.flyToBounds(poly.getBounds().pad(0.4), { duration: .8 });
@@ -5191,6 +5220,12 @@ function renderAreas() {
             setTimeout(() => map.removeLayer(shape), 5000);
         });
         delBtn.addEventListener('click', () => {
+            if (a.serverId) {
+                fetch('/api/areas-monitoradas?id=' + encodeURIComponent(a.serverId), {
+                    method: 'DELETE',
+                    headers: tokenSessao() ? { Authorization: 'Bearer ' + tokenSessao() } : {},
+                }).catch(() => {});
+            }
             areas = areas.filter(x => x.id !== a.id);
             localStorage.setItem('dcmt_areas', JSON.stringify(areas));
             renderAreas();
@@ -5199,6 +5234,192 @@ function renderAreas() {
     });
     if (window.lucide) lucide.createIcons();
 }
+
+/* ================= Alertas ativos — áreas, eventos, push (Fase 5) ================
+   Áreas desenhadas podem ser monitoradas no servidor (regras por área);
+   eventos chegam na fila lateral com banner + som; Web Push via sw.js. */
+function tokenSessao() {
+    try { return localStorage.getItem('dcmt_token'); } catch (e) { return null; }
+}
+function bboxDeCoords(coords) {
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+    (coords || []).forEach(p => {
+        const lat = +p[0], lon = +p[1];
+        if (!isFinite(lat) || !isFinite(lon)) return;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+    });
+    if (minLat > maxLat) return null;
+    return { minLat, maxLat, minLon, maxLon };
+}
+async function monitorarArea(a) {
+    try {
+        const r = await fetch('/api/areas-monitoradas', {
+            method: 'POST',
+            headers: Object.assign({ 'Content-Type': 'application/json' },
+                tokenSessao() ? { Authorization: 'Bearer ' + tokenSessao() } : {}),
+            body: JSON.stringify({
+                nome: a.nome, coords: a.coords, bbox: bboxDeCoords(a.coords),
+                uf: (typeof ufSiglaCorrente === 'function' ? ufSiglaCorrente() : null),
+            }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error((j && j.erro) || ('HTTP ' + r.status));
+        a.serverId = j.area.id;
+        localStorage.setItem('dcmt_areas', JSON.stringify(areas));
+        renderAreas();
+        toast('Área <b>' + a.nome + '</b> em monitoramento (foco novo + aviso INMET).', true);
+    } catch (e) {
+        toast('Falha ao monitorar: ' + e.message + (tokenSessao() ? '' : ' (entre com login).'));
+    }
+}
+async function desmonitorarArea(a) {
+    if (!a.serverId) return;
+    try {
+        await fetch('/api/areas-monitoradas?id=' + encodeURIComponent(a.serverId), {
+            method: 'DELETE',
+            headers: tokenSessao() ? { Authorization: 'Bearer ' + tokenSessao() } : {},
+        });
+    } catch (e) {}
+    a.serverId = null;
+    localStorage.setItem('dcmt_areas', JSON.stringify(areas));
+    renderAreas();
+}
+
+const SEV_COR = { medio: '#eab308', alto: '#f97316', critico: '#ef4444' };
+let eventosVistos = new Set();
+let eventosTimer = null;
+function beepAlerta() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.25].forEach((t, i) => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.frequency.value = i ? 660 : 880;
+            o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
+        });
+    } catch (e) {}
+}
+function bannerAlerta(ev) {
+    const b = document.getElementById('alertaBanner');
+    if (!b) return;
+    b.style.display = 'block';
+    b.style.cssText += ';background:rgba(127,29,29,.92);border:1px solid #ef4444;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;';
+    b.innerHTML = `<b style="color:#fecaca;">${ev.severidade.toUpperCase()} · ${ev.areaNome}</b><br>${ev.titulo}<br><button class="mini-btn" id="alertaBannerOk" style="margin-top:6px;">Entendi</button>`;
+    const ok = document.getElementById('alertaBannerOk');
+    if (ok) ok.addEventListener('click', () => { b.style.display = 'none'; });
+    beepAlerta();
+}
+async function carregarEventos() {
+    const lista = document.getElementById('eventosLista');
+    if (!lista) return;
+    try {
+        const uf = (document.getElementById('evFiltroUf') || {}).value || '';
+        const tipo = (document.getElementById('evFiltroTipo') || {}).value || '';
+        const r = await fetch('/api/alertas-motor/eventos?limit=30' + (uf ? '&uf=' + uf : '') + (tipo ? '&tipo=' + tipo : ''));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        const evs = j.eventos || [];
+        if (!evs.length) {
+            lista.innerHTML = '<div style="color:#94a3b8;font-size:11px;">Sem eventos. O motor avalia a cada 15 min.</div>';
+            return;
+        }
+        lista.innerHTML = '';
+        evs.forEach(ev => {
+            const div = document.createElement('div');
+            const cor = SEV_COR[ev.severidade] || '#eab308';
+            const ja = ev.estado === 'reconhecido';
+            div.style.cssText = 'border:1px solid var(--border-color);border-left:3px solid ' + cor + ';border-radius:8px;padding:8px 10px;font-size:11.5px;' + (ja ? 'opacity:.6;' : '');
+            div.innerHTML = `<b>${ev.titulo}</b><br><span style="color:#94a3b8;">${ev.areaNome} · ${new Date(ev.criadoEm).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${ev.severidade}</span>`
+                + (ja ? `<br><span style="color:#4ade80;">✓ reconhecido</span>` : `<br><button class="mini-btn" data-rec="${ev.id}" style="margin-top:6px;">Reconhecer</button>`);
+            lista.appendChild(div);
+            if (!ja && !eventosVistos.has(ev.id)) {
+                eventosVistos.add(ev.id);
+                if (eventosVistos.size > 1 || document.hasFocus()) bannerAlerta(ev);
+                else eventosVistos.add(ev.id);
+            }
+        });
+        lista.querySelectorAll('[data-rec]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!tokenSessao()) { toast('Entre com login para reconhecer.'); return; }
+                await fetch('/api/alertas-motor/reconhecer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tokenSessao() },
+                    body: JSON.stringify({ id: btn.getAttribute('data-rec') }),
+                });
+                carregarEventos();
+            });
+        });
+        if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        lista.innerHTML = '<div style="color:#94a3b8;font-size:11px;">Eventos indisponíveis.</div>';
+    }
+}
+function agendaEventos() {
+    if (eventosTimer) clearInterval(eventosTimer);
+    eventosTimer = setInterval(() => { if (!document.hidden) carregarEventos(); }, 5 * 60 * 1000);
+}
+async function ativarPush() {
+    try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            toast('Este navegador não suporta notificações push.'); return;
+        }
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { toast('Permissão de notificação negada.'); return; }
+        const cfg = await (await fetch('/api/push/config')).json();
+        if (!cfg.ativo) { toast('Push desativado no servidor (VAPID).'); return; }
+        const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: cfg.vapidPublicKey,
+        });
+        const r = await fetch('/api/push/subscrever', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subscription: sub.toJSON() }),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        toast('Notificações <b>ativadas</b> neste dispositivo.', true);
+    } catch (e) {
+        toast('Falha ao ativar: ' + e.message);
+    }
+}
+// preenche filtro de UF com os estados carregados
+let _ufTentativas = 0;
+function popularFiltroUfEventos() {
+    const sel = document.getElementById('evFiltroUf');
+    if (!sel) return;
+    if (sel.options.length > 1) return;
+    try {
+        const estados = (typeof ibgeStates !== 'undefined' && ibgeStates) ? ibgeStates : [];
+        if (!estados.length && ++_ufTentativas < 20) {
+            setTimeout(popularFiltroUfEventos, 3000);
+            return;
+        }
+        estados.forEach(e => {
+            const o = document.createElement('option');
+            o.value = e.sigla; o.textContent = e.sigla;
+            sel.appendChild(o);
+        });
+    } catch (e) {}
+}
+(function initAlertasUI() {
+    try {
+        const pushBtn = document.getElementById('pushBtn');
+        if (pushBtn) pushBtn.addEventListener('click', ativarPush);
+        const fUf = document.getElementById('evFiltroUf');
+        const fTipo = document.getElementById('evFiltroTipo');
+        if (fUf) fUf.addEventListener('change', carregarEventos);
+        if (fTipo) fTipo.addEventListener('change', carregarEventos);
+        popularFiltroUfEventos();
+        carregarEventos();
+        agendaEventos();
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) carregarEventos();
+        });
+    } catch (e) {}
+})();
 
 /* ================= Busca (locais + coordenada) ================= */
 const searchInput = document.getElementById('searchInput');

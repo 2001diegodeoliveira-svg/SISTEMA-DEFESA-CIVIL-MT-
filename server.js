@@ -89,6 +89,14 @@ function wrap(fn) {
 /* Todas as rotas /api/* → roteador único (igual ao deploy na Vercel). */
 app.all('/api/*', wrap(apiRouter));
 
+// Service worker na raiz (escopo /): .js na raiz é bloqueado pela
+// allowlist abaixo, então serve explícito (antes dela) com escopo.
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, 'sw.js'));
+});
+
 // Job de sincronização Waze/TomTom — só roda no server.js
 // standalone (processo Node persistente); em serverless (Vercel) use
 // um agendador externo chamando POST /api/waze?action=sync e

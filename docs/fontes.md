@@ -113,6 +113,31 @@ requisição). Fallback "último válido" em `system_config`
 - **SNISB**: hoje é snapshot estático `js/barragens_mt.json`
   (sem frescor) — nacionalizar na Fase 3.
 
+## Fase 5 — alertas ativos (motor no servidor)
+
+- Áreas em `system_config` doc `areas-monitoradas`; eventos em
+  `alertas-eventos` (teto 500); snapshots em `motor-snapshots`;
+  auditoria em `audit_logs`; push subscriptions em
+  `push-subscriptions`; chats Telegram em `telegram-chats`.
+- Avaliação: `POST /api/alertas-motor/avaliar` com
+  `Authorization: Bearer <ALERTAS_CRON_SECRET>` (ou JWT
+  admin/avancado). Agendador: `.github/workflows/alertas-cron.yml`
+  (15 min; secrets `PROD_URL` + `ALERTAS_CRON_SECRET`).
+- Regras por área: `foco_novo` (INPE CSV do dia), `chuva_24h`
+  (open-meteo no centroide; default = limiar global do
+  pluv-alerta), `aviso_inmet` (CAP vigente com polígono),
+  `estacao_pane` (INMET). Dedup por área+regra+dia; níveis altos
+  do ENOS continuam exigindo confirmação humana.
+- Canais: Web Push (VAPID: `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`;
+  chave pública em `GET /api/push/config`; SW em `/sw.js`) e
+  Telegram outbound (`TELEGRAM_BOT_TOKEN`; webhook
+  `/api/telegram/webhook` com `/start` e `/status`;
+  `TELEGRAM_WEBHOOK_SECRET` valida a origem).
+- Fila: `GET /api/alertas-motor/eventos?uf=&tipo=&desde=&limit=`;
+  reconhecer exige login (`POST .../reconhecer {id}`).
+- Mapa: botão sino por área salva no servidor, fila lateral com
+  filtros, banner + som, botão Ativar notificações.
+
 ## Como adicionar uma fonte
 
 1. Acrescente a entrada em `api/_lib/origens.js` (hosts + TTL).
