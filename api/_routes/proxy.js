@@ -178,10 +178,12 @@ module.exports = serve(async function handler(req) {
     const buf = await readUpstreamBody(upstream, origem.maxBytes);
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
     const latenciaMs = Date.now() - inicio;
+    await registrarSaude(origem.id, upstream.ok, latenciaMs);
 
     // Guarda o último válido para fallback (X-Stale) — corpos
     // grandes demais pulam o fallback, mas ainda são servidos.
-    if (upstream.ok && buf.length <= MAX_FALLBACK_BYTES) {      try {
+    if (upstream.ok && buf.length <= MAX_FALLBACK_BYTES) {
+      try {
         await salvarFallback(chaveFallback(parsed), {
           status: upstream.status,
           contentType,
@@ -204,6 +206,7 @@ module.exports = serve(async function handler(req) {
     });
   } catch (e) {
     console.error('[proxy] falha ao buscar a origem:', e && e.message);
+    await registrarSaude(origem.id, false);
     // Fallback: último dado válido, sinalizado como antigo.
     try {
       const velho = await lerFallback(chaveFallback(parsed));

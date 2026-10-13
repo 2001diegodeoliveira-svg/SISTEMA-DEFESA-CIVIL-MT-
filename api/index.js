@@ -33,6 +33,8 @@ const handlers = {
   'occurrences': require('./_routes/occurrences'),
   'reports': require('./_routes/reports'),
   'proxy': require('./_routes/proxy'),
+  'fontes': require('./_routes/fontes'),
+  'fontes/saude': require('./_routes/fontes'),
   'waze': require('./_routes/waze'),
   'tomtom': require('./_routes/tomtom'),
   'gestao': require('./_routes/gestao'),

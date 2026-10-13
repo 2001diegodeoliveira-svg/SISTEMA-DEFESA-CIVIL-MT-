@@ -1263,6 +1263,13 @@
             .temp-badge .tb-extra { display: none; }
             .temp-badge .tb-feels { font-size: 7px; }
         }
+        .fonte-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:baseline; }
+        #fontesCorpo { display:flex; flex-direction:column; gap:6px; margin-top:8px; max-height:46vh; overflow:auto; }
+        .fonte-linha { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); background:rgba(30,41,59,.5); border:1px solid var(--border-color); border-radius:8px; padding:7px 10px; }
+        .fonte-linha b { color:var(--text-main); min-width:130px; }
+        .fonte-linha span:last-child { margin-left:auto; text-align:right; }
+        .fontes-vazio { font-size:12.5px; color:var(--text-muted); }
+        #connBanner { position:fixed; top:0; left:0; right:0; z-index:4000; display:flex; align-items:center; justify-content:center; gap:8px; background:#7f1d1d; color:#fff; font-size:13px; font-weight:700; padding:9px 12px; }
     </style>
     <script src="js/demo.js"></script>
     <script src="js/protecao.js"></script>
@@ -1954,9 +1961,13 @@
             <h3><i data-lucide="database"></i> Fontes oficiais de dados</h3>
             <p class="note">O painel integra dados públicos e oficiais, mantendo a atribuição de origem. Quando não há serviço web compatível, o acesso é direcionado ao portal oficial (conforme proposta técnica, item 12).</p>
             <div id="portalsList"></div>
+            <h3 style="margin-top:14px;"><i data-lucide="activity"></i> <span id="fontesTitulo">Saúde das fontes</span></h3>
+            <p class="note">Estado em tempo real das fontes consumidas pelo painel (verde ok · amarelo lento · vermelho fora do ar).</p>
+            <div id="fontesCorpo"><p class="note">Carregando…</p></div>
             <button class="modal-close" id="closeSources">Fechar</button>
         </div>
     </div>
+    <div id="connBanner" style="display:none;"><i data-lucide="wifi-off"></i><span>Sem conexão — atualizações pausadas. Reconectando automaticamente…</span></div>
 </div>
 
 <!-- Popup central: alertas de chuva (INMET) + câmeras SINFRA próximas -->
@@ -1994,6 +2005,7 @@
 <script src="js/session.js"></script>
 <script>dcRenderUserArea();</script>
 <script src="js/monitor.js"></script>
+<script src="js/saude.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 /* ================= Mapa base ================= */
