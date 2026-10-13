@@ -75,15 +75,31 @@ requisição). Fallback "último válido" em `system_config`
   paginado (MaxRecordCount 2000), cache 24h.
 - Previsão por município: BrasilAPI CPTEC **fora do ar (HTTP 500)** —
   substituída por Open-Meteo por coordenada (nacional, verificada).
-- **CEMADEN: sem API legível por máquina encontrada** (Painel de
-  Alertas é HTML server-side; dados via Mapa Interativo com
-  download manual). Mantidos links oficiais; revisitar se surgir
-  endpoint documentado.
-- **Terras Indígenas: camada real inviável por ora** (geoserver
-  FUNAI com TLS inválido a partir daqui; portal no ar). Mantido
-  link ao portal FUNAI; revisitar.
 - Focos 48h WFS: filtro por UF + `bbox` da viewport (WFS 1.1.0,
   ordem lat,lon em EPSG:4326).
+
+## Fase 4 — novas camadas de risco (verificado ao vivo em 2026-10-13)
+
+- **DETER (desmatamento)** ✅ — WMS raster nacional sem chave:
+  `.../geoserver/deter-amz/wms` (`deter-amz:deter_amz`) e
+  `.../geoserver/deter-cerrado-nb/wms` (`deter-cerrado-nb:deter_cerrado`),
+  ambos HTTP 200. Tiles diretos (só baixa a área visível).
+  Detalhe vetorial (WFS) fica para fase futura.
+- **Qualidade do ar / fumaça** ✅ — `air-quality-api.open-meteo.com`
+  (PM2.5/PM10/AQI, sem chave, HTTP 200). Camada nos pontos das
+  estações INMET; **é modelo CAMS, não medição** (popup declara).
+- **Raios** ❌ — GOES GLM é netCDF em buckets (exige deps nativas +
+  pipeline próprio, fora do stack); Blitzortung é só para operadores
+  e proíbe uso comercial/proteção; BrasilDAT restrito. Adiado com
+  alternativas documentadas (parceria Blitzortung ou pipeline GLM).
+- **MapBiomas Alerta** ❌ — API GraphQL exige conta + Bearer token
+  pessoal (SignIn, sem conta de serviço). Viável com `MAPBIOMAS_TOKEN`
+  futuro; sem token, sem camada (regra: sem mock em produção).
+- **S2iD ocorrências** ❌ — portal JSF com login, sem API aberta;
+  alternativa é espelho Base dos Dados (exige cadastro). Mantido
+  fora; revisitar com credencial.
+- **CEMADEN / Terras Indígenas**: vereditos da Fase 3 mantidos
+  (sem API legível por máquina / geoserver FUNAI com TLS inválido).
 
 ## Fontes com problema conhecido
 

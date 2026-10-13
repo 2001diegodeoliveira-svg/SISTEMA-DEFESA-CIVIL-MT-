@@ -28,6 +28,7 @@ const FONTES = [
   { id: 'inmet-avisos', hosts: ['apiprevmet3.inmet.gov.br'], ttlSeg: 600, staleSeg: 1800, timeoutMs: 15000 },
   { id: 'inmet-graficos', hosts: ['tempo.inmet.gov.br'], ttlSeg: 3600, staleSeg: 7200, timeoutMs: 10000 },
   { id: 'open-meteo', hosts: ['api.open-meteo.com'], ttlSeg: 600, staleSeg: 1800, timeoutMs: 8000 },
+  { id: 'open-meteo-aq', hosts: ['air-quality-api.open-meteo.com'], ttlSeg: 1800, staleSeg: 3600, timeoutMs: 8000 },
   { id: 'ibge', hosts: ['servicodados.ibge.gov.br', 'www.ibge.gov.br'], ttlSeg: 86400, staleSeg: 86400, timeoutMs: 10000 },
   { id: 'msn', hosts: ['assets.msn.com'], ttlSeg: 900, staleSeg: 3600, timeoutMs: 10000 },
   { id: 'brasilapi', hosts: ['brasilapi.com.br'], ttlSeg: 1800, staleSeg: 3600, timeoutMs: 10000 },

@@ -24,6 +24,8 @@
        intervalo de refresh, auto-load no boot e loader global. */
     var CAMADAS = [
         { check: 'focos', meta: 'metaFocos', fonte: 'inpe-csv', refreshMin: 10, auto: true, loader: 'loadFocos' },
+        { check: 'deter', meta: 'metaDeter', fonte: null, refreshMin: 0, auto: false, loader: 'loadDeter' },
+        { check: 'qualidadeAr', meta: 'metaQualidadeAr', fonte: 'open-meteo-aq', refreshMin: 60, auto: false, loader: 'loadQualidadeAr' },
         { check: 'wmsFocos48h', meta: 'metaWmsFocos48h', fonte: 'inpe-terrabrasilis', refreshMin: 0, auto: false, loader: null },
         { check: 'anaHydrology', meta: 'metaAnaHydrology', fonte: null, refreshMin: 15, auto: true, loader: 'loadAnaHydrology' },
         { check: 'inmetStations', meta: 'metaInmet', fonte: 'inmet-estacoes', refreshMin: 15, auto: true, loader: 'loadInmetStations' },
@@ -61,10 +63,7 @@
             if (!meta) return;
             if (/carregando/i.test(meta.textContent || '')) return; // não atropela loading
             var dot = '<span class="fonte-dot" style="background:__COR__"></span> ';
-            if (!c.fonte) {
-                meta.innerHTML = dot.replace('__COR__', '#94a3b8') + 'sem telemetria de fonte';
-                return;
-            }
+            if (!c.fonte) return; // rotas próprias/estáticas: mantém o texto do loader
             var s = saudePorFonte[c.fonte];
             if (!s || !s.ultimoSucesso) {
                 meta.innerHTML = dot.replace('__COR__', '#94a3b8') + 'sem registro da fonte';

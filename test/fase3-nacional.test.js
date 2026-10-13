@@ -39,6 +39,13 @@ const ANA_XML = `<DataSet>
 <Table><NomeEstacao>VELHA</NomeEstacao><CodEstacao>01560001</CodEstacao><Municipio-UF>CUIABA-MT</Municipio-UF><Latitude>-15,60</Latitude><Longitude>-56,10</Longitude><NomeRio></NomeRio><StatusEstacao>Inativo</StatusEstacao></Table>
 </DataSet>`;
 
+test('registro de fontes inclui qualidade do ar (Open-Meteo AQ)', () => {
+  const { origemPara } = require('../api/_lib/origens');
+  const aq = origemPara('air-quality-api.open-meteo.com');
+  assert.equal(aq.id, 'open-meteo-aq');
+  assert.ok(aq.ttlSeg >= 600);
+});
+
 test('ANA: default MT (compat), ?uf=SP, ?uf=BR, UF inválida', async () => {
   const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
   const fetchOrig = global.fetch;
