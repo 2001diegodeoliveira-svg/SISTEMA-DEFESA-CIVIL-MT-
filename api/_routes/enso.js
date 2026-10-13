@@ -56,7 +56,7 @@ module.exports = serve(async function handler(req) {
       enso.lerLimiares(),
       enso.lerRegras(),
       Promise.resolve(enso.lerFontes()),
-      enso.ultimaAmostra(),
+      enso.ultimaAmostra('ONI'),
       enso.lerFonteStatus(),
       enso.lerAlertas(),
     ]);

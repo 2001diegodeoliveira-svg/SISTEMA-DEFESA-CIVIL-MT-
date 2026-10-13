@@ -20,14 +20,16 @@ const ENV_KEYS = [
   'AUTH_LOGIN_ENABLED', 'DEMO_HORAS', 'JWT_SECRET', 'VERCEL', 'VERCEL_ENV',
   'NODE_ENV', 'FILE_STORE', 'DATABASE_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN',
   'SEED_USERS', 'ENSO_DRY_RUN', 'ENSO_WEBHOOK_URL', 'ENSO_RULES_JSON',
-  'ENSO_HISTERESE', 'ENSO_REAVISO_HORAS', 'ENSO_NOAA_ONI_URL',
+  'ENSO_HISTERESE', 'ENSO_REAVISO_HORAS', 'ENSO_NOAA_ONI_URL', 'ENSO_NOAA_SST_URL',
+  'ENSO_NOAA_ENABLED',
   'ENSO_NEUTRO_BANDA', 'ENSO_FRACO', 'ENSO_MODERADO', 'ENSO_FORTE', 'ENSO_MUITO_FORTE',
 ];
 
 function setupEnv() {
   for (const k of ENV_KEYS) {
     if (['ENSO_DRY_RUN', 'ENSO_WEBHOOK_URL', 'ENSO_RULES_JSON', 'ENSO_HISTERESE',
-      'ENSO_REAVISO_HORAS', 'ENSO_NOAA_ONI_URL', 'ENSO_NEUTRO_BANDA', 'ENSO_FRACO',
+      'ENSO_REAVISO_HORAS', 'ENSO_NOAA_ONI_URL', 'ENSO_NOAA_SST_URL', 'ENSO_NOAA_ENABLED',
+      'ENSO_NEUTRO_BANDA', 'ENSO_FRACO',
       'ENSO_MODERADO', 'ENSO_FORTE', 'ENSO_MUITO_FORTE'].includes(k)) delete process.env[k];
   }
   process.env.VERCEL = '1';
@@ -249,6 +251,7 @@ test('coletor MOCK é claramente marcado; coleta é idempotente', async () => {
   const snap = await snapshot();
   try {
     setupEnv();
+    process.env.ENSO_NOAA_ENABLED = '0'; // isola o MOCK (sem rede neste teste)
     await limparEnso();
     const m = await enso.coletorMock().coletar();
     assert.equal(m.mock, true);
@@ -270,18 +273,93 @@ test('coletor MOCK é claramente marcado; coleta é idempotente', async () => {
   }
 });
 
-test('falha de fonte (NOAA sem URL) não derruba o módulo', async () => {
+test('falha de fonte (NOAA fora do ar) não derruba o módulo', async () => {
   const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
   const snap = await snapshot();
+  const fetchOrig = global.fetch;
   try {
     setupEnv();
     delete process.env.ENSO_NOAA_ONI_URL;
+    global.fetch = () => Promise.reject(new Error('rede simulada fora'));
     await limparEnso();
     const r = await enso.executarColeta({ usarMock: false });
     assert.equal(r.amostras.length, 0);
     assert.equal(r.fontes.noaa.ok, false);
-    assert.match(r.fontes.noaa.mensagem, /não configurada/);
+    assert.match(r.fontes.noaa.mensagem, /rede simulada/);
   } finally {
+    global.fetch = fetchOrig;
+    await restore(snap);
+    for (const [k, v] of prev) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    demoReset();
+  }
+});
+
+/* Fixtures no formato real da NOAA/CPC (trechos de oni.ascii.txt e
+ * sstoi.indices verificados ao vivo em 2026-10-11). */
+const FIXTURE_ONI = [
+  'SEAS  YR   TOTAL   ANOM',
+  'AMJ 2026  28.74   0.95',
+  'MJJ 2026  29.02   1.39',
+  'JJA 2026  29.09   1.80',
+  'JAS 2026  29.12   2.16',
+  'linha ruim sem formato',
+].join('\n');
+const FIXTURE_SST = [
+  'YR MON  NINO1+2   ANOM   NINO3    ANOM   NINO4    ANOM NINO3.4    ANOM',
+  '2026   8   24.93    4.08   28.35    3.13   29.63    0.93   29.42    2.52',
+  '2026   9   25.27    4.69   28.65    3.64   29.62    0.95   29.60    2.84',
+].join('\n');
+
+function stubFetchNoaa() {
+  const orig = global.fetch;
+  global.fetch = (url) => {
+    const u = String(url);
+    const texto = u.includes('sstoi') ? FIXTURE_SST : FIXTURE_ONI;
+    return Promise.resolve({ ok: true, text: () => Promise.resolve(texto) });
+  };
+  return orig;
+}
+
+test('parsers NOAA extraem o formato real; linhas ruins são ignoradas', () => {
+  const oni = enso.parseOniAscii(FIXTURE_ONI);
+  assert.equal(oni.length, 4);
+  assert.deepEqual([oni[3].temporada, oni[3].ano, oni[3].anom], ['JAS', 2026, 2.16]);
+  const sst = enso.parseSstoi(FIXTURE_SST);
+  assert.equal(sst.length, 2);
+  assert.equal(sst[1].nino34.anom, 2.84);
+  assert.throws(() => enso.parseOniAscii('só cabeçalho\n'), /sem linhas válidas/);
+  assert.throws(() => enso.parseSstoi('nada aqui'), /sem linhas válidas/);
+  assert.equal(enso.dataDoTrimestre('JAS', 2026), '2026-09-01');
+  assert.equal(enso.dataDoTrimestre('NDJ', 2025), '2026-01-01');
+  assert.equal(enso.dataDoTrimestre('XXX', 2026), null);
+});
+
+test('coletor NOAA real: 24 ONI + 4 regiões, idempotente, com mock desligável', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  const fetchOrig = stubFetchNoaa();
+  try {
+    setupEnv();
+    await limparEnso();
+    const lote = await enso.coletorNoaa().coletar({ timeoutMs: 5000 });
+    assert.equal(lote.filter((a) => a.indice === 'ONI').length, 4);
+    assert.ok(lote.some((a) => a.indice === 'NINO34' && a.valor === 2.84));
+    assert.ok(lote.every((a) => a.mock === false && a.unidade === '°C'));
+    const r1 = await enso.executarColeta({ usarMock: false });
+    assert.ok(r1.amostras.length >= 8);
+    assert.equal(r1.fontes.noaa.ok, true);
+    const n1 = (await readCollection('system_config')).find((d) => d.id === 'enso-indice').lista.length;
+    await enso.executarColeta({ usarMock: false });
+    const n2 = (await readCollection('system_config')).find((d) => d.id === 'enso-indice').lista.length;
+    assert.equal(n2, n1); // idempotente: nada novo
+    const ultimaOni = await enso.ultimaAmostra('ONI');
+    assert.equal(ultimaOni.valor, 2.16);
+    assert.equal(enso.classificar(ultimaOni.valor).intensidade, 'MUITO_FORTE');
+  } finally {
+    global.fetch = fetchOrig;
     await restore(snap);
     for (const [k, v] of prev) {
       if (v === undefined) delete process.env[k];

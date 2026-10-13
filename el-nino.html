@@ -333,6 +333,14 @@
 
     <section id="view-fontes" class="tab-view">
         <h3 class="section-title"><i data-lucide="external-link"></i> Boletins e fontes oficiais</h3>
+        <div class="card" style="margin-bottom:16px;">
+            <h4><i data-lucide="refresh-ccw"></i> Atualizar da fonte oficial (gestores)</h4>
+            <p>Coleta agora os índices NOAA/CPC (ONI + regiões Niño) e registra no servidor, com auditoria. Falha de fonte não derruba o módulo.</p>
+            <div class="form-row">
+                <button class="btn primary" id="btnColetar"><i data-lucide="download"></i> Coletar agora</button>
+            </div>
+            <p id="coletaResultado" style="margin-top:10px;font-size:13px;"></p>
+        </div>
         <div class="links-grid" id="fontesGrid">
             <div class="card"><p>Carregando fontes…</p></div>
         </div>
@@ -592,6 +600,21 @@
         }
 
         carregarEstado();
+        var btnColetar = document.getElementById('btnColetar');
+        if (btnColetar) {
+            btnColetar.addEventListener('click', function () {
+                var out = document.getElementById('coletaResultado');
+                btnColetar.disabled = true;
+                out.textContent = 'Coletando da NOAA/CPC…';
+                api('enso', { method: 'POST', body: { acao: 'coletar', usarMock: false } }).then(function (r) {
+                    btnColetar.disabled = false;
+                    if (!r.ok) { out.textContent = 'Falha: ' + ((r.data && r.data.erro) || r.status) + ' (gestores: admin/avancado).'; return; }
+                    var n = (r.data.amostras || []).length;
+                    out.textContent = 'Coleta concluída: ' + n + ' amostra(s) da NOAA/CPC registradas.';
+                    carregarEstado();
+                });
+            });
+        }
         if (window.lucide) lucide.createIcons();
     </script>
 </body>

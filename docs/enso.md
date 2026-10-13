@@ -37,7 +37,9 @@ fase futura, se o volume justificar.
 | `ENSO_DRY_RUN` | `1` | `1` = nenhum envio real (dev/teste); `0` + `ENSO_WEBHOOK_URL` = webhook real |
 | `ENSO_WEBHOOK_URL` | vazio | Destino do canal webhook |
 | `ENSO_EMAIL_DESTINO` | vazio | Destino padrão do canal e-mail (via outbox p/ MTA externo) |
-| `ENSO_NOAA_ONI_URL` | vazio | URL do coletor NOAA (sem ela, coletor informa "não configurado") |
+| `ENSO_NOAA_ENABLED` | `1` | `0` desliga o coletor real (só MOCK) |
+| `ENSO_NOAA_ONI_URL` | `https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt` | ONI (verificado ao vivo em 2026-10-11) |
+| `ENSO_NOAA_SST_URL` | `https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices` | Niño 1+2/3/4/3.4 (verificado ao vivo em 2026-10-11) |
 | `ENSO_FONTE_STALE_HORAS` | `72` | Idade máxima de fonte saudável |
 | `ENSO_FONTES_JSON` | (6 fontes oficiais) | Links exibidos na UI (configuráveis) |
 
@@ -72,10 +74,13 @@ em auditoria com regra, gatilho, canal, horário e resultado.
 `executarColeta({usarMock})` roda cada coletor isolado
 (try/catch por fonte), com retentativa + backoff + timeout, e
 atualiza `fonte_status` (com flag `stale`). Upsert idempotente
-por `(fonte, observadoEm)`. Coletor NOAA exige
-`ENSO_NOAA_ONI_URL`; **URLs oficiais não verificadas ao vivo
-nesta fase** — configure e valide antes de produção. Sem URL,
-o módulo opera com MOCK claramente marcado (`mock: true`).
+por `(fonte, observadoEm)` (teto de 500 no doc `enso-indice`).
+Coletor NOAA/CPC com URLs **verificadas ao vivo em 2026-10-11**:
+`oni.ascii.txt` (linhas `SEAS YR TOTAL ANOM`; coleta os últimos
+24 trimestres) e `sstoi.indices` (Niño 1+2/3/4/3.4 mensais;
+coleta a última de cada região). `ENSO_NOAA_ENABLED=0` desliga o
+coletor real. Sem dado real, o módulo opera com MOCK claramente
+marcado (`mock: true`).
 
 ## Como adicionar um coletor
 

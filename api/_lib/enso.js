@@ -17,9 +17,9 @@
      confirmação humana (ver avaliar() + confirmarAlerta()).
    - Falha de UMA fonte nunca derruba o módulo: cada coletor
      roda isolado e atualiza "fonte_status".
-   - Sem URLs inventadas: o coletor NOAA só opera com
-     ENSO_NOAA_ONI_URL configurada; sem isso, usa MOCK
-     claramente marcado (mock:true) e avisa em fonte_status.
+   - Sem URLs inventadas: o coletor NOAA usa URLs verificadas ao vivo
+     em 2026-10-11 (oni.ascii.txt + sstoi.indices do CPC/NCEP),
+     sobrescrevíveis por env; o MOCK segue claramente marcado.
    - Persistência adaptada ao banco existente: usa as coleções
      genéricas do store — "system_config" (docs id-chaveados,
      mapeada p/ tabela system_config no PostgreSQL) e
@@ -596,41 +596,131 @@ function coletorMock() {
   };
 }
 
-/** Coletor NOAA/CPC. URL 100% configurável (ENSO_NOAA_ONI_URL);
- *  sem URL, o coletor informa "não configurado" em vez de falhar.
- *  AVISO: URLs oficiais não verificadas ao vivo nesta fase —
- *  configure e valide antes de ativar em produção. */
+/** Coletor NOAA/CPC — URLs verificadas ao vivo em 2026-10-11.
+ *  ONI:  https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt
+ *         (linhas "SEAS YR TOTAL ANOM", ex.: "JAS 2026  29.12   2.16")
+ *  Regiões Niño (1+2, 3, 4, 3.4 — total + anomalia, mensal):
+ *         https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices
+ *  Ambas 100% configuráveis (ENSO_NOAA_ONI_URL / ENSO_NOAA_SST_URL);
+ *  ENSO_NOAA_ENABLED=0 desliga o coletor (mantém só o MOCK). */
+const URL_ONI_PADRAO = 'https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt';
+const URL_SST_PADRAO = 'https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices';
+
+function noaaEnabled() {
+  return envFlag('ENSO_NOAA_ENABLED', true);
+}
+function urlNoaaOni() {
+  return (process.env.ENSO_NOAA_ONI_URL || '').trim() || URL_ONI_PADRAO;
+}
+function urlNoaaSst() {
+  return (process.env.ENSO_NOAA_SST_URL || '').trim() || URL_SST_PADRAO;
+}
+
+/* Último mês de cada trimestre ONI -> data ISO (dia 1). NDJ termina
+ * em janeiro do ano seguinte. */
+const FIM_TRIMESTRE = {
+  DJF: [2, 0], JFM: [3, 0], FMA: [4, 0], MAM: [5, 0], AMJ: [6, 0], MJJ: [7, 0],
+  JJA: [8, 0], JAS: [9, 0], ASO: [10, 0], SON: [11, 0], OND: [12, 0], NDJ: [1, 1],
+};
+function dataDoTrimestre(temporada, ano) {
+  const fim = FIM_TRIMESTRE[String(temporada || '').toUpperCase()];
+  if (!fim || !Number.isInteger(ano)) return null;
+  const mm = String(fim[0]).padStart(2, '0');
+  return `${ano + fim[1]}-${mm}-01`;
+}
+
+/** Parser do oni.ascii.txt. Devolve linhas cronológicas
+ *  [{temporada, ano, total, anom}]. Ignora cabeçalho e linhas ruins;
+ *  lança Error se nenhuma linha válida. */
+function parseOniAscii(texto) {
+  const linhas = [];
+  for (const crua of String(texto || '').split(/\r?\n/)) {
+    const m = crua.trim().match(/^([A-Z]{3})\s+(\d{4})\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*$/);
+    if (!m) continue;
+    if (!FIM_TRIMESTRE[m[1]]) continue;
+    linhas.push({ temporada: m[1], ano: Number(m[2]), total: Number(m[3]), anom: Number(m[4]) });
+  }
+  if (!linhas.length) throw new Error('oni.ascii.txt sem linhas válidas (formato mudou?)');
+  return linhas;
+}
+
+/** Parser do sstoi.indices. Devolve linhas cronológicas
+ *  [{ano, mes, nino12:{total,anom}, nino3, nino4, nino34}].
+ *  Ignora cabeçalho e linhas ruins; lança Error se vazio. */
+function parseSstoi(texto) {
+  const linhas = [];
+  for (const crua of String(texto || '').split(/\r?\n/)) {
+    const p = crua.trim().split(/\s+/);
+    if (p.length < 10) continue;
+    const ano = Number(p[0]);
+    const mes = Number(p[1]);
+    const nums = p.slice(2, 10).map(Number);
+    if (!Number.isInteger(ano) || !(mes >= 1 && mes <= 12) || nums.some((n) => !Number.isFinite(n))) continue;
+    const [t12, a12, t3, a3, t4, a4, t34, a34] = nums;
+    linhas.push({
+      ano, mes,
+      nino12: { total: t12, anom: a12 }, nino3: { total: t3, anom: a3 },
+      nino4: { total: t4, anom: a4 }, nino34: { total: t34, anom: a34 },
+    });
+  }
+  if (!linhas.length) throw new Error('sstoi.indices sem linhas válidas (formato mudou?)');
+  return linhas;
+}
+
+async function buscarTexto(url, timeoutMs) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function coletorNoaa() {
   return {
     id: 'noaa',
-    nome: 'NOAA/CPC (URL configurável)',
-    async coletar({ timeoutMs = 10000 } = {}) {
-      const url = (process.env.ENSO_NOAA_ONI_URL || '').trim();
-      if (!url) throw new Error('ENSO_NOAA_ONI_URL não configurada (coletor desativado; use o MOCK)');
+    nome: 'NOAA/CPC (ONI + regiões Niño)',
+    /** Devolve ARRAY de amostras (últimos 24 ONI + última de cada
+     *  região Niño). Falha com Error após retentativa. */
+    async coletar({ timeoutMs = 15000 } = {}) {
+      if (!noaaEnabled()) throw new Error('coletor NOAA desligado (ENSO_NOAA_ENABLED=0)');
+      const urlOni = urlNoaaOni();
+      const urlSst = urlNoaaSst();
       let ultimoErro = null;
       for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
-          const res = await fetch(url, { signal: ctrl.signal });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const texto = await res.text();
-          // Parser defensivo Fase 1: aceita JSON {valor|value|anomaly}.
-          // Formatos ASCII tabulares da NOAA exigem parser dedicado
-          // (fora do escopo: configure e valide antes de ativar).
-          let valor = null;
-          try {
-            const j = JSON.parse(texto);
-            const cand = j.valor ?? j.value ?? j.anomaly ?? j.oni;
-            if (typeof cand === 'number' && Number.isFinite(cand)) valor = cand;
-          } catch { /* não-JSON: sem parser nesta fase */ }
-          if (valor === null) throw new Error('formato não reconhecido (Fase 1: parser tabular NOAA pendente de validação)');
-          return { indice: 'ONI', valor, unidade: '°C', observadoEm: new Date().toISOString(), fonte: url, mock: false };
+          const [txtOni, txtSst] = await Promise.all([
+            buscarTexto(urlOni, timeoutMs),
+            buscarTexto(urlSst, timeoutMs),
+          ]);
+          const oni = parseOniAscii(txtOni);
+          const sst = parseSstoi(txtSst);
+          const amostras = [];
+          for (const r of oni.slice(-24)) {
+            const obs = dataDoTrimestre(r.temporada, r.ano);
+            if (!obs) continue;
+            amostras.push({
+              indice: 'ONI', valor: r.anom, total: r.total,
+              temporada: r.temporada, ano: r.ano, unidade: '°C',
+              observadoEm: obs, fonte: urlOni, mock: false,
+            });
+          }
+          const u = sst[sst.length - 1];
+          const obsSst = `${u.ano}-${String(u.mes).padStart(2, '0')}-01`;
+          for (const [indice, d] of [['NINO12', u.nino12], ['NINO3', u.nino3], ['NINO4', u.nino4], ['NINO34', u.nino34]]) {
+            amostras.push({
+              indice, valor: d.anom, total: d.total, ano: u.ano, mes: u.mes,
+              unidade: '°C', observadoEm: obsSst, fonte: urlSst, mock: false,
+            });
+          }
+          if (!amostras.length) throw new Error('nenhuma amostra extraída (verifique os formatos)');
+          return amostras;
         } catch (e) {
           ultimoErro = e;
           await new Promise((r) => setTimeout(r, 500 * tentativa)); // backoff
-        } finally {
-          clearTimeout(t);
         }
       }
       throw new Error(`coleta NOAA falhou após retentativa: ${ultimoErro && ultimoErro.message}`);
@@ -675,11 +765,17 @@ async function registrarAmostra(amostra) {
   return lista;
 }
 
-async function ultimaAmostra() {
+async function ultimaAmostra(indice) {
   try {
     const col = await readCollection('system_config');
     const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-indice');
     const lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
+    if (indice) {
+      for (let i = lista.length - 1; i >= 0; i -= 1) {
+        if (lista[i] && lista[i].indice === indice) return lista[i];
+      }
+      return null;
+    }
     return lista.length ? lista[lista.length - 1] : null;
   } catch {
     return null;
@@ -696,11 +792,15 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
   const amostras = [];
   for (const c of coletores) {
     try {
-      const amostra = await c.coletar({ timeoutMs });
-      await registrarAmostra(amostra);
-      amostras.push(amostra);
-      fontes[c.id] = { ok: true, ultimoSucesso: new Date().toISOString(), ultimoErro: null, mensagem: `OK (${amostra.indice}=${amostra.valor}°C)` };
-      logger.info('enso.coleta.ok', `${c.id}: ${amostra.valor}°C.`, { fonte: c.id });
+      const resultado = await c.coletar({ timeoutMs });
+      const lote = Array.isArray(resultado) ? resultado : [resultado];
+      for (const amostra of lote) {
+        await registrarAmostra(amostra);
+        amostras.push(amostra);
+      }
+      const resumo = lote.map((a) => `${a.indice}=${a.valor}`).join(', ');
+      fontes[c.id] = { ok: true, ultimoSucesso: new Date().toISOString(), ultimoErro: null, mensagem: `OK (${resumo}°C)` };
+      logger.info('enso.coleta.ok', `${c.id}: ${lote.length} amostra(s).`, { fonte: c.id });
     } catch (e) {
       fontes[c.id] = { ...(fontes[c.id] || {}), ok: false, ultimoErro: new Date().toISOString(), mensagem: e.message };
       logger.warn('enso.coleta.falhou', `${c.id}: ${e.message} (módulo segue operando).`, { fonte: c.id });
@@ -759,6 +859,7 @@ module.exports = {
   canais, despachar, dryRunAtivo, webhookUrl, CANAIS_IMPLEMENTADOS, CANAIS_STUB,
   // coletores
   executarColeta, registrarAmostra, ultimaAmostra, lerFonteStatus, coletorMock, coletorNoaa,
+  parseOniAscii, parseSstoi, dataDoTrimestre, urlNoaaOni, urlNoaaSst, noaaEnabled,
   lerFontes,
   logger,
 };
