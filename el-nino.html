@@ -260,7 +260,7 @@
     <section class="hero">
         <div class="eyebrow"><i data-lucide="radar"></i> Monitoramento ENOS - SGI PROTEGE</div>
         <h2>EL NIÑO <span>· MONITORAMENTO ENOS</span></h2>
-        <p>Painel operacional do fenômeno El Niño–Oscilação Sul (ENOS): estado atual, classificação de intensidade, regras de alerta e trilha de auditoria. Os valores são indicativos e estão sujeitos a revisão — este painel é apoio à decisão e <b>não substitui os alertas oficiais do INMET, do CEMADEN e da Defesa Civil</b>.</p>
+        <p>Painel de visualização do fenômeno El Niño–Oscilação Sul (ENOS): estado atual, classificação de intensidade, regras de alerta e trilha de auditoria. A SGI PROTEGE é apenas uma ferramenta que facilita a visualização dos dados oficiais — <b>não produz classificação própria e não substitui os alertas oficiais do INMET, do CEMADEN e da Defesa Civil</b>.</p>
         <div class="chips" id="heroChips">
             <span class="chip"><i data-lucide="activity"></i> Carregando estado…</span>
         </div>
@@ -319,7 +319,7 @@
 
         <div class="alert-note">
             <i data-lucide="info"></i>
-            <p>A classificação oficial do episódio em vigência é publicada pelos centros nacionais e internacionais (INMET, CPTEC/INPE, NOAA/CPC). Este painel reflete a última medição registrada no servidor da SGI PROTEGE e pode divergir das publicações oficiais mais recentes.</p>
+            <p>A classificação oficial do episódio em vigência é publicada pelos centros nacionais e internacionais (INMET, CPTEC/INPE, NOAA/CPC). A SGI PROTEGE é apenas uma ferramenta que facilita a visualização desses dados: este painel exibe a última medição registrada no servidor e pode divergir das publicações oficiais mais recentes — em caso de divergência, valem as fontes oficiais.</p>
         </div>
     </section>
 
@@ -479,7 +479,7 @@
                 chips.push('<span class="chip"><i data-lucide="database"></i> Limiares: ' + esc(j.limiares.origem) + '</span>');
                 if (j.alertasPendentes) chips.push('<span class="chip warn"><i data-lucide="bell-ring"></i> ' + j.alertasPendentes + ' pendente(s)</span>');
             }
-            chips.push('<span class="chip"><i data-lucide="shield-alert"></i> Não substitui INMET · CEMADEN · Defesa Civil</span>');
+            chips.push('<span class="chip"><i data-lucide="shield-alert"></i> Só visualização · valem INMET · CEMADEN · Defesa Civil</span>');
             document.getElementById('heroChips').innerHTML = chips.join('');
 
             if (j && j.limiares) {

@@ -856,7 +856,7 @@ function lerFontes() {
   }
 }
 
-const DISCLAIMER = 'Monitoramento de apoio à decisão. Não substitui os alertas oficiais do INMET, do CEMADEN e da Defesa Civil. Previsões estão sujeitas a revisão.';
+const DISCLAIMER = 'A SGI PROTEGE é apenas uma ferramenta que facilita a visualização dos dados: não produz classificação própria. Em caso de divergência, valem os alertas oficiais do INMET, do CEMADEN e da Defesa Civil.';
 
 module.exports = {
   // config / classificação
