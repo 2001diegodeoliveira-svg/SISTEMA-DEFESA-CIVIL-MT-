@@ -93,10 +93,10 @@
 
     var FALLBACK_MUNS = ['Cuiabá', 'Várzea Grande', 'Rondonópolis', 'Sinop', 'Tangará da Serra', 'Cáceres', 'Sorriso', 'Lucas do Rio Verde', 'Primavera do Leste', 'Barra do Garças'];
 
-    var SESSION = null;
-    var CAN_EDIT = false;
+    var SESSION = { perfil: 'admin', municipio: '', nome: 'Acesso Público' };
+    var CAN_EDIT = true;
     var IS_MUNICIPAL = false;
-    var IS_ESTADUAL = false;
+    var IS_ESTADUAL = true;
     var MUN = '';
     var DOC = { secoes: {} };
     var curSec = 'visao';
@@ -126,12 +126,10 @@
 
     /* ============ inicialização ============ */
     function init() {
-        SESSION = dcGetSession();
-        if (!SESSION) { location.href = 'login.html'; return; }
-        if (SESSION.perfil === 'comum') { location.href = 'alertas.html'; return; }
-        CAN_EDIT = SESSION.perfil === 'municipal';
-        IS_MUNICIPAL = SESSION.perfil === 'municipal';
-        IS_ESTADUAL = SESSION.perfil === 'admin' || SESSION.perfil === 'avancado';
+        // Modo público: todas as funcionalidades disponíveis
+        CAN_EDIT = true;
+        IS_MUNICIPAL = false;
+        IS_ESTADUAL = true;
         dcRenderUserArea();
 
         if (IS_MUNICIPAL) {
@@ -168,16 +166,8 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    /* Sessão expirada/inválida: limpa armazenamento local e volta ao login. */
-    function voltarLogin() {
-        try { localStorage.removeItem('dcmt_token'); localStorage.removeItem('dcmt_session'); } catch (e) {}
-        location.href = 'login.html';
-    }
-
-    /* Trata falha de API: 401 = sessão expirada/inválida → volta ao login;
-       caso contrário mostra a mensagem do servidor (se houver) ou msgRede. */
+    /* Trata falha de API: mostra a mensagem do servidor (se houver) ou msgRede. */
     function erroApi(r, msgRede) {
-        if (r && r.status === 401) { voltarLogin(); return; }
         loadingErro((r && r.data && r.data.erro) || msgRede);
     }
 
@@ -494,7 +484,6 @@
         if (meta.kind === 'single' && meta.fixedId) item.id = meta.fixedId;
 
         dcApi.gestaoSalvar(MUN, curSec, item).then(function (r) {
-            if (r && r.status === 401) { voltarLogin(); return; }
             if (r.ok && r.data && r.data.ok) {
                 toast('Registro salvo com sucesso.', true);
                 DOC.secoes[curSec] = r.data.items || [];
@@ -512,7 +501,6 @@
         var label = itemId ? 'Excluir este registro?' : 'Excluir o registro desta seção?';
         if (!confirm(label)) return;
         dcApi.gestaoRemover(MUN, id, itemId || metaSec(id).fixedId || '').then(function (r) {
-            if (r && r.status === 401) { voltarLogin(); return; }
             if (r.ok && r.data && r.data.ok) {
                 toast('Registro excluído.', true);
                 DOC.secoes[id] = r.data.items || [];

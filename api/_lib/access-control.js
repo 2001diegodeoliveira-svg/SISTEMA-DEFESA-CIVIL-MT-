@@ -6,7 +6,6 @@ const INTERNAL_PAGES = new Map([
   ['gestaodefrota.html', new Set(['admin', 'avancado', 'municipal', 'administrador_orgao', 'coordenador', 'operador_campo', 'leitura'])],
   ['vistoria.html', new Set(['admin', 'avancado', 'municipal', 'coordenador', 'operador_campo'])],
   ['meus-chamados.html', new Set(['admin', 'avancado', 'municipal', 'coordenador', 'analista', 'operador_campo', 'voluntario', 'leitura'])],
-  ['cadastro-usuarios.html', new Set(['admin', 'administrador_orgao', 'coordenador'])],
 ]);
 
 const PRIVATE_API_ROUTES = new Set([

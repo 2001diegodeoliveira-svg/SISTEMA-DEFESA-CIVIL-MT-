@@ -305,8 +305,7 @@
 <script>
     (function () {
         var s = dcGetSession();
-        if (!s) location.replace('login.html');
-        else if (s.perfil === 'comum') location.replace('alertas.html');
+        // Modo público: sem redirecionamento
     })();
 </script>
 <script src="js/proxy.js"></script>
