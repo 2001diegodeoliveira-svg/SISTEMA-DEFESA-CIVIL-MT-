@@ -15,13 +15,53 @@ const MAX_CHAVES = 5000;
 
 const tentativas = new Map(); // chave -> { falhas, primeiroEm }
 
-function ipDaRequisicao(req) {
-  const h = req && req.headers;
-  if (!h) return 'local';
-  const bruto = (h.get && h.get('x-forwarded-for')) || h['x-forwarded-for']
-    || (h.get && h.get('x-real-ip')) || h['x-real-ip'] || '';
-  const ip = String(bruto).split(',')[0].trim();
-  return ip || 'local';
+function trustedProxies(env = process.env) {
+  return String(env.TRUSTED_PROXIES || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+/* IP direto da conexão (socket) — não forjável pelo cliente. Na Vercel o
+   runtime Node expõe socket.remoteAddress; no wrapper Express incluímos
+   req.ip; nos testes (objeto puro) cai para 'local'. */
+function ipDireto(req) {
+  if (!req) return '';
+  const candidates = [
+    req.ip,
+    req.socket && req.socket.remoteAddress,
+    req.connection && req.connection.remoteAddress,
+  ];
+  for (const candidate of candidates) {
+    const ip = String(candidate || '').trim();
+    if (ip) return ip;
+  }
+  return '';
+}
+
+function proxyConfiavel(req, env = process.env) {
+  const trusted = trustedProxies(env);
+  if (!trusted.length) return false;
+  if (trusted.includes('*')) return true;
+  const direto = ipDireto(req);
+  return direto && trusted.includes(direto);
+}
+
+function ipDaRequisicao(req, env = process.env) {
+  const direto = ipDireto(req);
+  /* CRIPTO-05: só confia em x-forwarded-for quando o IP de origem é um
+     proxy conhecido (TRUSTED_PROXIES). Header forjado de cliente
+     não-respeitado não reseta o bucket. Em serverless o Map é por
+     instância (mitigação parcial) — recomendar throttle no edge
+     (Vercel WAF/Upstash) para produção. */
+  if (proxyConfiavel(req, env)) {
+    const h = req && req.headers;
+    const bruto = (h.get && h.get('x-forwarded-for')) || h['x-forwarded-for']
+      || (h.get && h.get('x-real-ip')) || h['x-real-ip'] || '';
+    const ip = String(bruto).split(',')[0].trim();
+    if (ip) return ip;
+  }
+  return direto || 'local';
 }
 
 function chaveDe(req, usuario) {
@@ -75,4 +115,6 @@ module.exports = {
   registrarFalha,
   limparSucesso,
   segundosDeEspera,
+  ipDaRequisicao,
+  trustedProxies,
 };

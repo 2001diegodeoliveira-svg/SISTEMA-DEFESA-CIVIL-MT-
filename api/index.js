@@ -281,6 +281,10 @@ module.exports = serve(async function handler(req) {
      tanto no Express quanto na Vercel. */
   const clone = { method: req.method };
   clone.url = '/api/' + route + (query ? '?' + query : '');
+  /* CRIPTO-05: preserva o IP direto através do roteador para o rate-limit. */
+  if (req.ip) clone.ip = req.ip;
+  if (req.socket) clone.socket = req.socket;
+  if (req.connection) clone.connection = req.connection;
   const authorization = readHeader(req.headers, 'authorization') ||
     (loginEnabled && !acessoAberto ? undefined : 'Bearer access-without-login');
   clone.headers = {

@@ -68,6 +68,11 @@ function wrap(fn) {
         get: name => req.get(name),
         authorization: req.get('authorization'),
       },
+      /* CRIPTO-05: propaga o IP direto para o rate-limit decidir se pode
+         confiar em x-forwarded-for (só via TRUSTED_PROXIES). */
+      ip: req.ip,
+      socket: req.socket,
+      connection: req.connection,
       on: undefined,
       text: async () => JSON.stringify(req.body || {}),
     };
