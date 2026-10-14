@@ -123,7 +123,25 @@ test('INMET-chuva: ?uf= filtra arquivos do zip; UF inválida é 400', async () =
       { nome: 'INMET_S_SP_A701_2026.CSV', conteudo: CSV_SP },
       { nome: 'INMET_S_MT_A901_2026.CSV', conteudo: CSV_MT },
     ]);
-    global.fetch = () => Promise.resolve(new Response(zip, { status: 200 }));
+    // Emula servidor com HEAD + HTTP Range (206) como o portal INMET.
+    global.fetch = (url, opts = {}) => {
+      const metodo = ((opts && opts.method) || 'GET').toUpperCase();
+      const range = opts && opts.headers && opts.headers.Range;
+      if (metodo === 'HEAD') {
+        return Promise.resolve(new Response(null, {
+          status: 200, headers: { 'content-length': String(zip.length) },
+        }));
+      }
+      const m = /^bytes=(\d+)-(\d+)$/.exec(range || '');
+      if (!m) return Promise.reject(new Error('teste: Range esperado'));
+      const ini = Number(m[1]);
+      const fim = Math.min(Number(m[2]), zip.length - 1);
+      const fatia = zip.slice(ini, fim + 1);
+      return Promise.resolve(new Response(fatia, {
+        status: 206,
+        headers: { 'content-range': `bytes ${ini}-${fim}/${zip.length}` },
+      }));
+    };
     const sp = await (await apiHandler(get('inmet-chuva?ano=2026&uf=SP&refresh=1'))).json();
     assert.equal(sp.uf, 'SP');
     assert.equal(sp.totalEstacoes, 1);
