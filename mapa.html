@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
     <link rel="icon" type="image/png" href="imagens/logo.png">
     <title>Mapa Integrado — Painel SGI PROTEGE | Brasil</title>
@@ -1270,6 +1270,10 @@
         .fonte-linha span:last-child { margin-left:auto; text-align:right; }
         .fontes-vazio { font-size:12.5px; color:var(--text-muted); }
         #connBanner { position:fixed; top:0; left:0; right:0; z-index:4000; display:flex; align-items:center; justify-content:center; gap:8px; background:#7f1d1d; color:#fff; font-size:13px; font-weight:700; padding:9px 12px; }
+        /* Fase 9 (a11y): foco visível por teclado em controles e toggles. */
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, .check-row:focus-visible {
+            outline: 2px solid #38bdf8; outline-offset: 2px;
+        }
         #relogio { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-muted); white-space:nowrap; }
         #relogio b { color:var(--text-main); font-variant-numeric:tabular-nums; }
         #kioskBar { position:fixed; left:50%; transform:translateX(-50%); bottom:14px; z-index:3000; display:none; align-items:center; gap:14px; background:rgba(11,19,41,.92); border:1px solid var(--border-color); border-radius:12px; padding:8px 16px; font-size:12.5px; color:var(--text-main); }
@@ -1377,6 +1381,7 @@
 
     <!-- Painel de camadas -->
     <aside id="layersPanel">
+        <div class="note" style="font-size:10.5px;color:var(--text-muted);padding:2px 2px 8px;line-height:1.5;">Apoio à decisão — confirme sempre nas fontes oficiais indicadas em cada camada.</div>
         <div class="group-title"><i data-lucide="cloud-lightning"></i> Meteorologia</div>
         <button class="layer-btn radar" data-layer="radar">
             <i data-lucide="satellite-dish"></i>
@@ -1684,6 +1689,7 @@
             <select class="pluv-filter" id="msnCity"></select>
             <button class="msn-refresh" id="msnRefresh"><i data-lucide="refresh-cw"></i> Atualizar</button>
         </div>
+        <div style="font-size:9.5px;color:#94a3b8;padding:6px 14px 0;line-height:1.5;">API não oficial (portal MSN, sem termos públicos) — pode parar sem aviso; confirme na previsão Open-Meteo.</div>
         <div class="msn-body">
             <div class="msn-empty" id="msnEmpty">Selecione um munic&iacute;pio para carregar a previs&atilde;o MSN Clima (Foreca).</div>
             <div id="msnContent" style="display:none;"></div>
@@ -2824,6 +2830,20 @@ function focarMunicipioInicial() {
 /* ================= Ambiente: UCs via WMS CNUC ================= */
 map.createPane('ambiente');
 map.getPane('ambiente').style.zIndex = 350;
+/* Fase 9: tiles WMS que falham avisam na meta-linha (1 aviso a cada 5 min). */
+const wmsErroFlags = {};
+function vigiarTilesWms(layer, metaId, nome) {
+    if (!layer || !layer.on) return;
+    layer.on('tileerror', () => {
+        if (wmsErroFlags[metaId]) return;
+        wmsErroFlags[metaId] = true;
+        const meta = document.getElementById(metaId);
+        if (meta && !/falhas de tiles/i.test(meta.textContent || '')) {
+            meta.innerHTML += ` · <b style="color:#f87171;">${nome}: falhas de tiles</b>`;
+        }
+        setTimeout(() => { wmsErroFlags[metaId] = false; }, 5 * 60 * 1000);
+    });
+}
 function loadUCs() {
     ucWms = L.tileLayer.wms('https://geoservicos.inde.gov.br/geoserver/ows', {
         layers: 'MMA:cnuc_2026_03',
@@ -2883,7 +2903,10 @@ const CAMERA_BASE = 'https://obrasaovivo.sinfra.mt.gov.br';
 function setCheck(key, val) {
     checkState[key] = val;
     const row = document.querySelector(`.check-row[data-check="${key}"]`);
-    if (row) row.querySelector('.toggle').classList.toggle('on', val);
+    if (row) {
+        row.querySelector('.toggle').classList.toggle('on', val);
+        row.setAttribute('aria-checked', val ? 'true' : 'false');
+    }
     if (key === 'focos' && val && !focosLoaded && !focosLoading) loadFocos();
     if (key === 'barragens' && val && !barragensLoaded && !barragensLoading) loadBarragens();
     if (key === 'anaHydrology' && val && !anaHydrologyLoaded && !anaHydrologyLoading) loadAnaHydrology();
@@ -2935,6 +2958,17 @@ document.querySelectorAll('.check-row').forEach(row => {
     row.addEventListener('click', () => {
         const key = row.dataset.check;
         setCheck(key, !checkState[key]);
+    });
+    // Fase 9 (a11y): toggles operáveis por teclado.
+    row.setAttribute('role', 'switch');
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('aria-checked', checkState[row.dataset.check] ? 'true' : 'false');
+    row.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const key = row.dataset.check;
+            setCheck(key, !checkState[key]);
+        }
     });
 });
 // Fase 8: mostra/esconde a malha municipal conforme o zoom (ver applyChecks).
@@ -3401,6 +3435,12 @@ function camStatusBadge(on) {
 function cameraPopupHTML(cam) {
     const endereco = [cam.endereco, cam.municipio].filter(Boolean).join(' · ') || '—';
     const titulo = cam.localizacao || cam.slug || 'Câmera';
+    // Fase 9 (mixed content): stream http:// em página https:// é bloqueado
+    // pelo navegador — nesse caso mostra fallback com link externo.
+    const inseguro = /^http:\/\//i.test(cam.link || '') && location.protocol === 'https:';
+    const videoHtml = inseguro
+        ? `<div style="padding:14px 12px;font-size:11px;color:#94a3b8;line-height:1.6;">Stream em HTTP puro — o navegador bloqueia a incorporação em página HTTPS. <a href="${cam.link}" target="_blank" rel="noopener" style="color:#38bdf8;">Abrir monitor em nova aba</a></div>`
+        : `<iframe src="${cam.link}" title="${titulo}" style="display:block;width:430px;height:300px;border:0;background:transparent;" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>`;
     return `
         <div style="min-width:300px;width:450px;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;">
@@ -3409,7 +3449,7 @@ function cameraPopupHTML(cam) {
             </div>
             <div style="color:#94a3b8;font-size:10px;margin-bottom:8px;">${cam.obra ? 'Obra: ' + cam.obra : 'SINFRA-MT'}${cam.municipio ? ' · ' + cam.municipio : ''}</div>
             <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.09);background:#000;box-shadow:0 6px 24px rgba(0,0,0,.35);">
-                <iframe src="${cam.link}" title="${titulo}" style="display:block;width:430px;height:300px;border:0;background:transparent;" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>
+                ${videoHtml}
                 <div style="position:absolute;left:0;bottom:0;right:0;padding:4px 9px;font-size:9px;color:rgba(255,255,255,.7);background:linear-gradient(transparent, rgba(0,0,0,.6));">SINFRA-MT · obrasaovivo.sinfra.mt.gov.br</div>
             </div>
             <div style="font-size:10.5px;line-height:1.7;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;">
@@ -3638,10 +3678,16 @@ function rainPintarCams(lat, lng, rotuloDist) {
         grid.innerHTML = '<div class="rain-empty-cams">Sem câmeras SINFRA ao vivo nas proximidades desta área no momento.</div>';
         return;
     }
-    grid.innerHTML = cams.map(cam => `
+    grid.innerHTML = cams.map(cam => {
+        // Fase 9 (mixed content): http:// em página https:// não incorpora.
+        const bloqueado = /^http:\/\//i.test(cam.link || '') && location.protocol === 'https:';
+        const video = bloqueado
+            ? `<div style="padding:10px;font-size:10px;color:#94a3b8;">Stream HTTP — <a href="${cam.link}" target="_blank" rel="noopener" style="color:#38bdf8;">abrir em nova aba</a></div>`
+            : `<iframe src="${cam.link}" title="${cam.localizacao || cam.slug}" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>`;
+        return `
         <div class="rain-cam">
             <div class="rain-cam-video">
-                <iframe src="${cam.link}" title="${cam.localizacao || cam.slug}" allow="autoplay; encrypted-media; fullscreen" loading="lazy"></iframe>
+                ${video}
                 <span class="rain-cam-tag">AO VIVO</span>
             </div>
             <div class="rain-cam-cap">
@@ -3653,7 +3699,8 @@ function rainPintarCams(lat, lng, rotuloDist) {
                 <a href="${cam.link}" target="_blank" rel="noopener">Abrir monitor</a>
                 <button type="button" onclick="rainFlyToCam(${cam.lat}, ${cam.lng})">Ver no mapa</button>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 function alturaSeveridade(sev) { return { 'Grande Perigo': 'Perigo extremo', 'Perigo': 'Atenção alta', 'Perigo Potencial': 'Nível de atenção' }[sev.lbl] || 'Atenção'; }
 function rainCloseModal() {
@@ -6044,12 +6091,13 @@ function loadWmsFocos48h() {
     const opts = {
         layers: 'focos_48h_br_todosats',
         format: 'image/png', transparent: true, version: '1.1.1',
-        opacity: .8, attribution: 'INPE/TerraBrasilis · BDQueimadas · MT',
+        opacity: .8, attribution: 'INPE/TerraBrasilis · BDQueimadas',
         tileSize: 512, maxZoom: 14, keepBuffer: 2, updateWhenIdle: false
     };
     if (MT_BBOX) opts.bounds = MT_BBOX;
     if (clipped) opts.pane = 'wmsPane';
     wmsFocos48hLayer = L.tileLayer.wms('https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/wms', opts);
+    vigiarTilesWms(wmsFocos48hLayer, 'metaWmsFocos48h', 'TerraBrasilis');
     if (checkState.wmsFocos48h) wmsFocos48hLayer.addTo(map);
     loadWmsFocos48hDetalhe();
 }
@@ -6075,6 +6123,7 @@ async function loadDeter() {
             mkWms('https://terrabrasilis.dpi.inpe.br/geoserver/deter-amz', 'deter-amz:deter_amz'),
             mkWms('https://terrabrasilis.dpi.inpe.br/geoserver/deter-cerrado-nb', 'deter-cerrado-nb:deter_cerrado'),
         ]);
+        deterLayer.eachLayer(l => vigiarTilesWms(l, 'metaDeter', 'DETER'));
         if (checkState.deter) deterLayer.addTo(map);
         deterLoaded = true;
         deterLoading = false;

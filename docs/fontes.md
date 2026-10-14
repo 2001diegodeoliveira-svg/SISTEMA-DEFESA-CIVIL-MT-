@@ -104,14 +104,15 @@ requisição). Fallback "último válido" em `system_config`
 ## Fontes com problema conhecido
 
 - **CPTEC via BrasilAPI** (`/cptec/v1/clima/previsao/226/6`): HTTP 500
-  em 2026-10-13. Previsão nacional (Fase 3) deve trocar por fonte
-  verificada.
+  em 2026-10-13. **Trocado na Fase 3** por Open-Meteo por coordenada;
+  aviso no painel MSN lembra a dependência.
 - **MSN/Foreca** (`assets.msn.com/...` com token fixo no código):
-  API não-oficial, sem termos verificados; risco de quebra sem aviso.
+  API não-oficial, sem termos verificados; risco de quebra sem aviso
+  (avisado no próprio painel, Fase 9).
 - **CNUC/INDE**: GetCapabilities instável/lento daqui (>60s);
   timeout do proxy é 25s + fallback stale.
-- **SNISB**: hoje é snapshot estático `js/barragens_mt.json`
-  (sem frescor) — nacionalizar na Fase 3.
+- **SNISB**: era snapshot estático `js/barragens_mt.json`
+  (sem frescor) — **nacionalizado na Fase 3** (`GET /api/barragens`).
 
 ## Fase 5 — alertas ativos (motor no servidor)
 
