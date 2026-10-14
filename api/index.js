@@ -6,7 +6,7 @@
 const { serve } = require('./_lib/serverless');
 const { corsHeaders, bearerToken } = require('./_lib/http');
 const { isLoginEnabled, validateProductionConfig } = require('./_lib/runtime-config');
-const { verifyToken, isLoginEligible, isSessaoLiberada } = require('./_lib/auth');
+const { verifyToken, isLoginEligible, isSessaoLiberada, isSuspended } = require('./_lib/auth');
 const { demoAtualizar, demoAberto } = require('./_lib/demo');
 const { readCollection, loadUserAccess, driver } = require('./_lib/store');
 const { runWithDbContext } = require('./_lib/db-context');
@@ -128,10 +128,27 @@ module.exports = serve(async function handler(req) {
     route.replace(/\/(enroll|confirm|verify)$/, '');
   const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
   const loginEnabled = isLoginEnabled();
+  const suspenso = isSuspended();
+  /* Lockout de manutenção (fail-closed): com AUTH_SUSPENDED ativo, só
+     leitura pública (GET público) e o próprio login (que responde 503)
+     passam daqui. Escrita e rota não-pública: 503 sem token, 401 com
+     token antigo (sessão da janela suspensa não autoriza nada). */
+  if (suspenso && route !== 'auth/login' && req.method !== 'OPTIONS') {
+    const policy = apiPolicy(routeKey, req.method);
+    if (req.method !== 'GET' || !policy.public) {
+      const comToken = Boolean(bearerToken(req));
+      return new Response(JSON.stringify(comToken
+        ? { erro: 'Sessão suspensa para manutenção.' }
+        : { erro: 'Sistema em manutenção. Login e operações suspensos.' }), {
+        status: comToken ? 401 : 503,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+  }
   /* Registra/consulta o marco do primeiro acesso e mantém a janela de
      demonstração em cache para os handlers que autorizam por token. */
   await demoAtualizar();
-  const acessoAberto = demoAberto();
+  const acessoAberto = suspenso ? false : demoAberto();
   let configuredAdmin = false;
   try {
     const seeds = JSON.parse(process.env.SEED_USERS || '[]');
