@@ -5,10 +5,9 @@
      no servidor, não do navegador).
    - Painel "Saúde das fontes": estado, último sucesso, última
      falha e latência por fonte (botão flutuante "Fontes").
-   - Auto-refresh por camada (só camada visível), pausado com a
-     aba oculta e retomado ao voltar (atrasados rodam na hora).
-   - Camadas essenciais passam a carregar sozinhas (sem
-     "ative para carregar"): focos, INMET, ANA e CENSIPAM.
+    - Auto-refresh por camada (só camada visível e ligada pelo usuário),
+      pausado com a aba oculta e retomado ao voltar (atrasados rodam
+      na hora). Nada é ligado sozinho: opt-in como na versão MT.
    - Indicador global online/offline com heartbeat e reconexão
      automática (retoma polls + refresh atrasado).
    Não duplica o js/monitor.js (alertas); só frescor/saúde.
@@ -16,22 +15,28 @@
 (function (global) {
     'use strict';
 
-    var SAUDE_URL = '/api/fontes/saude';
+    function baseUrl(path) {
+        try {
+            if (typeof apiUrl === 'function') return apiUrl(path);
+        } catch (e) {}
+        return path;
+    }
     var SAUDE_POLL_MS = 60000;
     var TICK_MS = 60000;
 
     /* check-key do mapa -> meta-line, fonte (api/_lib/origens.js),
-       intervalo de refresh, auto-load no boot e loader global. */
+       intervalo de refresh e loader global. Opt-in como antes:
+       nada é ligado sozinho; refresh só em camada visível. */
     var CAMADAS = [
-        { check: 'focos', meta: 'metaFocos', fonte: 'inpe-csv', refreshMin: 10, auto: true, loader: 'loadFocos' },
-        { check: 'deter', meta: 'metaDeter', fonte: null, refreshMin: 0, auto: false, loader: 'loadDeter' },
-        { check: 'qualidadeAr', meta: 'metaQualidadeAr', fonte: 'open-meteo-aq', refreshMin: 60, auto: false, loader: 'loadQualidadeAr' },
-        { check: 'wmsFocos48h', meta: 'metaWmsFocos48h', fonte: 'inpe-terrabrasilis', refreshMin: 0, auto: false, loader: null },
-        { check: 'anaHydrology', meta: 'metaAnaHydrology', fonte: null, refreshMin: 15, auto: true, loader: 'loadAnaHydrology' },
-        { check: 'inmetStations', meta: 'metaInmet', fonte: 'inmet-estacoes', refreshMin: 15, auto: true, loader: 'loadInmetStations' },
-        { check: 'chuvaInmet', meta: 'metaChuvaInmet', fonte: 'inmet-estacoes', refreshMin: 0, auto: false, loader: null },
-        { check: 'sipam', meta: 'metaSipam', fonte: 'censipam', refreshMin: 10, auto: true, loader: 'loadSIPAM' },
-        { check: 'barragens', meta: 'metaBarragens', fonte: null, refreshMin: 0, auto: false, loader: null },
+        { check: 'focos', meta: 'metaFocos', fonte: 'inpe-csv', refreshMin: 10, loader: 'loadFocos' },
+        { check: 'deter', meta: 'metaDeter', fonte: null, refreshMin: 0, loader: 'loadDeter' },
+        { check: 'qualidadeAr', meta: 'metaQualidadeAr', fonte: 'open-meteo-aq', refreshMin: 60, loader: 'loadQualidadeAr' },
+        { check: 'wmsFocos48h', meta: 'metaWmsFocos48h', fonte: 'inpe-terrabrasilis', refreshMin: 0, loader: null },
+        { check: 'anaHydrology', meta: 'metaAnaHydrology', fonte: null, refreshMin: 15, loader: 'loadAnaHydrology' },
+        { check: 'inmetStations', meta: 'metaInmet', fonte: 'inmet-estacoes', refreshMin: 15, loader: 'loadInmetStations' },
+        { check: 'chuvaInmet', meta: 'metaChuvaInmet', fonte: 'inmet-estacoes', refreshMin: 0, loader: null },
+        { check: 'sipam', meta: 'metaSipam', fonte: 'censipam', refreshMin: 10, loader: 'loadSIPAM' },
+        { check: 'barragens', meta: 'metaBarragens', fonte: null, refreshMin: 0, loader: null },
     ];
 
     var saudePorFonte = {};   // id -> {estado, ultimoSucesso, ultimaFalha, latenciaMs}
@@ -57,16 +62,26 @@
     }
 
     /* ---------- selos por camada ---------- */
+    /* Anexa (sem apagar o texto do loader) um selo com a hora da fonte. */
     function atualizarSelos() {
         CAMADAS.forEach(function (c) {
             var meta = c.meta && $(c.meta);
             if (!meta) return;
             if (/carregando/i.test(meta.textContent || '')) return; // não atropela loading
-            var dot = '<span class="fonte-dot" style="background:__COR__"></span> ';
-            if (!c.fonte) return; // rotas próprias/estáticas: mantém o texto do loader
+            var selo = meta.querySelector(':scope > span.fonte-selo');
+            if (!c.fonte) {
+                if (selo) selo.remove();
+                return;
+            }
             var s = saudePorFonte[c.fonte];
+            if (!selo) {
+                selo = document.createElement('span');
+                selo.className = 'fonte-selo';
+                meta.appendChild(document.createTextNode(' '));
+                meta.appendChild(selo);
+            }
             if (!s || !s.ultimoSucesso) {
-                meta.innerHTML = dot.replace('__COR__', '#94a3b8') + 'sem registro da fonte';
+                selo.innerHTML = '<span class="fonte-dot" style="background:#94a3b8"></span>sem registro da fonte';
                 return;
             }
             var quando = haXMin(s.ultimoSucesso) || '—';
@@ -74,7 +89,7 @@
             if (s.ultimaFalha && Date.parse(s.ultimaFalha) > Date.parse(s.ultimoSucesso)) {
                 extra = ' · última tentativa falhou (' + (haXMin(s.ultimaFalha) || '') + ')';
             }
-            meta.innerHTML = dot.replace('__COR__', corEstado(s.estado || 'fora'))
+            selo.innerHTML = '<span class="fonte-dot" style="background:' + corEstado(s.estado || 'fora') + '"></span>'
                 + 'fonte atualizada ' + quando + extra;
         });
     }
@@ -105,7 +120,7 @@
     }
 
     function pollSaude() {
-        return fetch(SAUDE_URL, { cache: 'no-store' }).then(function (r) {
+        return fetch(baseUrl('/api/fontes/saude'), { cache: 'no-store' }).then(function (r) {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.json();
         }).then(function (j) {
@@ -158,7 +173,7 @@
     }
 
     function heartbeat() {
-        fetch('/api/', { cache: 'no-store' }).then(function (r) {
+        fetch(baseUrl('/api/'), { cache: 'no-store' }).then(function (r) {
             setOnline(r.ok, 'heartbeat');
         }).catch(function () {
             setOnline(false, 'heartbeat');
@@ -176,18 +191,6 @@
 
     function init() {
         if (!global.checkState && typeof checkState === 'undefined') return false;
-        // Camadas essenciais: carrega sozinhas (adeus "ative para carregar").
-        CAMADAS.forEach(function (c) {
-            if (!c.auto) return;
-            var meta = c.meta && $(c.meta);
-            if (meta && /ative para carregar/i.test(meta.textContent || '')) {
-                meta.textContent = 'carregamento automático ativo…';
-            }
-            try {
-                if (typeof global.setCheck === 'function') global.setCheck(c.check, true);
-            } catch (e) {}
-            ultimoRefresh[c.check] = Date.now();
-        });
         document.addEventListener('visibilitychange', function () {
             if (document.hidden) {
                 if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }

@@ -65,15 +65,20 @@ function parseLista(xml) {
     const html = dm ? dm[1] : '';
     const evento = campoTabela(html, 'Evento') || textoTag(item, 'title').replace(/^Aviso de\s+/i, '').replace(/\..*$/, '');
     const severidade = campoTabela(html, 'Severidade');
+    const inicioIso = parseData(campoTabela(html, 'Início'));
     const fimIso = parseData(campoTabela(html, 'Fim'));
+    // Vigente = já começou E ainda não terminou (como na versão MT:
+    // futuro distante ou expirado não dispara modal).
+    const inicioOk = inicioIso ? Date.parse(inicioIso) <= agora : true;
+    const fimOk = fimIso ? Date.parse(fimIso) >= agora : true;
     out.push({
       id: idMatch[1],
       evento: evento || null,
       severidade: severidade || null,
       nivel: SEVERIDADE_NIVEL[severidade] || 0,
-      inicio: parseData(campoTabela(html, 'Início')),
+      inicio: inicioIso,
       fim: fimIso,
-      vigente: fimIso ? Date.parse(fimIso) >= agora : true,
+      vigente: inicioOk && fimOk,
       descricao: campoTabela(html, 'Descrição') || null,
       areas: campoTabela(html, 'Área') || null,
     });

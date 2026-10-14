@@ -207,7 +207,8 @@ test('Barragens: normaliza, filtra sem-coords, valida UF/bbox', async () => {
 
 /* ---------- Avisos INMET (CAP) ---------- */
 const RSS_FIX = `<?xml version="1.0"?><rss><channel>
-<item><title>Aviso de Tempestade. Severidade Grau: Perigo</title><link>https://apiprevmet3.inmet.gov.br/avisos/rss/56064</link><description><![CDATA[<table><tr><th>Evento</th><td>Tempestade</td></tr><tr><th>Severidade</th><td>Perigo</td></tr><tr><th>Início</th><td>2099-01-01 00:01:00.0</td></tr><tr><th>Fim</th><td>2099-01-01 23:59:00.0</td></tr><tr><th>Descrição</th><td>Chuva forte.</td></tr><tr><th>Área</th><td>Aviso para as Áreas: Norte MT</td></tr></table>]]></description></item>
+<item><title>Aviso de Tempestade. Severidade Grau: Perigo</title><link>https://apiprevmet3.inmet.gov.br/avisos/rss/56064</link><description><![CDATA[<table><tr><th>Evento</th><td>Tempestade</td></tr><tr><th>Severidade</th><td>Perigo</td></tr><tr><th>Início</th><td>2000-01-01 00:01:00.0</td></tr><tr><th>Fim</th><td>2099-01-01 23:59:00.0</td></tr><tr><th>Descrição</th><td>Chuva forte.</td></tr><tr><th>Área</th><td>Aviso para as Áreas: Norte MT</td></tr></table>]]></description></item>
+<item><title>Aviso futuro. Severidade Grau: Perigo</title><link>https://apiprevmet3.inmet.gov.br/avisos/rss/2</link><description><![CDATA[<table><tr><th>Evento</th><td>Tempestade</td></tr><tr><th>Severidade</th><td>Perigo</td></tr><tr><th>Início</th><td>2099-06-01 00:01:00.0</td></tr><tr><th>Fim</th><td>2099-06-02 23:59:00.0</td></tr></table>]]></description></item>
 <item><title>Aviso de Onda de Calor. Severidade Grau: Perigo Potencial</title><link>https://apiprevmet3.inmet.gov.br/avisos/rss/1</link><description><![CDATA[<table><tr><th>Evento</th><td>Onda de Calor</td></tr><tr><th>Severidade</th><td>Perigo Potencial</td></tr><tr><th>Início</th><td>2000-01-01 00:01:00.0</td></tr><tr><th>Fim</th><td>2000-01-01 23:59:00.0</td></tr></table>]]></description></item>
 </channel></rss>`;
 const CAP_FIX = `<?xml version="1.0"?><alert xmlns="urn:oasis:names:tc:emergency:cap:1.2"><sent>2026-10-13T13:09:28-03:00</sent><info><event>Tempestade</event><severity>Severe</severity><urgency>Future</urgency><certainty>Likely</certainty><onset>2026-10-14T00:01:00-03:00</onset><expires>2026-10-14T23:59:00-03:00</expires><areaDesc>Area X</areaDesc><polygon>-20.0,-50.0 -21.0,-51.0 -20.5,-52.0 -20.0,-50.0</polygon></info></alert>`;
@@ -223,11 +224,14 @@ test('Avisos: lista nacional ordenada + detalhe CAP com polígono', async () => 
     const r = await apiHandler(get('avisos'));
     assert.equal(r.status, 200);
     const j = await r.json();
-    assert.equal(j.total, 2);
-    assert.equal(j.avisos[0].id, '56064'); // Perigo antes de Perigo Potencial
-    assert.equal(j.avisos[0].nivel, 2);
-    assert.equal(j.avisos[0].vigente, true);
-    assert.equal(j.avisos[1].vigente, false);
+    assert.equal(j.total, 3);
+    const porId = Object.fromEntries(j.avisos.map((a) => [a.id, a]));
+    assert.equal(porId['56064'].nivel, 2);
+    assert.equal(porId['56064'].vigente, true);
+    assert.equal(j.vigentes, 1);
+    assert.equal(porId['2'].vigente, false); // ainda não começou: sem modal
+    assert.equal(porId['1'].vigente, false); // expirado
+    assert.ok(j.avisos.indexOf(porId['1']) > j.avisos.indexOf(porId['56064'])); // severidade ordena
     assert.ok(r.headers.get('cache-control').includes('s-maxage=600'));
     const d = await (await apiHandler(get('avisos?id=56064'))).json();
     assert.equal(d.evento, 'Tempestade');
