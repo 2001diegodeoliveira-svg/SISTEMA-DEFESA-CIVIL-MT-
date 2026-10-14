@@ -2471,6 +2471,8 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
 
         if (munLayer) map.removeLayer(munLayer);
         munLayer = L.geoJSON(malhaMunicipal, {
+            renderer: L.canvas({ padding: 0.2 }),
+            smoothFactor: 2, // simplificação (Fase 8); detalhe total volta no zoom
             style: {
                 color: '#38bdf8', weight: 0.8, opacity: .45,
                 fillColor: '#38bdf8', fillOpacity: .02
@@ -2897,7 +2899,10 @@ function setCheck(key, val) {
 }
 function applyChecks() {
     if (mtLayer) checkState.mtOutline ? mtLayer.addTo(map) : map.removeLayer(mtLayer);
-    if (munLayer) checkState.municipios ? munLayer.addTo(map) : map.removeLayer(munLayer);
+    // Fase 8: malha municipal (centenas de paths) só a partir do zoom 7;
+    // abaixo disso, só o contorno da UF — evita travar o zoom-out nacional.
+    const mostraMun = checkState.municipios && map.getZoom() >= 7;
+    if (munLayer) mostraMun ? munLayer.addTo(map) : map.removeLayer(munLayer);
     if (ucWms) checkState.ucs ? ucWms.addTo(map) : map.removeLayer(ucWms);
     if (checkState.focos) {
         if (focosFiltrosAtivos() && focosFilteredLayer) {
@@ -2932,10 +2937,12 @@ document.querySelectorAll('.check-row').forEach(row => {
         setCheck(key, !checkState[key]);
     });
 });
+// Fase 8: mostra/esconde a malha municipal conforme o zoom (ver applyChecks).
+map.on('zoomend', () => { if (checkState.municipios) applyChecks(); });
 function refreshLegend() {
     const box = document.getElementById('legendBox');
     document.getElementById('legRadar').style.display = activeOverlay === 'radar' ? '' : 'none';
-    document.getElementById('legMun').style.display = checkState.municipios && munLayer ? '' : 'none';
+    document.getElementById('legMun').style.display = (checkState.municipios && munLayer && map.getZoom() >= 7) ? '' : 'none';
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
     document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
     document.getElementById('legAnaHydrology').style.display = checkState.anaHydrology && anaHydrologyLayer ? '' : 'none';
@@ -2982,7 +2989,7 @@ function iconDivMarker(iconKey, color, size) {
 
 /* ================= Focos de calor reais — INPE BDQueimadas ================= */
 const canvasRenderer = L.canvas({ padding: 0.3 });
-const FOCO_FLAME_LIMIT = 700;      // acima disso usa círculos canvas (performance)
+const FOCO_FLAME_LIMIT = 150;      // acima disso usa círculos canvas (performance; DOM só p/ poucos)
 const FOCO_MAX_PONTOS = 6000;      // teto de pontos (mapa + tabela)
 const FOCO_MAX_DIAS = 30;          // máximo de dias buscados por período
 let focosPeriodoDias = 1;          // 1 = hoje (24h)
@@ -6695,9 +6702,17 @@ async function fetchWindData() {
     overlayRequestLock.wind = false;
 }
 
+/* Fase 8: orçamento de partículas pela área da tela (dispositivo fraco
+   recebe menos) + degradação automática se o frame ficar lento. */
+let windBudget = 2000;
+let windFrameEmaMs = 16;
+let windLastFrameT = 0;
+let windSlowFrames = 0;
 function initWindParticles() {
     windParticles = [];
-    const count = 2000;
+    const area = (windCanvas.width || 800) * (windCanvas.height || 600);
+    windBudget = Math.max(400, Math.min(2000, Math.round(area / 1200)));
+    const count = windBudget;
     const trailLen = 20;
     for (let i = 0; i < count; i++) {
         const x = Math.random() * windCanvas.width;
@@ -6760,6 +6775,23 @@ function getWindAtPixel(px, py) {
 
 function drawWindFrame() {
     if (activeOverlayWindy !== 'wind') return;
+    // Auto-degradação: EMA do tempo de frame; lento por 2s seguidos
+    // reduz partículas e encurta rastros (piso conservador).
+    const agoraT = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (windLastFrameT) {
+        const dt = agoraT - windLastFrameT;
+        windFrameEmaMs = windFrameEmaMs * 0.92 + Math.min(dt, 250) * 0.08;
+        if (windFrameEmaMs > 26) {
+            if (++windSlowFrames >= 120 && windParticles.length > 300) {
+                windParticles.length = Math.max(300, Math.floor(windParticles.length * 0.6));
+                windParticles.forEach(p => { p.trail.length = Math.min(p.trail.length, 12); p.maxAge = Math.min(p.maxAge, 90); });
+                windSlowFrames = 0;
+            }
+        } else {
+            windSlowFrames = 0;
+        }
+    }
+    windLastFrameT = agoraT;
     windCtx.clearRect(0, 0, windCanvas.width, windCanvas.height);
 
     for (const p of windParticles) {
@@ -7377,6 +7409,46 @@ document.getElementById('climateToggle').addEventListener('click', () => {
             if (++tentativas < 60) setTimeout(restaurar, 2000);
         }
     })();
+})();
+</script>
+<script>
+/* ================= HUD de performance (Fase 8) =================
+   ?perf=1 mostra FPS, heap JS, nós DOM e contadores de camadas —
+   para medição antes/depois em campo. Sem dependências. */
+(function () {
+    'use strict';
+    if (new URLSearchParams(location.search).get('perf') !== '1') return;
+    var box = document.createElement('div');
+    box.id = 'perfHud';
+    box.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:5000;background:rgba(11,19,41,.92);'
+        + 'border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:8px 12px;font:11px/1.7 monospace;color:#f1f5f9;';
+    document.body.appendChild(box);
+    var frames = 0, ultimo = performance.now(), fps = 0;
+    function loop(t) {
+        frames++;
+        if (t - ultimo >= 1000) {
+            fps = Math.round(frames * 1000 / (t - ultimo));
+            frames = 0;
+            ultimo = t;
+            var heap = (performance.memory && performance.memory.usedJSHeapSize)
+                ? (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + ' MB' : 'n/a';
+            var dom = document.getElementsByTagName('*').length;
+            var marcadores = 0;
+            try {
+                if (typeof map !== 'undefined') {
+                    map.eachLayer(function (l) {
+                        if (l.getLayers) marcadores += l.getLayers().length;
+                    });
+                }
+            } catch (e) {}
+            var vento = (typeof windParticles !== 'undefined' ? windParticles.length : 0)
+                + '/' + (typeof windBudget !== 'undefined' ? windBudget : '?');
+            box.innerHTML = 'FPS ' + fps + ' · heap ' + heap + '<br>DOM ' + dom
+                + ' · marcadores ' + marcadores + '<br>vento ' + vento + ' part.';
+        }
+        requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
 })();
 </script>
 </body>
