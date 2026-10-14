@@ -17,7 +17,10 @@
      Em produção sem PROXY_HOSTS, recusa tudo com 503.
    Uso no frontend:  dcProxyFetch('https://api.externa.com/...')
    ============================================================ */
-const dns = require('dns');
+const dns = require('node:dns');
+const http = require('node:http');
+const https = require('node:https');
+const crypto = require('node:crypto');
 const { corsHeaders, cacheHeaders, reqUrl } = require('../_lib/http');
 const { origemPara } = require('../_lib/origens');
 const { readCollection, writeCollection } = require('../_lib/store');
@@ -43,16 +46,19 @@ function hostAllowed(host) {
 }
 
 /* ---------- anti-SSRF ----------
-   NOTA TÉCNICA (TOCTOU): o `fetch` global (undici interno do Node)
-   não aceita `lookup`/Agent customizado sem o pacote `undici`
-   (dependência nova, vetada aqui), e reescrever o fetch sobre
-   http.request seria um rewrite arriscado do streaming/timeout/
-   redirect. Por isso o pin por conexão NÃO é feito: a checagem
-   DNS prévia barra literais, nomes locais e resolved-para-privado,
-   e redirects são negados — mas um DNS que mudar entre a checagem
-   e o fetch (rebinding) não seria pego. Mitigação adotada:
-   POST /api/fontes/vigilancia re-resolve periodicamente todos os
-   hosts e audita quem passar a apontar para faixa privada. */
+   Duas camadas:
+   1. `verificarAlvo` (pré-checagem): nega literais/internos, nomes locais
+      e hostnames que resolvem para faixa privada. Dá o 403 explicativo.
+   2. `lookupSeguro` (pin na conexão): o transporte nativo (node:http/https)
+      resolve o DNS através deste `lookup`, que valida o endereço ANTES de
+      devolver para o `connect`. A mesma resolução que valida é a que
+      conecta — não existe janela entre checar e conectar, então DNS
+      rebinding (TOCTOU) é bloqueado mesmo se o DNS mudar depois da
+      pré-checagem. Redirects são seguidos manualmente (limite de saltos)
+      com revalidação de allowlist + IP a cada salto.
+   Mitigação complementar (detecção tardia): POST|GET /api/fontes/vigilancia
+   re-resolve periodicamente os hosts e audita quem apontar p/ faixa privada
+   (ver api/_routes/fontes-vigilancia.js). Só observa e alarma. */
 // Resolvedor injetável (testes substituem via definirResolvedor).
 const resolvedorPadrao = (host) => dns.promises.lookup(host, { all: true }).then((r) => r.map((x) => x.address));
 let resolvedor = resolvedorPadrao;
@@ -126,12 +132,69 @@ function ipv6Bloqueado(host) {
   if (t === '::' || t === '::ffff:0.0.0.0') return 'não-roteável (::)';
   if (/^(fe[89ab][0-9a-f]?):/i.test(t)) return 'link-local (fe80::/10)';
   if (/^(fc|fd)[0-9a-f]{0,2}:/i.test(t)) return 'privada (fc00::/7)';
-  const m = t.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  const m = t.match(/:(\d+\.\d+\.\d+\.\d+)$/);
   if (m) {
     const b = ipv4Flexivel(m[1]);
-    if (b) return ipv6Bloqueado('x') || ipv4Privado(b);
+    if (!b) return 'IPv4 mapeado inválido (' + t + ')';
+    return ipv4Privado(b);
   }
   return null;
+}
+
+/* Validador estrito de IPv6 textual (com ou sem ::, com zona % e com
+   dotted-quad embutido). Evita que lixo com ':' passe como "público". */
+function ipv6Valido(s) {
+  const t = String(s || '').toLowerCase().split('%')[0].replace(/^\[|\]$/g, '');
+  if (!t.includes(':') || /[^0-9a-f:.]/i.test(t)) return false;
+  const partes = t.split('::');
+  if (partes.length > 2) return false;
+  const temPontos = t.includes('.');
+  const checar = (lado) => {
+    if (lado === '') return [];
+    return lado.split(':');
+  };
+  const grupos = [...checar(partes[0]), ...checar(partes[1] || '')];
+  let pontos = 0;
+  for (const g of grupos) {
+    if (g.includes('.')) {
+      pontos += 1;
+      if (!ipv4Flexivel(g)) return false;
+      continue;
+    }
+    if (!/^[0-9a-f]{1,4}$/i.test(g)) return false;
+  }
+  if (pontos > 1) return false;
+  const total = grupos.length + (pontos ? 1 : 0); // dotted-quad vale por 2 grupos
+  if (partes.length === 2) return total < 8;
+  return total === 8;
+}
+
+/* Veredito unificado para QUALQUER endereço resolvido/conectado.
+   Devolve null (liberado) ou o motivo do bloqueio. Cobre: 0/8, 10/8,
+   127/8, 169.254/16 (metadata de cloud), 172.16/12, 192.168/16,
+   ::1, ::, fe80::/10, fc00::/7 e IPv4 mapeado em IPv6
+   (::ffff:10.0.0.1 e forma longa 0:0:0:0:0:ffff:10.0.0.1). */
+function motivoEnderecoBloqueado(endereco) {
+  const s = String(endereco || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!s) return 'endereço vazio';
+  const mapeado = s.match(/:(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (mapeado) {
+    const b = ipv4Flexivel(mapeado[1]);
+    if (!b) return 'IPv4 mapeado inválido (' + s + ')';
+    return ipv4Privado(b);
+  }
+  if (s.includes(':')) {
+    if (!ipv6Valido(s)) return 'IPv6 inválido (' + s + ')';
+    return ipv6Bloqueado(s);
+  }
+  const b = ipv4Flexivel(s);
+  if (!b) return 'endereço inválido (' + s + ')';
+  return ipv4Privado(b);
+}
+
+/* Predicado simples (quando só interessa bloquear/liberar). */
+function ehIpPrivado(endereco) {
+  return motivoEnderecoBloqueado(endereco) !== null;
 }
 
 const NOMES_BLOQUEADOS = ['localhost'];
@@ -170,21 +233,13 @@ async function verificarAlvo(parsed) {
     return { ok: false, motivo: 'destino sem endereço (fail closed)' };
   }
   for (const ip of enderecos) {
-    const s = String(ip).toLowerCase().replace(/^\[|\]$/g, '');
-    const b6 = ipv6Bloqueado(s);
-    if (b6) return { ok: false, motivo: `resolveu para ${s} (${b6})` };
-    const b4 = ipv4Flexivel(s);
-    if (b4) {
-      const priv = ipv4Privado(b4);
-      if (priv) return { ok: false, motivo: `resolveu para ${s} (${priv})` };
+    const motivo = motivoEnderecoBloqueado(ip);
+    if (motivo) {
+      const s = String(ip).toLowerCase().replace(/^\[|\]$/g, '');
+      return { ok: false, motivo: `resolveu para ${s} (${motivo})` };
     }
   }
   return { ok: true };
-}
-
-function rewriteUrl(url) {
-    // Habilita modo cors-friendly p/ alguns provedores que exigem Auth header
-    return url;
 }
 
 const UPSTREAM_TIMEOUT_MS = 20000;
@@ -192,52 +247,172 @@ const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024;
 /* Teto do fallback "último válido" (KV viaja na URL: corpos
    gigantes quebrariam o driver kv; acima disso, sem stale). */
 const MAX_FALLBACK_BYTES = 256 * 1024;
+/* Saltos máximos de redirect seguidos manualmente (cada salto é
+   revalidado: allowlist + pré-checagem DNS + pin na conexão). */
+const MAX_SALTOS_REDIRECT = 3;
 
-// Tenta buscar a origem com timeout; refaz 1 tentativa em caso de falha de rede/timeout.
-async function fetchUpstream(target, timeoutMs, attempts = 2) {
-    const limite = Number(timeoutMs) > 0 ? Number(timeoutMs) : UPSTREAM_TIMEOUT_MS;
-    for (let i = 0; i < attempts; i++) {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), limite);
-        try {
-            return await fetch(rewriteUrl(target), {
-                headers: {
-                    'User-Agent': 'SGIProtege/1.0 (+painel-operacional)',
-                    'Accept': '*/*',
-                },
-                redirect: 'manual',
-                signal: ctrl.signal,
-            });
-        } catch (e) {
-            if (i === attempts - 1) throw e;
-        } finally {
-            clearTimeout(timer);
-        }
-    }
+/* ---------- pin de DNS na conexão (fecha o TOCTOU) ----------
+   Resolução de baixo nível injetável (uma chamada = um endereço).
+   O transporte passa `lookupSeguro` para http/https.request: o endereço
+   validado aqui é exatamente o usado pelo `connect`. */
+const procurarDnsPadrao = (host) => new Promise((resolve, reject) => {
+  dns.lookup(String(host), (err, address, family) => {
+    if (err) reject(err);
+    else resolve({ address, family });
+  });
+});
+let procurarDns = procurarDnsPadrao;
+function definirProcurarDns(fn) {
+  procurarDns = typeof fn === 'function' ? fn : procurarDnsPadrao;
 }
 
-async function readUpstreamBody(response, maxBytes) {
-  const limite = Number(maxBytes) > 0 ? Number(maxBytes) : MAX_UPSTREAM_BYTES;
-  const contentLength = Number(response.headers.get('content-length'));
-  if (Number.isFinite(contentLength) && contentLength > limite) {
-    throw new Error('Resposta da origem excede o limite permitido.');
-  }
-  if (!response.body) return Buffer.alloc(0);
+/* Assinatura de `lookup` do node (hostname, options, callback).
+   Falha fechado: IP privado/reservado ou DNS indisponível abortam
+   a conexão antes de qualquer byte trafegar.
+   Compatível com Happy Eyeballs (Node ≥20 chama com `all: true`
+   esperando um array de { address, family }). */
+function lookupSeguro(hostname, options, callback) {
+  const cb = typeof options === 'function' ? options : callback;
+  const emLote = options && typeof options === 'object' && options.all === true;
+  procurarDns(String(hostname)).then(
+    ({ address }) => {
+      const motivo = motivoEnderecoBloqueado(address);
+      if (motivo) {
+        const erro = new Error('SSRF: conexão bloqueada (' + motivo + ').');
+        erro.final = true;
+        cb(erro);
+        return;
+      }
+      const limpo = String(address);
+      const familia = limpo.includes(':') ? 6 : 4;
+      if (emLote) cb(null, [{ address: limpo, family: familia }]);
+      else cb(null, limpo, familia);
+    },
+    (err) => cb(err instanceof Error ? err : new Error('DNS indisponível.'))
+  );
+}
 
-  const reader = response.body.getReader();
-  const chunks = [];
-  let size = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > limite) {
-      try { await reader.cancel(); } catch { /* resposta já encerrada */ }
-      throw new Error('Resposta da origem excede o limite permitido.');
+/* Lê um stream com teto rígido de bytes: estoura → destroy + erro.
+   Não confia só em Content-Length (pode mentir ou faltar). */
+function coletarCorpoLimitado(stream, limite, aoDestruir) {
+  return new Promise((resolve, reject) => {
+    const teto = Number(limite) > 0 ? Number(limite) : MAX_UPSTREAM_BYTES;
+    const chunks = [];
+    let size = 0;
+    let encerrado = false;
+    const falhar = (erro) => {
+      if (encerrado) return;
+      encerrado = true;
+      try { stream.destroy(); } catch { /* já encerrado */ }
+      if (typeof aoDestruir === 'function') {
+        try { aoDestruir(); } catch { /* best-effort */ }
+      }
+      reject(erro);
+    };
+    stream.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > teto) {
+        const erro = new Error('Resposta da origem excede o limite permitido.');
+        erro.final = true;
+        falhar(erro);
+        return;
+      }
+      chunks.push(chunk);
+    });
+    stream.on('end', () => {
+      if (!encerrado) {
+        encerrado = true;
+        resolve(Buffer.concat(chunks, size));
+      }
+    });
+    stream.on('error', (erro) => falhar(erro));
+  });
+}
+
+/* Transporte padrão: http/https nativo com o lookup pinado.
+   Devolve { status, ok, headers: { get }, body: Buffer }.
+   Redirects NÃO são seguidos aqui (o handler segue manualmente). */
+function transporteNativo({ parsed, timeoutMs, maxBytes, lookup }) {
+  return new Promise((resolve, reject) => {
+    let encerrado = false;
+    const ok = (valor) => { if (!encerrado) { encerrado = true; resolve(valor); } };
+    const falhar = (erro) => { if (!encerrado) { encerrado = true; reject(erro); } };
+    const limite = Number(timeoutMs) > 0 ? Number(timeoutMs) : UPSTREAM_TIMEOUT_MS;
+    const teto = Number(maxBytes) > 0 ? Number(maxBytes) : MAX_UPSTREAM_BYTES;
+    const mod = parsed.protocol === 'https:' ? https : http;
+    let req;
+    try {
+      req = mod.request({
+        hostname: parsed.hostname,
+        port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+        path: parsed.pathname + parsed.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'SGIProtege/1.0 (+painel-operacional)',
+          'Accept': '*/*',
+        },
+        lookup: lookup || lookupSeguro,
+      }, (res) => {
+        const total = Number(res.headers['content-length']);
+        if (Number.isFinite(total) && total > teto) {
+          const erro = new Error('Resposta da origem excede o limite permitido.');
+          erro.final = true;
+          try { req.destroy(); } catch { /* já encerrado */ }
+          falhar(erro);
+          return;
+        }
+        coletarCorpoLimitado(res, teto, () => { try { req.destroy(); } catch {} }).then(
+          (body) => ok({
+            status: res.statusCode,
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            headers: {
+              get: (nome) => {
+                const valor = res.headers[String(nome || '').toLowerCase()];
+                if (Array.isArray(valor)) return valor.join(', ');
+                return valor == null ? null : String(valor);
+              },
+            },
+            body,
+          }),
+          (erro) => falhar(erro)
+        );
+      });
+    } catch (erro) {
+      falhar(erro);
+      return;
     }
-    chunks.push(Buffer.from(value));
+    req.on('error', (erro) => falhar(erro));
+    req.setTimeout(limite, () => {
+      const erro = new Error('Timeout ao buscar a origem (' + limite + 'ms).');
+      try { req.destroy(erro); } catch { /* já encerrado */ }
+      falhar(erro);
+    });
+    req.end();
+  });
+}
+
+/* Transporte injetável (testes substituem via definirTransporte).
+   O mock DEVE chamar `lookup(hostname, {}, cb)` para simular a
+   resolução do momento da conexão — é assim que o teste de
+   rebinding prova o abort. */
+let transporte = transporteNativo;
+function definirTransporte(fn) {
+  transporte = typeof fn === 'function' ? fn : transporteNativo;
+}
+
+/* Busca com 1 retry em falha de rede/timeout. Erros `final`
+   (SSRF, limite de corpo, redirect esgotado) nunca repetem. */
+async function buscarOrigem({ parsed, timeoutMs, maxBytes, attempts = 2 }) {
+  let ultimo = null;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await transporte({ parsed, timeoutMs, maxBytes, lookup: lookupSeguro });
+    } catch (erro) {
+      ultimo = erro;
+      if ((erro && erro.final) || i === attempts - 1) throw erro;
+    }
   }
-  return Buffer.concat(chunks, size);
+  throw ultimo;
 }
 
 /* Saúde por fonte (lido por GET /api/fontes/saude).
@@ -314,34 +489,57 @@ module.exports = serve(async function handler(req) {
     return new Response(JSON.stringify({ erro: 'Informe o parâmetro ?url=' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
 
-  let parsed;
-  try { parsed = new URL(target); } catch (e) {
+  let atual;
+  try { atual = new URL(target); } catch (e) {
     return new Response(JSON.stringify({ erro: 'URL inválida.' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return new Response(JSON.stringify({ erro: 'Protocolo não suportado.' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
   if (emProducao() && !allowedHosts().length) {
     return new Response(JSON.stringify({ erro: 'Proxy desativado: configure PROXY_HOSTS em produção.' }), { status: 503, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
-  const checagem = await verificarAlvo(parsed);
-  if (!checagem.ok) {
-    return new Response(JSON.stringify({ erro: 'Destino não permitido no proxy.', motivo: checagem.motivo }), { status: 403, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
-  }
-  if (!hostAllowed(parsed.hostname)) {
-    return new Response(JSON.stringify({ erro: 'Domínio não permitido no proxy.' }), { status: 403, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
-  }
 
   // Config de cache/timeout por fonte (default seguro p/ hosts novos).
-  const origem = origemPara(parsed.hostname);
+  const origem = origemPara(atual.hostname);
+
+  function destinoProibido(parsed, checagem) {
+    if (!checagem.ok) {
+      return new Response(JSON.stringify({ erro: 'Destino não permitido no proxy.', motivo: checagem.motivo }), { status: 403, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
+    }
+    if (!hostAllowed(parsed.hostname)) {
+      return new Response(JSON.stringify({ erro: 'Domínio não permitido no proxy.' }), { status: 403, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
+    }
+    return null;
+  }
 
   try {
     const inicio = Date.now();
-    const upstream = await fetchUpstream(target, origem.timeoutMs);
-    if (upstream.status >= 300 && upstream.status < 400) {
-      throw new Error('Redirecionamentos da origem não são permitidos.');
+    let upstream = null;
+    /* Redirects seguidos manualmente: cada salto volta para a
+       revalidação (protocolo + pré-checagem DNS + allowlist) e a
+       conexão de cada salto passa pelo lookup pinado. */
+    for (let salto = 0; ; salto++) {
+      if (atual.protocol !== 'http:' && atual.protocol !== 'https:') {
+        return new Response(JSON.stringify({ erro: 'Protocolo não suportado.' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
+      }
+      const bloqueado = destinoProibido(atual, await verificarAlvo(atual));
+      if (bloqueado) return bloqueado;
+      upstream = await buscarOrigem({ parsed: atual, timeoutMs: origem.timeoutMs, maxBytes: origem.maxBytes });
+      const redireciona = upstream.status >= 300 && upstream.status < 400
+        ? upstream.headers.get('location') : null;
+      if (!redireciona) break;
+      if (salto >= MAX_SALTOS_REDIRECT) {
+        const erro = new Error('Redirecionamentos da origem excedem o limite permitido.');
+        erro.final = true;
+        throw erro;
+      }
+      try {
+        atual = new URL(redireciona, atual.href);
+      } catch (e) {
+        const erro = new Error('Destino de redirecionamento inválido.');
+        erro.final = true;
+        throw erro;
+      }
     }
-    const buf = await readUpstreamBody(upstream, origem.maxBytes);
+    const buf = upstream.body;
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
     const latenciaMs = Date.now() - inicio;
     await registrarSaude(origem.id, upstream.ok, latenciaMs);
@@ -350,7 +548,7 @@ module.exports = serve(async function handler(req) {
     // grandes demais pulam o fallback, mas ainda são servidos.
     if (upstream.ok && buf.length <= MAX_FALLBACK_BYTES) {
       try {
-        await salvarFallback(chaveFallback(parsed), {
+        await salvarFallback(chaveFallback(atual), {
           status: upstream.status,
           contentType,
           base64: buf.toString('base64'),
@@ -376,7 +574,7 @@ module.exports = serve(async function handler(req) {
     await registrarSaude(origem.id, false);
     // Fallback: último dado válido, sinalizado como antigo.
     try {
-      const velho = await lerFallback(chaveFallback(parsed));
+      const velho = await lerFallback(chaveFallback(atual));
       if (velho && velho.base64) {
         const buf = Buffer.from(velho.base64, 'base64');
         const idadeSeg = Math.max(0, Math.round((Date.now() - Date.parse(velho.salvoEm)) / 1000));
@@ -398,9 +596,16 @@ module.exports = serve(async function handler(req) {
   }
 });
 
-// Ganchos de teste (SSRF): substituem o resolvedor DNS.
+// Ganchos de teste (SSRF): substituem resolvedor, lookup e transporte.
 module.exports.verificarAlvo = verificarAlvo;
 module.exports.definirResolvedor = definirResolvedor;
+module.exports.definirProcurarDns = definirProcurarDns;
+module.exports.definirTransporte = definirTransporte;
+module.exports.transporteNativo = transporteNativo;
+module.exports.lookupSeguro = lookupSeguro;
+module.exports.motivoEnderecoBloqueado = motivoEnderecoBloqueado;
+module.exports.ehIpPrivado = ehIpPrivado;
+module.exports.coletarCorpoLimitado = coletarCorpoLimitado;
 module.exports.limparSaudeCache = limparSaudeCache;
 module.exports.ipv4Flexivel = ipv4Flexivel;
 module.exports.ipv4Privado = ipv4Privado;

@@ -181,4 +181,27 @@ app.get('*', (req, res, next) => {
 app.listen(PORT, () => {
   console.log(`\nSGI PROTEGE — backend rodando em http://localhost:${PORT}`);
   console.log('Endpoints: /api/auth/login, /api/alertas, /api/reports, /api/areas\n');
+  agendarVigilanciaDns(PORT);
 });
+
+/* Job de vigilância DNS (mitigação TOCTOU — só observa e alarma).
+   Servidor tradicional: setInterval com .unref() (não segura o exit).
+   Serverless (Vercel): setInterval não funciona — usar o Cron do
+   vercel.json chamando GET /api/fontes/vigilancia.
+   Desligado por padrão; ative com VIGILANCIA_INTERVAL_MIN=5. */
+function agendarVigilanciaDns(port) {
+  const intervaloMin = Number(process.env.VIGILANCIA_INTERVAL_MIN || 0);
+  if (!Number.isFinite(intervaloMin) || intervaloMin <= 0) return;
+  const secret = process.env.VIGILANCIA_SECRET || '';
+  const tick = async () => {
+    try {
+      await fetch(`http://127.0.0.1:${port}/api/fontes/vigilancia`, {
+        method: 'POST',
+        headers: secret ? { authorization: 'Bearer ' + secret } : {},
+      });
+    } catch (erro) {
+      console.error('[vigilancia] falha ao executar:', erro && erro.message);
+    }
+  };
+  setInterval(tick, intervaloMin * 60 * 1000).unref();
+}

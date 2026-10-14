@@ -17,7 +17,7 @@ portão global em `api/_lib/access-control.js` + checagem no handler.
 | `GET /api/occurrences/:id` | detalhe (404 se ausente) | store |
 | `GET /api/reports` | reportes públicos | store |
 | `GET /api/proxy?url=` | proxy CORS genérico; `X-Fonte/X-Upstream-*`, `X-Stale` em fallback | origem externa; `s-maxage` por fonte (ver `api/_lib/origens.js`); allowlist `PROXY_HOSTS` |
-| \POST /api/fontes/vigilancia\ | re-resolve hosts e audita quem aponta p/ faixa privada (mitigacao TOCTOU; usar via cron) | \system_config\ (\onte-vigilancia\) + \udit_logs\ |
+| `GET\|POST /api/fontes/vigilancia` | re-resolve hosts e audita quem aponta p/ faixa privada (mitigação TOCTOU; Vercel Cron a cada 5min ou `VIGILANCIA_INTERVAL_MIN` no standalone; exige Bearer/`?secret=` se `VIGILANCIA_SECRET` setado) | `system_config` (`fonte-vigilancia`) + `audit_logs` |
 | `GET /api/fontes` ou `/api/fontes/saude` | saúde das 22 fontes (ok/lento/fora, último sucesso/falha, latência) | `system_config` (`fonte-saude`) |
 | `GET /api/barragens?uf=&bbox=&limit=&offset=` | SNISB normalizado (+`parcial`) | ArcGIS REST SNISB; `s-maxage=24h` |
 | `GET /api/avisos` / `?id=` | RSS nacional / detalhe CAP+polígono | INMET; `s-maxage` 10min/1h |

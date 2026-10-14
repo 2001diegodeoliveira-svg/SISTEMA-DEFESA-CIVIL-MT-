@@ -1,13 +1,21 @@
 /* ============================================================
    Vigilância de DNS das fontes (mitigação do TOCTOU do anti-SSRF).
-   POST /api/fontes/vigilancia (público, como /api/fontes/saude)
+   GET|POST /api/fontes/vigilancia
    Re-resolve todos os hosts do registro + PROXY_HOSTS, compara com
    a linha de base (doc "fonte-vigilancia") e audita em audit_logs
    quem passar a resolver para faixa privada/reservada.
-   Uso: cron externo periódico (ex.: a cada 5 min). Fail-seguro:
-   só observa e alarma — nunca bloqueia request por aqui.
+   Uso: cron externo periódico (ex.: a cada 5 min) ou Vercel Cron
+   (ver vercel.json). Fail-seguro: só observa e alarma — nunca
+   bloqueia request por aqui.
+   Autenticação: se VIGILANCIA_SECRET estiver configurado, exige
+   `Authorization: Bearer <secret>` (comparação em tempo constante)
+   ou `?secret=`; sem secret, público como /api/fontes/saude (dev).
+   NOTA: o Cron da Vercel faz GET sem header customizado — com secret
+   configurado, use um agendador externo com Bearer; sem secret, o
+   Cron da Vercel funciona direto. Ver docs/APIs.md.
    ============================================================ */
-const { jsonResponse } = require('../_lib/http');
+const crypto = require('node:crypto');
+const { jsonResponse, bearerToken, reqUrl } = require('../_lib/http');
 const { serve } = require('../_lib/serverless');
 const { FONTES } = require('../_lib/origens');
 const { readCollection, writeCollection, push } = require('../_lib/store');
@@ -25,13 +33,34 @@ function hostsMonitorados() {
   return [...new Set([...doRegistro, ...doEnv])];
 }
 
+function segredoConfere(fornecido, env = process.env) {
+  const esperado = String(env.VIGILANCIA_SECRET || '');
+  if (!esperado) return true; // sem secret: público (dev / Cron sem header)
+  const a = Buffer.from(String(fornecido || ''));
+  const b = Buffer.from(esperado);
+  if (a.length !== b.length || !a.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+function autorizado(req, env = process.env) {
+  if (!String(env.VIGILANCIA_SECRET || '')) return true;
+  const token = bearerToken(req);
+  const viaQuery = reqUrl(req)?.searchParams.get('secret');
+  return segredoConfere(token, env) || segredoConfere(viaQuery, env);
+}
+
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
   if (req.method === 'OPTIONS') {
     const { corsHeaders } = require('../_lib/http');
     return new Response(null, { status: 204, headers: corsHeaders(origin) });
   }
-  if (req.method !== 'POST') return jsonResponse(405, { erro: 'Método não suportado.' }, origin);
+  if (!autorizado(req)) {
+    return jsonResponse(401, { erro: 'Não autorizado.' }, origin);
+  }
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return jsonResponse(405, { erro: 'Método não suportado.' }, origin);
+  }
 
   const col = await readCollection('system_config');
   const resto = (Array.isArray(col) ? col : []).filter((d) => !d || d.id !== 'fonte-vigilancia');
