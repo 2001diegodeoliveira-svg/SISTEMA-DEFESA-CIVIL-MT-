@@ -31,6 +31,12 @@ o último dado válido (origem fora do ar). HIT/MISS real aparece em
 | inmet-graficos | tempo.inmet.gov.br | 1h | 2h | 10s |
 | open-meteo | api.open-meteo.com | 600s | 1800s | 8s |
 | ibge | servicodados.ibge.gov.br, www.ibge.gov.br | 24h | 24h | 10s |
+
+Malhas territoriais (`js/organizacao.js`): estados por UF e municípios
+por UF funcionam; **a malha nacional usava `/malhas/estados` sem id,
+que retorna 404** (a API exige `{id}`) — corrigido para
+`/malhas/paises/BR?intrarregiao=UF` com retry (3 tentativas, backoff),
+validado com as 27 UFs. Documentação oficial: `/api/docs/malhas`.
 | msn | assets.msn.com | 15min | 1h | 10s |
 | brasilapi | brasilapi.com.br | 30min | 1h | 10s |
 | nominatim | nominatim.openstreetmap.org | 24h | 24h | 10s |

@@ -94,18 +94,27 @@
         return organizacaoPorUf(codigo, await obterEstados());
     }
 
-    async function buscarJson(url) {
-        const requisitar = global.dcProxyFetch || global.fetch;
-        if (typeof requisitar !== 'function') {
-            throw new Error('Não há um serviço de rede disponível para consultar o IBGE.');
+    async function buscarJson(url, tentativas) {
+        const max = Number.isFinite(tentativas) && tentativas > 0 ? tentativas : 1;
+        let ultimoErro = null;
+        for (let t = 0; t < max; t++) {
+            if (t > 0) await new Promise(function (r) { setTimeout(r, 800 * t); });
+            try {
+                const requisitar = global.dcProxyFetch || global.fetch;
+                if (typeof requisitar !== 'function') {
+                    throw new Error('Não há um serviço de rede disponível para consultar o IBGE.');
+                }
+                const resposta = await requisitar(url);
+                if (!resposta || !resposta.ok) {
+                    const status = resposta && Number.isFinite(resposta.status) ? ' (' + resposta.status + ')' : '';
+                    throw new Error('O IBGE não respondeu à consulta' + status + '.');
+                }
+                return resposta.json();
+            } catch (erro) {
+                ultimoErro = erro;
+            }
         }
-
-        const resposta = await requisitar(url);
-        if (!resposta || !resposta.ok) {
-            const status = resposta && Number.isFinite(resposta.status) ? ' (' + resposta.status + ')' : '';
-            throw new Error('O IBGE não respondeu à consulta' + status + '.');
-        }
-        return resposta.json();
+        throw ultimoErro;
     }
 
     function validarLista(valor, descricao) {
@@ -174,10 +183,14 @@
 
     function obterMalhaEstados() {
         if (!malhaEstadosPromise) {
-            const url = MALHAS_BASE + '/estados?formato=application/vnd.geo+json&qualidade=minima';
-            malhaEstadosPromise = buscarJson(url)
+            // Sem endpoint de coleção: usa o país com intrarregião UF
+            // (documentado em /api/docs/malhas; /malhas/estados sem id dá 404).
+            const url = MALHAS_BASE + '/paises/BR?formato=application/vnd.geo+json&intrarregiao=UF&qualidade=minima';
+            malhaEstadosPromise = buscarJson(url, 3)
                 .then(function (valor) {
-                    return validarMalha(valor, 'estados');
+                    const malha = validarMalha(valor, 'estados');
+                    if (!malha.features.length) throw new Error('Malha de estados vazia.');
+                    return malha;
                 })
                 .catch(function (erro) {
                     malhaEstadosPromise = null;
@@ -195,9 +208,11 @@
         if (!malhasMunicipaisPorUf.has(uf)) {
             const url = MALHAS_BASE + '/estados/' + encodeURIComponent(uf) +
                 '?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima';
-            const malhaPromise = buscarJson(url)
+            const malhaPromise = buscarJson(url, 3)
                 .then(function (valor) {
-                    return validarMalha(valor, 'municípios da UF');
+                    const malha = validarMalha(valor, 'municípios da UF');
+                    if (!malha.features.length) throw new Error('Malha de municípios vazia.');
+                    return malha;
                 })
                 .catch(function (erro) {
                     malhasMunicipaisPorUf.delete(uf);
