@@ -1270,6 +1270,15 @@
         .fonte-linha span:last-child { margin-left:auto; text-align:right; }
         .fontes-vazio { font-size:12.5px; color:var(--text-muted); }
         #connBanner { position:fixed; top:0; left:0; right:0; z-index:4000; display:flex; align-items:center; justify-content:center; gap:8px; background:#7f1d1d; color:#fff; font-size:13px; font-weight:700; padding:9px 12px; }
+        #relogio { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-muted); white-space:nowrap; }
+        #relogio b { color:var(--text-main); font-variant-numeric:tabular-nums; }
+        #kioskBar { position:fixed; left:50%; transform:translateX(-50%); bottom:14px; z-index:3000; display:none; align-items:center; gap:14px; background:rgba(11,19,41,.92); border:1px solid var(--border-color); border-radius:12px; padding:8px 16px; font-size:12.5px; color:var(--text-main); }
+        #kioskBar b { font-variant-numeric:tabular-nums; }
+        #kioskBar button { background:var(--bg-card-hover); color:var(--text-main); border:1px solid var(--border-color); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; }
+        body.kiosk #kioskBar { display:flex; }
+        body.kiosk aside#layersPanel, body.kiosk #climatePanel, body.kiosk .layers-toggle, body.kiosk .pluv-toggle, body.kiosk .msn-toggle,
+        body.kiosk #searchWrap, body.kiosk .top-actions .icon-btn, body.kiosk #userArea, body.kiosk .emergency-btn { display:none !important; }
+        body.kiosk #drawBar { display:none !important; }
     </style>
     <script src="js/demo.js"></script>
     <script src="js/protecao.js"></script>
@@ -1297,6 +1306,7 @@
         </div>
 
         <div class="top-actions">
+            <div id="relogio" title="Horário de Brasília e UTC"><i data-lucide="clock"></i><b id="relogioBr">--:--</b><span id="relogioUtc">UTC --:--</span></div>
             <button class="icon-btn" id="btnSources" title="Fontes de dados"><i data-lucide="database"></i> <span class="lbl">Fontes</span></button>
             <a class="icon-btn" href="painel.html"><i data-lucide="bar-chart-3"></i> <span class="lbl">Painel</span></a>
             <a class="icon-btn" href="alertas.html"><i data-lucide="bell"></i> <span class="lbl">Alertas</span></a>
@@ -2011,6 +2021,7 @@
         </div>
     </div>
     <div id="connBanner" style="display:none;"><i data-lucide="wifi-off"></i><span>Sem conexão — atualizações pausadas. Reconectando automaticamente…</span></div>
+    <div id="kioskBar"><i data-lucide="tv"></i><b id="kioskRelogio">--:--</b><span id="kioskUf">—</span><span id="kioskMsg">modo sala de situação</span><button id="kioskFull" title="Tela cheia">⛶</button><button id="kioskSair" title="Sair do modo">✕</button></div>
 </div>
 
 <!-- Popup central: alertas de chuva (INMET) + câmeras SINFRA próximas -->
@@ -7223,6 +7234,150 @@ document.getElementById('climateToggle').addEventListener('click', () => {
 
 /* ================= Alertas Climáticos em Tempo Real =================
    Lógica movida para js/monitor.js (compartilhada entre todas as páginas). */
+</script>
+<script>
+/* ================= Modo sala de situação 24h (Fase 7) =================
+   ?kiosk=1     esconde menus, mostra barra do plantão
+   ?giro=SECS   rotação automática por UF (padrão 90, mín 15)
+   ?ufs=SP,MT   lista a girar (padrão: todas as UFs)
+   ?reload=HORAS recarga preventiva preservando a visão (padrão 6 no kiosk, 0 fora)
+   Relógio Brasília+UTC fica sempre visível no topo. */
+(function () {
+    'use strict';
+    var q = new URLSearchParams(location.search);
+    var KIOSK = q.get('kiosk') === '1';
+    var GIRO_SEG = Math.min(1800, Math.max(15, parseInt(q.get('giro') || '90', 10) || 90));
+    var UFS_PARAM = (q.get('ufs') || '').split(',').map(function (s) { return s.trim().toUpperCase(); }).filter(Boolean);
+    var RELOAD_H = parseFloat(q.get('reload') || (KIOSK ? '6' : '0')) || 0;
+
+    function fmtHora(d, tz) {
+        try {
+            return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: tz });
+        } catch (e) {
+            return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+    }
+    function tickRelogio() {
+        var agora = new Date();
+        var br = document.getElementById('relogioBr');
+        var utc = document.getElementById('relogioUtc');
+        if (br) br.textContent = fmtHora(agora, 'America/Sao_Paulo');
+        if (utc) utc.textContent = 'UTC ' + fmtHora(agora, 'UTC');
+        var kb = document.getElementById('kioskRelogio');
+        if (kb) kb.textContent = fmtHora(agora, 'America/Sao_Paulo') + ' · UTC ' + fmtHora(agora, 'UTC');
+    }
+    setInterval(tickRelogio, 1000);
+    tickRelogio();
+
+    // Service worker: resiliência de rede (Fase 7). Push continua
+    // exigindo permissão explícita (botão Ativar notificações).
+    try {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(function () {});
+        }
+    } catch (err) {}
+
+    if (!KIOSK) return;
+    document.body.classList.add('kiosk');
+
+    function codigoDaSigla(sigla) {
+        try {
+            var lista = (typeof ibgeStates !== 'undefined' && ibgeStates) ? ibgeStates : [];
+            var e = lista.find(function (x) { return String(x.sigla).toUpperCase() === sigla; });
+            return e ? String(e.id).padStart(2, '0') : null;
+        } catch (err) { return null; }
+    }
+    var fila = [], pos = 0, tentativas = 0;
+    function resolverFila() {
+        var siglas = UFS_PARAM.length ? UFS_PARAM : [];
+        if (!siglas.length) {
+            try {
+                var lista = (typeof ibgeStates !== 'undefined' && ibgeStates) ? ibgeStates : [];
+                siglas = lista.map(function (x) { return String(x.sigla).toUpperCase(); });
+            } catch (err) { siglas = []; }
+        }
+        fila = siglas.map(codigoDaSigla).filter(Boolean);
+        return fila.length > 0;
+    }
+    function girar() {
+        if (!resolverFila()) return;
+        pos = (pos + 1) % fila.length;
+        var el = document.getElementById('kioskUf');
+        try {
+            if (typeof selecionarUf === 'function') selecionarUf(fila[pos]);
+        } catch (err) {}
+        if (el) {
+            var sigla = UFS_PARAM.length ? UFS_PARAM[pos % UFS_PARAM.length] : ('UF ' + fila[pos]);
+            el.textContent = 'girando: ' + sigla + ' (' + (pos + 1) + '/' + fila.length + ')';
+        }
+    }
+    function bootKiosk() {
+        if (resolverFila()) {
+            setInterval(girar, GIRO_SEG * 1000);
+            var msg = document.getElementById('kioskMsg');
+            if (msg) msg.textContent = 'rotação a cada ' + GIRO_SEG + 's';
+        } else if (++tentativas < 40) {
+            setTimeout(bootKiosk, 2000);
+        }
+    }
+    bootKiosk();
+
+    var btnFull = document.getElementById('kioskFull');
+    if (btnFull) btnFull.addEventListener('click', function () {
+        try {
+            if (document.fullscreenElement) document.exitFullscreen();
+            else document.documentElement.requestFullscreen();
+        } catch (err) {}
+    });
+    var btnSair = document.getElementById('kioskSair');
+    if (btnSair) btnSair.addEventListener('click', function () {
+        var u = new URL(location.href);
+        u.searchParams.delete('kiosk');
+        location.href = u.toString();
+    });
+
+    // Recarga preventiva: salva a visão e recarrega (anti vazamento de memória).
+    if (RELOAD_H > 0) {
+        setTimeout(function () {
+            try {
+                var visiveis = [];
+                if (typeof checkState !== 'undefined') {
+                    Object.keys(checkState).forEach(function (k) { if (checkState[k]) visiveis.push(k); });
+                }
+                var centro = null, zoom = null;
+                try { var c = map.getCenter(); centro = [c.lat, c.lng]; zoom = map.getZoom(); } catch (err) {}
+                sessionStorage.setItem('sgi-kiosk', JSON.stringify({
+                    uf: (typeof selectedUfCode !== 'undefined') ? selectedUfCode : '',
+                    checks: visiveis, centro: centro, zoom: zoom, salvoEm: Date.now(),
+                }));
+            } catch (err) {}
+            location.reload();
+        }, RELOAD_H * 3600000);
+    }
+})();
+/* Restaura a visão após recarga preventiva (se salvou há menos de 2 ciclos). */
+(function () {
+    'use strict';
+    var raw = null;
+    try { raw = sessionStorage.getItem('sgi-kiosk'); } catch (err) { return; }
+    if (!raw) return;
+    var st;
+    try { st = JSON.parse(raw); } catch (err) { return; }
+    try { sessionStorage.removeItem('sgi-kiosk'); } catch (err) {}
+    if (!st || !st.salvoEm || Date.now() - st.salvoEm > 12 * 3600000) return;
+    var tentativas = 0;
+    (function restaurar() {
+        try {
+            if (typeof map === 'undefined' || typeof setCheck !== 'function') throw new Error('aguarda mapa');
+            if (st.centro && st.zoom) { try { map.setView(st.centro, st.zoom); } catch (err) {} }
+            (st.checks || []).forEach(function (k) {
+                try { if (typeof checkState !== 'undefined' && !checkState[k]) setCheck(k, true); } catch (err) {}
+            });
+        } catch (err) {
+            if (++tentativas < 60) setTimeout(restaurar, 2000);
+        }
+    })();
+})();
 </script>
 </body>
 </html>
