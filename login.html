@@ -307,6 +307,12 @@
         /* A página de login permanece disponível como tela pública. */
     </script>
     <script>
+        /* MODO MANUTENÇÃO — login suspenso temporariamente.
+           true  = página mostra o aviso e bloqueia qualquer tentativa;
+           false = login volta ao normal. Reversível, sem mexer na API. */
+        const LOGIN_SUSPENSO = true;
+    </script>
+    <script>
         let perfilSelecionado = null;
         let municipios = [];
         let mfaChallengeToken = null;
@@ -379,7 +385,16 @@
             const el = document.getElementById('boxMsg');
             el.className = 'box-msg ' + (tipo || 'erro');
             el.innerHTML = '<i data-lucide="' + (tipo === 'ok' ? 'circle-check' : tipo === 'info' ? 'info' : 'triangle-alert') + '"></i> <span>' + texto + '</span>';
-            if (window.lucide) lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
+
+        // Modo manutenção: avisa de cara e desabilita os botões.
+        if (typeof LOGIN_SUSPENSO !== 'undefined' && LOGIN_SUSPENSO) {
+            mostrarMsg('Login temporariamente suspenso para manutenção. Tente novamente mais tarde.');
+            const entrar = document.getElementById('entrarBtn');
+            const confirmar = document.getElementById('mfaConfirmar');
+            if (entrar) entrar.disabled = true;
+            if (confirmar) confirmar.disabled = true;
+        }
         }
 
         function ocultarMsg() {
@@ -475,6 +490,12 @@
         });
 
         document.getElementById('entrarBtn').addEventListener('click', async () => {
+            // MODO MANUTENÇÃO: login suspenso temporariamente. Para reativar,
+            // apague este bloco (ou use a flag LOGIN_SUSPENSO abaixo).
+            if (typeof LOGIN_SUSPENSO !== 'undefined' && LOGIN_SUSPENSO) {
+                mostrarMsg('Login temporariamente suspenso para manutenção. Tente novamente mais tarde.');
+                return;
+            }
             const usuario = document.getElementById('usuarioInput').value.trim();
             const senha = document.getElementById('senhaInput').value;
 
