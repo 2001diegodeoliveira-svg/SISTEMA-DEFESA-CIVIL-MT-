@@ -4,7 +4,6 @@
    Varre os avisos vigentes de chuva/tempestade em todo o Brasil, desenha
    os polígonos no mapa e abre o modal central para avisos ainda não
    exibidos nesta sessão (com câmeras SINFRA próximas quando houver). */
-const RAIN_RSS_URL = 'https://apiprevmet3.inmet.gov.br/avisos/rss';
 let avisosLayer = null;
 const RAIN_MESO_CENTROID = {
     'Centro-Sul Mato-grossense': [-15.60, -55.80],
@@ -26,11 +25,6 @@ let rainAlertShown = {};
 let rainAlertShowing = false;
 let rainCurAlert = null;
 
-function rainCampo(html, rotulo) {
-    const re = new RegExp('<th[^>]*>' + rotulo + '</th>[\\s\\S]*?<td>([\\s\\S]*?)</td>', 'i');
-    const m = html.match(re);
-    return m ? m[1].replace(/<[^>]+>/g, '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/\s+/g, ' ').trim() : '';
-}
 function rainFmtDh(str) {
     const d = new Date(String(str).replace(' ', 'T'));
     if (isNaN(d)) return '—';

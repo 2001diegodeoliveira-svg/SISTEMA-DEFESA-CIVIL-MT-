@@ -200,15 +200,6 @@ function msnCityDefault() {
     const c = centroidByCod['5103403']; // Cuiabá
     return c ? '5103403' : (Object.keys(centroidByCod)[0] || '');
 }
-function openMsnMun(cod) {
-    const sel = document.getElementById('msnCity');
-    if (!sel.options.length) populateMsnCity();
-    if ([...sel.options].some(o => o.value === String(cod))) sel.value = String(cod);
-    const p = document.getElementById('msnPanel');
-    p.classList.remove('hidden-panel');
-    loadMsnOverview(String(cod));
-    if (window.lucide) lucide.createIcons();
-}
 
 
 /* ================= SIPAM Painel do Fogo — Eventos ativos em MT ================= */

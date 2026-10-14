@@ -15,14 +15,14 @@ function renderHourly48h(hourly) {
         const wind = hourly.wind_speed_10m[i] ?? 0;
         const gusts = hourly.wind_gusts_10m[i] ?? 0;
         const wcode = hourly.weather_code?.[i] ?? 0;
-        const [emoji] = WMO_ICONS[wcode] || ['\u2601\uFE0F'];
+        const [, icon] = WMO_ICONS[wcode] || ['—', 'cloud'];
         const isToday = dt.getDate() === new Date().getDate();
         const dayLabel = isToday ? '' : dt.toLocaleDateString('pt-BR', { weekday: 'short' }) + ' ';
         const item = document.createElement('div');
         item.className = 'pp-h-item';
         item.innerHTML = `
             <span class="phi-time">${dayLabel}${hr}</span>
-            <span class="phi-icon">${emoji}</span>
+            <span class="phi-icon"><i data-lucide="${icon}"></i></span>
             <span class="phi-temp">${temp != null ? Math.round(temp) + '\u00B0' : '\u2014'}</span>
             <span class="phi-wind"><i data-lucide="wind" style="font-size:7px;"></i>${Math.round(wind)}<sup style="font-size:6px;color:#ef4444;">${gusts > wind ? ' g' + Math.round(gusts) : ''}</sup></span>
             <span class="phi-rain">${rain > 0 ? rain.toFixed(1) + 'mm' : (prob > 0 ? prob + '%' : '')}</span>`;
@@ -39,7 +39,7 @@ function renderDaily7(daily) {
     const diaSem = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00E1b'];
     for (let i = 0; i < Math.min(7, daily.time.length); i++) {
         const dt = new Date(daily.time[i] + 'T12:00:00');
-        const [emoji] = WMO_ICONS[daily.weather_code?.[i]] || ['\u2601\uFE0F'];
+        const [, icon] = WMO_ICONS[daily.weather_code?.[i]] || ['—', 'cloud'];
         const tmax = Math.round(daily.temperature_2m_max?.[i] ?? 0);
         const tmin = Math.round(daily.temperature_2m_min?.[i] ?? 0);
         const rain = (daily.precipitation_sum?.[i] ?? 0).toFixed(1);
@@ -49,7 +49,7 @@ function renderDaily7(daily) {
         row.className = 'pp-day-row';
         row.innerHTML = `
             <span class="pp-day-name">${isToday ? 'Hoje' : diaSem[dt.getDay()]}</span>
-            <span class="pp-day-icon">${emoji}</span>
+            <span class="pp-day-icon"><i data-lucide="${icon}"></i></span>
             <span class="pp-day-temps"><span class="pp-day-tmax">${tmax}\u00B0</span><span class="pp-day-tmin">${tmin}\u00B0</span></span>
             <span class="pp-day-rain"><i data-lucide="droplet" style="font-size:8px;"></i> ${rain}mm</span>
             <span class="pp-day-wind"><i data-lucide="wind" style="font-size:8px;"></i> ${windMax}</span>`;

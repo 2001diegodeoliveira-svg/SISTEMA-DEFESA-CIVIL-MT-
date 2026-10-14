@@ -414,20 +414,7 @@ const pp = {
 map.on('click', e => { if (!drawing) openPointPanel(e.latlng.lat, e.latlng.lng); });
 document.getElementById('ppClose').addEventListener('click', () => pp.panel.classList.remove('open'));
 
-function wmoDesc(code) {
-    const table = {
-        0: ['Céu limpo', 'sun'], 1: ['Predomínio de sol', 'cloud-sun'], 2: ['Parcialmente nublado', 'cloud-sun'],
-        3: ['Nublado', 'cloud'], 45: ['Nevoeiro', 'cloud-fog'], 48: ['Nevoeiro com geada', 'cloud-fog'],
-        51: ['Garoa fraca', 'cloud-rain'], 53: ['Garoa moderada', 'cloud-rain'], 55: ['Garoa intensa', 'cloud-rain'],
-        61: ['Chuva fraca', 'cloud-rain'], 63: ['Chuva moderada', 'cloud-rain'], 65: ['Chuva forte', 'cloud-rain'],
-        71: ['Neve fraca', 'snowflake'], 73: ['Neve moderada', 'snowflake'], 75: ['Neve forte', 'snowflake'],
-        80: ['Pancadas isoladas', 'cloud-rain'], 81: ['Pancadas moderadas', 'cloud-rain'],
-        82: ['Pancadas violentas', 'cloud-rain'],
-        95: ['Tempestade', 'cloud-lightning'], 96: ['Tempestade com granizo', 'cloud-lightning'], 99: ['Tempestade severa', 'cloud-lightning'],
-    };
-    return table[code] || ['Condição indisponível', 'cloud'];
-}
-
+/* Tabela WMO única deste módulo: [descrição, ícone lucide]. */
 const WMO_ICONS = {
     0: ['Céu limpo','sun'], 1: ['Predomínio de sol','cloud-sun'], 2: ['Parc. nublado','cloud-sun'],
     3: ['Nublado','cloud'], 45: ['Nevoeiro','cloud-fog'], 48: ['Nevoeiro c/ geada','cloud-fog'],
