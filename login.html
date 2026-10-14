@@ -247,7 +247,12 @@
                 <section class="passo" id="passoMfa" aria-labelledby="mfaTitulo">
                     <h3 id="mfaTitulo">Verificação multifator</h3>
                     <p class="sub" id="mfaInstrucao">Informe o código temporário do aplicativo autenticador.</p>
+                    <!-- CRIPTO-04: prefira QR code do otpauthUri em vez de texto puro.
+                         TODO(frontend-senior): renderizar QR local (ex.: lib qrcode) a partir
+                         de data-otpauth-uri; nunca logar secret/codigo/token. -->
+                    <canvas id="mfaQr" hidden aria-label="QR code do autenticador"></canvas>
                     <p id="mfaSegredo" class="sub" hidden></p>
+                    <button class="btn" id="mfaCopiar" type="button" hidden>COPIAR CHAVE</button>
                     <label for="mfaCodigo" style="display:block;margin:16px 0 7px;font-size:11px;font-weight:600;">CÓDIGO DE SEIS DÍGITOS</label>
                     <input id="mfaCodigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" aria-describedby="mfaInstrucao">
                     <button class="btn" id="mfaConfirmar" type="button">CONFIRMAR CÓDIGO</button>
@@ -405,6 +410,18 @@
             location.href = (user.perfil === 'municipal') ? 'gestao.html' : 'index.html';
         }
 
+        function limparMfaSegredo() {
+            const segredo = document.getElementById('mfaSegredo');
+            const qr = document.getElementById('mfaQr');
+            const copiar = document.getElementById('mfaCopiar');
+            if (segredo) { segredo.textContent = ''; segredo.hidden = true; segredo.removeAttribute('data-otpauth-uri'); }
+            if (qr) { qr.hidden = true; const ctx = qr.getContext && qr.getContext('2d'); if (ctx) ctx.clearRect(0, 0, qr.width, qr.height); }
+            if (copiar) copiar.hidden = true;
+            const codigo = document.getElementById('mfaCodigo');
+            if (codigo) codigo.value = '';
+            mfaChallengeToken = null;
+        }
+
         async function iniciarMfa(desafio, configuracao) {
             mfaChallengeToken = desafio;
             mfaSetupRequired = configuracao;
@@ -413,11 +430,12 @@
             passo.classList.add('ativo');
             const instrucao = document.getElementById('mfaInstrucao');
             const segredo = document.getElementById('mfaSegredo');
+            const copiar = document.getElementById('mfaCopiar');
             if (!configuracao) {
                 instrucao.textContent = 'Abra seu aplicativo autenticador e informe o código atual.';
                 return;
             }
-            instrucao.textContent = 'Cadastre esta chave no aplicativo autenticador. A configuração só será ativada após confirmar um código válido.';
+            instrucao.textContent = 'Escaneie o QR code no aplicativo autenticador (ou copie a chave). A configuração só será ativada após confirmar um código válido.';
             const resultado = await dcApi.mfaEnroll(desafio);
             if (!resultado.ok || !resultado.data || !resultado.data.secret) {
                 mostrarMsg(resultado.data && resultado.data.erro || 'Não foi possível iniciar a configuração multifator.');
@@ -425,8 +443,18 @@
                 document.getElementById('passo-01').classList.add('ativo');
                 return;
             }
+            /* CRIPTO-04: evita texto puro persistente; guarda o otpauthUri em
+               atributo para o QR e oferece cópia explícita. Limpo após confirm. */
             segredo.hidden = false;
-            segredo.textContent = 'Chave de configuração: ' + resultado.data.secret + ' | URI: ' + resultado.data.otpauthUri;
+            segredo.setAttribute('data-otpauth-uri', resultado.data.otpauthUri || '');
+            segredo.textContent = 'Chave: ' + resultado.data.secret;
+            if (copiar) {
+                copiar.hidden = false;
+                copiar.onclick = async function () {
+                    try { await navigator.clipboard.writeText(resultado.data.secret); mostrarMsg('Chave copiada. Cole no aplicativo autenticador.', 'ok'); }
+                    catch (e) { mostrarMsg('Não foi possível copiar automaticamente. Digite a chave manualmente.'); }
+                };
+            }
         }
 
         document.getElementById('mfaConfirmar').addEventListener('click', async function () {
@@ -442,6 +470,7 @@
                 mostrarMsg(resultado.data && resultado.data.erro || 'A verificação multifator falhou.');
                 return;
             }
+            limparMfaSegredo();
             entrarNoPainel(resultado.data.token, resultado.data.user);
         });
 
