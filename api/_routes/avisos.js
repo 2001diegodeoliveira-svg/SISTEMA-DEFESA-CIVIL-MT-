@@ -47,9 +47,28 @@ function textoTag(xml, tag) {
   return m ? m[1].trim() : '';
 }
 
+/* Datas do INMET vêm em hora de Brasília sem offset
+   ("2026-10-13 23:00", "14/10/2026 00:01"). Sem sufixo, `new Date`
+   interpreta no fuso do servidor (UTC na Vercel), deslocando a
+   vigência em horas. Brasília é UTC-3 o ano todo (sem horário de
+   verão desde 2019), então convertemos com offset explícito.
+   CAP com offset próprio (ex.: -03:00) usa o nativo. */
+const FUSO_BRASILIA_MIN = -180;
+
 function parseData(v) {
   if (!v) return null;
-  const d = new Date(String(v).replace(' ', 'T'));
+  const texto = String(v).trim();
+  let m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/.exec(texto);
+  if (m) {
+    const ms = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) - FUSO_BRASILIA_MIN * 60000;
+    return new Date(ms).toISOString();
+  }
+  m = /^(\d{2})\/(\d{2})\/(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/.exec(texto);
+  if (m) {
+    const ms = Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0)) - FUSO_BRASILIA_MIN * 60000;
+    return new Date(ms).toISOString();
+  }
+  const d = new Date(texto);
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
@@ -158,3 +177,4 @@ module.exports = serve(async function handler(req) {
 module.exports.parseLista = parseLista;
 module.exports.parseDetalhe = parseDetalhe;
 module.exports.parsePoligono = parsePoligono;
+module.exports.parseData = parseData;
