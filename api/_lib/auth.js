@@ -5,7 +5,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
-const { isLoginEnabled, isSeedOnlyLoginEnabled, resolveJwtExp } = require('./runtime-config');
+const { isLoginEnabled, isSeedOnlyLoginEnabled, isSuspended, resolveJwtExp } = require('./runtime-config');
 const { demoAberto } = require('./demo');
 
 function getJwtSecret() {
@@ -140,6 +140,9 @@ function signChallengeToken(user, purpose) {
 }
 
 function verifyToken(token) {
+  /* Suspensão (fail-closed) tem precedência sobre tudo: nem o modo
+     "login desligado = liberado" nem a janela demo autorizam nada. */
+  if (isSuspended()) return null;
   if (!isLoginEnabled()) {
     return { sub: 'anon', usuario: 'Acesso livre', perfil: 'admin', liberada: true };
   }
@@ -187,4 +190,5 @@ module.exports = {
   publicUser,
   seedUsers,
   isLoginEnabled,
+  isSuspended,
 };

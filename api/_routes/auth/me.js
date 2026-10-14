@@ -1,6 +1,6 @@
 /* GET /api/auth/me → { user } (valida token) */
 const { jsonResponse, bearerToken } = require('../../_lib/http');
-const { verifyToken, publicUser, isLoginEligible, isLoginEnabled, isSessaoLiberada } = require('../../_lib/auth');
+const { verifyToken, publicUser, isLoginEligible, isLoginEnabled, isSuspended, isSessaoLiberada } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 const { readCollection } = require('../../_lib/store');
 
@@ -10,6 +10,11 @@ module.exports = serve(async function handler(req) {
   if (req.method === 'OPTIONS') return jsonResponse(204, {}, origin);
   if (req.method !== 'GET') {
     return jsonResponse(405, { erro: 'Método não permitido.' }, origin);
+  }
+  /* Suspensão fail-closed primeiro: nem o modo "login desligado" autoriza,
+     e tokens emitidos antes da suspensão não valem mais (verifyToken→null). */
+  if (isSuspended()) {
+    return jsonResponse(401, { erro: 'Sessão suspensa para manutenção.' }, origin);
   }
   if (!isLoginEnabled()) {
     return jsonResponse(200, { user: {
