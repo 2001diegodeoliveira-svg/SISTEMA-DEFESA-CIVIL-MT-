@@ -26,6 +26,7 @@ function setupEnv() {
   process.env.PROXY_HOSTS = 'example.test';
   // DNS determinístico (o proxy agora valida SSRF antes do fetch).
   proxyHandler.definirResolvedor(async () => ['93.184.216.34']);
+  proxyHandler.limparSaudeCache();
   demoReset();
 }
 
@@ -120,10 +121,39 @@ test('proxy registra sucesso e falha na saúde da fonte', async () => {
   } finally {
     global.fetch = fetchOrig;
     await restore(snap);
-    for (const [k, v] of prev) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
-    }
-    demoReset();
+    restoreEnv(prev);
+  }
+});
+
+test('POST /api/fontes/vigilancia audita host que resolve p/ privado', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  try {
+    setupEnv();
+    await writeCollection('system_config', []);
+    const vigilancia = require('../api/_routes/fontes-vigilancia');
+    const post = () => vigilancia(new Request('http://localhost/api/fontes/vigilancia', { method: 'POST' }));
+    proxyHandler.definirResolvedor(async (host) => (
+      host === 'ruim.test' ? ['10.9.9.9'] : ['93.184.216.34']
+    ));
+    process.env.PROXY_HOSTS = 'ruim.test,bom.test';
+    const r1 = await post();
+    assert.equal(r1.status, 200);
+    const j1 = await r1.json();
+    assert.ok(j1.verificados > 0);
+    const achado = j1.achados.find((a) => a.host === 'ruim.test');
+    assert.ok(achado && !achado.recuperado);
+    const logs = await readCollection('audit_logs');
+    assert.ok(logs.some((l) => l.action === 'fonte.vigilancia' && l.metadata.host === 'ruim.test'));
+    // segunda rodada com tudo público: registra recuperação, sem novo alarme
+    proxyHandler.definirResolvedor(async () => ['93.184.216.34']);
+    const j2 = await (await post()).json();
+    const rec = j2.achados.find((a) => a.host === 'ruim.test');
+    assert.ok(rec && rec.recuperado === true);
+    const logs2 = await readCollection('audit_logs');
+    assert.equal(logs2.filter((l) => l.action === 'fonte.vigilancia').length, 1);
+  } finally {
+    await restore(snap);
+    restoreEnv(prev);
   }
 });

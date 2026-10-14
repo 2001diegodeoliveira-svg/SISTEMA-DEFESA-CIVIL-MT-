@@ -42,7 +42,17 @@ function hostAllowed(host) {
   return allowed.some((h) => host === h || host.endsWith('.' + h));
 }
 
-/* ---------- anti-SSRF ---------- */
+/* ---------- anti-SSRF ----------
+   NOTA TÉCNICA (TOCTOU): o `fetch` global (undici interno do Node)
+   não aceita `lookup`/Agent customizado sem o pacote `undici`
+   (dependência nova, vetada aqui), e reescrever o fetch sobre
+   http.request seria um rewrite arriscado do streaming/timeout/
+   redirect. Por isso o pin por conexão NÃO é feito: a checagem
+   DNS prévia barra literais, nomes locais e resolved-para-privado,
+   e redirects são negados — mas um DNS que mudar entre a checagem
+   e o fetch (rebinding) não seria pego. Mitigação adotada:
+   POST /api/fontes/vigilancia re-resolve periodicamente todos os
+   hosts e audita quem passar a apontar para faixa privada. */
 // Resolvedor injetável (testes substituem via definirResolvedor).
 const resolvedorPadrao = (host) => dns.promises.lookup(host, { all: true }).then((r) => r.map((x) => x.address));
 let resolvedor = resolvedorPadrao;
@@ -236,6 +246,11 @@ async function readUpstreamBody(response, maxBytes) {
 const SAUDE_THROTTLE_MS = 60000;
 const saudeCache = {}; // { [origemId]: { ok, ts } }
 
+/* Zera o throttle em memória (testes: elimina estado entre casos). */
+function limparSaudeCache() {
+  for (const k of Object.keys(saudeCache)) delete saudeCache[k];
+}
+
 async function registrarSaude(origemId, ok, latenciaMs) {
   const agora = Date.now();
   const anterior = saudeCache[origemId];
@@ -386,5 +401,6 @@ module.exports = serve(async function handler(req) {
 // Ganchos de teste (SSRF): substituem o resolvedor DNS.
 module.exports.verificarAlvo = verificarAlvo;
 module.exports.definirResolvedor = definirResolvedor;
+module.exports.limparSaudeCache = limparSaudeCache;
 module.exports.ipv4Flexivel = ipv4Flexivel;
 module.exports.ipv4Privado = ipv4Privado;

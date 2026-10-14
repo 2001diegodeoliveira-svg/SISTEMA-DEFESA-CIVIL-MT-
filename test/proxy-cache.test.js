@@ -25,6 +25,7 @@ function setupEnv() {
   process.env.PROXY_HOSTS = 'example.test,api.rainviewer.com';
   // DNS determinístico: hosts de teste resolvem para IP público.
   proxyHandler.definirResolvedor(async () => ['93.184.216.34']);
+  proxyHandler.limparSaudeCache();
   demoReset();
 }
 
