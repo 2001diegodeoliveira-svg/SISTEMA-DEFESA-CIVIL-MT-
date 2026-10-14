@@ -3,7 +3,7 @@
    GET /api/fontes/saude, regra de estado ok/lento/fora e o hook
    do proxy que registra sucesso/falha (com throttle). Sem rede.
    ============================================================ */
-const { test } = require('node:test');
+const { test, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const proxyHandler = require('../api/_routes/proxy');
 const fontesHandler = require('../api/_routes/fontes');
@@ -11,6 +11,16 @@ const { estadoFonte } = require('../api/_routes/fontes');
 const { FONTES } = require('../api/_lib/origens');
 const { readCollection, writeCollection } = require('../api/_lib/store');
 const { demoReset } = require('../api/_lib/demo');
+
+const fetchOriginal = global.fetch;
+
+/* FIX-01: rede de segurança — nenhum stub vaza entre testes. */
+afterEach(() => {
+  global.fetch = fetchOriginal;
+  proxyHandler.definirResolvedor(null);
+  proxyHandler.definirTransporte(null);
+  proxyHandler.definirProcurarDns(null);
+});
 
 const ENV_KEYS = [
   'VERCEL', 'VERCEL_ENV', 'NODE_ENV', 'FILE_STORE', 'DATABASE_URL',
@@ -32,11 +42,22 @@ function setupEnv() {
 
 function restoreEnv(prev) {
   proxyHandler.definirResolvedor(null);
+  proxyHandler.definirTransporte(null);
+  proxyHandler.definirProcurarDns(null);
   for (const [k, v] of prev) {
     if (v === undefined) delete process.env[k];
     else process.env[k] = v;
   }
   demoReset();
+}
+
+function respostaUpstream(corpo, contentType = 'text/plain') {
+  return {
+    status: 200,
+    ok: true,
+    headers: { get: (nome) => (String(nome || '').toLowerCase() === 'content-type' ? contentType : null) },
+    body: Buffer.from(corpo),
+  };
 }
 
 async function snapshot() {
@@ -92,13 +113,10 @@ test('GET /api/fontes/saude lista o registro com estado inicial fora', async () 
 test('proxy registra sucesso e falha na saúde da fonte', async () => {
   const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
   const snap = await snapshot();
-  const fetchOrig = global.fetch;
   try {
     setupEnv();
     await writeCollection('system_config', []);
-    global.fetch = () => Promise.resolve(
-      new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } })
-    );
+    proxyHandler.definirTransporte(async () => respostaUpstream('ok'));
     const r1 = await proxyHandler(request('https://example.test/a'));
     assert.equal(r1.status, 200);
     let col = await readCollection('system_config');
@@ -106,7 +124,7 @@ test('proxy registra sucesso e falha na saúde da fonte', async () => {
     assert.ok(doc.fontes.default.ultimoSucesso);
     assert.equal(doc.fontes.default.ultimaFalha, undefined);
 
-    global.fetch = () => Promise.reject(new Error('caiu'));
+    proxyHandler.definirTransporte(async () => { throw new Error('caiu'); });
     // com fallback guardado do sucesso acima: serve stale + registra falha
     const r2 = await proxyHandler(request('https://example.test/a'));
     assert.equal(r2.status, 200);
@@ -119,7 +137,6 @@ test('proxy registra sucesso e falha na saúde da fonte', async () => {
     assert.equal(r3.status, 502);
     assert.ok((await r3.json()).erro);
   } finally {
-    global.fetch = fetchOrig;
     await restore(snap);
     restoreEnv(prev);
   }
@@ -152,6 +169,35 @@ test('POST /api/fontes/vigilancia audita host que resolve p/ privado', async () 
     assert.ok(rec && rec.recuperado === true);
     const logs2 = await readCollection('audit_logs');
     assert.equal(logs2.filter((l) => l.action === 'fonte.vigilancia').length, 1);
+  } finally {
+    await restore(snap);
+    restoreEnv(prev);
+  }
+});
+
+test('vigilancia exige secret quando configurado; GET serve o cron', async () => {
+  const prev = new Map([...ENV_KEYS, 'VIGILANCIA_SECRET'].map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  try {
+    setupEnv();
+    await writeCollection('system_config', []);
+    const vigilancia = require('../api/_routes/fontes-vigilancia');
+    process.env.VIGILANCIA_SECRET = 'segredo-do-cron-com-20+';
+    const semCred = await vigilancia(new Request('http://localhost/api/fontes/vigilancia', { method: 'POST' }));
+    assert.equal(semCred.status, 401);
+    const errada = await vigilancia(new Request('http://localhost/api/fontes/vigilancia?secret=errada', { method: 'POST' }));
+    assert.equal(errada.status, 401);
+    const comQuery = await vigilancia(new Request('http://localhost/api/fontes/vigilancia?secret=segredo-do-cron-com-20%2B', { method: 'GET' }));
+    assert.equal(comQuery.status, 200);
+    assert.ok((await comQuery.json()).verificados >= 0);
+    const comBearer = await vigilancia(new Request('http://localhost/api/fontes/vigilancia', {
+      method: 'POST',
+      headers: { authorization: 'Bearer segredo-do-cron-com-20+' },
+    }));
+    assert.equal(comBearer.status, 200);
+    delete process.env.VIGILANCIA_SECRET;
+    const aberto = await vigilancia(new Request('http://localhost/api/fontes/vigilancia', { method: 'GET' }));
+    assert.equal(aberto.status, 200);
   } finally {
     await restore(snap);
     restoreEnv(prev);

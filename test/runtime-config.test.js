@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { isLoginEnabled, isSeedOnlyLoginEnabled, validateProductionConfig } = require('../api/_lib/runtime-config');
 const { isLoginEligible } = require('../api/_lib/auth');
@@ -10,6 +10,19 @@ const { demoReset } = require('../api/_lib/demo');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { totp } = require('../api/_lib/mfa');
+
+const fetchOriginal = global.fetch;
+
+/* FIX-01: rede de segurança — stubs de rede/DNS nunca vazam entre testes. */
+afterEach(() => {
+  global.fetch = fetchOriginal;
+  try {
+    const proxyRoute = require('../api/_routes/proxy');
+    proxyRoute.definirResolvedor(null);
+    proxyRoute.definirTransporte(null);
+    proxyRoute.definirProcurarDns(null);
+  } catch { /* rota ausente em algum contexto */ }
+});
 
 function validProductionEnv(overrides = {}) {
   return {
@@ -250,30 +263,30 @@ test('CORS reflete apenas origens explicitamente autorizadas', () => {
   }
 });
 
-test('proxy não segue redirecionamentos nem aceita respostas maiores que o limite', async () => {
+test('proxy bloqueia redirect para IP interno e recusa corpo acima do limite', async () => {
   const proxyRoute = require('../api/_routes/proxy');
-  const previousFetch = global.fetch;
-  let fetchOptions;
   try {
     proxyRoute.definirResolvedor(async () => ['93.184.216.34']);
-    global.fetch = async (_url, options) => {
-      fetchOptions = options;
-      return new Response('redirect', {
-        status: 302,
-        headers: { location: 'http://127.0.0.1/private' },
-      });
-    };
+    // 302 para 127.0.0.1: o salto é revalidado e barrado com 403 + motivo.
+    proxyRoute.definirTransporte(async () => ({
+      status: 302,
+      ok: false,
+      headers: {
+        get: (nome) => (String(nome || '').toLowerCase() === 'location' ? 'http://127.0.0.1/private' : null),
+      },
+      body: Buffer.alloc(0),
+    }));
     const redirectResponse = await apiHandler({
       method: 'GET',
       url: 'https://example.test/api/proxy?url=https%3A%2F%2Ftrusted.example%2Fdata',
       headers: { origin: undefined },
     });
-    assert.equal(fetchOptions.redirect, 'manual');
-    assert.equal(redirectResponse.status, 502);
+    assert.equal(redirectResponse.status, 403);
+    assert.ok((await redirectResponse.json()).motivo);
 
-    global.fetch = async () => new Response('large', {
-      headers: { 'content-length': String(10 * 1024 * 1024 + 1) },
-    });
+    const limite = new Error('Resposta da origem excede o limite permitido.');
+    limite.final = true;
+    proxyRoute.definirTransporte(async () => { throw limite; });
     const oversizedResponse = await apiHandler({
       method: 'GET',
       url: 'https://example.test/api/proxy?url=https%3A%2F%2Ftrusted.example%2Fdata',
@@ -282,7 +295,8 @@ test('proxy não segue redirecionamentos nem aceita respostas maiores que o limi
     assert.equal(oversizedResponse.status, 502);
     assert.deepEqual(await oversizedResponse.json(), { erro: 'Falha ao buscar a origem.' });
   } finally {
-    global.fetch = previousFetch;
+    proxyRoute.definirTransporte(null);
+    proxyRoute.definirProcurarDns(null);
     proxyRoute.definirResolvedor(null);
   }
 });
