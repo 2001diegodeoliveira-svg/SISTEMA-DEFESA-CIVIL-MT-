@@ -289,6 +289,16 @@ const RSS_FIX = `<?xml version="1.0"?><rss><channel>
 </channel></rss>`;
 const CAP_FIX = `<?xml version="1.0"?><alert xmlns="urn:oasis:names:tc:emergency:cap:1.2"><sent>2026-10-13T13:09:28-03:00</sent><info><event>Tempestade</event><severity>Severe</severity><urgency>Future</urgency><certainty>Likely</certainty><onset>2026-10-14T00:01:00-03:00</onset><expires>2026-10-14T23:59:00-03:00</expires><areaDesc>Area X</areaDesc><polygon>-20.0,-50.0 -21.0,-51.0 -20.5,-52.0 -20.0,-50.0</polygon></info></alert>`;
 
+test('parseData trata hora de Brasília sem offset (UTC-3 o ano todo)', () => {
+  const { parseData } = require('../api/_routes/avisos');
+  assert.equal(parseData('2026-10-13 23:00'), '2026-10-14T02:00:00.000Z');
+  assert.equal(parseData('2026-10-13 23:00:00.0'), '2026-10-14T02:00:00.000Z');
+  assert.equal(parseData('14/10/2026 00:01'), '2026-10-14T03:01:00.000Z');
+  assert.equal(parseData('2026-10-14T00:01:00-03:00'), '2026-10-14T03:01:00.000Z');
+  assert.equal(parseData(''), null);
+  assert.equal(parseData('lixo'), null);
+});
+
 test('Avisos: lista nacional ordenada + detalhe CAP com polígono', async () => {
   const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
   const fetchOrig = global.fetch;
