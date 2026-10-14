@@ -5,11 +5,26 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { readCollection, writeCollection } = require('./store');
-const { isLoginEnabled, isSeedOnlyLoginEnabled } = require('./runtime-config');
+const { isLoginEnabled, isSeedOnlyLoginEnabled, resolveJwtExp } = require('./runtime-config');
 const { demoAberto } = require('./demo');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
-const JWT_EXP = process.env.JWT_EXP || '12h';
+function getJwtSecret() {
+  return process.env.JWT_SECRET || 'dc-mt-dev-secret-change-me';
+}
+
+function getJwtExp() {
+  return resolveJwtExp(process.env.JWT_EXP);
+}
+
+/* bcrypt trunca em 72 bytes; senhas maiores devem ser rejeitadas antes do
+   compare para não travar o event loop (express.json aceita até 1 MB). */
+const MAX_PASSWORD_BYTES = 72;
+
+/* Hash dummy de custo equivalente (12) para equalizar o tempo quando o
+   usuário não existe ou não é elegível — mitiga oráculo de tempo sem
+   vazar se o usuário é válido. Gerado offline, nunca é um segredo. */
+const DUMMY_HASH = '$2a$12$fhxUB9AYxOCBRDn7n9L9QuFlLSq4jy2OixrdqkjD6IlIzNFHY0882';
+const DUMMY_PASSWORD = 'dummy-password-for-timing-mitigation';
 
 function seedUsers() {
   try {
@@ -26,12 +41,16 @@ async function ensureSeededUsers() {
   for (const configured of configuredAdmins) {
     const index = users.findIndex((user) => String(user.usuario).toLowerCase() === String(configured.usuario).toLowerCase());
     const existing = index >= 0 ? users[index] : null;
-    if (existing && existing.ativo !== false && existing.perfil === 'admin' && bcrypt.compareSync(configured.senha, existing.senhaHash)) continue;
+    if (existing && existing.ativo !== false && existing.perfil === 'admin' && existing.senhaHash) {
+      try {
+        if (await bcrypt.compare(configured.senha, existing.senhaHash)) continue;
+      } catch { /* hash inválido: recria abaixo */ }
+    }
     const account = {
       ...(existing || {}),
       id: existing ? existing.id : 'U' + (users.length + 1),
       usuario: configured.usuario,
-      senhaHash: bcrypt.hashSync(configured.senha, 12),
+      senhaHash: await bcrypt.hash(configured.senha, 12),
       nome: configured.nome || existing && existing.nome || '',
       perfil: 'admin',
       municipio: configured.municipio || '',
@@ -47,12 +66,33 @@ async function ensureSeededUsers() {
   return users;
 }
 
+async function dummyCompare() {
+  try {
+    await bcrypt.compare(DUMMY_PASSWORD, DUMMY_HASH);
+  } catch { /* nunca deve falhar; tempo equivalente é o que importa */ }
+}
+
 async function findByCredentials(usuario, senha) {
   const users = await ensureSeededUsers();
   const normalizedUsername = String(usuario || '').trim().toLowerCase();
   const u = users.find((user) => String(user.usuario || '').trim().toLowerCase() === normalizedUsername);
-  if (!isLoginEligible(u)) return null;
-  if (!bcrypt.compareSync(senha, u.senhaHash)) return null;
+  /* Caminho quente assíncrono com tempo equivalente: usuário inexistente ou
+     inelegível executa um compare dummy antes do 401 genérico. */
+  if (!isLoginEligible(u)) {
+    await dummyCompare();
+    return null;
+  }
+  if (typeof senha !== 'string' || Buffer.byteLength(senha, 'utf8') > MAX_PASSWORD_BYTES) {
+    await dummyCompare();
+    return null;
+  }
+  let ok = false;
+  try {
+    ok = await bcrypt.compare(senha, u.senhaHash);
+  } catch {
+    ok = false;
+  }
+  if (!ok) return null;
   return u;
 }
 
@@ -76,17 +116,25 @@ function isLoginEligible(user) {
 const findOrProvisionUser = findByCredentials;
 
 function signToken(user, claims = {}) {
+  /* CRIPTO-03: session token nunca carrega purpose (amarração exclusiva dos
+     challenge tokens). Se um caller passar purpose, é erro de programação. */
+  if (claims && Object.prototype.hasOwnProperty.call(claims, 'purpose')) {
+    throw new Error('Session token must not carry a purpose.');
+  }
   return jwt.sign(
     { sub: user.id, usuario: user.usuario, perfil: user.perfil, ...claims },
-    JWT_SECRET,
-    { expiresIn: JWT_EXP }
+    getJwtSecret(),
+    { expiresIn: getJwtExp() }
   );
 }
 
 function signChallengeToken(user, purpose) {
+  if (!['mfa_setup', 'mfa_login'].includes(purpose)) {
+    throw new Error('Unknown challenge purpose.');
+  }
   return jwt.sign(
     { sub: user.id, usuario: user.usuario, perfil: user.perfil, purpose },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '5m' }
   );
 }
@@ -97,7 +145,7 @@ function verifyToken(token) {
   }
   if (token) {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      return jwt.verify(token, getJwtSecret());
     } catch { /* token ausente/inválido: verifica a janela de demonstração */ }
   }
   if (demoAberto()) {
@@ -125,7 +173,9 @@ function publicUser(user, access) {
 }
 
 module.exports = {
-  JWT_SECRET,
+  getJwtSecret,
+  getJwtExp,
+  MAX_PASSWORD_BYTES,
   ensureSeededUsers,
   findByCredentials,
   findOrProvisionUser,

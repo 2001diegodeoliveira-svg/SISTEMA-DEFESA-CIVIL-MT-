@@ -1,6 +1,6 @@
 /* POST /api/auth/login → valida as credenciais e emite a sessão. */
 const { jsonResponse, readJson } = require('../../_lib/http');
-const { findOrProvisionUser, signToken, signChallengeToken, publicUser, isLoginEnabled } = require('../../_lib/auth');
+const { findOrProvisionUser, signToken, signChallengeToken, publicUser, isLoginEnabled, MAX_PASSWORD_BYTES } = require('../../_lib/auth');
 const { serve } = require('../../_lib/serverless');
 const { loginBloqueado, registrarFalha, limparSucesso, segundosDeEspera } = require('../../_lib/rate-limit');
 const { runWithDbContext } = require('../../_lib/db-context');
@@ -24,6 +24,11 @@ module.exports = serve(async function handler(req) {
   const senha = String(body.senha || '');
   if (!usuario || !senha) {
     return jsonResponse(400, { erro: 'Informe usuário e senha.' }, origin);
+  }
+  /* CRIPTO-02: bcrypt trunca em 72 bytes e o corpo aceita até 1 MB.
+     Rejeita antes de qualquer hash para não travar o event loop. */
+  if (Buffer.byteLength(senha, 'utf8') > (MAX_PASSWORD_BYTES || 72)) {
+    return jsonResponse(400, { erro: 'Senha excede o limite de 72 bytes UTF-8 (limite do bcrypt).' }, origin);
   }
 
   const bloqueadoMs = loginBloqueado(req, usuario);
