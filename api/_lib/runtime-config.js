@@ -9,6 +9,20 @@ function isSeedOnlyLoginEnabled(env = process.env) {
   return ['1', 'true', 'yes', 'on'].includes(String(env.AUTH_SEED_ONLY || '').trim().toLowerCase());
 }
 
+/* Suspensão explícita de manutenção (fail-closed): com AUTH_SUSPENDED
+   ativo, ninguém autentica e nenhuma operação protegida executa —
+   diferente de AUTH_LOGIN_ENABLED=false, que significa acesso liberado.
+   NUNCA reaproveitar "login desligado = liberado" como suspensão. */
+function isSuspended(env = process.env) {
+  return ['1', 'true', 'yes', 'on'].includes(String(env.AUTH_SUSPENDED || '').trim().toLowerCase());
+}
+
+/* MAINTENANCE_UNTIL: ISO-8601 do fim previsto da suspensão (ms epoch ou null). */
+function maintenanceUntilMs(env = process.env) {
+  const t = Date.parse(String(env.MAINTENANCE_UNTIL || ''));
+  return Number.isFinite(t) ? t : null;
+}
+
 function parseList(value) {
   return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
 }
@@ -116,6 +130,19 @@ function validateProductionConfig(env = process.env) {
     }
   }
 
+  /* Suspensão em produção deve ser explícita e temporária: exige
+     MAINTENANCE_UNTIL ISO futura; ausente/inválida/vencida recusa o boot
+     para que a renovação seja consciente (o roteador valida por request,
+     então o vencimento passa a bloquear sozinho). */
+  if (isSuspended(env)) {
+    const ate = maintenanceUntilMs(env);
+    if (ate === null) {
+      problems.push('MAINTENANCE_UNTIL deve conter uma data ISO válida enquanto AUTH_SUSPENDED estiver ativo.');
+    } else if (ate <= Date.now()) {
+      problems.push('MAINTENANCE_UNTIL vencido: renove a data ou desligue AUTH_SUSPENDED para religar.');
+    }
+  }
+
   if (['1', 'true', 'yes', 'on'].includes(String(env.WAZE_MOCK_ENABLED || '').toLowerCase())) {
     problems.push('WAZE_MOCK_ENABLED deve estar desativado em produção.');
   }
@@ -149,4 +176,4 @@ function validateProductionConfig(env = process.env) {
   return problems;
 }
 
-module.exports = { isLoginEnabled, isSeedOnlyLoginEnabled, validateProductionConfig, parseJwtExpToSeconds, resolveJwtExp, isJwtExpValid, JWT_EXP_DEFAULT, JWT_EXP_MAX_SECONDS };
+module.exports = { isLoginEnabled, isSeedOnlyLoginEnabled, isSuspended, maintenanceUntilMs, validateProductionConfig, parseJwtExpToSeconds, resolveJwtExp, isJwtExpValid, JWT_EXP_DEFAULT, JWT_EXP_MAX_SECONDS };
