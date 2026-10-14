@@ -2592,6 +2592,11 @@ function recarregarCamadasUF() {
     } catch (e) {}
     try { if (typeof loadCptec === 'function') loadCptec(); } catch (e) {}
     try { if (typeof loadWmsFocos48hDetalhe === 'function') loadWmsFocos48hDetalhe(); } catch (e) {}
+    try {
+        if (typeof avisosLayer !== 'undefined' && avisosLayer) {
+            avisosLayer.eachLayer(l => { try { avisosLayer.removeLayer(l); } catch (e2) {} });
+        }
+    } catch (e) {}
 }
 
 function focarMunicipioPorCodigo(codigo) {
@@ -2876,6 +2881,14 @@ let ibgeStates = [];
 /* UF corrente a partir do seletor de território (Fase 3+ nacional).
    Sem UF selecionada (visão Brasil) devolve null = sem filtro.
    Chamadas que exigem UF (fontes só-MT/AMZ) usam 'MT' como padrão. */
+function apiBase() {
+    try {
+        return (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
+    } catch (e) { return ''; }
+}
+function apiUrl(path) {
+    return apiBase() + (path.startsWith('/') ? path : '/' + path);
+}
 function ufSiglaCorrente() {
     if (!selectedUfCode) return null;
     const cod = String(selectedUfCode).padStart(2, '0');
@@ -3265,7 +3278,7 @@ async function loadBarragens() {
     try {
         // Fase 3: SNISB nacional via /api/barragens (substitui o snapshot js/barragens_mt.json).
         const siglaUF = ufSiglaCorrente() || 'BR';
-        const res = await fetch('/api/barragens?uf=' + siglaUF + '&limit=2000');
+        const res = await fetch(apiUrl('/api/barragens?uf=' + siglaUF + '&limit=2000'));
         const j = await res.json();
         if (!res.ok) throw new Error((j && j.erro) || ('HTTP ' + res.status));
         const data = Array.isArray(j.barragens) ? j.barragens : [];
@@ -3590,7 +3603,7 @@ function desenharPoligonoAviso(aviso) {
 }
 async function checkRainAlerts() {
     try {
-        const r = await fetch('/api/avisos');
+        const r = await fetch(apiUrl('/api/avisos'));
         if (!r.ok) return;
         const j = await r.json();
         const vigentes = (j.avisos || []).filter(a => a.vigente && RAIN_AVISO_KEYWORDS.test(a.evento || ''));
@@ -3603,7 +3616,7 @@ async function checkRainAlerts() {
             let poligono = null, centro = null;
             if (!jaVisto && novos.includes(item)) {
                 try {
-                    const rd = await fetch('/api/avisos?id=' + encodeURIComponent(item.id));
+                    const rd = await fetch(apiUrl('/api/avisos?id=' + encodeURIComponent(item.id)));
                     if (rd.ok) {
                         const det = await rd.json();
                         poligono = det.poligono || null;
@@ -4086,10 +4099,10 @@ async function loadChuvaInmet() {
     const meta = document.getElementById('metaChuvaInmet');
     meta.innerHTML = 'INMET BDMEP · <b>carregando acumulados...</b>';
     try {
-        const apiBase = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
+        const baseUrl = apiBase();
         const ano = new Date().getUTCFullYear();
         const siglaUF = ufSiglaCorrente() || 'BR';
-        const res = await fetch(apiBase + '/api/inmet-chuva?ano=' + ano + '&uf=' + siglaUF);
+        const res = await fetch(baseUrl + '/api/inmet-chuva?ano=' + ano + '&uf=' + siglaUF);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!Array.isArray(data.estacoes)) throw new Error('Resposta inválida');
@@ -5383,7 +5396,7 @@ function renderAreas() {
         });
         delBtn.addEventListener('click', () => {
             if (a.serverId) {
-                fetch('/api/areas-monitoradas?id=' + encodeURIComponent(a.serverId), {
+                fetch(apiUrl('/api/areas-monitoradas?id=' + encodeURIComponent(a.serverId)), {
                     method: 'DELETE',
                     headers: tokenSessao() ? { Authorization: 'Bearer ' + tokenSessao() } : {},
                 }).catch(() => {});
@@ -5418,7 +5431,7 @@ function bboxDeCoords(coords) {
 }
 async function monitorarArea(a) {
     try {
-        const r = await fetch('/api/areas-monitoradas', {
+        const r = await fetch(apiUrl('/api/areas-monitoradas'), {
             method: 'POST',
             headers: Object.assign({ 'Content-Type': 'application/json' },
                 tokenSessao() ? { Authorization: 'Bearer ' + tokenSessao() } : {}),
@@ -5440,7 +5453,7 @@ async function monitorarArea(a) {
 async function desmonitorarArea(a) {
     if (!a.serverId) return;
     try {
-        await fetch('/api/areas-monitoradas?id=' + encodeURIComponent(a.serverId), {
+        await fetch(apiUrl('/api/areas-monitoradas?id=' + encodeURIComponent(a.serverId)), {
             method: 'DELETE',
             headers: tokenSessao() ? { Authorization: 'Bearer ' + tokenSessao() } : {},
         });
@@ -5453,9 +5466,13 @@ async function desmonitorarArea(a) {
 const SEV_COR = { medio: '#eab308', alto: '#f97316', critico: '#ef4444' };
 let eventosVistos = new Set();
 let eventosTimer = null;
+let primeiraCargaEventos = true;
+let audioCtx = null;
 function beepAlerta() {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        const ctx = audioCtx;
         [0, 0.25].forEach((t, i) => {
             const o = ctx.createOscillator(), g = ctx.createGain();
             o.connect(g); g.connect(ctx.destination);
@@ -5467,9 +5484,8 @@ function beepAlerta() {
 function bannerAlerta(ev) {
     const b = document.getElementById('alertaBanner');
     if (!b) return;
-    b.style.display = 'block';
-    b.style.cssText += ';background:rgba(127,29,29,.92);border:1px solid #ef4444;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;';
-    b.innerHTML = `<b style="color:#fecaca;">${ev.severidade.toUpperCase()} · ${ev.areaNome}</b><br>${ev.titulo}<br><button class="mini-btn" id="alertaBannerOk" style="margin-top:6px;">Entendi</button>`;
+    b.setAttribute('style', 'display:block;background:rgba(127,29,29,.92);border:1px solid #ef4444;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;');
+    b.innerHTML = `<b style="color:#fecaca;">${(ev.severidade || 'info').toUpperCase()} · ${ev.areaNome || ''}</b><br>${ev.titulo}<br><button class="mini-btn" id="alertaBannerOk" style="margin-top:6px;">Entendi</button>`;
     const ok = document.getElementById('alertaBannerOk');
     if (ok) ok.addEventListener('click', () => { b.style.display = 'none'; });
     beepAlerta();
@@ -5480,7 +5496,7 @@ async function carregarEventos() {
     try {
         const uf = (document.getElementById('evFiltroUf') || {}).value || '';
         const tipo = (document.getElementById('evFiltroTipo') || {}).value || '';
-        const r = await fetch('/api/alertas-motor/eventos?limit=30' + (uf ? '&uf=' + uf : '') + (tipo ? '&tipo=' + tipo : ''));
+        const r = await fetch(apiUrl('/api/alertas-motor/eventos?limit=30' + (uf ? '&uf=' + uf : '') + (tipo ? '&tipo=' + tipo : '')));
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const j = await r.json();
         const evs = j.eventos || [];
@@ -5499,14 +5515,14 @@ async function carregarEventos() {
             lista.appendChild(div);
             if (!ja && !eventosVistos.has(ev.id)) {
                 eventosVistos.add(ev.id);
-                if (eventosVistos.size > 1 || document.hasFocus()) bannerAlerta(ev);
-                else eventosVistos.add(ev.id);
+                if (!primeiraCargaEventos) bannerAlerta(ev);
             }
         });
+        primeiraCargaEventos = false;
         lista.querySelectorAll('[data-rec]').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (!tokenSessao()) { toast('Entre com login para reconhecer.'); return; }
-                await fetch('/api/alertas-motor/reconhecer', {
+                await fetch(apiUrl('/api/alertas-motor/reconhecer'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tokenSessao() },
                     body: JSON.stringify({ id: btn.getAttribute('data-rec') }),
@@ -5531,13 +5547,13 @@ async function ativarPush() {
         const reg = await navigator.serviceWorker.register('/sw.js');
         const perm = await Notification.requestPermission();
         if (perm !== 'granted') { toast('Permissão de notificação negada.'); return; }
-        const cfg = await (await fetch('/api/push/config')).json();
+        const cfg = await (await fetch(apiUrl('/api/push/config'))).json();
         if (!cfg.ativo) { toast('Push desativado no servidor (VAPID).'); return; }
         const sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: cfg.vapidPublicKey,
         });
-        const r = await fetch('/api/push/subscrever', {
+        const r = await fetch(apiUrl('/api/push/subscrever'), {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ subscription: sub.toJSON() }),
         });

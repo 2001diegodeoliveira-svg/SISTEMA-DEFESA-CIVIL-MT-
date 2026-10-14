@@ -91,7 +91,8 @@ module.exports = serve(async function handler(req) {
     const lista = await motor.lerEventos();
     const uf = (q.get('uf') || '').toUpperCase();
     const tipo = q.get('tipo') || '';
-    const desde = q.get('desde') ? Date.parse(q.get('desde')) : 0;
+    const desdeNum = q.get('desde') ? Date.parse(q.get('desde')) : 0;
+    const desde = Number.isFinite(desdeNum) ? desdeNum : 0;
     const limit = Math.min(200, Math.max(1, Number(q.get('limit')) || 50));
     const out = lista
       .filter((e) => (!uf || (e.uf || '').toUpperCase() === uf)
