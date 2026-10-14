@@ -94,12 +94,27 @@ async function checkRainAlerts() {
             });
         }
         alerts.sort((a, b) => a.sev.peso - b.sev.peso);
+        // Como na versão MT: modal só para o que está na tela — o resto
+        // vira só polígono no mapa (sem spam de popups nacionais).
+        let vista = null;
+        try {
+            if (typeof map !== 'undefined' && map.getBounds) vista = map.getBounds();
+        } catch (e) {}
+        function naTela(a) {
+            if (!a.poligono || !a.poligono.length) return false;
+            if (!vista || !vista.isValid || !vista.isValid()) return true;
+            try {
+                return a.poligono.some(function (p) {
+                    return vista.contains([p[0], p[1]]);
+                });
+            } catch (e) { return true; }
+        }
         const mostrar = alerts.filter(a => !(a.id in rainAlertShown));
         if (!mostrar.length) return;
         mostrar.forEach(a => {
             rainAlertShown[a.id] = Date.now();
             desenharPoligonoAviso(a);
-            rainAlertQueue.push(a);
+            if (naTela(a)) rainAlertQueue.push(a);
         });
         rainAlertShowNext();
     } catch (e) {}
