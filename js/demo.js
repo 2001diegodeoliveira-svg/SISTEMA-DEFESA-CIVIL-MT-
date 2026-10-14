@@ -10,8 +10,11 @@
     var TIMEOUT_SYNC_MS = 4000;
     var LIMITE_TIMEOUT_MS = 2147483647;
 
-    /* Login remains available as a public page when authentication is enabled. */
-    var PUBLICAS = ['login.html'];
+    /* Login remains available as a public page when authentication is enabled.
+       O mapa é monitoramento público (inclusive TVs de sala de situação
+       sem login): pode ser visto sem sessão; a API continua exigindo
+       autenticação nas operações de escrita. */
+    var PUBLICAS = ['login.html', 'mapa.html'];
     var PAGINAS_INTERNAS = {
         'painel.html': ['admin', 'avancado', 'municipal', 'coordenador', 'analista', 'operador_campo', 'leitura'],
         'gestao.html': ['admin', 'avancado', 'municipal', 'administrador_orgao', 'coordenador', 'analista', 'leitura'],

@@ -184,12 +184,11 @@ document.getElementById('mpClose').addEventListener('click', () =>
 
 /* ================= Inicialização ================= */
 /* Controle de acesso por perfil:
-   - comum → sem mapa (apenas alertas e orientações)
+   - sem sessão → mapa público, sem restrição (a API protege a escrita)
+   - comum → alertas e orientações (comportamento anterior)
    - municipal → restrição de navegação ao próprio município */
 const sessaoAtual = dcGetSession();
-if (!sessaoAtual) {
-    location.replace('login.html');
-} else if (sessaoAtual.perfil === 'comum') {
+if (sessaoAtual && sessaoAtual.perfil === 'comum') {
     location.replace('alertas.html');
 }
 let restricaoMun = null;
