@@ -1,8 +1,8 @@
 /* ============================================================
    Monitor inteligente de alertas — SGI PROTEGE.
    Roda em qualquer página (requer js/proxy.js para dcProxyFetch).
-   - Monitora clima em 8 cidades de MT, novos focos INPE e novos
-     eventos SIPAM a cada 5 min.
+   - Monitora clima nas cidades-base (MT) ou no município selecionado
+     no mapa, novos focos INPE e novos eventos SIPAM a cada 5 min.
    - "Inteligência": além de limiares fixos, cruza temperatura +
      umidade + vento num índice de risco combinado (a mesma lógica
      usada no mapa para risco de fogo), e evita repetir o mesmo
@@ -33,6 +33,34 @@
     const COOLDOWN_MS = 20 * 60 * 1000; // não repete o mesmo alerta por 20 min
     const HISTORY_KEY = 'dcmt_monitor_history';
     const HISTORY_MAX = 50;
+    const UF_AMZ = ['AC', 'AP', 'AM', 'MA', 'MT', 'PA', 'RO', 'RR', 'TO'];
+
+    /* Escopo nacional (Fase 3+): lê a UF do mapa quando disponível;
+       fora do mapa (outras páginas), mantém o comportamento MT. */
+    function escopoAtual() {
+        try {
+            if (typeof ufSiglaCorrente === 'function' && typeof ufNomeCorrente === 'function') {
+                return { sigla: ufSiglaCorrente(), nome: ufNomeCorrente() };
+            }
+        } catch (e) {}
+        return { sigla: 'MT', nome: 'MATO GROSSO' };
+    }
+    /* Cidades do ciclo de clima: município selecionado no mapa, ou a
+       lista base MT quando nada está selecionado. */
+    function cidadesMonitoradas() {
+        try {
+            if (typeof centroidByCod !== 'undefined' && typeof document !== 'undefined') {
+                const sel = document.getElementById('territoryMunicipio');
+                const cod = sel && sel.value;
+                const c = cod && centroidByCod[cod];
+                if (c && isFinite(c.lat) && isFinite(c.lng)) {
+                    const opt = sel.options[sel.selectedIndex];
+                    return [{ nome: (opt && opt.text) || 'Município', lat: c.lat, lon: c.lng }];
+                }
+            }
+        } catch (e) {}
+        return MON_CITIES;
+    }
 
     let prevByCity = {};
     let queue = [];
@@ -122,10 +150,7 @@
     }
 
     let els = {};
-    function isMtScope() {
-        return global.DC_ORGANIZACAO &&
-            global.DC_ORGANIZACAO.normalizarCodigoUf(global.DC_ORGANIZACAO.obterUfInicial()) === '51';
-    }
+    // (Legado Fase 3+: isMtScope removido — escopo agora é nacional.)
 
     function ensureUI() {
         if (document.getElementById('dcm-popup')) return;
@@ -219,7 +244,7 @@
 
     /* ================= Fila / exibição ================= */
     function queueAlert(alert) {
-        if (!monitorActive || !isMtScope()) return;
+        if (!monitorActive) return;
         const key = alert.type + '|' + alert.city + '|' + alert.severity;
         const now = Date.now();
         if (cooldowns[key] && now - cooldowns[key] < COOLDOWN_MS) return; // evita repetir o mesmo alerta
@@ -318,6 +343,7 @@
 
     async function detectNewFocos() {
         try {
+            const escopo = escopoAtual();
             const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
             const res = await dcProxyFetch(`https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_${iso}.csv`);
             if (!res.ok) return;
@@ -329,14 +355,14 @@
             for (let i = 1; i < lines.length; i++) {
                 const cols = lines[i].split(',');
                 if (cols.length < header.length - 2) continue;
-                if ((cols[iUF] || '').trim().toUpperCase() !== 'MATO GROSSO') continue;
+                if (escopo.nome && (cols[iUF] || '').trim().toUpperCase() !== escopo.nome) continue;
                 const lat = parseFloat(cols[iLat]), lon = parseFloat(cols[iLon]);
                 if (isFinite(lat) && isFinite(lon)) current.push(`${lat.toFixed(3)},${lon.toFixed(3)}`);
             }
             if (focoKeys.length > 0) {
                 const newOnes = current.filter(k => !focoKeys.includes(k));
                 if (newOnes.length > 0) {
-                    queueAlert({ type: 'fire', severity: newOnes.length > 5 ? 'critico' : newOnes.length > 2 ? 'alto' : 'medio', title: `${newOnes.length} novo(s) foco(s) detectado(s)`, desc: 'INPE identificou novos pontos de calor em MT', city: 'Estado de MT', ts: Date.now() });
+                    queueAlert({ type: 'fire', severity: newOnes.length > 5 ? 'critico' : newOnes.length > 2 ? 'alto' : 'medio', title: `${newOnes.length} novo(s) foco(s) detectado(s)`, desc: 'INPE identificou novos pontos de calor em ' + (escopo.sigla || 'BR'), city: 'Estado ' + (escopo.sigla || 'BR'), ts: Date.now() });
                 }
             }
             focoKeys = current;
@@ -345,14 +371,17 @@
 
     async function detectNewSipam() {
         try {
-            const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT');
+            const escopo = escopoAtual();
+            const sigla = escopo.sigla || 'MT';
+            if (!UF_AMZ.includes(sigla)) return; // fora da Amazônia Legal: sem fonte
+            const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=' + sigla);
             if (!res.ok) return;
             const eventos = await res.json();
             if (!Array.isArray(eventos)) return;
             const ids = eventos.map(e => e.id_evento);
             if (sipamIds.length > 0) {
                 eventos.filter(e => !sipamIds.includes(e.id_evento)).forEach(ev => {
-                    queueAlert({ type: 'event', severity: ev.status_evento === 'Ativo' ? 'alto' : 'medio', title: `Novo evento SIPAM #${ev.id_evento}`, desc: `${ev.status_evento} — ${ev.municipio || 'MT'} — ${ev.area_total_evento ? ev.area_total_evento.toFixed(1) + ' ha' : '—'}`, city: ev.municipio || 'MT', ts: Date.now() });
+                    queueAlert({ type: 'event', severity: ev.status_evento === 'Ativo' ? 'alto' : 'medio', title: `Novo evento SIPAM #${ev.id_evento}`, desc: `${ev.status_evento} — ${ev.municipio || sigla} — ${ev.area_total_evento ? ev.area_total_evento.toFixed(1) + ' ha' : '—'}`, city: ev.municipio || sigla, ts: Date.now() });
                 });
             }
             sipamIds = ids;
@@ -360,10 +389,11 @@
     }
 
     async function runCycle() {
-        if (!monitorActive || !isMtScope()) return;
-        const results = await Promise.all(MON_CITIES.map(fetchCityWeather));
-        if (!monitorActive || !isMtScope()) return;
-        MON_CITIES.forEach((city, i) => {
+        if (!monitorActive) return;
+        const cidades = cidadesMonitoradas();
+        const results = await Promise.all(cidades.map(fetchCityWeather));
+        if (!monitorActive) return;
+        cidades.forEach((city, i) => {
             const curr = results[i];
             if (!curr) return;
             const prev = prevByCity[city.nome];
@@ -372,29 +402,19 @@
         });
 
         await Promise.all([detectNewFocos(), detectNewSipam()]);
-        if (!monitorActive || !isMtScope()) return;
+        if (!monitorActive) return;
 
         if (firstRun) {
             firstRun = false;
-            const okCities = MON_CITIES.filter(c => prevByCity[c.nome]).length;
-            queueAlert({ type: 'event', severity: 'info', title: 'Monitoramento Ativo', desc: `${okCities} de ${MON_CITIES.length} cidades conectadas · Ciclo a cada 5 min`, city: 'SGI PROTEGE', ts: Date.now() });
+            const okCities = cidades.filter(c => prevByCity[c.nome]).length;
+            queueAlert({ type: 'event', severity: 'info', title: 'Monitoramento Ativo', desc: `${okCities} de ${cidades.length} cidades conectadas · Ciclo a cada 5 min`, city: 'SGI PROTEGE', ts: Date.now() });
         }
         cycleTimer = setTimeout(runCycle, 5 * 60 * 1000);
     }
 
     function setScope() {
-        if (!isMtScope()) {
-            monitorActive = false;
-            queue = [];
-            showing = false;
-            clearTimeout(cycleTimer);
-            ['dcm-popup', 'dcm-bell', 'dcm-history', 'dcm-styles'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) element.remove();
-            });
-            els = {};
-            return;
-        }
+        // Fase 3+: escopo nacional — o ciclo lê a UF vigente a cada
+        // rodada; sem teardown por UF (era só-MT antes).
         if (monitorActive || typeof global.dcProxyFetch !== 'function') return;
         monitorActive = true;
         ensureUI();

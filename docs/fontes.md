@@ -61,7 +61,16 @@ requisição). Fallback "último válido" em `system_config`
 - `GET /api/enso`, `/api/enso/avaliar` — módulo ENOS.
 - `GET /api/pluv-alerta`, `/api/pluv-alerta/avaliar` — limiar de chuva.
 
-## Fase 3 — cobertura nacional (verificado ao vivo em 2026-10-13)
+## Cobertura nacional (visão Brasil = sem filtro; UF selecionada = filtro)
+
+- Focos CSV/WFS, INMET (estações + chuva + pluviômetro), ANA,
+  barragens, avisos CAP, DETER, qualidade do ar, previsão e contador:
+  nacionais. Boot sem `?uf=` mostra o Brasil (antes: MT fixo).
+- Exceções honestas (fontes intrinsecamente regionais): CENSIPAM
+  (Amazônia Legal; pede UF), SESP-MT/VigiaMais e SINFRA/câmeras
+  (só MT), abrigos (`js/abrigos_mt.json`, sem fonte nacional
+  verificada), monitor climático por cidade (lista base MT +
+  município selecionado).
 
 - `GET /api/ana-hidrologia?uf=` — mesmo XML nacional
   (`telemetriaws1.ana.gov.br`), filtro por UF no servidor

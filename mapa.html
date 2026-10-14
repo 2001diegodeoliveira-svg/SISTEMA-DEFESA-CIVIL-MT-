@@ -1620,7 +1620,7 @@
     <!-- Painel Estações INMET — Pluviômetro -->
     <aside id="pluvPanel" class="hidden-panel">
         <div class="pluv-head" id="pluvHead">
-            <h3><i data-lucide="droplets"></i> Estações INMET · Pluviômetro — MT</h3>
+            <h3><i data-lucide="droplets"></i> Estações INMET · Pluviômetro <span id="pluvUf">—</span></h3>
             <button class="ph-close" id="pluvClose" title="Fechar"><i data-lucide="x"></i></button>
         </div>
         <div id="pluvSummary">
@@ -2389,15 +2389,13 @@ function atualizarContextoOrganizacao(codigoUf) {
 }
 
 function aplicarDisponibilidadeRegional(codigoUf) {
-    const somenteEstadoSelecionado = new Set([
-        'focos', 'barragens', 'wmsFocos48h', 'reports', 'inmetStations',
-        'chuvaInmet', 'sipam', 'vigiaMais', 'camsSinfra', 'abrigos'
-    ]);
+    // Fase 3+: só o que é intrinsecamente MT fica restrito à UF.
+    // Camadas nacionais (focos, barragens, ANA, INMET, chuva, WMS,
+    // reports, DETER, qualidade do ar) ficam sempre visíveis.
+    const somenteMT = new Set(['vigiaMais', 'camsSinfra', 'abrigos', 'sipam']);
     const disponivel = Boolean(codigoUf);
-    document.querySelectorAll('.ov-btn[data-ov="temp"], .ov-btn[data-ov="fire"]').forEach(button => {
-        button.hidden = !disponivel;
-    });
-    somenteEstadoSelecionado.forEach(key => {
+    // Fase 3+: overlays de grade (temp/fire) são nacionais por viewport.
+    somenteMT.forEach(key => {
         const row = document.querySelector('.check-row[data-check="' + key + '"]');
         if (row) row.hidden = !disponivel;
         if (!disponivel && checkState[key]) {
@@ -2875,24 +2873,22 @@ let reportsLayer = null, reportsLoaded = false, reportsLoading = false;
 let reportSeenIds = new Set(), reportMarkerIds = new Map(), reportsTimer = null;
 let selectedUfCode = '';
 let ibgeStates = [];
-/* UF corrente a partir do seletor de território (Fase 3: cobertura
-   nacional). Sem UF selecionada, mantém MT (comportamento anterior). */
+/* UF corrente a partir do seletor de território (Fase 3+ nacional).
+   Sem UF selecionada (visão Brasil) devolve null = sem filtro.
+   Chamadas que exigem UF (fontes só-MT/AMZ) usam 'MT' como padrão. */
 function ufSiglaCorrente() {
-    const cod = String(selectedUfCode || '51').padStart(2, '0');
+    if (!selectedUfCode) return null;
+    const cod = String(selectedUfCode).padStart(2, '0');
     const e = (ibgeStates || []).find(x => String(x.id).padStart(2, '0') === cod);
-    return (e && e.sigla) ? String(e.sigla).toUpperCase() : 'MT';
+    return (e && e.sigla) ? String(e.sigla).toUpperCase() : null;
 }
 function ufNomeCorrente() {
-    const cod = String(selectedUfCode || '51').padStart(2, '0');
+    if (!selectedUfCode) return null;
+    const cod = String(selectedUfCode).padStart(2, '0');
     const e = (ibgeStates || []).find(x => String(x.id).padStart(2, '0') === cod);
-    return (e && e.nome) ? String(e.nome).toUpperCase() : 'MATO GROSSO';
+    return (e && e.nome) ? String(e.nome).toUpperCase() : null;
 }
 let ibgeMunicipiosDaUf = [];
-/* Limites aproximados do território de Mato Grosso (malha IBGE) */
-const MT_LAT_MIN = -18.1, MT_LAT_MAX = -7.3, MT_LON_MIN = -62.0, MT_LON_MAX = -50.0;
-function dentroMT(lat, lng) {
-    return isFinite(lat) && isFinite(lng) && lat >= MT_LAT_MIN && lat <= MT_LAT_MAX && lng >= MT_LON_MIN && lng <= MT_LON_MAX;
-}
 let vigiaMaisLayer = null;
 let abrigosLayer = null, abrigosLoaded = false, abrigosLoading = false;
 let camSinfraLayer = null, camSinfraLoaded = false, camSinfraLoading = false;
@@ -3146,12 +3142,13 @@ async function loadFocosPeriodo(dias) {
     }
 
     // Remove duplicados, filtra pela UF selecionada e aplica teto de pontos.
-    // Sem UF (visão Brasil), mantém cobertura nacional até o teto.
+    // Sem UF (visão Brasil): cobertura nacional até o teto.
     const siglaUF = ufSiglaCorrente();
     const nomeUF = ufNomeCorrente();
-    const base = (selectedUfCode && selectedUfCode !== '')
+    const base = nomeUF
         ? collect.filter(f => (f.estado || '').trim().toUpperCase() === nomeUF)
-        : collect.filter(f => (f.estado || '').trim().toUpperCase() === 'MATO GROSSO');
+        : collect;
+    const rotuloUF = siglaUF ? ' em ' + siglaUF : ' no Brasil';
     const seen = new Set();
     const rows = [];
     for (const f of base) {
@@ -3173,7 +3170,6 @@ async function loadFocosPeriodo(dias) {
 
     const rotulo = nDias <= 1 ? '24h' : (nDias === 2 ? '48h' : nDias + 'd');
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const rotuloUF = (selectedUfCode && selectedUfCode !== '') ? ' em ' + siglaUF : ' no Brasil';
     meta.innerHTML = `INPE BDQueimadas · <b>${rows.length.toLocaleString('pt-BR')} focos${rotuloUF}</b> · ${rotulo} · ${horaCsv}`;
     const lbl = document.querySelector('.check-row[data-check="focos"] label');
     if (lbl) lbl.innerHTML =
@@ -3268,7 +3264,7 @@ async function loadBarragens() {
     meta.innerHTML = 'ANA/SNISB · <b>carregando...</b>';
     try {
         // Fase 3: SNISB nacional via /api/barragens (substitui o snapshot js/barragens_mt.json).
-        const siglaUF = ufSiglaCorrente();
+        const siglaUF = ufSiglaCorrente() || 'BR';
         const res = await fetch('/api/barragens?uf=' + siglaUF + '&limit=2000');
         const j = await res.json();
         if (!res.ok) throw new Error((j && j.erro) || ('HTTP ' + res.status));
@@ -3285,7 +3281,7 @@ async function loadBarragens() {
         barragensLayer.addTo(map);
         barragensLoaded = true;
         barragensLoading = false;
-        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em ${siglaUF}${j.parcial ? ' (parcial — refine a busca)' : ''} · ${j.atualizadoEm ? 'atualizado ' + new Date(j.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'dados na barragem'}`;
+        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em ${(siglaUF || j.uf || "BR")}${j.parcial ? ' (parcial — refine a busca)' : ''} · ${j.atualizadoEm ? 'atualizado ' + new Date(j.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'dados na barragem'}`;
         if (window.lucide) lucide.createIcons();
         refreshLegend();
     } catch (e) {
@@ -3304,7 +3300,7 @@ function escapeAnaHtml(value) {
 async function loadAnaHydrology() {
     anaHydrologyLoading = true;
     const meta = document.getElementById('metaAnaHydrology');
-    const siglaUF = ufSiglaCorrente();
+    const siglaUF = ufSiglaCorrente() || 'BR';
     if (meta) meta.textContent = `ANA/Telemetria · consultando estações de ${siglaUF}...`;
     try {
         if (!window.dcApi || typeof window.dcApi.anaHidrologia !== 'function') {
@@ -3346,7 +3342,7 @@ async function loadAnaHydrology() {
         });
         if (checkState.anaHydrology) anaHydrologyLayer.addTo(map);
         anaHydrologyLoaded = true;
-        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em ${siglaUF} · cadastro`;
+        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em ${(siglaUF || "BR")} · cadastro`;
         refreshLegend();
     } catch (error) {
         if (meta) meta.textContent = `ANA/Telemetria · ${error.message || 'falha ao carregar estações'}`;
@@ -3752,12 +3748,12 @@ async function loadQualidadeAr() {
     const meta = document.getElementById('metaQualidadeAr');
     if (meta) meta.innerHTML = 'CAMS via Open-Meteo · <b>carregando...</b>';
     try {
-        const siglaUF = ufSiglaCorrente();
+        const siglaUF = ufSiglaCorrente() || 'BR';
         const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
         const data = await res.json();
-        const pontos = ((selectedUfCode && selectedUfCode !== '')
+        const pontos = (siglaUF
             ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF)
-            : data.filter(s => (s.SG_ESTADO || '').toUpperCase() === 'MT'))
+            : data.slice())
             .map(s => ({ lat: parseFloat(s.VL_LATITUDE), lon: parseFloat(s.VL_LONGITUDE), nome: s.DC_NOME, codigo: s.CD_ESTACAO }))
             .filter(pt => pt.lat && pt.lon);
         if (!pontos.length) throw new Error('Sem estações de referência.');
@@ -4007,13 +4003,11 @@ async function loadInmetStations() {
     try {
         const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
         const data = await res.json();
-        // Fase 3: nacional — filtra pela UF selecionada (default MT);
-        // exibe operantes e em pane (situação real da estação).
-        const siglaUF = ufSiglaCorrente();
-        const nomeUF = ufNomeCorrente();
-        const ufStations = (selectedUfCode && selectedUfCode !== '')
+        // Fase 3+: nacional — filtra pela UF ou mostra o Brasil todo.
+        const siglaUF = ufSiglaCorrente() || 'BR';
+        const ufStations = ufSiglaCorrente()
             ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF && s.VL_LATITUDE && s.VL_LONGITUDE)
-            : data.filter(s => (s.SG_ESTADO || '').toUpperCase() === 'MT' && s.VL_LATITUDE && s.VL_LONGITUDE);
+            : data.filter(s => s.VL_LATITUDE && s.VL_LONGITUDE);
         inmetLayer = L.layerGroup();
         let nOper = 0, nPane = 0;
         ufStations.forEach(s => {
@@ -4041,7 +4035,7 @@ async function loadInmetStations() {
                         <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(160deg,rgba(34,211,238,.25),rgba(34,211,238,.08));border:1px solid rgba(34,211,238,.5);display:flex;align-items:center;justify-content:center;"><i data-lucide="radio-tower" style="color:#22d3ee;width:16px;height:16px;"></i></span>
                         <div>
                             <div style="font-weight:700;font-size:13px;color:#fff;line-height:1.2;">${s.DC_NOME}</div>
-                            <div style="color:#94a3b8;font-size:9.5px;">Estação Meteorológica Automática · ${siglaUF}</div>
+                            <div style="color:#94a3b8;font-size:9.5px;">Estação Meteorológica Automática · ${siglaUF || 'BR'}</div>
                         </div>
                     </div>
                     <div style="display:flex;gap:5px;margin-bottom:7px;">
@@ -4075,7 +4069,7 @@ async function loadInmetStations() {
         inmetLayer.addTo(map);
         inmetLoaded = true;
         inmetLoading = false;
-        meta.innerHTML = `INMET · <b>${ufStations.length}</b> EAM em ${siglaUF} · <b style="color:#4ade80;">${nOper} operantes</b> · <b style="color:#94a3b8;">${nPane} em pane</b>`;
+        meta.innerHTML = `INMET · <b>${ufStations.length}</b> EAM ${siglaUF === 'BR' ? 'no Brasil' : 'em ' + siglaUF} · <b style="color:#4ade80;">${nOper} operantes</b> · <b style="color:#94a3b8;">${nPane} em pane</b>`;
     } catch (e) {
         inmetLoading = false;
         meta.textContent = 'INMET · indisponível';
@@ -4094,7 +4088,7 @@ async function loadChuvaInmet() {
     try {
         const apiBase = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
         const ano = new Date().getUTCFullYear();
-        const siglaUF = ufSiglaCorrente();
+        const siglaUF = ufSiglaCorrente() || 'BR';
         const res = await fetch(apiBase + '/api/inmet-chuva?ano=' + ano + '&uf=' + siglaUF);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
@@ -4510,11 +4504,11 @@ async function loadInmetPluvio() {
     try {
         const res = await dcProxyFetch('https://apitempo.inmet.gov.br/estacoes/T');
         const data = await res.json();
-        // Fase 3: nacional — mesma base de estações da camada INMET.
-        const siglaUF = ufSiglaCorrente();
-        const ufStations = (selectedUfCode && selectedUfCode !== '')
+        // Fase 3+: nacional — mesma base de estações da camada INMET.
+        const siglaUF = ufSiglaCorrente() || 'BR';
+        const ufStations = ufSiglaCorrente()
             ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF && s.VL_LATITUDE && s.VL_LONGITUDE)
-            : data.filter(s => (s.SG_ESTADO || '').toUpperCase() === 'MT' && s.VL_LATITUDE && s.VL_LONGITUDE);
+            : data.filter(s => s.VL_LATITUDE && s.VL_LONGITUDE);
         // Agrupa em lotes (Open-Meteo aceita até ~50 pontos por chamada)
         const chunks = [];
         for (let i = 0; i < ufStations.length; i += 40) chunks.push(ufStations.slice(i, i + 40));
@@ -4600,7 +4594,7 @@ async function loadInmetPluvio() {
             m.bindPopup(`
                 <div style="min-width:190px;">
                     <div style="font-weight:700;font-size:12px;margin-bottom:2px;"><i data-lucide="droplets" style="color:#22d3ee;margin-right:4px;"></i>${st.nome}</div>
-                    <div style="color:#94a3b8;font-size:10px;margin-bottom:7px;">${st.codigo} · INMET · MT</div>
+                    <div style="color:#94a3b8;font-size:10px;margin-bottom:7px;">${st.codigo} · INMET · ${(typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'BR'}</div>
                     <div style="font-size:11px;line-height:1.7;">
                         <div><b style="color:${RAIN_COR(st.chuva)};">☔ Chuva agora:</b> ${st.chuva} mm/h</div>
                         <div><b>Chuva 24h:</b> ${st.c24} mm · <b>7d:</b> ${st.c7} mm</div>
@@ -4655,6 +4649,8 @@ function renderPluvTable() {
         return 0;
     });
     total.textContent = pluvStations.length;
+    const pluvUfEl = document.getElementById('pluvUf');
+    if (pluvUfEl) pluvUfEl.textContent = '— ' + ((typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'BR');
     oper.textContent = pluvStations.filter(s => s.sit === 'Operante').length;
     pane.textContent = pluvStations.filter(s => s.sit !== 'Operante').length;
     const max24 = pluvStations.reduce((m, s) => (s.c24 > m) ? s.c24 : m, 0);
@@ -4999,10 +4995,17 @@ async function loadSIPAM() {
     sipamLoading = true;
     const meta = document.getElementById('metaSipam');
     meta.innerHTML = 'CENSIPAM · <b>carregando eventos...</b>';
-    // Fase 3: CENSIPAM cobre a Amazônia Legal — parametriza a UF;
-    // fora dela, explica em vez de mostrar vazio.
+    // Fase 3+: CENSIPAM cobre a Amazônia Legal — parametriza a UF.
+    // Sem UF (visão Brasil): pede seleção; fora da AMZ: explica.
     const UF_AMZ = ['AC', 'AP', 'AM', 'MA', 'MT', 'PA', 'RO', 'RR', 'TO'];
     const siglaUF = ufSiglaCorrente();
+    if (!siglaUF) {
+        meta.textContent = 'CENSIPAM · selecione uma UF da Amazônia Legal';
+        sipamLoading = false;
+        sipamLoaded = true;
+        sipamData = [];
+        return;
+    }
     if (!UF_AMZ.includes(siglaUF)) {
         meta.textContent = `CENSIPAM · fora da área de cobertura (Amazônia Legal) para ${siglaUF}`;
         sipamLoading = false;
@@ -5166,7 +5169,7 @@ async function loadReports() {
             }));
         }
         // Limita às ocorrências dentro do território de Mato Grosso
-        points = (points || []).filter(p => dentroMT(Number(p.latitude), Number(p.longitude)));
+        // Fase 3+: sem recorte MT — nacional, orientado aos dados da API.
 
         if (!reportsLayer) reportsLayer = L.layerGroup();
         let novos = 0, novosClimaticos = [];
@@ -6026,7 +6029,7 @@ setTimeout(() => map.invalidateSize(), 300);
         } catch { el.temp.textContent = '—'; }
     }
 
-    // INPE: contagem de focos em MT
+    // INPE: contagem de focos (UF selecionada ou Brasil)
     async function loadFogos() {
         try {
             const iso = new Date().toISOString().slice(0, 10).replaceAll('-', '');
@@ -6036,7 +6039,13 @@ setTimeout(() => map.invalidateSize(), 300);
             const lines = txt.split('\n');
             const h = lines[0].split(',').map(x => x.trim());
             const iUF = h.indexOf('estado');
-            const n = lines.slice(1).filter(l => { const c = l.split(','); return (c[iUF]||'').trim().toUpperCase() === 'MATO GROSSO'; }).length;
+            const nomeUF = (typeof ufNomeCorrente === 'function' && ufNomeCorrente()) || null;
+            const n = lines.slice(1).filter(l => {
+                if (l.trim().length < 10) return false;
+                if (!nomeUF) return true;
+                const c = l.split(',');
+                return (c[iUF] || '').trim().toUpperCase() === nomeUF;
+            }).length;
             el.fogos.textContent = n.toLocaleString('pt-BR');
         } catch { el.fogos.textContent = '—'; }
     }
@@ -6214,7 +6223,6 @@ function buildWmsFoco48hDetalhe(features, totalFeatures) {
         if (geom.type !== 'Point') continue;
         const [lon, lat] = geom.coordinates;
         if (!isFinite(lat) || !isFinite(lon)) continue;
-        if (!dentroMT(lat, lon)) continue;
         const k = lat.toFixed(4) + ',' + lon.toFixed(4);
         if (seen.has(k)) continue;
         seen.add(k);
@@ -6255,7 +6263,8 @@ function buildWmsFoco48hDetalhe(features, totalFeatures) {
     if (meta) {
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const total = Math.max(rows.length, totalFeatures || 0);
-        meta.innerHTML = `TerraBrasilis · raster + vetorial 48h · <b>${shown.length.toLocaleString('pt-BR')} exibidos de ${total.toLocaleString('pt-BR')} focos em MT</b> · todos satélites · ${hora}`;
+        const rot = (typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || '';
+        meta.innerHTML = `TerraBrasilis · raster + vetorial 48h · <b>${shown.length.toLocaleString('pt-BR')} exibidos de ${total.toLocaleString('pt-BR')} focos${rot ? ' em ' + rot : ' no Brasil'}</b> · todos satélites · ${hora}`;
     }
     const leg = document.getElementById('legFocosWms');
     if (leg) {
@@ -6273,7 +6282,7 @@ async function loadWmsFocos48hDetalhe() {
         const siglaUF = ufSiglaCorrente();
         const nomeUF = ufNomeCorrente();
         const filtros = [];
-        if (selectedUfCode && selectedUfCode !== '') filtros.push(`estado='${nomeUF.replace(/'/g, "''")}'`);
+        if (nomeUF) filtros.push(`estado='${nomeUF.replace(/'/g, "''")}'`);
         let url = 'https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/dados_abertos/ows' +
             '?service=WFS&version=1.1.0&request=GetFeature' +
             '&typeName=dados_abertos:focos_48h_br_todosats' +
