@@ -34,7 +34,35 @@ const RANGE_PARALELO = 24;
    cálculo estourar, cai para a leitura em 2 passos. */
 const EXTRA_FOLGA = 1024;
 
-let cache = { ano: null, ts: 0, dados: null };
+/* Cache por chave ano:uf (Map com teto): alternar de UF não evicta
+   as demais até o teto. TTL 6h por entrada. */
+const CACHE_POR_CHAVE = new Map();
+const CACHE_MAX_CHAVES = 8;
+
+function lerCache(chave) {
+  const item = CACHE_POR_CHAVE.get(chave);
+  if (!item) return null;
+  if (Date.now() - item.ts >= CACHE_TTL_MS) {
+    CACHE_POR_CHAVE.delete(chave);
+    return null;
+  }
+  // LRU: re-insere para marcar como usada recentemente.
+  CACHE_POR_CHAVE.delete(chave);
+  CACHE_POR_CHAVE.set(chave, item);
+  return item.dados;
+}
+
+function gravarCache(chave, dados) {
+  CACHE_POR_CHAVE.delete(chave);
+  CACHE_POR_CHAVE.set(chave, { ts: Date.now(), dados });
+  while (CACHE_POR_CHAVE.size > CACHE_MAX_CHAVES) {
+    CACHE_POR_CHAVE.delete(CACHE_POR_CHAVE.keys().next().value);
+  }
+}
+
+function limparCache() {
+  CACHE_POR_CHAVE.clear();
+}
 
 function parseNum(v) {
   const t = String(v).trim();
@@ -281,13 +309,9 @@ function consolidar(estacoes) {
 
 async function obterDados(ano, uf, force) {
   const chave = `${ano}:${uf}`;
-  if (
-    !force &&
-    cache.chave === chave &&
-    cache.dados &&
-    Date.now() - cache.ts < CACHE_TTL_MS
-  ) {
-    return cache.dados;
+  if (!force) {
+    const emCache = lerCache(chave);
+    if (emCache) return emCache;
   }
 
   const url = ZIP_BASE + ano + '.zip';
@@ -295,7 +319,7 @@ async function obterDados(ano, uf, force) {
   const estacoes = await extrairUF(url, entradas, uf);
   const dados = consolidar(estacoes);
 
-  cache = { chave, ano, ts: Date.now(), dados };
+  gravarCache(chave, dados);
   return dados;
 }
 
@@ -331,3 +355,5 @@ module.exports = serve(async function handler(req) {
     return jsonResponse(502, { erro: 'Falha ao processar dados INMET: ' + e.message }, origin);
   }
 });
+
+module.exports.limparCache = limparCache;

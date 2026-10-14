@@ -159,6 +159,53 @@ test('INMET-chuva: ?uf= filtra arquivos do zip; UF inválida é 400', async () =
   }
 });
 
+test('INMET-chuva: cache por chave evita re-download (MT→SP→MT)', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const fetchOrig = global.fetch;
+  try {
+    setupEnv();
+    const inmetRota = require('../api/_routes/inmet-chuva');
+    inmetRota.limparCache();
+    const zip = montarZip([
+      { nome: 'INMET_S_SP_A701_2026.CSV', conteudo: CSV_SP },
+      { nome: 'INMET_S_MT_A901_2026.CSV', conteudo: CSV_MT },
+    ]);
+    let chamadas = 0;
+    global.fetch = (url, opts = {}) => {
+      chamadas += 1;
+      const metodo = ((opts && opts.method) || 'GET').toUpperCase();
+      const range = opts && opts.headers && opts.headers.Range;
+      if (metodo === 'HEAD') {
+        return Promise.resolve(new Response(null, {
+          status: 200, headers: { 'content-length': String(zip.length) },
+        }));
+      }
+      const m = /^bytes=(\d+)-(\d+)$/.exec(range || '');
+      if (!m) return Promise.reject(new Error('teste: Range esperado'));
+      const ini = Number(m[1]);
+      const fim = Math.min(Number(m[2]), zip.length - 1);
+      return Promise.resolve(new Response(zip.slice(ini, fim + 1), {
+        status: 206,
+        headers: { 'content-range': `bytes ${ini}-${fim}/${zip.length}` },
+      }));
+    };
+    const antes = chamadas;
+    assert.equal((await apiHandler(get('inmet-chuva?ano=2026&uf=MT&refresh=1'))).status, 200);
+    const aposMT = chamadas;
+    assert.ok(aposMT > antes); // populou
+    assert.equal((await apiHandler(get('inmet-chuva?ano=2026&uf=MT'))).status, 200);
+    assert.equal(chamadas, aposMT); // mesma chave: zero fetch novo
+    assert.equal((await apiHandler(get('inmet-chuva?ano=2026&uf=SP'))).status, 200);
+    const aposSP = chamadas;
+    assert.ok(aposSP > aposMT); // outra chave: baixa de novo
+    assert.equal((await apiHandler(get('inmet-chuva?ano=2026&uf=MT'))).status, 200);
+    assert.equal(chamadas, aposSP); // MT ainda em cache: sem evicção
+  } finally {
+    global.fetch = fetchOrig;
+    restoreEnv(prev);
+  }
+});
+
 /* ---------- Barragens SNISB ---------- */
 const SNISB_JSON = {
   features: [
