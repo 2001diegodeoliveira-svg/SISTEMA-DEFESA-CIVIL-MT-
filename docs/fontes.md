@@ -51,8 +51,18 @@ validado com as 27 UFs. Documentação oficial: `/api/docs/malhas`.
 | default | qualquer outro host permitido | 300s | 600s | 10s |
 
 Segurança: o allowlist continua sendo `PROXY_HOSTS` (lido por
-requisição). Fallback "último válido" em `system_config`
+requisição); **em produção sem `PROXY_HOSTS`, o proxy recusa tudo
+com 503** (nunca opera aberto). Anti-SSRF em todas as chamadas:
+nega IPs literais/internos (incluindo formas numéricas tipo
+`http://2130706433/`), nomes locais (`localhost`, `.local`,
+`.internal` etc.) e hostnames que resolvem para faixa privada,
+link-local ou metadata cloud; DNS irresolúvel nega (fail closed).
+Risco residual conhecido: TOCTOU entre checagem DNS e fetch
+(sem pin de IP; redirects já são negados). Fallback "último válido" em `system_config`
 (`proxy-fallback:<host><path>`), teto de 256 KB por corpo.
+`?raw=1` (ou omitido): passthrough binário exato da origem,
+refletido em `X-Proxy-Raw` (compatível com `js/proxy.js`,
+que sempre envia o parâmetro).
 
 ## Direto do navegador (tiles — adequado, sem proxy)
 

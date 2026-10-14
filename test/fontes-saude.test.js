@@ -24,6 +24,17 @@ function setupEnv() {
   process.env.NODE_ENV = 'test';
   process.env.FILE_STORE = '0';
   process.env.PROXY_HOSTS = 'example.test';
+  // DNS determinístico (o proxy agora valida SSRF antes do fetch).
+  proxyHandler.definirResolvedor(async () => ['93.184.216.34']);
+  demoReset();
+}
+
+function restoreEnv(prev) {
+  proxyHandler.definirResolvedor(null);
+  for (const [k, v] of prev) {
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
   demoReset();
 }
 
@@ -73,11 +84,7 @@ test('GET /api/fontes/saude lista o registro com estado inicial fora', async () 
     assert.deepEqual(rain.hosts, ['api.rainviewer.com']);
   } finally {
     await restore(snap);
-    for (const [k, v] of prev) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
-    }
-    demoReset();
+    restoreEnv(prev);
   }
 });
 

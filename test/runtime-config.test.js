@@ -251,9 +251,11 @@ test('CORS reflete apenas origens explicitamente autorizadas', () => {
 });
 
 test('proxy não segue redirecionamentos nem aceita respostas maiores que o limite', async () => {
+  const proxyRoute = require('../api/_routes/proxy');
   const previousFetch = global.fetch;
   let fetchOptions;
   try {
+    proxyRoute.definirResolvedor(async () => ['93.184.216.34']);
     global.fetch = async (_url, options) => {
       fetchOptions = options;
       return new Response('redirect', {
@@ -281,6 +283,7 @@ test('proxy não segue redirecionamentos nem aceita respostas maiores que o limi
     assert.deepEqual(await oversizedResponse.json(), { erro: 'Falha ao buscar a origem.' });
   } finally {
     global.fetch = previousFetch;
+    proxyRoute.definirResolvedor(null);
   }
 });
 

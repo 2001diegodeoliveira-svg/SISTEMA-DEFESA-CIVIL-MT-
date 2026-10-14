@@ -23,6 +23,17 @@ function setupEnv() {
   process.env.NODE_ENV = 'test';
   process.env.FILE_STORE = '0';
   process.env.PROXY_HOSTS = 'example.test,api.rainviewer.com';
+  // DNS determinístico: hosts de teste resolvem para IP público.
+  proxyHandler.definirResolvedor(async () => ['93.184.216.34']);
+  demoReset();
+}
+
+function restoreEnv(prev) {
+  proxyHandler.definirResolvedor(null);
+  for (const [k, v] of prev) {
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
   demoReset();
 }
 
@@ -67,11 +78,7 @@ test('sucesso devolve corpo + Cache-Control da fonte + métricas', async () => {
   } finally {
     global.fetch = fetchOrig;
     await restore(snap);
-    for (const [k, v] of prev) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
-    }
-    demoReset();
+    restoreEnv(prev);
   }
 });
 
@@ -99,11 +106,7 @@ test('origem fora do ar serve último válido com X-Stale', async () => {
   } finally {
     global.fetch = fetchOrig;
     await restore(snap);
-    for (const [k, v] of prev) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
-    }
-    demoReset();
+    restoreEnv(prev);
   }
 });
 
@@ -121,11 +124,7 @@ test('sem fallback e com origem fora: 502 com JSON de erro', async () => {
   } finally {
     global.fetch = fetchOrig;
     await restore(snap);
-    for (const [k, v] of prev) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
-    }
-    demoReset();
+    restoreEnv(prev);
   }
 });
 
@@ -140,10 +139,94 @@ test('host fora do allowlist: 403; método != GET: 405; sem ?url=: 400', async (
     const r400 = await proxyHandler(new Request('http://localhost/api/proxy', { method: 'GET' }));
     assert.equal(r400.status, 400);
   } finally {
-    for (const [k, v] of prev) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
+    restoreEnv(prev);
+  }
+});
+
+test('SSRF: IPs literais/internos e localhost são 403 sem DNS', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  let chamadasDns = 0;
+  try {
+    setupEnv();
+    process.env.PROXY_HOSTS = 'alvo.test';
+    proxyHandler.definirResolvedor(async () => { chamadasDns += 1; return ['93.184.216.34']; });
+    const alvos = [
+      'http://169.254.169.254/latest/meta-data/',
+      'http://localhost:3000/api/areas',
+      'http://127.0.0.1/x',
+      'http://10.0.0.5/x',
+      'http://192.168.1.1/x',
+      'http://172.20.10.4/x',
+      'http://0.0.0.0/x',
+      'http://2130706433/', // 127.0.0.1 em decimal
+      'http://0x7f.0x0.0x0.0x1/', // 127.0.0.1 em hexa
+      'http://[::1]/x',
+    ];
+    for (const alvo of alvos) {
+      const res = await proxyHandler(request(alvo));
+      assert.equal(res.status, 403, alvo);
+      assert.ok((await res.json()).motivo);
     }
-    demoReset();
+    assert.equal(chamadasDns, 0); // literais/nomes locais: sem DNS
+  } finally {
+    await restore(snap);
+    restoreEnv(prev);
+  }
+});
+
+test('SSRF: hostname que resolve p/ privado é 403; público passa', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  const fetchOrig = global.fetch;
+  try {
+    setupEnv();
+    process.env.PROXY_HOSTS = 'interno.test,publico.test';
+    proxyHandler.definirResolvedor(async (host) => {
+      if (host === 'interno.test') return ['10.1.2.3'];
+      if (host === 'publico.test') return ['93.184.216.34'];
+      throw new Error('NXDOMAIN simulado');
+    });
+    global.fetch = () => Promise.resolve(new Response('ok', { status: 200 }));
+    const ruim = await proxyHandler(request('https://interno.test/x'));
+    assert.equal(ruim.status, 403);
+    const bom = await proxyHandler(request('https://publico.test/x'));
+    assert.equal(bom.status, 200);
+    const semDns = await proxyHandler(request('https://nxdominio.test/x'));
+    assert.equal(semDns.status, 403); // fail closed
+  } finally {
+    global.fetch = fetchOrig;
+    await restore(snap);
+    restoreEnv(prev);
+  }
+});
+
+test('produção sem PROXY_HOSTS recusa com 503; raw documentado', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const snap = await snapshot();
+  const fetchOrig = global.fetch;
+  try {
+    setupEnv();
+    process.env.NODE_ENV = 'production';
+    process.env.PROXY_HOSTS = '';
+    global.fetch = () => Promise.resolve(new Response('x', { status: 200 }));
+    const r503 = await proxyHandler(request('https://example.test/x'));
+    assert.equal(r503.status, 503);
+    assert.ok((await r503.json()).erro.includes('PROXY_HOSTS'));
+    process.env.PROXY_HOSTS = 'example.test';
+    const comRaw = (alvo, raw) => new Request(
+      `http://localhost/api/proxy?url=${encodeURIComponent(alvo)}&raw=${raw}`,
+      { method: 'GET' }
+    );
+    const r1 = await proxyHandler(comRaw('https://example.test/x', '1'));
+    assert.equal(r1.status, 200);
+    assert.equal(r1.headers.get('x-proxy-raw'), '1');
+    const r0 = await proxyHandler(comRaw('https://example.test/x', '0'));
+    assert.equal(r0.status, 200);
+    assert.equal(r0.headers.get('x-proxy-raw'), '0');
+  } finally {
+    global.fetch = fetchOrig;
+    await restore(snap);
+    restoreEnv(prev);
   }
 });

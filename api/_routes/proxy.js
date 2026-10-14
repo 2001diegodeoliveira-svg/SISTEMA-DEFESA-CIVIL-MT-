@@ -4,19 +4,30 @@
    GET /api/proxy?url=<encodada>&raw=1
    - Busca a URL no servidor (sem restrição de CORS) e devolve
      o conteúdo com cabeçalhos CORS permissivos.
-   - raw=1 devolve o corpo como está (CSV/XML/imagem).
+   - raw=1 (ou omitido): devolve o corpo como está, binário
+     (CSV/XML/imagem/JSON da origem). O parâmetro existe por
+     compatibilidade com js/proxy.js (que sempre o envia) e é
+     refletido em X-Proxy-Raw.
    - Cache CDN por fonte (ver api/_lib/origens.js): s-maxage +
      stale-while-revalidate; headers X-Fonte e X-Upstream-*.
    - Fallback para o último dado válido (X-Stale: 1) quando a
      origem cai; senão 502 como antes.
+   - Anti-SSRF: nega IPs literais/internos, nomes locais e
+     hostnames que resolvem para faixa privada (ver abaixo).
+     Em produção sem PROXY_HOSTS, recusa tudo com 503.
    Uso no frontend:  dcProxyFetch('https://api.externa.com/...')
    ============================================================ */
+const dns = require('dns');
 const { corsHeaders, cacheHeaders, reqUrl } = require('../_lib/http');
 const { origemPara } = require('../_lib/origens');
 const { readCollection, writeCollection } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 
 const ALLOWED_HOSTS_ENV = 'PROXY_HOSTS';
+
+function emProducao() {
+  return process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+}
 
 function allowedHosts() {
   return (process.env[ALLOWED_HOSTS_ENV] || '')
@@ -29,6 +40,136 @@ function hostAllowed(host) {
   const allowed = allowedHosts();
   if (!allowed.length) return true; // sem restrição (padrão dev)
   return allowed.some((h) => host === h || host.endsWith('.' + h));
+}
+
+/* ---------- anti-SSRF ---------- */
+// Resolvedor injetável (testes substituem via definirResolvedor).
+const resolvedorPadrao = (host) => dns.promises.lookup(host, { all: true }).then((r) => r.map((x) => x.address));
+let resolvedor = resolvedorPadrao;
+function definirResolvedor(fn) {
+  resolvedor = typeof fn === 'function' ? fn : resolvedorPadrao;
+}
+
+function parteNumIPv4(p) {
+  const t = String(p || '').trim();
+  if (/^0x[0-9a-f]+$/i.test(t)) return parseInt(t, 16);
+  if (/^0[0-9]+$/.test(t)) {
+    const n = parseInt(t, 8);
+    return Number.isFinite(n) ? n : NaN;
+  }
+  if (/^\d+$/.test(t)) return parseInt(t, 10);
+  return NaN;
+}
+
+/* Interpreta formas numéricas de IPv4 (regras inet_aton: decimal,
+   octal, hexadecimal e inteiro de 32 bits), barrando bypass tipo
+   http://2130706433/ (= 127.0.0.1). Devolve [b0,b1,b2,b3] ou null. */
+function ipv4Flexivel(host) {
+  const t = String(host || '').trim();
+  if (/^\d+$/.test(t)) {
+    const n = Number(t);
+    if (!Number.isInteger(n) || n < 0 || n > 4294967295) return null;
+    return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+  }
+  if (!t.includes('.')) return null;
+  const partes = t.split('.');
+  if (partes.length < 2 || partes.length > 4) return null;
+  const nums = partes.map(parteNumIPv4);
+  if (nums.some((n) => !Number.isInteger(n) || n < 0)) return null;
+  if (nums.length === 4) {
+    if (nums.some((n) => n > 255)) return null;
+    return nums;
+  }
+  // Formas curtas (regras inet_aton): a.b | a.b.c, última parte larga.
+  const limites = { 2: 16777216, 3: 65536 };
+  if (nums.slice(0, -1).some((n) => n > 255)) return null;
+  const ultimo = nums[nums.length - 1];
+  if (ultimo >= limites[nums.length]) return null;
+  const bytes = [...nums.slice(0, -1)];
+  let resto = ultimo;
+  const casas = 4 - bytes.length;
+  for (let i = casas - 1; i >= 0; i -= 1) {
+    const div = 256 ** i;
+    bytes.push(Math.floor(resto / div));
+    resto %= div;
+  }
+  return bytes;
+}
+
+function ipv4Privado(b) {
+  const [a, c, d] = [b[0], b[1], b[2]];
+  void d;
+  if (a === 0) return 'não-roteável (0.0.0.0/8)';
+  if (a === 10) return 'privada (10/8)';
+  if (a === 127) return 'loopback (127/8)';
+  if (a === 169 && c === 254) return 'link-local/metadata (169.254/16)';
+  if (a === 172 && c >= 16 && c <= 31) return 'privada (172.16/12)';
+  if (a === 192 && c === 168) return 'privada (192.168/16)';
+  if (a === 100 && c >= 64 && c <= 127) return 'compartilhada CGNAT (100.64/10)';
+  return null;
+}
+
+function ipv6Bloqueado(host) {
+  const t = String(host || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!t.includes(':')) return null;
+  if (t === '::1') return 'loopback (::1)';
+  if (t === '::' || t === '::ffff:0.0.0.0') return 'não-roteável (::)';
+  if (/^(fe[89ab][0-9a-f]?):/i.test(t)) return 'link-local (fe80::/10)';
+  if (/^(fc|fd)[0-9a-f]{0,2}:/i.test(t)) return 'privada (fc00::/7)';
+  const m = t.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (m) {
+    const b = ipv4Flexivel(m[1]);
+    if (b) return ipv6Bloqueado('x') || ipv4Privado(b);
+  }
+  return null;
+}
+
+const NOMES_BLOQUEADOS = ['localhost'];
+// .test/.example (RFC reservados, sem resolução pública) caem no
+// fail closed do resolvedor; não bloquear por nome para não quebrar testes.
+const SUFIXOS_BLOQUEADOS = ['.localhost', '.local', '.internal', '.lan', '.home.arpa', '.invalid'];
+
+function nomeBloqueado(host) {
+  const t = String(host || '').toLowerCase().replace(/\.+$/, '');
+  if (NOMES_BLOQUEADOS.includes(t)) return 'nome local (' + t + ')';
+  if (SUFIXOS_BLOQUEADOS.some((s) => t.endsWith(s))) return 'sufixo interno (' + t + ')';
+  return null;
+}
+
+/** Verifica o alvo contra SSRF. Devolve {ok} ou {ok:false, motivo}. */
+async function verificarAlvo(parsed) {
+  const host = String(parsed.hostname || '').toLowerCase().replace(/\.+$/, '');
+  if (!host) return { ok: false, motivo: 'hostname vazio' };
+  const nb = nomeBloqueado(host);
+  if (nb) return { ok: false, motivo: nb };
+  const v6 = ipv6Bloqueado(host);
+  if (v6) return { ok: false, motivo: v6 };
+  const v4 = ipv4Flexivel(host);
+  if (v4) {
+    const priv = ipv4Privado(v4);
+    if (priv) return { ok: false, motivo: 'IP ' + priv };
+    return { ok: true };
+  }
+  let enderecos;
+  try {
+    enderecos = await resolvedor(host);
+  } catch (e) {
+    return { ok: false, motivo: 'destino não resolvido (fail closed)' };
+  }
+  if (!Array.isArray(enderecos) || !enderecos.length) {
+    return { ok: false, motivo: 'destino sem endereço (fail closed)' };
+  }
+  for (const ip of enderecos) {
+    const s = String(ip).toLowerCase().replace(/^\[|\]$/g, '');
+    const b6 = ipv6Bloqueado(s);
+    if (b6) return { ok: false, motivo: `resolveu para ${s} (${b6})` };
+    const b4 = ipv4Flexivel(s);
+    if (b4) {
+      const priv = ipv4Privado(b4);
+      if (priv) return { ok: false, motivo: `resolveu para ${s} (${priv})` };
+    }
+  }
+  return { ok: true };
 }
 
 function rewriteUrl(url) {
@@ -149,7 +290,10 @@ module.exports = serve(async function handler(req) {
 
   const url = reqUrl(req);
   const target = url && url.searchParams.get('url');
-  const raw = url && url.searchParams.get('raw') === '1';
+  const rawParam = url ? url.searchParams.get('raw') : null;
+  // raw=1 (ou omitido): passthrough binário exato da origem.
+  // O parâmetro existe por compatibilidade com js/proxy.js.
+  const modoRaw = rawParam === null || rawParam === '1';
 
   if (!target) {
     return new Response(JSON.stringify({ erro: 'Informe o parâmetro ?url=' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
@@ -161,6 +305,13 @@ module.exports = serve(async function handler(req) {
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     return new Response(JSON.stringify({ erro: 'Protocolo não suportado.' }), { status: 400, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
+  }
+  if (emProducao() && !allowedHosts().length) {
+    return new Response(JSON.stringify({ erro: 'Proxy desativado: configure PROXY_HOSTS em produção.' }), { status: 503, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
+  }
+  const checagem = await verificarAlvo(parsed);
+  if (!checagem.ok) {
+    return new Response(JSON.stringify({ erro: 'Destino não permitido no proxy.', motivo: checagem.motivo }), { status: 403, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
   if (!hostAllowed(parsed.hostname)) {
     return new Response(JSON.stringify({ erro: 'Domínio não permitido no proxy.' }), { status: 403, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
@@ -200,6 +351,7 @@ module.exports = serve(async function handler(req) {
       headers: Object.assign({}, headers, cacheHeaders(origem.ttlSeg, origem.staleSeg), {
         'Content-Type': contentType,
         'X-Fonte': origem.id,
+        'X-Proxy-Raw': modoRaw ? '1' : '0',
         'X-Upstream-Status': String(upstream.status),
         'X-Upstream-Latency-Ms': String(latenciaMs),
       }),
@@ -230,3 +382,9 @@ module.exports = serve(async function handler(req) {
     return new Response(JSON.stringify({ erro: 'Falha ao buscar a origem.' }), { status: 502, headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }) });
   }
 });
+
+// Ganchos de teste (SSRF): substituem o resolvedor DNS.
+module.exports.verificarAlvo = verificarAlvo;
+module.exports.definirResolvedor = definirResolvedor;
+module.exports.ipv4Flexivel = ipv4Flexivel;
+module.exports.ipv4Privado = ipv4Privado;
