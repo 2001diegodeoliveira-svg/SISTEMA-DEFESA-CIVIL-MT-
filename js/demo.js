@@ -76,7 +76,9 @@
         loginHabilitado: false,
         liberado: true,
         sincronizado: false,
-        concluido: false
+        concluido: false,
+        suspenso: false,
+        manutencaoAte: null
     };
 
     function recalcular() {
@@ -171,7 +173,15 @@
                     estado.inicio = servidor;
                     gravarInicioLocal(servidor);
                 }
-                if (dados.loginHabilitado === false) {
+                if (dados.suspenso === true) {
+                    /* Suspensão fail-closed do servidor: nada libera e o
+                       login não resolve — páginas internas caem no login. */
+                    estado.duracaoMs = 0;
+                    estado.loginHabilitado = true;
+                    estado.suspenso = true;
+                    estado.manutencaoAte = dados.manutencaoAte || null;
+                    estado.liberado = false;
+                } else if (dados.loginHabilitado === false) {
                     /* Login suspenso no servidor: libera leitura sem token. */
                     estado.duracaoMs = 0;
                     estado.loginHabilitado = false;

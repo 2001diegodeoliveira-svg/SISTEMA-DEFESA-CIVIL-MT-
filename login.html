@@ -307,10 +307,32 @@
         /* A página de login permanece disponível como tela pública. */
     </script>
     <script>
-        /* MODO MANUTENÇÃO — login suspenso temporariamente.
-           true  = página mostra o aviso e bloqueia qualquer tentativa;
-           false = login volta ao normal. Reversível, sem mexer na API. */
-        const LOGIN_SUSPENSO = true;
+        /* Suspensão de manutenção (fail-closed): o SERVIDOR é a autoridade.
+           Esta página consulta GET api/demo; com suspenso=true, exibe o
+           banner com a mensagem do servidor e bloqueia as tentativas.
+           Sem resposta (offline), a página segue utilizável — o login
+           falha de qualquer forma sem a API. Nada é injetado via
+           innerHTML com dados dinâmicos (só textContent). */
+        let loginSuspensoServidor = false;
+        fetch('api/demo', { headers: { accept: 'application/json' } })
+            .then(function (resposta) { return resposta && resposta.ok ? resposta.json() : null; })
+            .then(function (dados) {
+                if (!dados || dados.suspenso !== true) return;
+                loginSuspensoServidor = true;
+                let aviso = (dados.mensagem && String(dados.mensagem)) || 'Login suspenso para manutenção.';
+                if (dados.manutencaoAte) {
+                    const quando = new Date(dados.manutencaoAte);
+                    if (!Number.isNaN(quando.getTime())) {
+                        aviso += ' Volte em ' + quando.toLocaleString('pt-BR') + '.';
+                    }
+                }
+                mostrarMsg(aviso);
+                const entrar = document.getElementById('entrarBtn');
+                const confirmar = document.getElementById('mfaConfirmar');
+                if (entrar) entrar.disabled = true;
+                if (confirmar) confirmar.disabled = true;
+            })
+            .catch(function () { /* sem servidor: mantém a página como está */ });
     </script>
     <script>
         let perfilSelecionado = null;
@@ -385,16 +407,7 @@
             const el = document.getElementById('boxMsg');
             el.className = 'box-msg ' + (tipo || 'erro');
             el.innerHTML = '<i data-lucide="' + (tipo === 'ok' ? 'circle-check' : tipo === 'info' ? 'info' : 'triangle-alert') + '"></i> <span>' + texto + '</span>';
-        if (window.lucide) lucide.createIcons();
-
-        // Modo manutenção: avisa de cara e desabilita os botões.
-        if (typeof LOGIN_SUSPENSO !== 'undefined' && LOGIN_SUSPENSO) {
-            mostrarMsg('Login temporariamente suspenso para manutenção. Tente novamente mais tarde.');
-            const entrar = document.getElementById('entrarBtn');
-            const confirmar = document.getElementById('mfaConfirmar');
-            if (entrar) entrar.disabled = true;
-            if (confirmar) confirmar.disabled = true;
-        }
+            if (window.lucide) lucide.createIcons();
         }
 
         function ocultarMsg() {
@@ -473,6 +486,10 @@
         }
 
         document.getElementById('mfaConfirmar').addEventListener('click', async function () {
+            if (loginSuspensoServidor) {
+                mostrarMsg('Login temporariamente suspenso para manutenção. Tente novamente mais tarde.');
+                return;
+            }
             const codigo = document.getElementById('mfaCodigo').value.trim();
             if (!/^\d{6}$/.test(codigo)) {
                 mostrarMsg('Informe o código de seis dígitos do aplicativo.');
@@ -490,9 +507,8 @@
         });
 
         document.getElementById('entrarBtn').addEventListener('click', async () => {
-            // MODO MANUTENÇÃO: login suspenso temporariamente. Para reativar,
-            // apague este bloco (ou use a flag LOGIN_SUSPENSO abaixo).
-            if (typeof LOGIN_SUSPENSO !== 'undefined' && LOGIN_SUSPENSO) {
+            // Suspensão fail-closed (estado vindo de GET api/demo).
+            if (loginSuspensoServidor) {
                 mostrarMsg('Login temporariamente suspenso para manutenção. Tente novamente mais tarde.');
                 return;
             }
