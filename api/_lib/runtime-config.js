@@ -13,6 +13,32 @@ function parseList(value) {
   return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
 }
 
+/* JWT_EXP allowlist: número + unidade (s/m/h/d), teto de 24h, default 12h.
+   Evita token vitalício via valor como "never" ou gigante. */
+const JWT_EXP_DEFAULT = '12h';
+const JWT_EXP_MAX_SECONDS = 24 * 3600;
+
+function parseJwtExpToSeconds(value) {
+  const raw = String(value === undefined || value === null ? JWT_EXP_DEFAULT : value).trim();
+  const m = raw.match(/^(\d+)([smhd])$/);
+  if (!m) return null;
+  const amount = Number(m[1]);
+  if (!Number.isSafeInteger(amount) || amount <= 0) return null;
+  const multipliers = { s: 1, m: 60, h: 3600, d: 86400 };
+  const seconds = amount * multipliers[m[2]];
+  if (!Number.isSafeInteger(seconds) || seconds <= 0 || seconds > JWT_EXP_MAX_SECONDS) return null;
+  return seconds;
+}
+
+function resolveJwtExp(value) {
+  const raw = String(value === undefined || value === null || value === '' ? JWT_EXP_DEFAULT : value).trim();
+  return parseJwtExpToSeconds(raw) === null ? JWT_EXP_DEFAULT : raw;
+}
+
+function isJwtExpValid(value) {
+  return parseJwtExpToSeconds(value) !== null;
+}
+
 function validateProductionConfig(env = process.env) {
   if (env.NODE_ENV !== 'production' && env.VERCEL_ENV !== 'production') return [];
 
@@ -52,9 +78,10 @@ function validateProductionConfig(env = process.env) {
   }
 
   let seedUsers = null;
+  let seedParseError = false;
   try {
     seedUsers = JSON.parse(env.SEED_USERS || 'null');
-  } catch {}
+  } catch { seedParseError = true; }
   const hasDatabase = Boolean(env.DATABASE_URL && env.FILE_STORE !== '1');
   if (hasDatabase) {
     try {
@@ -102,7 +129,24 @@ function validateProductionConfig(env = process.env) {
     problems.push('TOMTOM_API_KEY é obrigatória quando TOMTOM_ENABLED está ativo.');
   }
 
+  /* CRIPTO-03: JWT_EXP com allowlist e teto de 24h. Valor como "never" ou
+     gigante geraria token vitalício — recusa o boot em produção. */
+  if (!isJwtExpValid(env.JWT_EXP === undefined || env.JWT_EXP === '' ? JWT_EXP_DEFAULT : env.JWT_EXP)) {
+    problems.push('JWT_EXP inválido: use número+unidade (ex.: 15m, 12h) com teto de 24h.');
+  }
+
+  /* CRIPTO-01: login desligado + seed de produção coexistindo é configuração
+     perigosa (verifyToken() libera admin para qualquer request). Em produção,
+     esse par deve falhar fechado no CI/deploy. Mantemos o modo manutenção
+     (AUTH off sem seed) para não quebrar o fluxo intencional de manutenção. */
+  if (!isLoginEnabled(env) && Array.isArray(seedUsers) && seedUsers.length) {
+    problems.push('AUTH_LOGIN_ENABLED=false não pode coexistir com SEED_USERS em produção.');
+  }
+  if (seedParseError && env.SEED_USERS) {
+    problems.push('SEED_USERS contém JSON inválido.');
+  }
+
   return problems;
 }
 
-module.exports = { isLoginEnabled, isSeedOnlyLoginEnabled, validateProductionConfig };
+module.exports = { isLoginEnabled, isSeedOnlyLoginEnabled, validateProductionConfig, parseJwtExpToSeconds, resolveJwtExp, isJwtExpValid, JWT_EXP_DEFAULT, JWT_EXP_MAX_SECONDS };
