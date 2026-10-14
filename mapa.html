@@ -1442,6 +1442,7 @@
             <label>Período</label>
             <div class="filter-btns" id="filterPeriodo">
                 <button class="filter-btn active" data-dias="1">Hoje</button>
+                <button class="filter-btn" data-dias="2">48h</button>
                 <button class="filter-btn" data-dias="7">7d</button>
                 <button class="filter-btn" data-dias="30">30d</button>
                 <button class="filter-btn" data-dias="90">90d</button>
@@ -1558,6 +1559,15 @@
         <div id="cptecPanel" style="padding:0 2px;">
             <div id="cptecFonte" style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;"><i data-lucide="link" style="font-size:9px;"></i> Fonte: Open-Meteo</div>
             <div id="cptecCards" style="display:flex;flex-direction:column;gap:5px;"></div>
+            <div id="chuvaTimeline" style="margin-top:8px;">
+                <div style="display:flex;align-items:center;gap:6px;color:#94a3b8;font-size:10.5px;margin-bottom:4px;">
+                    <i data-lucide="droplets" style="font-size:10px;"></i>
+                    <span>Chuva hora a hora · 24h obs. + 6h prev.</span>
+                    <button class="mini-btn" id="chuvaPlayBtn" title="Animar" style="margin-left:auto;"><i data-lucide="play"></i></button>
+                </div>
+                <div id="chuvaBars" style="display:flex;align-items:flex-end;gap:2px;height:56px;"></div>
+                <div id="chuvaHora" style="color:#94a3b8;font-size:10px;margin-top:3px;">—</div>
+            </div>
         </div>
 
         <div id="areaActions">
@@ -2202,6 +2212,11 @@ function stopPlaying() {
     if (window.lucide) lucide.createIcons();
 }
 document.getElementById('playBtn').addEventListener('click', () => playing ? stopPlaying() : startPlaying());
+document.getElementById('chuvaPlayBtn').addEventListener('click', () => {
+    if (!chuvaHoras.length) { loadChuvaTimeline(); return; }
+    chuvaTocando ? pararChuva() : tocarChuva();
+    desenharChuva();
+});
 document.getElementById('timeSlider').addEventListener('input', e => { stopPlaying(); showFrame(+e.target.value); });
 function updateTimeline() {
     if (!radarFrames.length) return;
@@ -3104,7 +3119,7 @@ async function loadFocosPeriodo(dias) {
     focosRawData = rows;
     focosFilteredData = focosFiltrosAtivos() ? rows.filter(focosFiltroTest) : [...rows];
 
-    const rotulo = nDias <= 1 ? '24h' : nDias + 'd';
+    const rotulo = nDias <= 1 ? '24h' : (nDias === 2 ? '48h' : nDias + 'd');
     const horaCsv = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const rotuloUF = (selectedUfCode && selectedUfCode !== '') ? ' em ' + siglaUF : ' no Brasil';
     meta.innerHTML = `INPE BDQueimadas · <b>${rows.length.toLocaleString('pt-BR')} focos${rotuloUF}</b> · ${rotulo} · ${horaCsv}`;
@@ -3833,12 +3848,91 @@ async function loadCptec() {
             </div>`
         ).join('');
         if (window.lucide) lucide.createIcons();
+        loadChuvaTimeline();
     } catch (e) {
         container.innerHTML = '<div style="color:#94a3b8;font-size:10.5px;">Erro ao carregar previsão</div>';
     }
 }
 loadCptec();
 setInterval(loadCptec, 60 * 60 * 1000);
+
+/* ================= Chuva hora a hora — 24h observadas + 6h previstas ===============
+   Fase 6: animação da precipitação horária (Open-Meteo, já verificado) para
+   o mesmo alvo da previsão (município selecionado ou centro do mapa).
+   Barras sólidas = observado; hachuradas claras = previsão. */
+let chuvaHoras = [], chuvaIdx = 0, chuvaTimer = null, chuvaTocando = false;
+async function loadChuvaTimeline() {
+    const box = document.getElementById('chuvaBars');
+    const lbl = document.getElementById('chuvaHora');
+    if (!box) return;
+    try {
+        const alvo = previsaoAlvo();
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${alvo.lat.toFixed(4)}&longitude=${alvo.lng.toFixed(4)}`
+            + `&hourly=precipitation&past_days=1&forecast_days=2&timezone=auto`;
+        const res = await dcProxyFetch(url);
+        const data = await res.json();
+        const times = (data.hourly && data.daily !== undefined && data.hourly.time) || [];
+        const vals = (data.hourly && data.hourly.precipitation) || [];
+        if (!times.length) throw new Error('sem série horária');
+        const agora = Date.now();
+        let ini = 0;
+        for (let i = 0; i < times.length; i++) {
+            if (Date.parse(times[i]) <= agora - 24 * 3600000) ini = i;
+            else break;
+        }
+        chuvaHoras = [];
+        for (let i = ini; i < Math.min(times.length, ini + 30); i++) {
+            chuvaHoras.push({
+                t: times[i],
+                mm: Number(vals[i]) || 0,
+                futuro: Date.parse(times[i]) > agora,
+            });
+        }
+        chuvaIdx = Math.min(chuvaHoras.findIndex(h => h.futuro), chuvaHoras.length - 1);
+        if (chuvaIdx < 0) chuvaIdx = chuvaHoras.length - 1;
+        pararChuva();
+        desenharChuva();
+    } catch (e) {
+        if (lbl) lbl.textContent = 'Chuva hora a hora indisponível';
+    }
+}
+function desenharChuva() {
+    const box = document.getElementById('chuvaBars');
+    const lbl = document.getElementById('chuvaHora');
+    if (!box || !chuvaHoras.length) return;
+    const max = Math.max(1, ...chuvaHoras.map(h => h.mm));
+    box.innerHTML = chuvaHoras.map((h, i) => {
+        const alt = Math.max(2, Math.round((h.mm / max) * 52));
+        const base = h.futuro
+            ? 'background:repeating-linear-gradient(45deg,rgba(125,211,252,.35) 0 2px,transparent 2px 5px);border:1px dashed rgba(125,211,252,.5);'
+            : 'background:#38bdf8;';
+        const borda = i === chuvaIdx ? 'outline:2px solid #fff;outline-offset:1px;' : '';
+        return `<div title="${h.t} · ${h.mm} mm${h.futuro ? ' (prev.)' : ''}" style="flex:1;min-width:3px;height:${alt}px;${base}${borda}border-radius:2px;"></div>`;
+    }).join('');
+    const h = chuvaHoras[chuvaIdx];
+    if (lbl && h) {
+        const dt = new Date(h.t);
+        lbl.textContent = `${dt.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${h.mm} mm${h.futuro ? ' (previsão)' : ' (observado)'}`;
+    }
+    const btn = document.getElementById('chuvaPlayBtn');
+    if (btn) btn.innerHTML = `<i data-lucide="${chuvaTocando ? 'pause' : 'play'}"></i>`;
+    if (window.lucide) lucide.createIcons();
+}
+function tocarChuva() {
+    pararChuva();
+    chuvaTocando = true;
+    chuvaTimer = setInterval(() => {
+        if (!chuvaHoras.length) return;
+        chuvaIdx = (chuvaIdx + 1) % chuvaHoras.length;
+        desenharChuva();
+    }, 700);
+    desenharChuva();
+}
+function pararChuva() {
+    chuvaTocando = false;
+    if (chuvaTimer) clearInterval(chuvaTimer);
+    chuvaTimer = null;
+}
 
 /* ================= Estações INMET (EAM) — API pública ================= */
 async function loadInmetStations() {
