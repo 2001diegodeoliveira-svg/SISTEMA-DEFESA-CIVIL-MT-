@@ -205,6 +205,35 @@ test('Barragens: normaliza, filtra sem-coords, valida UF/bbox', async () => {
   }
 });
 
+test('Barragens: truncado em 2000 com exceeded avisa parcial:true', async () => {
+  const prev = new Map(ENV_KEYS.map((k) => [k, process.env[k]]));
+  const fetchOrig = global.fetch;
+  try {
+    setupEnv();
+    const pagina = (base) => ({
+      exceededTransferLimit: true,
+      features: Array.from({ length: 1000 }, (_, i) => ({ attributes: {
+        BAR_CD_SNISB: base + i, BAR_NM_NOME: `B${base + i}`, ING_NM_MUNICIPIO: 'C',
+        ING_SG_UFMUNICIPIO: 'MT', BAR_NU_LATITUDE: -15.6, BAR_NU_LONGITUDE: -56.1,
+      } })),
+    });
+    global.fetch = (url) => {
+      const u = new URL(String(url));
+      const off = Number(u.searchParams.get('resultOffset')) || 0;
+      return Promise.resolve(new Response(JSON.stringify(pagina(off)), { status: 200 }));
+    };
+    const r = await apiHandler(get('barragens?uf=BR&limit=2000'));
+    assert.equal(r.status, 200);
+    const j = await r.json();
+    assert.equal(j.total, 2000);
+    assert.equal(j.parcial, true);
+    assert.ok(j.observacao.includes('parcial'));
+  } finally {
+    global.fetch = fetchOrig;
+    restoreEnv(prev);
+  }
+});
+
 /* ---------- Avisos INMET (CAP) ---------- */
 const RSS_FIX = `<?xml version="1.0"?><rss><channel>
 <item><title>Aviso de Tempestade. Severidade Grau: Perigo</title><link>https://apiprevmet3.inmet.gov.br/avisos/rss/56064</link><description><![CDATA[<table><tr><th>Evento</th><td>Tempestade</td></tr><tr><th>Severidade</th><td>Perigo</td></tr><tr><th>Início</th><td>2000-01-01 00:01:00.0</td></tr><tr><th>Fim</th><td>2099-01-01 23:59:00.0</td></tr><tr><th>Descrição</th><td>Chuva forte.</td></tr><tr><th>Área</th><td>Aviso para as Áreas: Norte MT</td></tr></table>]]></description></item>

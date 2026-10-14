@@ -142,6 +142,7 @@ module.exports = serve(async function handler(req) {
   // Pagina no servidor quando o pedido excede uma página ArcGIS.
   const itens = [];
   let parcial = false;
+  let ultimaExcedeu = false;
   try {
     let off = offset;
     let restante = limit;
@@ -151,9 +152,13 @@ module.exports = serve(async function handler(req) {
       itens.push(...r.itens);
       restante -= r.itens.length;
       off += r.itens.length;
+      ultimaExcedeu = r.excedeu === true;
       if (!r.excedeu || r.itens.length < n) break;
       if (pag === MAX_PAGINAS - 1) parcial = true;
     }
+    // Saiu por cota (restante<=0) mas a origem sinalizou mais páginas:
+    // resposta truncada — avisar em vez de fingir totalidade.
+    if (!parcial && ultimaExcedeu && itens.length >= limit) parcial = true;
   } catch (e) {
     return jsonResponse(502, { erro: 'Falha ao consultar o SNISB.', detalhes: e.message }, origin);
   }
