@@ -178,7 +178,8 @@ module.exports = serve(async function handler(req) {
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
-        throw e;
+        // Fallback vazio para malhas quando a API falha
+        return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
       ttlSeg = 86400; staleSeg = 86400;
@@ -201,7 +202,8 @@ module.exports = serve(async function handler(req) {
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
-        throw e;
+        // Fallback vazio para malhas municipais quando a API falha
+        return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
       ttlSeg = 86400; staleSeg = 86400;
