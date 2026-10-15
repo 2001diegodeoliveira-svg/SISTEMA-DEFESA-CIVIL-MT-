@@ -24,8 +24,19 @@ function validarUF(uf) {
 }
 
 async function buscarOrigemComFallback({ parsed, origemId, timeoutMs, maxBytes }) {
+  console.log('[ibge] buscarOrigemComFallback called for:', origemId);
   const origem = FONTES.find(f => f.id === origemId) || { ...FONTES[0] };
-  const { buscarOrigem, lerFallback, salvarFallback, registrarSaude, chaveFallback } = require('./proxy');
+  console.log('[ibge] origem found:', origem?.id);
+  let proxyMod;
+  try {
+    proxyMod = require('./proxy');
+    console.log('[ibge] proxy module loaded');
+  } catch (e) {
+    console.error('[ibge] proxy require failed:', e.message);
+    throw e;
+  }
+  const { buscarOrigem, lerFallback, salvarFallback, registrarSaude, chaveFallback } = proxyMod;
+  console.log('[ibge] proxy functions extracted');
 
   try {
     const upstream = await buscarOrigem({ parsed, timeoutMs, maxBytes });
