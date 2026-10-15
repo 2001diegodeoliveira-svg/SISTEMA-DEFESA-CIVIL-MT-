@@ -155,6 +155,7 @@ module.exports = serve(async function handler(req) {
       return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
 } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
+      console.log('[ibge] fetching malhas estados');
       origemId = 'ibge';
       upstreamUrl = `${IBGE_MALHAS_BASE}/paises/BR?formato=application/vnd.geo+json&intrarregiao=UF&qualidade=minima`;
       let result;
@@ -165,11 +166,14 @@ module.exports = serve(async function handler(req) {
           timeoutMs: 15000,
           maxBytes: 10 * 1024 * 1024,
         });
+        console.log('[ibge] malhas estados result:', result.upstream?.status, result.upstream?.ok);
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
+        console.error('[ibge] malhas estados error:', e.message);
         return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
+      console.log('[ibge] malhas estados features:', data.features?.length);
       ttlSeg = 86400; staleSeg = 86400;
       const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
       if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
@@ -178,6 +182,7 @@ module.exports = serve(async function handler(req) {
 } else if (path.startsWith('/malhas/estados/') && path.length > 16) {
       const uf = validarUF(path.slice(16));
       if (!uf) return jsonResponse(400, { erro: 'UF inválida na malha.' }, origin);
+      console.log('[ibge] fetching malhas estado:', uf);
       origemId = 'ibge';
       upstreamUrl = `${IBGE_MALHAS_BASE}/estados/${uf}?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima`;
       let result;
@@ -188,11 +193,14 @@ module.exports = serve(async function handler(req) {
           timeoutMs: 15000,
           maxBytes: 10 * 1024 * 1024,
         });
+        console.log('[ibge] malhas estado result:', uf, result.upstream?.status, result.upstream?.ok);
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
+        console.error('[ibge] malhas estado error:', uf, e.message);
         return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
+      console.log('[ibge] malhas estado features:', uf, data.features?.length);
       ttlSeg = 86400; staleSeg = 86400;
       const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
       if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
