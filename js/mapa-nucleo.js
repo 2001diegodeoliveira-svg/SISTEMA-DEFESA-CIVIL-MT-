@@ -178,6 +178,11 @@ function updateTimeline() {
 document.querySelectorAll('.layer-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const key = btn.dataset.layer;
+        if (key === 'tempestadePotencial') {
+            const row = document.querySelector('.check-row[data-check="tempestadePotencial"]');
+            if (row) row.click();
+            return;
+        }
         const wasActive = btn.classList.contains('active');
         document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
         if (wasActive) {
