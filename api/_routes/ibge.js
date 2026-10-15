@@ -39,7 +39,9 @@ async function buscarOrigemComFallback({ parsed, origemId, timeoutMs, maxBytes }
   console.log('[ibge] proxy functions extracted');
 
   try {
+    console.log('[ibge] calling buscarOrigem');
     const upstream = await buscarOrigem({ parsed, timeoutMs, maxBytes });
+    console.log('[ibge] buscarOrigem returned:', upstream.status);
     const buf = upstream.body;
     const contentType = upstream.headers.get('content-type') || 'application/json';
 
