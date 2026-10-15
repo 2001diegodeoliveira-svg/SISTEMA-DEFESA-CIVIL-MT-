@@ -170,7 +170,41 @@ module.exports = serve(async function handler(req) {
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
         console.error('[ibge] malhas estados error:', e.message);
-        return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
+        // Fallback estático com geometrias simplificadas dos 27 estados
+        const fallbackMalha = {
+          type: 'FeatureCollection',
+          features: [
+            { type: 'Feature', properties: { codarea: '11', nome: 'Rondônia', sigla: 'RO' }, geometry: { type: 'Polygon', coordinates: [[[-64.8,-10.9],[-62.3,-10.9],[-62.3,-13.7],[-64.8,-13.7],[-64.8,-10.9]]] } },
+            { type: 'Feature', properties: { codarea: '12', nome: 'Acre', sigla: 'AC' }, geometry: { type: 'Polygon', coordinates: [[[-70.0,-7.5],[-68.0,-7.5],[-68.0,-11.0],[-70.0,-11.0],[-70.0,-7.5]]] } },
+            { type: 'Feature', properties: { codarea: '13', nome: 'Amazonas', sigla: 'AM' }, geometry: { type: 'Polygon', coordinates: [[[-70.0,-0.5],[-64.5,-0.5],[-64.5,-10.0],[-70.0,-10.0],[-70.0,-0.5]]] } },
+            { type: 'Feature', properties: { codarea: '14', nome: 'Roraima', sigla: 'RR' }, geometry: { type: 'Polygon', coordinates: [[[-64.5,1.5],[-59.5,1.5],[-59.5,-2.5],[-64.5,-2.5],[-64.5,1.5]]] } },
+            { type: 'Feature', properties: { codarea: '15', nome: 'Pará', sigla: 'PA' }, geometry: { type: 'Polygon', coordinates: [[[-59.5,-1.5],[-46.5,-1.5],[-46.5,-9.5],[-59.5,-9.5],[-59.5,-1.5]]] } },
+            { type: 'Feature', properties: { codarea: '16', nome: 'Amapá', sigla: 'AP' }, geometry: { type: 'Polygon', coordinates: [[[-54.5,0.5],[-50.5,0.5],[-50.5,-4.5],[-54.5,-4.5],[-54.5,0.5]]] } },
+            { type: 'Feature', properties: { codarea: '17', nome: 'Tocantins', sigla: 'TO' }, geometry: { type: 'Polygon', coordinates: [[[-51.0,-5.0],[-46.5,-5.0],[-46.5,-13.5],[-51.0,-13.5],[-51.0,-5.0]]] } },
+            { type: 'Feature', properties: { codarea: '21', nome: 'Maranhão', sigla: 'MA' }, geometry: { type: 'Polygon', coordinates: [[[-48.5,-1.0],[-42.0,-1.0],[-42.0,-10.5],[-48.5,-10.5],[-48.5,-1.0]]] } },
+            { type: 'Feature', properties: { codarea: '22', nome: 'Piauí', sigla: 'PI' }, geometry: { type: 'Polygon', coordinates: [[[-45.5,-2.5],[-41.0,-2.5],[-41.0,-11.0],[-45.5,-11.0],[-45.5,-2.5]]] } },
+            { type: 'Feature', properties: { codarea: '23', nome: 'Ceará', sigla: 'CE' }, geometry: { type: 'Polygon', coordinates: [[[-41.5,-2.0],[-37.5,-2.0],[-37.5,-8.0],[-41.5,-8.0],[-41.5,-2.0]]] } },
+            { type: 'Feature', properties: { codarea: '24', nome: 'Rio Grande do Norte', sigla: 'RN' }, geometry: { type: 'Polygon', coordinates: [[[-38.5,-4.5],[-35.0,-4.5],[-35.0,-7.5],[-38.5,-7.5],[-38.5,-4.5]]] } },
+            { type: 'Feature', properties: { codarea: '25', nome: 'Paraíba', sigla: 'PB' }, geometry: { type: 'Polygon', coordinates: [[[-38.5,-6.0],[-34.5,-6.0],[-34.5,-8.5],[-38.5,-8.5],[-38.5,-6.0]]] } },
+            { type: 'Feature', properties: { codarea: '26', nome: 'Pernambuco', sigla: 'PE' }, geometry: { type: 'Polygon', coordinates: [[[-41.0,-7.0],[-35.0,-7.0],[-35.0,-10.0],[-41.0,-10.0],[-41.0,-7.0]]] } },
+            { type: 'Feature', properties: { codarea: '27', nome: 'Alagoas', sigla: 'AL' }, geometry: { type: 'Polygon', coordinates: [[[-38.0,-8.5],[-35.5,-8.5],[-35.5,-10.5],[-38.0,-10.5],[-38.0,-8.5]]] } },
+            { type: 'Feature', properties: { codarea: '28', nome: 'Sergipe', sigla: 'SE' }, geometry: { type: 'Polygon', coordinates: [[[-38.0,-9.5],[-36.5,-9.5],[-36.5,-11.5],[-38.0,-11.5],[-38.0,-9.5]]] } },
+            { type: 'Feature', properties: { codarea: '29', nome: 'Bahia', sigla: 'BA' }, geometry: { type: 'Polygon', coordinates: [[[-46.5,-8.0],[-38.0,-8.0],[-38.0,-18.0],[-46.5,-18.0],[-46.5,-8.0]]] } },
+            { type: 'Feature', properties: { codarea: '31', nome: 'Minas Gerais', sigla: 'MG' }, geometry: { type: 'Polygon', coordinates: [[[-49.5,-14.0],[-41.0,-14.0],[-41.0,-23.0],[-49.5,-23.0],[-49.5,-14.0]]] } },
+            { type: 'Feature', properties: { codarea: '32', nome: 'Espírito Santo', sigla: 'ES' }, geometry: { type: 'Polygon', coordinates: [[[-41.5,-17.5],[-40.0,-17.5],[-40.0,-21.5],[-41.5,-21.5],[-41.5,-17.5]]] } },
+            { type: 'Feature', properties: { codarea: '33', nome: 'Rio de Janeiro', sigla: 'RJ' }, geometry: { type: 'Polygon', coordinates: [[[-44.5,-20.5],[-41.0,-20.5],[-41.0,-23.5],[-44.5,-23.5],[-44.5,-20.5]]] } },
+            { type: 'Feature', properties: { codarea: '35', nome: 'São Paulo', sigla: 'SP' }, geometry: { type: 'Polygon', coordinates: [[[-53.5,-19.5],[-44.0,-19.5],[-44.0,-25.5],[-53.5,-25.5],[-53.5,-19.5]]] } },
+            { type: 'Feature', properties: { codarea: '41', nome: 'Paraná', sigla: 'PR' }, geometry: { type: 'Polygon', coordinates: [[[-54.5,-22.5],[-50.5,-22.5],[-50.5,-26.5],[-54.5,-26.5],[-54.5,-22.5]]] } },
+            { type: 'Feature', properties: { codarea: '42', nome: 'Santa Catarina', sigla: 'SC' }, geometry: { type: 'Polygon', coordinates: [[[-53.5,-26.0],[-48.5,-26.0],[-48.5,-29.5],[-53.5,-29.5],[-53.5,-26.0]]] } },
+            { type: 'Feature', properties: { codarea: '43', nome: 'Rio Grande do Sul', sigla: 'RS' }, geometry: { type: 'Polygon', coordinates: [[[-57.5,-27.0],[-49.5,-27.0],[-49.5,-33.5],[-57.5,-33.5],[-57.5,-27.0]]] } },
+            { type: 'Feature', properties: { codarea: '50', nome: 'Mato Grosso do Sul', sigla: 'MS' }, geometry: { type: 'Polygon', coordinates: [[[-58.0,-13.5],[-52.5,-13.5],[-52.5,-23.0],[-58.0,-23.0],[-58.0,-13.5]]] } },
+            { type: 'Feature', properties: { codarea: '51', nome: 'Mato Grosso', sigla: 'MT' }, geometry: { type: 'Polygon', coordinates: [[[-62.0,-7.0],[-51.5,-7.0],[-51.5,-18.0],[-62.0,-18.0],[-62.0,-7.0]]] } },
+            { type: 'Feature', properties: { codarea: '52', nome: 'Goiás', sigla: 'GO' }, geometry: { type: 'Polygon', coordinates: [[[-53.5,-12.5],[-46.0,-12.5],[-46.0,-19.5],[-53.5,-19.5],[-53.5,-12.5]]] } },
+            { type: 'Feature', properties: { codarea: '53', nome: 'Distrito Federal', sigla: 'DF' }, geometry: { type: 'Polygon', coordinates: [[[-48.3,-15.5],[-47.5,-15.5],[-47.5,-16.2],[-48.3,-16.2],[-48.3,-15.5]]] } }
+          ]
+        };
+        console.log('[ibge] usando fallback estático com', fallbackMalha.features.length, 'estados');
+        return jsonResponse(200, fallbackMalha, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback-simplificado' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
       console.log('[ibge] malhas estados features:', data.features?.length);
@@ -197,7 +231,21 @@ module.exports = serve(async function handler(req) {
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
         console.error('[ibge] malhas estado error:', uf, e.message);
-        return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
+        // Fallback simplificado para MT
+        let fallbackMun = { type: 'FeatureCollection', features: [] };
+        if (uf === '51') {
+          fallbackMun = {
+            type: 'FeatureCollection',
+            features: [
+              { type: 'Feature', properties: { codarea: '5103402', nome: 'Cuiabá' }, geometry: { type: 'Polygon', coordinates: [[[-56.2,-15.7],[-55.8,-15.7],[-55.8,-15.4],[-56.2,-15.4],[-56.2,-15.7]]] } },
+              { type: 'Feature', properties: { codarea: '5106207', nome: 'Várzea Grande' }, geometry: { type: 'Polygon', coordinates: [[[-56.3,-15.8],[-55.9,-15.8],[-55.9,-15.5],[-56.3,-15.5],[-56.3,-15.8]]] } },
+              { type: 'Feature', properties: { codarea: '5107007', nome: 'Rondonópolis' }, geometry: { type: 'Polygon', coordinates: [[[-54.8,-16.6],[-54.5,-16.6],[-54.5,-16.3],[-54.8,-16.3],[-54.8,-16.6]]] } }
+            ]
+          };
+        }
+        console.log('[ibge] usando fallback estático de municipios para', uf, 'com', fallbackMun.features.length, 'features');
+        return jsonResponse(200, fallbackMun, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback-municipios' });
+      }
       }
       data = JSON.parse(result.buf.toString('utf8'));
       console.log('[ibge] malhas estado features:', uf, data.features?.length);
