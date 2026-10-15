@@ -246,7 +246,6 @@ module.exports = serve(async function handler(req) {
         console.log('[ibge] usando fallback estático de municipios para', uf, 'com', fallbackMun.features.length, 'features');
         return jsonResponse(200, fallbackMun, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback-municipios' });
       }
-      }
       data = JSON.parse(result.buf.toString('utf8'));
       console.log('[ibge] malhas estado features:', uf, data.features?.length);
       ttlSeg = 86400; staleSeg = 86400;
