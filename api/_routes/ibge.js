@@ -85,7 +85,6 @@ module.exports = serve(async function handler(req) {
       return jsonResponse(200, { status: 'ok', timestamp: new Date().toISOString() }, origin);
     }
 
-  try {
     let data, ttlSeg, staleSeg, origemId, upstreamUrl;
 
     if (path === '/estados' || path === '/estados/') {
@@ -119,6 +118,11 @@ module.exports = serve(async function handler(req) {
         ];
         return jsonResponse(200, data, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback' });
       }
+      data = JSON.parse(result.buf.toString('utf8'));
+      ttlSeg = 86400; staleSeg = 86400;
+      const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
+      if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
+      return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else if (path === '/municipios' || path === '/municipios/') {
       const uf = validarUF(params.get('uf'));
@@ -141,6 +145,11 @@ module.exports = serve(async function handler(req) {
         }
         throw e;
       }
+      data = JSON.parse(result.buf.toString('utf8'));
+      ttlSeg = 86400; staleSeg = 86400;
+      const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
+      if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
+      return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
       origemId = 'brasilapi';
