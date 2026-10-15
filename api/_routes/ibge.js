@@ -24,24 +24,11 @@ function validarUF(uf) {
 }
 
 async function buscarOrigemComFallback({ parsed, origemId, timeoutMs, maxBytes }) {
-  console.log('[ibge] buscarOrigemComFallback called for:', origemId);
   const origem = FONTES.find(f => f.id === origemId) || { ...FONTES[0] };
-  console.log('[ibge] origem found:', origem?.id);
-  let proxyMod;
-  try {
-    proxyMod = require('./proxy');
-    console.log('[ibge] proxy module loaded');
-  } catch (e) {
-    console.error('[ibge] proxy require failed:', e.message);
-    throw e;
-  }
-  const { buscarOrigem, lerFallback, salvarFallback, registrarSaude, chaveFallback } = proxyMod;
-  console.log('[ibge] proxy functions extracted');
+  const { buscarOrigem, lerFallback, salvarFallback, registrarSaude, chaveFallback } = require('./proxy');
 
   try {
-    console.log('[ibge] calling buscarOrigem');
     const upstream = await buscarOrigem({ parsed, timeoutMs, maxBytes });
-    console.log('[ibge] buscarOrigem returned:', upstream.status);
     const buf = upstream.body;
     const contentType = upstream.headers.get('content-type') || 'application/json';
 
@@ -139,9 +126,7 @@ module.exports = serve(async function handler(req) {
       return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else if (path === '/municipios' || path === '/municipios/') {
-      console.log('[ibge] municipios path, params:', params.toString());
       const uf = validarUF(params.get('uf'));
-      console.log('[ibge] uf from params:', params.get('uf'), 'validado:', uf);
       if (!uf) return jsonResponse(400, { erro: 'Parâmetro uf obrigatório (ex.: 51).' }, origin);
       origemId = 'brasilapi';
       upstreamUrl = `${BRASILAPI_BASE}/municipios/v1/${uf}`;
@@ -155,7 +140,6 @@ module.exports = serve(async function handler(req) {
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
-        console.error('[ibge] municipios upstream error:', e.message);
         // Fallback estático para MT se tudo falhar
         if (uf === '51') {
           data = [{ id: 5103402, nome: 'Cuiabá' }, { id: 5106207, nome: 'Várzea Grande' }, { id: 5107007, nome: 'Rondonópolis' }];
@@ -188,8 +172,8 @@ module.exports = serve(async function handler(req) {
       data = JSON.parse(result.buf.toString('utf8'));
       ttlSeg = 86400; staleSeg = 86400;
       const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-      if (stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(idadeSeg);
-      return new Response(JSON.stringify(data), { status: upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': contentType }) });
+      if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
+      return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else if (path.startsWith('/malhas/estados/') && path.length > 16) {
       const uf = validarUF(path.slice(16));
@@ -212,8 +196,8 @@ module.exports = serve(async function handler(req) {
       data = JSON.parse(result.buf.toString('utf8'));
       ttlSeg = 86400; staleSeg = 86400;
       const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-      if (stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(idadeSeg);
-      return new Response(JSON.stringify(data), { status: upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': contentType }) });
+      if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
+      return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else {
       return jsonResponse(404, { erro: 'Endpoint não encontrado.' }, origin);
