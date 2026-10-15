@@ -1,7 +1,5 @@
 (function (global) {
     'use strict';
-
-    const IBGE_BASE = '/api/ibge';
     const CORES_PADRAO = Object.freeze({
         primaria: '#f9631c',
         secundaria: '#38bdf8',
@@ -116,6 +114,36 @@
         throw ultimoErro;
     }
 
+    async function fetchIBGE(path) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 10000);
+        try {
+            const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades' + path, {
+                headers: { 'Accept': 'application/json' },
+                signal: ctrl.signal,
+            });
+            if (!res.ok) throw new Error('IBGE HTTP ' + res.status);
+            return res.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    async function fetchIBGEMalha(path) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);
+        try {
+            const res = await fetch('https://brasilapi.com.br/api/ibge/malhas' + path, {
+                headers: { 'Accept': 'application/vnd.geo+json' },
+                signal: ctrl.signal,
+            });
+            if (!res.ok) throw new Error('BrasilAPI Malha HTTP ' + res.status);
+            return res.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
     function validarLista(valor, descricao) {
         if (!Array.isArray(valor)) throw new Error('Resposta inválida do IBGE: ' + descricao + '.');
         return valor;
@@ -130,7 +158,7 @@
 
     function obterEstados() {
         if (!estadosPromise) {
-            estadosPromise = buscarJson(IBGE_BASE + '/estados')
+            estadosPromise = fetchIBGE('/estados')
                 .then(function (valor) {
                     return validarLista(valor, 'lista de estados').filter(function (estado) {
                         return estado && /^\d{1,2}$/.test(String(estado.id)) &&
@@ -153,7 +181,7 @@
         if (!/^\d{2}$/.test(uf)) {
             return Promise.reject(new TypeError('Informe o código IBGE de dois dígitos da UF.'));
         }
-        return buscarJson(IBGE_BASE + '/municipios?uf=' + encodeURIComponent(uf))
+        return fetchIBGE('/municipios?uf=' + encodeURIComponent(uf))
             .then(function (valor) {
                 return validarLista(valor, 'municípios da UF').filter(function (municipio) {
                     return municipio && /^\d{7}$/.test(String(municipio.id)) &&
@@ -166,7 +194,7 @@
 
     function obterTotalMunicipios() {
         if (!municipiosNacionaisPromise) {
-            municipiosNacionaisPromise = buscarJson(IBGE_BASE + '/municipios?uf=todos')
+            municipiosNacionaisPromise = fetchIBGE('/municipios?uf=todos')
                 .then(function (valor) {
                     return validarLista(valor, 'lista nacional de municípios').filter(function (municipio) {
                         return municipio && /^\d{7}$/.test(String(municipio.id));
@@ -182,8 +210,7 @@
 
     function obterMalhaEstados() {
         if (!malhaEstadosPromise) {
-            const url = IBGE_BASE + '/malha/estados';
-            malhaEstadosPromise = buscarJson(url, 3)
+            malhaEstadosPromise = fetchIBGEMalha('/estados')
                 .then(function (valor) {
                     const malha = validarMalha(valor, 'estados');
                     if (!malha.features.length) throw new Error('Malha de estados vazia.');
@@ -203,8 +230,7 @@
             return Promise.reject(new TypeError('Informe o código IBGE de dois dígitos da UF.'));
         }
         if (!malhasMunicipaisPorUf.has(uf)) {
-            const url = IBGE_BASE + '/malha/municipios?uf=' + encodeURIComponent(uf);
-            const malhaPromise = buscarJson(url, 3)
+            const malhaPromise = fetchIBGEMalha('/estados/' + encodeURIComponent(uf))
                 .then(function (valor) {
                     const malha = validarMalha(valor, 'municípios da UF');
                     if (!malha.features.length) throw new Error('Malha de municípios vazia.');

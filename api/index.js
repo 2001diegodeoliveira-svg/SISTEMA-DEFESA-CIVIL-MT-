@@ -36,7 +36,6 @@ const handlers = {
   'fontes': require('./_routes/fontes'),
   'fontes/saude': require('./_routes/fontes'),
   'fontes/vigilancia': require('./_routes/fontes-vigilancia'),
-  'ibge': require('./_routes/ibge'),
   'barragens': require('./_routes/barragens'),
   'avisos': require('./_routes/avisos'),
   'areas-monitoradas': require('./_routes/areas-monitoradas'),
@@ -317,7 +316,6 @@ module.exports = serve(async function handler(req) {
 
   let target = null;
   if (handlers[route]) target = handlers[route];
-  else if (route.startsWith('ibge/')) target = handlers['ibge'];
   else if (route.startsWith('auth/mfa/')) target = require('./_routes/auth/mfa');
   else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
   else {
