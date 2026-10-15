@@ -13,8 +13,7 @@ const { serve } = require('../_lib/serverless');
 const { origemPara, FONTES } = require('../_lib/origens');
 const { readCollection, writeCollection } = require('../_lib/store');
 
-const IBGE_API_BASE = 'https://servicodados.ibge.gov.br/api/v1/localidades';
-const BRASILAPI_BASE = 'https://brasilapi.com.br/api/ibge/malhas';
+const BRASILAPI_BASE = 'https://brasilapi.com.br/api/ibge';
 const TIMEOUT_MS = 10000;
 
 function validarUF(uf) {
@@ -77,19 +76,15 @@ module.exports = serve(async function handler(req) {
   if (req.method !== 'GET') return jsonResponse(405, { erro: 'Método não suportado.' }, origin);
 
   const url = reqUrl(req);
-  console.log('[ibge] raw url:', req.url);
-  console.log('[ibge] parsed pathname:', url ? url.pathname : 'none');
-  console.log('[ibge] parsed search:', url ? url.search : 'none');
   const path = url ? url.pathname.replace('/api/ibge', '') : '/estados';
-  console.log('[ibge] path after replace:', path);
   const params = url ? url.searchParams : new URLSearchParams();
 
   try {
     let data, ttlSeg, staleSeg, origemId, upstreamUrl;
 
     if (path === '/estados' || path === '/estados/') {
-      origemId = 'ibge';
-      upstreamUrl = `${IBGE_API_BASE}/estados?orderBy=nome`;
+      origemId = 'brasilapi';
+      upstreamUrl = `${BRASILAPI_BASE}/uf/v1`;
       const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
         parsed: new URL(upstreamUrl),
         origemId,
@@ -105,8 +100,8 @@ module.exports = serve(async function handler(req) {
     } else if (path === '/municipios' || path === '/municipios/') {
       const uf = validarUF(params.get('uf'));
       if (!uf) return jsonResponse(400, { erro: 'Parâmetro uf obrigatório (ex.: 51).' }, origin);
-      origemId = 'ibge';
-      upstreamUrl = `${IBGE_API_BASE}/estados/${uf}/municipios?orderBy=nome`;
+      origemId = 'brasilapi';
+      upstreamUrl = `${BRASILAPI_BASE}/municipios/v1/${uf}`;
       const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
         parsed: new URL(upstreamUrl),
         origemId,
@@ -121,7 +116,7 @@ module.exports = serve(async function handler(req) {
 
     } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
       origemId = 'brasilapi';
-      upstreamUrl = `${BRASILAPI_BASE}/estados?formato=application/vnd.geo+json`;
+      upstreamUrl = `${BRASILAPI_BASE}/malhas/estados?formato=application/vnd.geo+json`;
       const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
         parsed: new URL(upstreamUrl),
         origemId,
@@ -138,7 +133,7 @@ module.exports = serve(async function handler(req) {
       const uf = validarUF(path.slice(16));
       if (!uf) return jsonResponse(400, { erro: 'UF inválida na malha.' }, origin);
       origemId = 'brasilapi';
-      upstreamUrl = `${BRASILAPI_BASE}/estados/${uf}?formato=application/vnd.geo+json`;
+      upstreamUrl = `${BRASILAPI_BASE}/malhas/estados/${uf}?formato=application/vnd.geo+json`;
       const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
         parsed: new URL(upstreamUrl),
         origemId,
@@ -156,6 +151,6 @@ module.exports = serve(async function handler(req) {
     }
   } catch (e) {
     console.error('[ibge]', e.message);
-    return jsonResponse(502, { erro: 'Falha ao consultar IBGE/BrasilAPI.', detalhe: e.message }, origin);
+    return jsonResponse(502, { erro: 'Falha ao consultar BrasilAPI/IBGE.', detalhe: e.message }, origin);
   }
 });
