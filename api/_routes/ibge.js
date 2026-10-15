@@ -139,7 +139,9 @@ module.exports = serve(async function handler(req) {
       return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else if (path === '/municipios' || path === '/municipios/') {
+      console.log('[ibge] municipios path, params:', params.toString());
       const uf = validarUF(params.get('uf'));
+      console.log('[ibge] uf from params:', params.get('uf'), 'validado:', uf);
       if (!uf) return jsonResponse(400, { erro: 'Parâmetro uf obrigatório (ex.: 51).' }, origin);
       origemId = 'brasilapi';
       upstreamUrl = `${BRASILAPI_BASE}/municipios/v1/${uf}`;
