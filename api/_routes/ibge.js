@@ -77,7 +77,11 @@ module.exports = serve(async function handler(req) {
   if (req.method !== 'GET') return jsonResponse(405, { erro: 'Método não suportado.' }, origin);
 
   const url = reqUrl(req);
+  console.log('[ibge] raw url:', req.url);
+  console.log('[ibge] parsed pathname:', url ? url.pathname : 'none');
+  console.log('[ibge] parsed search:', url ? url.search : 'none');
   const path = url ? url.pathname.replace('/api/ibge', '') : '/estados';
+  console.log('[ibge] path after replace:', path);
   const params = url ? url.searchParams : new URLSearchParams();
 
   try {
