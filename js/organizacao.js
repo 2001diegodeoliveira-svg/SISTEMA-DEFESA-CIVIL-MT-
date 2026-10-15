@@ -1,8 +1,7 @@
 (function (global) {
     'use strict';
 
-    const IBGE_BASE = 'https://brasilapi.com.br/api/ibge';
-    const MALHAS_BASE = 'https://brasilapi.com.br/api/ibge/malhas';
+    const IBGE_BASE = '/api/ibge';
     const CORES_PADRAO = Object.freeze({
         primaria: '#f9631c',
         secundaria: '#38bdf8',
@@ -131,7 +130,7 @@
 
     function obterEstados() {
         if (!estadosPromise) {
-            estadosPromise = buscarJson(IBGE_BASE + '/uf/v1')
+            estadosPromise = buscarJson(IBGE_BASE + '/estados')
                 .then(function (valor) {
                     return validarLista(valor, 'lista de estados').filter(function (estado) {
                         return estado && /^\d{1,2}$/.test(String(estado.id)) &&
@@ -154,7 +153,7 @@
         if (!/^\d{2}$/.test(uf)) {
             return Promise.reject(new TypeError('Informe o código IBGE de dois dígitos da UF.'));
         }
-        return buscarJson(IBGE_BASE + '/municipios/v1/' + encodeURIComponent(uf))
+        return buscarJson(IBGE_BASE + '/municipios?uf=' + encodeURIComponent(uf))
             .then(function (valor) {
                 return validarLista(valor, 'municípios da UF').filter(function (municipio) {
                     return municipio && /^\d{7}$/.test(String(municipio.id)) &&
@@ -167,7 +166,7 @@
 
     function obterTotalMunicipios() {
         if (!municipiosNacionaisPromise) {
-            municipiosNacionaisPromise = buscarJson(IBGE_BASE + '/municipios/v1')
+            municipiosNacionaisPromise = buscarJson(IBGE_BASE + '/municipios?uf=todos')
                 .then(function (valor) {
                     return validarLista(valor, 'lista nacional de municípios').filter(function (municipio) {
                         return municipio && /^\d{7}$/.test(String(municipio.id));
@@ -183,7 +182,7 @@
 
     function obterMalhaEstados() {
         if (!malhaEstadosPromise) {
-            const url = MALHAS_BASE + '/estados?formato=application/vnd.geo+json';
+            const url = IBGE_BASE + '/malha/estados';
             malhaEstadosPromise = buscarJson(url, 3)
                 .then(function (valor) {
                     const malha = validarMalha(valor, 'estados');
@@ -204,7 +203,7 @@
             return Promise.reject(new TypeError('Informe o código IBGE de dois dígitos da UF.'));
         }
         if (!malhasMunicipaisPorUf.has(uf)) {
-            const url = MALHAS_BASE + '/estados/' + encodeURIComponent(uf) + '?formato=application/vnd.geo+json';
+            const url = IBGE_BASE + '/malha/municipios?uf=' + encodeURIComponent(uf);
             const malhaPromise = buscarJson(url, 3)
                 .then(function (valor) {
                     const malha = validarMalha(valor, 'municípios da UF');
