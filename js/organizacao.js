@@ -118,7 +118,7 @@
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 10000);
         try {
-            const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades' + path, {
+            const res = await fetch('/api/ibge' + path, {
                 headers: { 'Accept': 'application/json' },
                 signal: ctrl.signal,
             });
@@ -133,11 +133,11 @@
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 15000);
         try {
-            const res = await fetch('https://brasilapi.com.br/api/ibge/malhas' + path, {
+            const res = await fetch('/api/ibge/malhas' + path, {
                 headers: { 'Accept': 'application/vnd.geo+json' },
                 signal: ctrl.signal,
             });
-            if (!res.ok) throw new Error('BrasilAPI Malha HTTP ' + res.status);
+            if (!res.ok) throw new Error('IBGE Malha HTTP ' + res.status);
             return res.json();
         } finally {
             clearTimeout(timer);
