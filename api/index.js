@@ -128,8 +128,10 @@ module.exports = serve(async function handler(req) {
   }
 
   const { route, query } = parseRoute(req);
+  console.log('[router] route:', route, 'query:', query);
   const routeKey = route.startsWith('user-registrations/') ? 'user-registrations' :
     route.replace(/\/(enroll|confirm|verify)$/, '');
+  console.log('[router] routeKey:', routeKey, 'has handler:', !!handlers[routeKey]);
   const production = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
   const loginEnabled = isLoginEnabled();
   const suspenso = isSuspended();
