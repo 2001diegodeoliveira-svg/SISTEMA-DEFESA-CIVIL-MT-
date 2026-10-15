@@ -111,6 +111,7 @@ module.exports = serve(async function handler(req) {
           timeoutMs: 10000,
           maxBytes: 10 * 1024 * 1024,
         });
+        if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
         // Fallback estático com todos os 27 estados
         data = [
@@ -167,13 +168,19 @@ module.exports = serve(async function handler(req) {
     } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
       origemId = 'brasilapi';
       upstreamUrl = `${BRASILAPI_BASE}/malhas/estados?formato=application/vnd.geo+json`;
-      const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
-        parsed: new URL(upstreamUrl),
-        origemId,
-        timeoutMs: 15000,
-        maxBytes: 10 * 1024 * 1024,
-      });
-      data = JSON.parse(buf.toString('utf8'));
+      let result;
+      try {
+        result = await buscarOrigemComFallback({
+          parsed: new URL(upstreamUrl),
+          origemId,
+          timeoutMs: 15000,
+          maxBytes: 10 * 1024 * 1024,
+        });
+        if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
+      } catch (e) {
+        throw e;
+      }
+      data = JSON.parse(result.buf.toString('utf8'));
       ttlSeg = 86400; staleSeg = 86400;
       const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
       if (stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(idadeSeg);
@@ -184,13 +191,19 @@ module.exports = serve(async function handler(req) {
       if (!uf) return jsonResponse(400, { erro: 'UF inválida na malha.' }, origin);
       origemId = 'brasilapi';
       upstreamUrl = `${BRASILAPI_BASE}/malhas/estados/${uf}?formato=application/vnd.geo+json`;
-      const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
-        parsed: new URL(upstreamUrl),
-        origemId,
-        timeoutMs: 15000,
-        maxBytes: 10 * 1024 * 1024,
-      });
-      data = JSON.parse(buf.toString('utf8'));
+      let result;
+      try {
+        result = await buscarOrigemComFallback({
+          parsed: new URL(upstreamUrl),
+          origemId,
+          timeoutMs: 15000,
+          maxBytes: 10 * 1024 * 1024,
+        });
+        if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
+      } catch (e) {
+        throw e;
+      }
+      data = JSON.parse(result.buf.toString('utf8'));
       ttlSeg = 86400; staleSeg = 86400;
       const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
       if (stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(idadeSeg);
