@@ -317,6 +317,7 @@ module.exports = serve(async function handler(req) {
 
   let target = null;
   if (handlers[route]) target = handlers[route];
+  else if (route.startsWith('ibge/')) target = handlers['ibge'];
   else if (route.startsWith('auth/mfa/')) target = require('./_routes/auth/mfa');
   else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
   else {
