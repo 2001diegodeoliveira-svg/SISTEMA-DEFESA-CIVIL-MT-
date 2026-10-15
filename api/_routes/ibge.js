@@ -75,9 +75,15 @@ module.exports = serve(async function handler(req) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (req.method !== 'GET') return jsonResponse(405, { erro: 'Método não suportado.' }, origin);
 
-  const url = reqUrl(req);
-  const path = url ? url.pathname.replace('/api/ibge', '') : '/estados';
-  const params = url ? url.searchParams : new URLSearchParams();
+  try {
+    const url = reqUrl(req);
+    const path = url ? url.pathname.replace('/api/ibge', '') : '/estados';
+    const params = url ? url.searchParams : new URLSearchParams();
+
+    // Health check endpoint
+    if (path === '/health') {
+      return jsonResponse(200, { status: 'ok', timestamp: new Date().toISOString() }, origin);
+    }
 
   try {
     let data, ttlSeg, staleSeg, origemId, upstreamUrl;
@@ -85,34 +91,56 @@ module.exports = serve(async function handler(req) {
     if (path === '/estados' || path === '/estados/') {
       origemId = 'brasilapi';
       upstreamUrl = `${BRASILAPI_BASE}/uf/v1`;
-      const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
-        parsed: new URL(upstreamUrl),
-        origemId,
-        timeoutMs: 10000,
-        maxBytes: 10 * 1024 * 1024,
-      });
-      data = JSON.parse(buf.toString('utf8'));
-      ttlSeg = 86400; staleSeg = 86400;
-      const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-      if (stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(idadeSeg);
-      return new Response(JSON.stringify(data), { status: upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': contentType }) });
+      let result;
+      try {
+        result = await buscarOrigemComFallback({
+          parsed: new URL(upstreamUrl),
+          origemId,
+          timeoutMs: 10000,
+          maxBytes: 10 * 1024 * 1024,
+        });
+      } catch (e) {
+        // Fallback estático com todos os 27 estados
+        data = [
+          { id: 11, sigla: 'RO', nome: 'Rondônia' }, { id: 12, sigla: 'AC', nome: 'Acre' },
+          { id: 13, sigla: 'AM', nome: 'Amazonas' }, { id: 14, sigla: 'RR', nome: 'Roraima' },
+          { id: 15, sigla: 'PA', nome: 'Pará' }, { id: 16, sigla: 'AP', nome: 'Amapá' },
+          { id: 17, sigla: 'TO', nome: 'Tocantins' }, { id: 21, sigla: 'MA', nome: 'Maranhão' },
+          { id: 22, sigla: 'PI', nome: 'Piauí' }, { id: 23, sigla: 'CE', nome: 'Ceará' },
+          { id: 24, sigla: 'RN', nome: 'Rio Grande do Norte' }, { id: 25, sigla: 'PB', nome: 'Paraíba' },
+          { id: 26, sigla: 'PE', nome: 'Pernambuco' }, { id: 27, sigla: 'AL', nome: 'Alagoas' },
+          { id: 28, sigla: 'SE', nome: 'Sergipe' }, { id: 29, sigla: 'BA', nome: 'Bahia' },
+          { id: 31, sigla: 'MG', nome: 'Minas Gerais' }, { id: 32, sigla: 'ES', nome: 'Espírito Santo' },
+          { id: 33, sigla: 'RJ', nome: 'Rio de Janeiro' }, { id: 35, sigla: 'SP', nome: 'São Paulo' },
+          { id: 41, sigla: 'PR', nome: 'Paraná' }, { id: 42, sigla: 'SC', nome: 'Santa Catarina' },
+          { id: 43, sigla: 'RS', nome: 'Rio Grande do Sul' }, { id: 50, sigla: 'MS', nome: 'Mato Grosso do Sul' },
+          { id: 51, sigla: 'MT', nome: 'Mato Grosso' }, { id: 52, sigla: 'GO', nome: 'Goiás' },
+          { id: 53, sigla: 'DF', nome: 'Distrito Federal' }
+        ];
+        return jsonResponse(200, data, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback' });
+      }
 
     } else if (path === '/municipios' || path === '/municipios/') {
       const uf = validarUF(params.get('uf'));
       if (!uf) return jsonResponse(400, { erro: 'Parâmetro uf obrigatório (ex.: 51).' }, origin);
       origemId = 'brasilapi';
       upstreamUrl = `${BRASILAPI_BASE}/municipios/v1/${uf}`;
-      const { upstream, buf, contentType, stale, idadeSeg } = await buscarOrigemComFallback({
-        parsed: new URL(upstreamUrl),
-        origemId,
-        timeoutMs: 10000,
-        maxBytes: 10 * 1024 * 1024,
-      });
-      data = JSON.parse(buf.toString('utf8'));
-      ttlSeg = 86400; staleSeg = 86400;
-      const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-      if (stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(idadeSeg);
-      return new Response(JSON.stringify(data), { status: upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': contentType }) });
+      let result;
+      try {
+        result = await buscarOrigemComFallback({
+          parsed: new URL(upstreamUrl),
+          origemId,
+          timeoutMs: 10000,
+          maxBytes: 10 * 1024 * 1024,
+        });
+      } catch (e) {
+        // Fallback estático para MT se tudo falhar
+        if (uf === '51') {
+          data = [{ id: 5103402, nome: 'Cuiabá' }, { id: 5106207, nome: 'Várzea Grande' }, { id: 5107007, nome: 'Rondonópolis' }];
+          return jsonResponse(200, data, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback' });
+        }
+        throw e;
+      }
 
     } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
       origemId = 'brasilapi';
@@ -150,7 +178,7 @@ module.exports = serve(async function handler(req) {
       return jsonResponse(404, { erro: 'Endpoint não encontrado.' }, origin);
     }
   } catch (e) {
-    console.error('[ibge]', e.message);
-    return jsonResponse(502, { erro: 'Falha ao consultar BrasilAPI/IBGE.', detalhe: e.message }, origin);
+    console.error('[ibge] handler error:', e.message, e.stack);
+    return jsonResponse(500, { erro: 'Erro interno no proxy IBGE.', detalhe: e.message }, origin);
   }
 });
