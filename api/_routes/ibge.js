@@ -153,7 +153,9 @@ module.exports = serve(async function handler(req) {
           timeoutMs: 10000,
           maxBytes: 10 * 1024 * 1024,
         });
+        if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
+        console.error('[ibge] municipios upstream error:', e.message);
         // Fallback estático para MT se tudo falhar
         if (uf === '51') {
           data = [{ id: 5103402, nome: 'Cuiabá' }, { id: 5106207, nome: 'Várzea Grande' }, { id: 5107007, nome: 'Rondonópolis' }];
