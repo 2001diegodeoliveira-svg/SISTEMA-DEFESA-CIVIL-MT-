@@ -20,6 +20,7 @@ const RAIN_SEV_INFO = {
     'Perigo': { lbl: 'Perigo', cor: '#f97316', peso: 1, icon: 'cloud-rain' },
     'Perigo Potencial': { lbl: 'Atenção', cor: '#eab308', peso: 2, icon: 'cloud-drizzle' },
 };
+let avisosSeverityFilter = null; // null = todas, 'Perigo Potencial' = só esse nível
 let rainAlertQueue = [];
 let rainAlertShown = {};
 let rainAlertShowing = false;
@@ -69,10 +70,15 @@ async function checkRainAlerts() {
         const j = await r.json();
         const vigentes = (j.avisos || []).filter(a => a.vigente && RAIN_AVISO_KEYWORDS.test(a.evento || ''));
         if (!vigentes.length) return;
+        // Filtro de severidade (definido pelo toggle "Tempestade - Perigo Potencial")
+        const filtrados = avisosSeverityFilter
+            ? vigentes.filter(a => a.severidade === avisosSeverityFilter)
+            : vigentes;
+        if (!filtrados.length) return;
         // Detalhe CAP (polígono) só para avisos novos, com teto por ciclo.
-        const novos = vigentes.filter(a => !(a.id in rainAlertShown)).slice(0, 8);
+        const novos = filtrados.filter(a => !(a.id in rainAlertShown)).slice(0, 8);
         const alerts = [];
-        for (const item of vigentes) {
+        for (const item of filtrados) {
             const jaVisto = (item.id in rainAlertShown);
             let poligono = null, centro = null;
             if (!jaVisto && novos.includes(item)) {
@@ -94,8 +100,6 @@ async function checkRainAlerts() {
             });
         }
         alerts.sort((a, b) => a.sev.peso - b.sev.peso);
-        // Como na versão MT: modal só para o que está na tela — o resto
-        // vira só polígono no mapa (sem spam de popups nacionais).
         let vista = null;
         try {
             if (typeof map !== 'undefined' && map.getBounds) vista = map.getBounds();
@@ -118,6 +122,15 @@ async function checkRainAlerts() {
         });
         rainAlertShowNext();
     } catch (e) {}
+}
+function refreshAvisosLayer() {
+    if (avisosLayer) {
+        try { map.removeLayer(avisosLayer); } catch {}
+        avisosLayer = L.layerGroup();
+        avisosLayer.addTo(map);
+    }
+    rainAlertShown = {};
+    checkRainAlerts();
 }
 function rainAlertShowNext() {
     if (rainAlertShowing || !rainAlertQueue.length) return;

@@ -26,10 +26,10 @@ function loadUCs() {
 }
 
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, barragens: () => barragensLayer, anaHydrology: () => anaHydrologyLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, deter: () => deterLayer, qualidadeAr: () => qualidadeArLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer };
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, barragens: () => barragensLayer, anaHydrology: () => anaHydrologyLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, deter: () => deterLayer, qualidadeAr: () => qualidadeArLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer, tempestadePotencial: () => avisosLayer };
 const checkState = { mtOutline: true, municipios: true, ucs: false, deter: false, qualidadeAr: false, focos: false, barragens: false,
 anaHydrology: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true,
-camsSinfra: true, chuvaInmet: false };
+camsSinfra: true, chuvaInmet: false, tempestadePotencial: true };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let anaHydrologyLayer = null, anaHydrologyLoaded = false, anaHydrologyLoading = false;
 let inmetLayer = null, inmetLoaded = false, inmetLoading = false;
@@ -96,6 +96,10 @@ function setCheck(key, val) {
     if (key === 'reports' && val && !reportsLoaded && !reportsLoading) loadReports();
     if (key === 'abrigos' && val && !abrigosLoaded && !abrigosLoading) loadAbrigos();
     if (key === 'camsSinfra' && val && !camSinfraLoaded && !camSinfraLoading) loadCamerasSinfra();
+    if (key === 'tempestadePotencial') {
+        avisosSeverityFilter = val ? 'Perigo Potencial' : null;
+        refreshAvisosLayer();
+    }
     applyChecks();
 }
 function applyChecks() {
@@ -130,6 +134,11 @@ function applyChecks() {
     if (vigiaMaisLayer) checkState.vigiaMais ? vigiaMaisLayer.addTo(map) : map.removeLayer(vigiaMaisLayer);
     if (abrigosLayer) checkState.abrigos ? abrigosLayer.addTo(map) : map.removeLayer(abrigosLayer);
     if (camSinfraLayer) checkState.camsSinfra ? camSinfraLayer.addTo(map) : map.removeLayer(camSinfraLayer);
+    if (checkState.tempestadePotencial) {
+        if (avisosLayer) avisosLayer.addTo(map);
+    } else {
+        if (avisosLayer) map.removeLayer(avisosLayer);
+    }
     refreshLegend();
 }
 document.querySelectorAll('.check-row').forEach(row => {
