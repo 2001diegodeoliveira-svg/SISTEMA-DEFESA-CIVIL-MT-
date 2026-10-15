@@ -6,7 +6,7 @@
      - estáticos mesma origem: cache-first (app shell), atualizados
        em segundo plano a cada deploy (CACHE bump).
    NUNCA cacheia POST nem o que não for GET mesma origem. */
-var CACHE = 'sgi-v1';
+var CACHE = 'sgi-v2';
 var SHELL = [
   '/',
   '/mapa.html',
