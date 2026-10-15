@@ -1,49 +1,8 @@
 /* ============================================================
-   IBGE / BrasilAPI proxy interno (server-side, sem redirect loop).
-   GET /api/ibge/estados
-   GET /api/ibge/municipios?uf=51
-   GET /api/ibge/municipios/todos
-   GET /api/ibge/malha/estados
-   GET /api/ibge/malha/municipios?uf=51
+   IBGE / BrasilAPI proxy interno - teste mínimo.
    ============================================================ */
-const { jsonResponse, cacheHeaders, reqUrl } = require('../_lib/http');
+const { jsonResponse, reqUrl } = require('../_lib/http');
 const { serve } = require('../_lib/serverless');
-
-const BRASILAPI_BASE = 'https://brasilapi.com.br/api/ibge';
-const TIMEOUT_MS = 10000;
-
-async function fetchBrasilApi(path) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  try {
-    console.log('[ibge] fetching:', BRASILAPI_BASE + path);
-    const res = await fetch(BRASILAPI_BASE + path, {
-      headers: { 'User-Agent': 'SGIProtege/1.0', Accept: 'application/json' },
-      signal: ctrl.signal,
-      redirect: 'follow',
-    });
-    console.log('[ibge] response status:', res.status);
-    if (!res.ok) throw new Error(`BrasilAPI HTTP ${res.status}`);
-    return res.json();
-  } catch (e) {
-    console.error('[ibge] fetch error:', e.message);
-    throw e;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function validarLista(valor, desc) {
-  if (!Array.isArray(valor)) throw new Error('Resposta inválida: ' + desc);
-  return valor;
-}
-
-function validarMalha(valor, desc) {
-  if (!valor || valor.type !== 'FeatureCollection' || !Array.isArray(valor.features)) {
-    throw new Error('Malha inválida: ' + desc);
-  }
-  return valor;
-}
 
 module.exports = serve(async function handler(req) {
   const origin = req.headers.get ? req.headers.get('origin') : undefined;
@@ -54,39 +13,37 @@ module.exports = serve(async function handler(req) {
 
   const url = reqUrl(req);
   const path = url ? url.pathname.replace('/api/ibge', '') : '/estados';
-  const params = url ? url.searchParams : new URLSearchParams();
 
-  console.log('[ibge] path:', path, 'params:', Object.fromEntries(params));
+  console.log('[ibge] path:', path);
 
   try {
-    let data, ttl = 86400, stale = 86400;
-
+    // Teste de fetch simples
     if (path === '/estados' || path === '/estados/') {
-      data = await fetchBrasilApi('/uf/v1');
-      validarLista(data, 'estados');
-    } else if (path === '/municipios' || path === '/municipios/') {
-      const uf = params.get('uf');
-      if (uf === 'todos' || !uf) {
-        data = await fetchBrasilApi('/municipios/v1');
-      } else {
-        data = await fetchBrasilApi('/municipios/v1/' + encodeURIComponent(uf));
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      try {
+        console.log('[ibge] testing fetch to brasilapi...');
+        const res = await fetch('https://brasilapi.com.br/api/ibge/uf/v1', {
+          headers: { 'User-Agent': 'SGIProtege/1.0', Accept: 'application/json' },
+          signal: ctrl.signal,
+          redirect: 'follow',
+        });
+        console.log('[ibge] fetch status:', res.status);
+        if (!res.ok) throw new Error(`BrasilAPI HTTP ${res.status}`);
+        const data = await res.json();
+        console.log('[ibge] data length:', data.length);
+        return jsonResponse(200, { teste: 'ok', count: data.length }, origin);
+      } catch (e) {
+        console.error('[ibge] fetch failed:', e.message, e.stack);
+        return jsonResponse(502, { erro: 'Fetch failed', detalhe: e.message }, origin);
+      } finally {
+        clearTimeout(timer);
       }
-      validarLista(data, 'municípios');
-    } else if (path === '/malha/estados' || path === '/malha/estados/') {
-      data = await fetchBrasilApi('/malhas/estados?formato=application/vnd.geo+json');
-      validarMalha(data, 'estados');
-    } else if (path === '/malha/municipios' || path === '/malha/municipios/') {
-      const uf = params.get('uf');
-      if (!uf) return jsonResponse(400, { erro: 'Informe uf' }, origin);
-      data = await fetchBrasilApi('/malhas/estados/' + encodeURIComponent(uf) + '?formato=application/vnd.geo+json');
-      validarMalha(data, 'municípios da UF');
-    } else {
-      return jsonResponse(404, { erro: 'Endpoint não encontrado.' }, origin);
     }
 
-    return jsonResponse(200, data, origin, { 'Cache-Control': cacheHeaders(ttl, stale)['Cache-Control'] });
+    return jsonResponse(404, { erro: 'Endpoint não encontrado.' }, origin);
   } catch (e) {
     console.error('[ibge] error:', e.message, e.stack);
-    return jsonResponse(502, { erro: 'Falha ao consultar BrasilAPI/IBGE.', detalhe: e.message }, origin);
+    return jsonResponse(502, { erro: 'Falha interna', detalhe: e.message }, origin);
   }
 });
