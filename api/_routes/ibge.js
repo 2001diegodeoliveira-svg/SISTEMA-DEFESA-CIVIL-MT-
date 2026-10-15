@@ -51,6 +51,8 @@ module.exports = serve(async function handler(req) {
   const path = url ? url.pathname.replace('/api/ibge', '') : '/estados';
   const params = url ? url.searchParams : new URLSearchParams();
 
+  console.log('[ibge] path:', path, 'params:', Object.fromEntries(params));
+
   try {
     let data, ttl = 86400, stale = 86400;
 
@@ -79,7 +81,7 @@ module.exports = serve(async function handler(req) {
 
     return jsonResponse(200, data, origin, { 'Cache-Control': cacheHeaders(ttl, stale)['Cache-Control'] });
   } catch (e) {
-    console.error('[ibge]', e.message);
-    return jsonResponse(502, { erro: 'Falha ao consultar BrasilAPI/IBGE.' }, origin);
+    console.error('[ibge] error:', e.message, e.stack);
+    return jsonResponse(502, { erro: 'Falha ao consultar BrasilAPI/IBGE.', detalhe: e.message }, origin);
   }
 });
