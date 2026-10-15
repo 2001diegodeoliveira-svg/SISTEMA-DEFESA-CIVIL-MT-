@@ -37,6 +37,7 @@ const handlers = {
   'fontes/saude': require('./_routes/fontes'),
   'fontes/vigilancia': require('./_routes/fontes-vigilancia'),
   'ibge': require('./_routes/ibge'),
+  'ibge/estados': require('./_routes/ibge'),
   'ibge/municipios': require('./_routes/ibge'),
   'ibge/malhas/estados': require('./_routes/ibge'),
   'ibge/malhas/estados/': require('./_routes/ibge'),
