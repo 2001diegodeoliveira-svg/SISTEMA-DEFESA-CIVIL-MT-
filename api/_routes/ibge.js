@@ -14,6 +14,7 @@ const { origemPara, FONTES } = require('../_lib/origens');
 const { readCollection, writeCollection } = require('../_lib/store');
 
 const BRASILAPI_BASE = 'https://brasilapi.com.br/api/ibge';
+const IBGE_MALHAS_BASE = 'https://servicodados.ibge.gov.br/api/v3/malhas';
 const TIMEOUT_MS = 10000;
 
 function validarUF(uf) {
@@ -153,9 +154,9 @@ module.exports = serve(async function handler(req) {
       if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
       return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
-    } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
-      origemId = 'brasilapi';
-      upstreamUrl = `${BRASILAPI_BASE}/malhas/estados?formato=application/vnd.geo+json`;
+} else if (path === '/malhas/estados' || path === '/malhas/estados/') {
+      origemId = 'ibge';
+      upstreamUrl = `${IBGE_MALHAS_BASE}/paises/BR?formato=application/vnd.geo+json&intrarregiao=UF&qualidade=minima`;
       let result;
       try {
         result = await buscarOrigemComFallback({
@@ -166,7 +167,6 @@ module.exports = serve(async function handler(req) {
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
-        // Fallback vazio para malhas quando a API falha
         return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
@@ -175,11 +175,11 @@ module.exports = serve(async function handler(req) {
       if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
       return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
-    } else if (path.startsWith('/malhas/estados/') && path.length > 16) {
+} else if (path.startsWith('/malhas/estados/') && path.length > 16) {
       const uf = validarUF(path.slice(16));
       if (!uf) return jsonResponse(400, { erro: 'UF inválida na malha.' }, origin);
-      origemId = 'brasilapi';
-      upstreamUrl = `${BRASILAPI_BASE}/malhas/estados/${uf}?formato=application/vnd.geo+json`;
+      origemId = 'ibge';
+      upstreamUrl = `${IBGE_MALHAS_BASE}/estados/${uf}?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima`;
       let result;
       try {
         result = await buscarOrigemComFallback({
@@ -190,7 +190,6 @@ module.exports = serve(async function handler(req) {
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
-        // Fallback vazio para malhas municipais quando a API falha
         return jsonResponse(200, { type: 'FeatureCollection', features: [] }, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'empty-fallback' });
       }
       data = JSON.parse(result.buf.toString('utf8'));
