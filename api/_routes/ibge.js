@@ -16,13 +16,18 @@ async function fetchBrasilApi(path) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
+    console.log('[ibge] fetching:', BRASILAPI_BASE + path);
     const res = await fetch(BRASILAPI_BASE + path, {
       headers: { 'User-Agent': 'SGIProtege/1.0', Accept: 'application/json' },
       signal: ctrl.signal,
       redirect: 'follow',
     });
+    console.log('[ibge] response status:', res.status);
     if (!res.ok) throw new Error(`BrasilAPI HTTP ${res.status}`);
     return res.json();
+  } catch (e) {
+    console.error('[ibge] fetch error:', e.message);
+    throw e;
   } finally {
     clearTimeout(timer);
   }
@@ -57,11 +62,29 @@ module.exports = serve(async function handler(req) {
     let data, ttl = 86400, stale = 86400;
 
     if (path === '/estados' || path === '/estados/') {
-      // Teste simples primeiro
-      return jsonResponse(200, { teste: 'ok', path }, origin);
+      data = await fetchBrasilApi('/uf/v1');
+      validarLista(data, 'estados');
+    } else if (path === '/municipios' || path === '/municipios/') {
+      const uf = params.get('uf');
+      if (uf === 'todos' || !uf) {
+        data = await fetchBrasilApi('/municipios/v1');
+      } else {
+        data = await fetchBrasilApi('/municipios/v1/' + encodeURIComponent(uf));
+      }
+      validarLista(data, 'municípios');
+    } else if (path === '/malha/estados' || path === '/malha/estados/') {
+      data = await fetchBrasilApi('/malhas/estados?formato=application/vnd.geo+json');
+      validarMalha(data, 'estados');
+    } else if (path === '/malha/municipios' || path === '/malha/municipios/') {
+      const uf = params.get('uf');
+      if (!uf) return jsonResponse(400, { erro: 'Informe uf' }, origin);
+      data = await fetchBrasilApi('/malhas/estados/' + encodeURIComponent(uf) + '?formato=application/vnd.geo+json');
+      validarMalha(data, 'municípios da UF');
+    } else {
+      return jsonResponse(404, { erro: 'Endpoint não encontrado.' }, origin);
     }
 
-    return jsonResponse(404, { erro: 'Endpoint não encontrado.' }, origin);
+    return jsonResponse(200, data, origin, { 'Cache-Control': cacheHeaders(ttl, stale)['Cache-Control'] });
   } catch (e) {
     console.error('[ibge] error:', e.message, e.stack);
     return jsonResponse(502, { erro: 'Falha ao consultar BrasilAPI/IBGE.', detalhe: e.message }, origin);
