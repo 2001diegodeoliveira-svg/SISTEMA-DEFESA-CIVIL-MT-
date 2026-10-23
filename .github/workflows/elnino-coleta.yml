@@ -1,0 +1,140 @@
+name: Coleta Automática El Niño (ENOS)
+
+on:
+  schedule:
+    # Diário às 06:00 UTC (03:00 Brasília) — após publicação NOAA
+    - cron: '0 6 * * *'
+    # Semanal às segundas 06:00 UTC para atualização completa
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}  # execução manual via Actions tab
+
+env:
+  # Configuração do módulo ENOS (mesmas vars do serverless)
+  ENSO_DRY_RUN: ${{ secrets.ENSO_DRY_RUN || 'true' }}
+  ENSO_WEBHOOK_URL: ${{ secrets.ENSO_WEBHOOK_URL }}
+  ENSO_EMAIL_DESTINO: ${{ secrets.ENSO_EMAIL_DESTINO }}
+  ENSO_NOAA_ENABLED: 'true'
+  ENSO_NOAA_ONI_URL: 'https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt'
+  ENSO_NOAA_SST_URL: 'https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices'
+  ENSO_COLETA_INTERVALO_MIN: '10'
+  ENSO_FONTE_STALE_HORAS: '72'
+  # Limiares (opcional — usa padrão se não definido)
+  ENSO_NEUTRO_BANDA: '0.5'
+  ENSO_FRACO: '0.5'
+  ENSO_MODERADO: '1.0'
+  ENSO_FORTE: '1.5'
+  ENSO_MUITO_FORTE: '2.0'
+  # Regras customizadas (opcional — JSON string)
+  # ENSO_RULES_JSON: '...'
+
+jobs:
+  coletar-enso:
+    name: Coletar e Avaliar ENOS
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # actions: write  # se precisar criar issue em falha
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci --prefer-offline --no-audit --no-fund
+        working-directory: .
+
+      - name: Verificar variáveis críticas
+        run: |
+          echo "ENSO_DRY_RUN=${ENSO_DRY_RUN}"
+          echo "ENSO_WEBHOOK_URL=${ENSO_WEBHOOK_URL:+(configurado)}"
+          echo "ENSO_EMAIL_DESTINO=${ENSO_EMAIL_DESTINO:+(configurado)}"
+          if [ "$ENSO_DRY_RUN" = "false" ] && [ -z "$ENSO_WEBHOOK_URL" ] && [ -z "$ENSO_EMAIL_DESTINO" ]; then
+            echo "⚠️ AVISO: DRY_RUN=false mas nenhum canal de envio configurado (WEBHOOK/EMAIL). Alertas não serão enviados."
+          fi
+
+      - name: Executar coleta NOAA/CPC (via API serverless)
+        id: coleta
+        run: |
+          # Chama a rota pública de coleta (aceita POST sem auth, com rate-limit)
+          # Usa o backend local (npm start) ou URL de produção via secret
+          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
+          echo "Chamando $API_BASE/api/enso (coleta)..."
+          RESPONSE=$(curl -s -X POST "$API_BASE/api/enso" \
+            -H "Content-Type: application/json" \
+            -d '{"acao":"coletar","usarMock":false}' \
+            --max-time 60)
+          echo "Resposta: $RESPONSE"
+          echo "response<<EOF" >> $GITHUB_OUTPUT
+          echo "$RESPONSE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Avaliar última medição (dispara regras)
+        if: fromJson(steps.coleta.outputs.response).coletado == true
+        run: |
+          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
+          # Pega a última amostra ONI registrada
+          ULTIMA=$(curl -s "$API_BASE/api/enso" | jq -r '.amostra')
+          if [ "$ULTIMA" != "null" ] && [ -n "$ULTIMA" ]; then
+            VALOR=$(echo "$ULTIMA" | jq -r '.valor')
+            INDICE=$(echo "$ULTIMA" | jq -r '.indice')
+            echo "Avaliando $INDICE = $VALOR °C..."
+            curl -s -X POST "$API_BASE/api/enso/avaliar" \
+              -H "Content-Type: application/json" \
+              -d "{\"valor\":$VALOR,\"indice\":\"$INDICE\",\"fonte\":\"auto:github-actions\"}" \
+              --max-time 30
+          else
+            echo "Nenhuma amostra nova para avaliar."
+          fi
+
+      - name: Health check das fontes
+        run: |
+          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
+          STATUS=$(curl -s "$API_BASE/api/enso" | jq -r '.fonteStatus')
+          echo "Status das fontes:"
+          echo "$STATUS" | jq '.'
+          # Verifica se NOAA está stale (>72h)
+          NOAA_OK=$(echo "$STATUS" | jq -r '.noaa.ok // false')
+          NOAA_STALE=$(echo "$STATUS" | jq -r '.noaa.stale // false')
+          if [ "$NOAA_OK" != "true" ] || [ "$NOAA_STALE" = "true" ]; then
+            echo "::warning::Fonte NOAA/CPC com problema (ok=$NOAA_OK, stale=$NOAA_STALE)"
+          fi
+
+      - name: Notificar falha (se houver)
+        if: failure()
+        run: |
+          # Opcional: criar issue ou enviar webhook de alerta de falha do pipeline
+          if [ -n "${{ secrets.ALERT_WEBHOOK }}" ]; then
+            curl -s -X POST "${{ secrets.ALERT_WEBHOOK }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\":\"⚠️ Falha na coleta automática ENOS (GitHub Actions)\",\"repo\":\"${{ github.repository }}\",\"run\":\"${{ github.run_id }}\"}"
+          fi
+
+  # Job opcional: gerar snapshot dos dados para debug/histórico
+  snapshot-dados:
+    name: Snapshot de Dados (artifacts)
+    needs: coletar-enso
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar estado atual do ENOS
+        run: |
+          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
+          curl -s "$API_BASE/api/enso" > enso-estado.json
+          curl -s "$API_BASE/api/elnino-mapa?camada=nino34-series" > nino34-series.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: enos-snapshot-${{ github.run_number }}
+          path: |
+            enso-estado.json
+            nino34-series.json
+          retention-days: 30

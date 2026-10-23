@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.13.1",
+    "cors": "^2.8.6",
+    "express": "^4.22.3",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.1",
     "web-push": "^3.6.7"
   },
   "engines": {

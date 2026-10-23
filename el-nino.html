@@ -7,6 +7,8 @@
     <title>El Niño · Monitoramento ENOS - SGI PROTEGE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <link rel="stylesheet" href="css/animated-icons.css">
     <style>
         :root {
@@ -277,6 +279,7 @@
 
     <div class="tabs">
         <button class="active" data-tab="estado"><i data-lucide="eye"></i> Estado atual</button>
+        <button data-tab="mapa"><i data-lucide="map"></i> Mapa</button>
         <button data-tab="niveis"><i data-lucide="layers"></i> Classificação e níveis</button>
         <button data-tab="fontes"><i data-lucide="external-link"></i> Boletins e fontes</button>
         <button data-tab="auditoria"><i data-lucide="clipboard-list"></i> Auditoria e confirmações</button>
@@ -320,6 +323,48 @@
         <div class="alert-note">
             <i data-lucide="info"></i>
             <p>A classificação oficial do episódio em vigência é publicada pelos centros nacionais e internacionais (INMET, CPTEC/INPE, NOAA/CPC). A SGI PROTEGE é apenas uma ferramenta que facilita a visualização desses dados: este painel exibe a última medição registrada no servidor e pode divergir das publicações oficiais mais recentes — em caso de divergência, valem as fontes oficiais.</p>
+        </div>
+    </section>
+
+    <section id="view-mapa" class="tab-view">
+        <h3 class="section-title"><i data-lucide="map"></i> Mapa El Niño — Monitoramento Oceano-Atmosfera</h3>
+        <div class="alert-note">
+            <i data-lucide="info"></i>
+            <p>Camadas: <b>Anomalia SST</b> (NOAA OISST 0.25°, vs climatologia 1991-2020), <b>Região Niño 3.4</b> (5°N–5°S, 170°W–120°W), <b>Focos de calor</b> (INPE/FIRMS). Dados de previsão rotulados. Linha do tempo: últimos 30 dias observados + 7 dias previsão. <b>Fonte SST:</b> NOAA PSL THREDDS (requer worker Python para NetCDF real; Fase 1 usa grade sintética baseada no ONI).</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;margin-top:16px;">
+            <div style="position:relative;height:560px;">
+                <div id="elninoMap" style="width:100%;height:100%;border-radius:12px;border:1px solid var(--border-color);"></div>
+                <div id="elninoTimeline" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(15,23,42,0.95);border:1px solid var(--border-color);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;min-width:300px;max-width:90vw;">
+                    <button id="elninoPlayBtn" class="btn" style="padding:6px 10px;" title="Play/Pause"><i data-lucide="play"></i></button>
+                    <input type="range" id="elninoTimelineSlider" min="0" max="0" value="0" style="flex:1;max-width:300px;accent-color:var(--accent-orange);">
+                    <span id="elninoTimelineLabel" style="font-size:11px;color:var(--text-muted);min-width:180px;text-align:center;">—</span>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+                <div class="card" style="flex:1;min-height:300px;">
+                    <h4><i data-lucide="activity"></i> Niño 3.4 (ONI) — Série Histórica</h4>
+                    <canvas id="elninoNino34Chart" style="width:100%;height:260px;"></canvas>
+                    <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">Índice mensal ONI / Niño 3.4 · Fonte: NOAA/CPC via coletor ENOS</p>
+                </div>
+                <div class="card">
+                    <h4><i data-lucide="layers"></i> Camadas</h4>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="elninoChkSst" checked> Anomalia SST (OISST)</label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:6px;"><input type="checkbox" id="elninoChkNino34" checked> Região Niño 3.4</label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:6px;"><input type="checkbox" id="elninoChkFocos" checked> Focos de calor (INPE/FIRMS)</label>
+                    <div style="margin-top:10px;">
+                        <label style="font-size:12px;color:var(--text-muted);">Opacidade SST: <span id="elninoOpacityVal">70%</span></label>
+                        <input type="range" id="elninoOpacityRange" min="0" max="100" value="70" style="width:100%;accent-color:var(--accent-orange);">
+                    </div>
+                </div>
+                <div class="card">
+                    <h4><i data-lucide="database"></i> Status das Fontes</h4>
+                    <div id="elninoSstMeta" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">NOAA OISST · carregando…</div>
+                    <div id="elninoFocosMeta" style="font-size:12px;color:var(--text-muted);">Focos de calor · carregando…</div>
+                    <button class="btn primary" id="elninoRefreshBtn" style="margin-top:10px;width:100%;justify-content:center;"><i data-lucide="refresh-cw"></i> Atualizar agora</button>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -404,6 +449,7 @@
     <script src="js/proxy.js"></script>
     <script src="js/api.js"></script>
     <script src="js/session.js"></script>
+    <script src="js/mapa-elnino.js"></script>
     <script>dcRenderUserArea();</script>
     <script>
         document.querySelectorAll('.tabs button').forEach(function (btn) {
@@ -617,6 +663,66 @@
             });
         }
         if (window.lucide) lucide.createIcons();
+    </script>
+    <script>
+        // Inicialização do mapa Leaflet para a aba El Niño
+        // Centro no Pacífico equatorial (Niño 3.4)
+        const DC_ORGANIZACAO = {
+            nacional: {
+                mapa: { centro: [0, -150], zoom: 3 }
+            }
+        };
+        // Cria o mapa quando a aba "mapa" for ativada pela primeira vez
+        let elninoMapInited = false;
+        document.querySelectorAll('.tabs button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (btn.dataset.tab === 'mapa' && !elninoMapInited) {
+                    setTimeout(function () {
+                        if (typeof L !== 'undefined' && !window.elninoMap) {
+                            window.elninoMap = L.map('elninoMap', { zoomControl: false, attributionControl: true })
+                                .setView(DC_ORGANIZACAO.nacional.mapa.centro, DC_ORGANIZACAO.nacional.mapa.zoom);
+                            L.control.zoom({ position: 'bottomright' }).addTo(window.elninoMap);
+                            L.control.scale({ position: 'bottomright', imperial: false }).addTo(window.elninoMap);
+                            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                                maxZoom: 18, maxNativeZoom: 16,
+                                attribution: '&copy; Esri &copy; OpenStreetMap'
+                            }).addTo(window.elninoMap);
+                            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                                maxZoom: 18, maxNativeZoom: 16,
+                                attribution: '&copy; Esri'
+                            }).addTo(window.elninoMap);
+                            // Expondo globalmente para mapa-elnino.js
+                            window.map = window.elninoMap;
+                            elninoMapInited = true;
+                            // Dispara inicialização das camadas
+                            if (typeof elninoInitMap === 'function') elninoInitMap();
+                        }
+                    }, 100);
+                }
+            });
+        });
+        // Se já estiver na aba mapa ao carregar
+        if (document.getElementById('view-mapa')?.classList.contains('active')) {
+            setTimeout(function () {
+                if (typeof L !== 'undefined' && !window.elninoMap) {
+                    window.elninoMap = L.map('elninoMap', { zoomControl: false, attributionControl: true })
+                        .setView(DC_ORGANIZACAO.nacional.mapa.centro, DC_ORGANIZACAO.nacional.mapa.zoom);
+                    L.control.zoom({ position: 'bottomright' }).addTo(window.elninoMap);
+                    L.control.scale({ position: 'bottomright', imperial: false }).addTo(window.elninoMap);
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 18, maxNativeZoom: 16,
+                        attribution: '&copy; Esri &copy; OpenStreetMap'
+                    }).addTo(window.elninoMap);
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 18, maxNativeZoom: 16,
+                        attribution: '&copy; Esri'
+                    }).addTo(window.elninoMap);
+                    window.map = window.elninoMap;
+                    elninoMapInited = true;
+                    if (typeof elninoInitMap === 'function') elninoInitMap();
+                }
+            }, 100);
+        }
     </script>
 </body>
 </html>
