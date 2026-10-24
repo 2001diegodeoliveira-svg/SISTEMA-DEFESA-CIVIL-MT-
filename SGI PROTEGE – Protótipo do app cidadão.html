@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SGI PROTEGE – Protótipo do app</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF1F4;--surf:#fff;--ink:#10283A;--mute:#5B6B78;--line:#D8DEE4;--or:#E8590C;--red:#C92A2A;--grn:#237A52;--ylw:#E8A800;--blu:#1C6DA8;--map:#E4EBE6;--wat:#BBD7EA;--sh:rgba(16,40,58,.14);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A141C;--surf:#14232F;--ink:#EAF0F5;--mute:#9DB0BF;--line:#26394A;--or:#FF8A47;--red:#FF7A7A;--grn:#5CC795;--ylw:#F5C542;--blu:#6DB6EC;--map:#1B2D27;--wat:#1E3C52;--sh:rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--bg:#0A141C;--surf:#14232F;--ink:#EAF0F5;--mute:#9DB0BF;--line:#26394A;--or:#FF8A47;--red:#FF7A7A;--grn:#5CC795;--ylw:#F5C542;--blu:#6DB6EC;--map:#1B2D27;--wat:#1E3C52;--sh:rgba(0,0,0,.5)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:16px}
+.phone{width:100%;height:100%;background:var(--surf);display:flex;flex-direction:column;overflow:hidden;position:relative}
+@media (min-width:600px){.phone{width:390px;height:780px;max-height:92vh;border-radius:36px;border:8px solid var(--ink);box-shadow:0 20px 50px var(--sh)}}
+.note{display:none;color:var(--mute);font-size:13px}
+@media (min-width:600px){.note{display:block}}
+header{padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--or);display:grid;place-items:center;color:#fff;font-style:normal;font-size:13px}
+h1{font-size:22px;margin:8px 0 8px;line-height:1.2}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1.5px solid var(--line);background:var(--surf);color:var(--ink);padding:7px 13px;border-radius:99px;font:inherit;font-size:14px;white-space:nowrap;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surf);border-color:var(--ink)}
+main{flex:1;overflow-y:auto;position:relative}
+.screen{display:none;padding:16px 18px 24px}
+.screen.on{display:block}
+.card{border:1.5px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--surf);width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;display:block}
+.card.red{border-left-color:var(--red)}.card.or{border-left-color:var(--or)}.card.ylw{border-left-color:var(--ylw)}.card.blu{border-left-color:var(--blu)}
+.card b{display:block;font-size:17px}
+.meta{font-size:13px;color:var(--mute);margin-top:2px}
+.more{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:15px;line-height:1.45}
+.card.open .more{display:block}
+.sub{font-size:14px;color:var(--mute);margin:4px 0 14px;line-height:1.4}
+.sec{font-size:14px;color:var(--mute);margin:18px 0 8px;font-weight:700}
+.mapbox{border-radius:14px;overflow:hidden;border:1.5px solid var(--line);position:relative}
+.mapbox svg{display:block;width:100%;height:auto}
+.mk{cursor:pointer}
+.sheet{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;min-height:64px;font-size:15px}
+.off{display:inline-block;margin-top:10px;font-size:13px;color:var(--grn);font-weight:700}
+.sosw{display:grid;place-items:center;margin:8px 0 16px}
+.sos{position:relative;width:210px;height:210px;border:0;border-radius:50%;background:var(--red);color:#fff;font:inherit;font-weight:700;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 8px 24px var(--sh)}
+.sos span{position:relative;z-index:1;font-size:44px;display:block;line-height:1}
+.sos small{position:relative;z-index:1;font-size:14px;font-weight:400;display:block;margin-top:6px}
+.sos svg{position:absolute;inset:-8px;width:226px;height:226px;transform:rotate(-90deg)}
+.sos circle{fill:none;stroke-width:8}
+.ring-bg{stroke:var(--line)}.ring{stroke:var(--ink);stroke-dasharray:691;stroke-dashoffset:691}
+.sent{display:none;border:1.5px solid var(--grn);border-radius:12px;padding:14px;margin-bottom:14px;line-height:1.5}
+.sent.on{display:block}
+.sent b{color:var(--grn);font-size:18px;display:block}
+.btn{display:block;width:100%;text-align:center;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:700;font-size:16px;background:var(--ink);color:var(--surf);cursor:pointer;text-decoration:none;margin-top:10px}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{border:1.5px solid var(--line);border-radius:12px;padding:14px 8px;background:var(--surf);color:var(--ink);font:inherit;font-size:15px;cursor:pointer;text-align:center}
+.cat em{display:block;font-style:normal;font-size:26px;margin-bottom:4px}
+.cat[aria-pressed="true"]{border-color:var(--or);background:color-mix(in srgb,var(--or) 14%,var(--surf));font-weight:700}
+.photo{border:2px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--mute);font-size:15px;cursor:pointer;background:none;width:100%;font-family:inherit}
+.photo.ok{border-style:solid;border-color:var(--grn);color:var(--grn);font-weight:700}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:15px;background:var(--surf);color:var(--ink);min-height:84px;resize:none}
+.row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);font-size:16px}
+.tog{width:46px;height:26px;border-radius:99px;background:var(--line);border:0;position:relative;cursor:pointer;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.tog[aria-pressed="true"]{background:var(--grn)}.tog[aria-pressed="true"]::after{left:23px}
+nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--surf);padding:6px 4px 10px}
+nav button{border:0;background:none;color:var(--mute);font:inherit;font-size:12px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button em{font-style:normal;font-size:21px}
+nav button[aria-selected="true"]{color:var(--ink);font-weight:700}
+nav button.s em{background:var(--red);color:#fff;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;margin-top:-18px;font-size:15px;font-weight:700;border:4px solid var(--surf)}
+:focus-visible{outline:3px solid var(--blu);outline-offset:2px}
+.toast{position:absolute;left:18px;right:18px;bottom:78px;background:var(--ink);color:var(--surf);padding:12px 14px;border-radius:12px;font-size:15px;display:none;z-index:5}
+.toast.on{display:block}
+</style>
+</head>
+<body>
+<div class="phone">
+  <header>
+    <div class="brand"><i>S</i>SGI PROTEGE</div>
+    <h1 id="title">Alertas na sua região</h1>
+    <div class="chips" id="places">
+      <button class="chip" aria-pressed="true">Casa</button>
+      <button class="chip" aria-pressed="false">Trabalho</button>
+      <button class="chip" aria-pressed="false">Escola</button>
+      <button class="chip" aria-pressed="false">Mãe</button>
+    </div>
+  </header>
+  <main>
+    <section class="screen on" id="s-alertas">
+      <p class="sub">3 avisos ativos perto de <b id="pl">Casa</b>. Toque para ver o que fazer.</p>
+      <button class="card red"><b>Foco de incêndio a 12 km</b><span class="meta">INPE · há 25 min · vento para o sul</span><div class="more">Mantenha janelas fechadas e evite queimar lixo. Se vir fogo próximo, ligue 199 e informe o local. Prepare documentos e água caso precise sair.</div></button>
+      <button class="card or"><b>Onda de calor</b><span class="meta">INMET · válido até sexta · 38 a 41 °C</span><div class="more">Beba água mesmo sem sede, evite sol entre 10h e 16h e cuide de crianças e idosos. Nunca deixe pessoas ou animais dentro de carros.</div></button>
+      <button class="card ylw"><b>Baixa umidade do ar</b><span class="meta">INMET · hoje · umidade abaixo de 20%</span><div class="more">Hidrate-se, use soro nasal e umidifique o ambiente. Pessoas com asma ou rinite devem redobrar a atenção.</div></button>
+      <div class="sec">Comunicados</div>
+      <button class="card blu"><b>Abrigo aberto na Escola Municipal Central</b><span class="meta">Defesa Civil · 42 de 120 vagas</span><div class="more">Aceita famílias e animais de estimação. Leve documentos, medicamentos e itens de higiene.</div></button>
+    </section>
+
+    <section class="screen" id="s-mapa">
+      <div class="chips" id="filt" style="margin-bottom:12px">
+        <button class="chip" aria-pressed="true">Tudo</button>
+        <button class="chip" aria-pressed="false">Focos</button>
+        <button class="chip" aria-pressed="false">Abrigos</button>
+        <button class="chip" aria-pressed="false">Água</button>
+      </div>
+      <div class="mapbox">
+        <svg viewBox="0 0 340 380" role="img" aria-label="Mapa ilustrativo com focos, abrigos e pontos de água">
+          <rect width="340" height="380" fill="var(--map)"/>
+          <path d="M-10 300 C60 260 110 330 180 290 S300 250 350 280 L350 330 C290 300 230 350 170 335 S50 310 -10 345Z" fill="var(--wat)"/>
+          <g stroke="var(--line)" stroke-width="6" fill="none" stroke-linecap="round"><path d="M0 120 H340"/><path d="M110 0 V250"/><path d="M0 60 L340 200"/><path d="M230 90 V270"/></g>
+          <circle cx="170" cy="190" r="46" fill="var(--blu)" opacity=".12"/>
+          <circle cx="170" cy="190" r="7" fill="var(--blu)" stroke="#fff" stroke-width="3"/>
+          <g class="mk" data-k="foco" data-t="Foco de incêndio · 12 km ao norte. Detectado pelo satélite há 25 min."><circle cx="260" cy="60" r="18" fill="var(--red)" opacity=".25"/><circle cx="260" cy="60" r="9" fill="var(--red)"/></g>
+          <g class="mk" data-k="foco" data-t="Foco de incêndio · 19 km a nordeste. Equipe de combate já acionada."><circle cx="70" cy="95" r="14" fill="var(--red)" opacity=".25"/><circle cx="70" cy="95" r="7" fill="var(--red)"/></g>
+          <g class="mk" data-k="abrigo" data-t="Escola Municipal Central · abrigo aberto · 42 de 120 vagas · 1,8 km."><rect x="196" y="140" width="22" height="22" rx="5" fill="var(--grn)"/><text x="207" y="156" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">A</text></g>
+          <g class="mk" data-k="abrigo" data-t="Ginásio Poliesportivo · abrigo em preparação · 3,4 km."><rect x="60" y="205" width="22" height="22" rx="5" fill="var(--grn)"/><text x="71" y="221" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">A</text></g>
+          <g class="mk" data-k="agua" data-t="Ponto de água potável · caminhão-pipa das 8h às 17h · 900 m."><circle cx="140" cy="240" r="11" fill="var(--blu)"/><text x="140" y="245" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">H</text></g>
+        </svg>
+      </div>
+      <div class="sheet" id="sheet">Toque em um marcador para ver detalhes.</div>
+      <span class="off">● Mapa salvo para uso offline</span>
+    </section>
+
+    <section class="screen" id="s-sos">
+      <p class="sub">Segure o botão por 2 segundos para enviar sua localização e pedir ajuda.</p>
+      <div class="chips" id="stype" style="margin-bottom:14px">
+        <button class="chip" aria-pressed="true">Incêndio</button>
+        <button class="chip" aria-pressed="false">Alagamento</button>
+        <button class="chip" aria-pressed="false">Saúde</button>
+        <button class="chip" aria-pressed="false">Outro</button>
+      </div>
+      <div class="sosw">
+        <button class="sos" id="sos" aria-label="Segure para enviar pedido de ajuda">
+          <svg viewBox="0 0 226 226"><circle class="ring-bg" cx="113" cy="113" r="110"/><circle class="ring" id="ring" cx="113" cy="113" r="110"/></svg>
+          <span>SOS</span><small>Segure 2 s</small>
+        </button>
+      </div>
+      <div class="sent" id="sent"><b>Pedido enviado</b>Protocolo <span id="proto"></span>. Localização, tipo de ocorrência e dados do seu cartão médico foram enviados à central. Fique em local seguro. Seu contato de confiança foi avisado.<button class="btn ghost" id="cancel">Cancelar pedido</button></div>
+      <a class="btn" href="tel:199">Ligar para 199</a>
+      <button class="btn ghost" id="noNet">Sem internet? Enviar por SMS</button>
+    </section>
+
+    <section class="screen" id="s-reportar">
+      <p class="sub">Registre uma ocorrência com foto e local. Você acompanha o andamento pelo protocolo.</p>
+      <div class="grid" id="cats">
+        <button class="cat" aria-pressed="false"><em>🔥</em>Queimada</button>
+        <button class="cat" aria-pressed="false"><em>🌊</em>Alagamento</button>
+        <button class="cat" aria-pressed="false"><em>⛰️</em>Deslizamento</button>
+        <button class="cat" aria-pressed="false"><em>🌳</em>Árvore caída</button>
+      </div>
+      <div class="sec">Foto ou vídeo</div>
+      <button class="photo" id="photo">Toque para adicionar foto</button>
+      <div class="sec">O que está acontecendo?</div>
+      <textarea id="desc" placeholder="Ex.: fogo se espalhando perto da estrada, sem equipe no local"></textarea>
+      <div class="row" style="border:0"><span>Enviar anonimamente</span><button class="tog" aria-pressed="false" aria-label="Enviar anonimamente"></button></div>
+      <button class="btn" id="send">Enviar ocorrência</button>
+    </section>
+
+    <section class="screen" id="s-perfil">
+      <div class="sec" style="margin-top:0">Meu cartão médico</div>
+      <div class="row"><span>Tipo sanguíneo</span><b>O+</b></div>
+      <div class="row"><span>Alergias</span><b>Dipirona</b></div>
+      <div class="row"><span>Contato de confiança</span><b>Mãe</b></div>
+      <div class="sec">Notificações</div>
+      <div class="row"><span>Alertas severos</span><button class="tog" aria-pressed="true" aria-label="Alertas severos"></button></div>
+      <div class="row"><span>Alertas por voz</span><button class="tog" aria-pressed="false" aria-label="Alertas por voz"></button></div>
+      <div class="row"><span>Mapas offline</span><button class="tog" aria-pressed="true" aria-label="Mapas offline"></button></div>
+      <div class="sec">Comunidade</div>
+      <button class="btn">Quero ser voluntário</button>
+      <button class="btn ghost">Plano de emergência da família</button>
+    </section>
+  </main>
+  <div class="toast" id="toast"></div>
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-s="alertas" data-t="Alertas na sua região"><em>🔔</em>Alertas</button>
+    <button role="tab" aria-selected="false" data-s="mapa" data-t="Mapa de risco"><em>🗺️</em>Mapa</button>
+    <button role="tab" aria-selected="false" data-s="sos" data-t="Pedir ajuda" class="s"><em>SOS</em>Ajuda</button>
+    <button role="tab" aria-selected="false" data-s="reportar" data-t="Reportar ocorrência"><em>📷</em>Reportar</button>
+    <button role="tab" aria-selected="false" data-s="perfil" data-t="Meu perfil"><em>👤</em>Perfil</button>
+  </nav>
+</div>
+<p class="note">Protótipo ilustrativo: dados fictícios, só para dar uma noção do app.</p>
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2400)}
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  $$('.screen').forEach(s=>s.classList.toggle('on',s.id==='s-'+b.dataset.s));
+  $('#title').textContent=b.dataset.t;
+  $('#places').style.display=b.dataset.s==='alertas'?'flex':'none';
+  $('main').scrollTop=0;
+});
+function single(box,cb){$$('button',box).forEach(b=>b.onclick=()=>{$$('button',box).forEach(x=>x.setAttribute('aria-pressed',x===b));cb&&cb(b)})}
+single($('#places'),b=>$('#pl').textContent=b.textContent);
+single($('#stype'));
+single($('#cats'));
+single($('#filt'),b=>{const k={Tudo:null,Focos:'foco',Abrigos:'abrigo',Água:'agua'}[b.textContent];$$('.mk').forEach(m=>m.style.opacity=!k||m.dataset.k===k?1:.15)});
+$$('.card').forEach(c=>c.onclick=()=>c.classList.toggle('open'));
+$$('.mk').forEach(m=>m.onclick=()=>$('#sheet').textContent=m.dataset.t);
+$$('.tog').forEach(t=>t.onclick=()=>t.setAttribute('aria-pressed',t.getAttribute('aria-pressed')!=='true'));
+$('#photo').onclick=e=>{e.target.classList.add('ok');e.target.textContent='Foto adicionada · local detectado'};
+$('#send').onclick=()=>{if(!$('#cats [aria-pressed=true]'))return toast('Escolha o tipo de ocorrência.');toast('Ocorrência enviada. Protocolo '+proto())};
+function proto(){return 'SGI-'+Math.floor(100000+Math.random()*899999)}
+$('#noNet').onclick=()=>toast('Abrindo SMS com sua localização e o tipo de ocorrência.');
+/* SOS: segurar 2 s */
+const sos=$('#sos'),ring=$('#ring');let t0=0,raf=0;
+function tick(){const p=Math.min((performance.now()-t0)/2000,1);ring.style.strokeDashoffset=691*(1-p);if(p<1)raf=requestAnimationFrame(tick);else done()}
+function done(){navigator.vibrate&&navigator.vibrate(200);$('#proto').textContent=proto();$('#sent').classList.add('on')}
+function stop(){cancelAnimationFrame(raf);if(!$('#sent').classList.contains('on'))ring.style.strokeDashoffset=691}
+sos.onpointerdown=e=>{e.preventDefault();t0=performance.now();raf=requestAnimationFrame(tick)};
+['pointerup','pointerleave','pointercancel'].forEach(ev=>sos['on'+ev]=stop);
+sos.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){t0=performance.now()-2000;done()}};
+$('#cancel').onclick=()=>{$('#sent').classList.remove('on');ring.style.strokeDashoffset=691;toast('Pedido cancelado.')};
+</script>
+</body>
+</html>
