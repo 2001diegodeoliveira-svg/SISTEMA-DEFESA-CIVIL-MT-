@@ -174,7 +174,7 @@
     function loadMunis() {
         var sel = $('munSel');
         var saved = sessionStorage.getItem('dcm_gestao_mun') || '';
-        dcProxyFetch('https://brasilapi.com.br/api/ibge/municipios/v1/51')
+        dcProxyFetch('https://brasilapi.com.br/api/ibge/municipios/v1/MT')
             .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); })
             .then(function (list) {
                 if (!Array.isArray(list) || !list.length) throw new Error('vazio');

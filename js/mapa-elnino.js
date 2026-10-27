@@ -125,9 +125,11 @@ async function elninoLoadFocos() {
     if (ELNINO.focosLoading) return;
     ELNINO.focosLoading = true;
     const meta = document.getElementById('elninoFocosMeta');
-    if (meta) meta.innerHTML = 'Focos de calor · <b>carregando...</b>';
+    if (meta) meta.innerHTML = 'Focos de calor �� <b>carregando...</b>';
+    const dias = (document.getElementById('elninoFocosDias')?.value) || '3';
+    const regiao = (document.getElementById('elninoFocosRegiao')?.value) || 'mt';
     try {
-        const res = await dcProxyFetch('/api/elnino-mapa?camada=focos');
+        const res = await dcProxyFetch('/api/elnino-mapa?camada=focos&dias=' + encodeURIComponent(dias) + '&regiao=' + encodeURIComponent(regiao));
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!data.geojson || !data.geojson.features?.length) throw new Error('Sem focos');
@@ -136,36 +138,65 @@ async function elninoLoadFocos() {
             try { map.removeLayer(ELNINO.focosLayer); } catch {}
         }
 
-        ELNINO.focosLayer = L.geoJSON(data.geojson, {
-            pointToLayer: (f, latlng) => {
-                const frp = f.properties?.frp || 0;
-                const radius = Math.max(4, Math.min(12, 4 + Math.log10(frp + 1) * 3));
-                return L.circleMarker(latlng, {
-                    radius,
-                    fillColor: frp > 50 ? '#dc2626' : frp > 20 ? '#f97316' : '#fbbf24',
-                    fillOpacity: 0.85,
-                    color: '#fff',
-                    weight: 1,
-                });
-            },
-            onEachFeature: (f, layer) => {
-                const p = f.properties;
-                layer.bindTooltip(
-                    `<b>${p.bioma || 'Foco'}</b><br>` +
-                    `FRP: ${p.frp?.toFixed(1) || '—'} MW<br>` +
-                    `${p.satellite || ''} · ${p.data_hora ? elninoFmtDateTime(p.data_hora) : ''}`,
-                    { sticky: true, direction: 'top', offset: [0, -8] }
-                );
-            },
-        }).addTo(map);
+        const cluster = (typeof L.markerClusterGroup === 'function') ? L.markerClusterGroup() : L.layerGroup();
+        data.geojson.features.forEach(f => {
+            const p = f.properties || {};
+            const latlng = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+            const frp = p.frp || 0;
+            const radius = Math.max(4, Math.min(12, 4 + Math.log10((frp || 0) + 1) * 3));
+            const marker = L.circleMarker(latlng, {
+                radius,
+                fillColor: frp > 50 ? '#dc2626' : frp > 20 ? '#f97316' : '#fbbf24',
+                fillOpacity: 0.85,
+                color: '#fff',
+                weight: 1,
+            });
+            const conf = p.confianca ? String(p.confianca) : '-';
+            const escHtml = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            marker.bindPopup(
+                '<b>Foco de calor</b><br>' +
+                'Data/hora: ' + escHtml(elninoFmtDateTime(p.data_hora)) + '<br>' +
+                'Satelite: ' + escHtml(p.satellite || '-') + '<br>' +
+                'Confianca: ' + escHtml(conf) + '<br>' +
+                'FRP: ' + (Number.isFinite(frp) ? frp.toFixed(1) : '-') + ' MW'
+            );
+            cluster.addLayer(marker);
+        });
+        cluster.addTo(map);
+        ELNINO.focosLayer = cluster;
 
         ELNINO.focosLoaded = true;
-        if (meta) meta.innerHTML = `Focos de calor (INPE/FIRMS) · <b>${data.total || 0}</b> focos · última atualização: ${elninoFmtDateTime(data.updated)}`;
+        if (meta) meta.innerHTML = 'Focos de calor (' + (data.fonte || 'NASA FIRMS') + ') �� <b>' + (data.total || 0) + '</b> focos �� atualizado em: ' + elninoFmtDateTime(data.atualizadoEm || data.updated);
     } catch (e) {
-        if (meta) meta.innerHTML = 'Focos de calor · <b style="color:#f87171;">indisponível</b>';
-        elninoToast('Não foi possível carregar focos de calor.');
+        if (meta) meta.innerHTML = 'Focos de calor �� <b style="color:#f87171;">indispon��vel</b>';
+        elninoToast('Nǜo foi poss��vel carregar focos de calor.');
     } finally {
         ELNINO.focosLoading = false;
+    }
+}
+
+async function elninoLoadInmetAvisos() {
+    const el = document.getElementById('inmetAvisosLista');
+    if (!el) return;
+    try {
+        const res = await dcProxyFetch('/api/inmet-avisos');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const avisos = data.avisos || [];
+        if (!avisos.length) {
+            el.innerHTML = '<p>Nenhum aviso ativo no momento.</p>';
+            return;
+        }
+        el.innerHTML = avisos.slice(0, 8).map(a => {
+            const tipo = a.descricao || a.tipo || 'Aviso';
+            const sev = a.severidade || '';
+            const fim = a.data_fim || a.dataFim || '';
+            return '<div style="padding:6px 0;border-bottom:1px solid var(--border-color);">' +
+                '<b>' + (tipo) + '</b> ' + (sev ? '(' + sev + ')' : '') + '<br>' +
+                (fim ? 'ate ' + elninoFmtDate(fim) : '') + '</div>';
+        }).join('') + (avisos.length > 8 ? '<p style="font-size:11px;">+' + (avisos.length-8) + ' avisos</p>' : '');
+    } catch (e) {
+        el.innerHTML = '<p style="color:#f87171;">Indisponivel.</p>';
     }
 }
 
@@ -356,11 +387,16 @@ function elninoBindControls() {
         if (e.target.checked) { elninoLoadFocos(); }
         else if (ELNINO.focosLayer) { try { map.removeLayer(ELNINO.focosLayer); } catch {} }
     });
+    const focosDias = document.getElementById('elninoFocosDias');
+    const focosRegiao = document.getElementById('elninoFocosRegiao');
+    if (focosDias) focosDias.addEventListener('change', () => { if (document.getElementById('elninoChkFocos')?.checked) elninoLoadFocos(); });
+    if (focosRegiao) focosRegiao.addEventListener('change', () => { if (document.getElementById('elninoChkFocos')?.checked) elninoLoadFocos(); });
     if (refreshBtn) refreshBtn.addEventListener('click', () => {
         ELNINO.sstLoaded = false; ELNINO.focosLoaded = false;
         elninoLoadSST();
         elninoLoadFocos();
         elninoLoadNino34Chart();
+        elninoLoadInmetAvisos();
     });
 }
 
@@ -373,6 +409,7 @@ async function elninoInitMap() {
     await Promise.all([
         elninoLoadSST(),
         elninoLoadNino34Chart(),
+        elninoLoadInmetAvisos(),
     ]);
     elninoAddNino34Polygon();
     elninoLoadFocos();

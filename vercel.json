@@ -9,6 +9,10 @@
     {
       "path": "/api/fontes/vigilancia",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/enso/cron",
+      "schedule": "0 6 * * *"
     }
   ],
   "rewrites": [

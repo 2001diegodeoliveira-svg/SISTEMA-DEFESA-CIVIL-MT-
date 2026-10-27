@@ -835,8 +835,8 @@
                         lat: +c.lat.toFixed(4), lon: +c.lon.toFixed(4),
                     };
                 }).filter(m => m && isFinite(m.lat) && isFinite(m.lon) && m.lat !== 0 && m.lon !== 0);
-                if (list.length !== municipios.length) {
-                    throw new Error('A malha municipal do IBGE não corresponde ao catálogo de municípios.');
+                if (list.length === 0) {
+                    throw new Error('A malha municipal do IBGE não retornou municípios válidos.');
                 }
                 omCacheSet('om_mun_mt_ibge_v1', { list, ts: Date.now() });
                 return list;

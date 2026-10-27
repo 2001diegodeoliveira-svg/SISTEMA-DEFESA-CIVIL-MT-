@@ -9,6 +9,9 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
     <style>
         :root {
@@ -310,6 +313,10 @@
             </div>
         </div>
 
+        <div class="card" style="margin-top:16px;">
+            <h4><i data-lucide="database"></i> Status das fontes de dados</h4>
+            <div id="fonteStatusLista" style="font-size:12.5px;color:var(--text-muted);">Carregando status das fontes.</div>
+        </div>
         <div class="card">
             <h4><i data-lucide="activity"></i> Escala de classificação (limiares configuráveis no servidor)</h4>
             <p id="escalaTexto">Carregando limiares…</p>
@@ -330,7 +337,7 @@
         <h3 class="section-title"><i data-lucide="map"></i> Mapa El Niño — Monitoramento Oceano-Atmosfera</h3>
         <div class="alert-note">
             <i data-lucide="info"></i>
-            <p>Camadas: <b>Anomalia SST</b> (NOAA OISST 0.25°, vs climatologia 1991-2020), <b>Região Niño 3.4</b> (5°N–5°S, 170°W–120°W), <b>Focos de calor</b> (INPE/FIRMS). Dados de previsão rotulados. Linha do tempo: últimos 30 dias observados + 7 dias previsão. <b>Fonte SST:</b> NOAA PSL THREDDS (requer worker Python para NetCDF real; Fase 1 usa grade sintética baseada no ONI).</p>
+            <p>Camadas: <b>Anomalia SST</b> (NOAA OISST 0.25°, vs climatologia 1991-2020), <b>Região Niño 3.4</b> (5°N–5°S, 170°W–120°W), <b>Focos de calor</b> (INPE/FIRMS). Dados de previsão rotulados. Linha do tempo: últimos 30 dias observados + 7 dias previsão. <b>Fonte SST:</b> NOAA OISST v2.1 (worker) (requer worker Python para NetCDF real; Fase 1 usa grade sintética baseada no ONI).</p>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;margin-top:16px;">
@@ -352,7 +359,22 @@
                     <h4><i data-lucide="layers"></i> Camadas</h4>
                     <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="elninoChkSst" checked> Anomalia SST (OISST)</label>
                     <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:6px;"><input type="checkbox" id="elninoChkNino34" checked> Região Niño 3.4</label>
-                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:6px;"><input type="checkbox" id="elninoChkFocos" checked> Focos de calor (INPE/FIRMS)</label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:6px;"><input type="checkbox" id="elninoChkFocos" checked> Focos de calor (NASA FIRMS)</label>
+                    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                        <label style="font-size:12px;color:var(--text-muted);">Dias:
+                            <select id="elninoFocosDias" style="background:var(--bg-dark);border:1px solid var(--border-color);color:var(--text-main);border-radius:6px;padding:4px 6px;font-size:12px;">
+                                <option value="1">1</option>
+                                <option value="3" selected>3</option>
+                                <option value="7">7</option>
+                            </select>
+                        </label>
+                        <label style="font-size:12px;color:var(--text-muted);">Área:
+                            <select id="elninoFocosRegiao" style="background:var(--bg-dark);border:1px solid var(--border-color);color:var(--text-main);border-radius:6px;padding:4px 6px;font-size:12px;">
+                                <option value="mt" selected>Mato Grosso</option>
+                                <option value="brasil">Brasil</option>
+                            </select>
+                        </label>
+                    </div>
                     <div style="margin-top:10px;">
                         <label style="font-size:12px;color:var(--text-muted);">Opacidade SST: <span id="elninoOpacityVal">70%</span></label>
                         <input type="range" id="elninoOpacityRange" min="0" max="100" value="70" style="width:100%;accent-color:var(--accent-orange);">
@@ -363,6 +385,10 @@
                     <div id="elninoSstMeta" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">NOAA OISST · carregando…</div>
                     <div id="elninoFocosMeta" style="font-size:12px;color:var(--text-muted);">Focos de calor · carregando…</div>
                     <button class="btn primary" id="elninoRefreshBtn" style="margin-top:10px;width:100%;justify-content:center;"><i data-lucide="refresh-cw"></i> Atualizar agora</button>
+                </div>
+                <div class="card">
+                    <h4><i data-lucide="cloud-rain"></i> Avisos INMET (Brasil)</h4>
+                    <div id="inmetAvisosLista" style="font-size:12px;color:var(--text-muted);">Carregando.</div>
                 </div>
             </div>
         </div>
@@ -551,6 +577,27 @@
                         '<span><b>' + esc(f.nome) + '</b><span>' + esc(f.descricao || '') + '</span></span>' +
                         '<i data-lucide="external-link"></i></a>';
                 }).join('');
+            }
+            // Status por fonte (Fase A)
+            var fsl = document.getElementById('fonteStatusLista');
+            if (fsl && j && j.fonteStatus) {
+                var entries = Object.keys(j.fonteStatus);
+                if (!entries.length) {
+                    fsl.innerHTML = '<p>Sem dados de status de fontes.</p>';
+                } else {
+                    fsl.innerHTML = entries.map(function (id) {
+                        var f = j.fonteStatus[id] || {};
+                        var status = f.status || (f.ok ? (f.stale ? 'atrasado' : 'ok') : 'falhou');
+                        var color = status === 'ok' ? 'var(--accent-green)' : (status === 'atrasado' ? 'var(--accent-orange)' : 'var(--accent-red)');
+                        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color);">' +
+                            '<span style="font-weight:600;">' + esc(id.toUpperCase()) + '</span>' +
+                            '<span style="color:' + color + ';font-weight:700;text-transform:uppercase;">' + esc(status) + '</span>' +
+                            '</div>' +
+                            '<div style="font-size:11px;color:var(--text-muted);padding:4px 0 8px;">' +
+                            'Última tentativa: ' + esc(f.ultimaTentativa || '-') + ' · Último sucesso: ' + esc(f.ultimoSucesso || '-') +
+                            (f.mensagem ? ' · ' + esc(f.mensagem) : '') + '</div>';
+                    }).join('');
+                }
             }
             if (window.lucide) lucide.createIcons();
         }

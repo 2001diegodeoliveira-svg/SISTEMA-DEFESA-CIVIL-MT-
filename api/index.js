@@ -57,11 +57,13 @@ const handlers = {
   'gestao': require('./_routes/gestao'),
   'noticias': require('./_routes/noticias'),
   'inmet-chuva': require('./_routes/inmet-chuva'),
+  'inmet-avisos': require('./_routes/inmet-avisos'),
   'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
   'enso': require('./_routes/enso'),
   'enso/avaliar': require('./_routes/enso-avaliar'),
+  'enso/cron': require('./_routes/enso-cron'),
 };
 
 const areasIdHandler = require('./_routes/areas/[id]');
@@ -326,6 +328,7 @@ module.exports = serve(async function handler(req) {
   if (handlers[route]) target = handlers[route];
   else if (route.startsWith('auth/mfa/')) target = require('./_routes/auth/mfa');
   else if (route.startsWith('user-registrations/')) target = handlers['user-registrations'];
+  else if (route.startsWith('ibge/malhas/estados/')) target = handlers['ibge'];
   else {
     const m = route.match(/^areas\/([^/]+)$/);
     if (m) target = areasIdHandler;

@@ -1,0 +1,39 @@
+name: OISST Worker (anomalia SST real)
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # diario, apos publicacao OISST
+  workflow_dispatch:
+
+jobs:
+  gerar-oisst:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install --quiet xarray netCDF4 numpy
+
+      - name: Gerar GeoJSON OISST
+        run: python scripts/oisst_worker.py
+
+      - name: Commit e push
+        run: |
+          git config user.name "oisst-worker"
+          git config user.email "oisst-worker@users.noreply.github.com"
+          git add oisst-anomaly.json
+          if git diff --cached --quiet; then
+            echo "Sem alteracoes."
+          else
+            git commit -m "chore(oisst): atualiza anomalia SST (auto)"
+            git push
+          fi

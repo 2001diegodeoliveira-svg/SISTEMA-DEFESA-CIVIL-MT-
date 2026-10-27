@@ -80,9 +80,9 @@ test('GET /api/ibge/estados retorna lista', async () => {
   const snap = await snapshot();
   try {
     setupEnv();
-    // O handler usa BrasilAPI como primário; o mock deve bater no endpoint da BrasilAPI
+    // O handler usa a API oficial do IBGE; o mock deve bater no endpoint de estados
     proxyHandler.definirTransporte(transporteSimulado({
-      '/uf/v1': { corpo: '[{"id":11,"sigla":"RO","nome":"Rondônia"},{"id":51,"sigla":"MT","nome":"Mato Grosso"}]', contentType: 'application/json' },
+      '/api/v1/localidades/estados': { corpo: '[{"id":11,"sigla":"RO","nome":"Rondônia"},{"id":51,"sigla":"MT","nome":"Mato Grosso"}]', contentType: 'application/json' },
       default: { erro: new Error('rota não mockada') },
     }));
     const mod = require('../api/_routes/ibge');

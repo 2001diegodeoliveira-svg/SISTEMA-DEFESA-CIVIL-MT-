@@ -17,8 +17,21 @@ const BRASILAPI_BASE = 'https://brasilapi.com.br/api/ibge';
 const IBGE_MALHAS_BASE = 'https://servicodados.ibge.gov.br/api/v3/malhas';
 const TIMEOUT_MS = 10000;
 
-function validarUF(uf) {
+const UF_POR_SIGLA = {
+  RO:'11', AC:'12', AM:'13', RR:'14', PA:'15', AP:'16', TO:'17',
+  MA:'21', PI:'22', CE:'23', RN:'24', PB:'25', PE:'26', AL:'27',
+  SE:'28', BA:'29', MG:'31', ES:'32', RJ:'33', SP:'35', PR:'41',
+  SC:'42', RS:'43', MS:'50', MT:'51', GO:'52', DF:'53',
+};
+
+function normalizarUF(uf) {
   const v = String(uf || '').trim().toUpperCase();
+  if (/^[A-Z]{2}$/.test(v) && UF_POR_SIGLA[v]) return UF_POR_SIGLA[v];
+  return v;
+}
+
+function validarUF(uf) {
+  const v = normalizarUF(uf);
   if (!/^\d{2}$/.test(v)) return null;
   const n = parseInt(v, 10);
   return n >= 11 && n <= 53 ? v : null;
@@ -89,14 +102,14 @@ module.exports = serve(async function handler(req) {
     let data, ttlSeg, staleSeg, origemId, upstreamUrl;
 
     if (path === '/estados' || path === '/estados/') {
-      origemId = 'brasilapi';
-      upstreamUrl = `${BRASILAPI_BASE}/uf/v1`;
+      origemId = 'ibge';
+      upstreamUrl = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados';
       let result;
       try {
         result = await buscarOrigemComFallback({
           parsed: new URL(upstreamUrl),
           origemId,
-          timeoutMs: 10000,
+          timeoutMs: 15000,
           maxBytes: 10 * 1024 * 1024,
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
@@ -127,16 +140,39 @@ module.exports = serve(async function handler(req) {
       return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
 
     } else if (path === '/municipios' || path === '/municipios/') {
-      const uf = validarUF(params.get('uf'));
+      const ufParam = String(params.get('uf') || '').trim();
+      // Catálogo nacional (contagem total) — usado pelo painel/território.
+      if (ufParam.toLowerCase() === 'todos') {
+        origemId = 'ibge';
+        upstreamUrl = 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios';
+        let result;
+        try {
+          result = await buscarOrigemComFallback({
+            parsed: new URL(upstreamUrl),
+            origemId,
+            timeoutMs: 15000,
+            maxBytes: 10 * 1024 * 1024,
+          });
+          if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
+        } catch (e) {
+          throw e;
+        }
+        data = JSON.parse(result.buf.toString('utf8'));
+        ttlSeg = 86400; staleSeg = 86400;
+        const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
+        if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
+        return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
+      }
+      const uf = validarUF(ufParam);
       if (!uf) return jsonResponse(400, { erro: 'Parâmetro uf obrigatório (ex.: 51).' }, origin);
-      origemId = 'brasilapi';
-      upstreamUrl = `${BRASILAPI_BASE}/municipios/v1/${uf}`;
+      origemId = 'ibge';
+      upstreamUrl = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`;
       let result;
       try {
         result = await buscarOrigemComFallback({
           parsed: new URL(upstreamUrl),
           origemId,
-          timeoutMs: 10000,
+          timeoutMs: 15000,
           maxBytes: 10 * 1024 * 1024,
         });
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);

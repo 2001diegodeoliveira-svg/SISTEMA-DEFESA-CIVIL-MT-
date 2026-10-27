@@ -29,7 +29,7 @@ const CACHE_TTL_ALERTAS = 600;
 const TIMEOUT_MS = 20000;
 
 let sstCache = { updatedAt: 0, data: null };
-let focosCache = { updatedAt: 0, data: null };
+const focosCache = {}; // chave `${regiao}:${dias}` -> { updatedAt, data }
 let chuvaCache = { updatedAt: 0, data: null };
 let secaCache = { updatedAt: 0, data: null };
 let riosCache = { updatedAt: 0, data: null };
@@ -57,191 +57,167 @@ async function buildSSTGeoJSON() {
         return { ...sstCache.data, _cached: true };
     }
 
-    // Tenta buscar OISST real via OpenDAP (requer netcdf-js ou proxy Python).
-    // Se falhar, gera grade sintética baseada no último ONI conhecido.
-    let anomGrid = null;
-    let latestDate = null;
-    let isForecast = false;
-
-    try {
-        // Tentativa de ler via endpoint THREDDS/DODS (retorna DAP/DDS)
-        // Nota: navegador não lê NetCDF binário; precisa worker Python.
-        // Por enquanto, usa proxy simples se houver ENSO_OISST_JSON_URL configurado.
-        const jsonUrl = process.env.ELNINO_OISST_JSON_URL;
-        if (jsonUrl) {
-            const res = await fetchWithTimeout(jsonUrl);
-            const txt = await res.text();
-            const parsed = JSON.parse(txt);
-            if (parsed.grid && parsed.date) {
-                anomGrid = parsed.grid;
-                latestDate = parsed.date;
-                isForecast = parsed.isForecast || false;
-            }
+    const fs = require('fs');
+    const path = require('path');
+    function readLocalOisst() {
+        const candidates = [
+            path.join(process.cwd(), 'data', 'oisst-anomaly.json'),
+            path.join(process.cwd(), 'oisst-anomaly.json'),
+            path.join(__dirname, '..', '..', 'data', 'oisst-anomaly.json'),
+            path.join(__dirname, '..', '..', 'oisst-anomaly.json'),
+        ];
+        for (const p of candidates) {
+            try {
+                if (fs.existsSync(p)) {
+                    const raw = fs.readFileSync(p, 'utf8');
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.geojson && Array.isArray(parsed.geojson.features) && parsed.geojson.features.length) return parsed;
+                }
+            } catch (e) { /* ignora */ }
         }
-    } catch (e) {
-        // Ignora e cai no fallback
+        return null;
     }
 
-    if (!anomGrid) {
-        // Fallback: grade sintética centrada no Pacífico equatorial
-        // baseada no último valor ONI conhecido (via enso.js)
+    let real = null;
+    const jsonUrl = process.env.ELNINO_OISST_JSON_URL;
+    if (jsonUrl) {
+        try {
+            const res = await fetchWithTimeout(jsonUrl);
+            const parsed = await res.json();
+            if (parsed && parsed.geojson && Array.isArray(parsed.geojson.features) && parsed.geojson.features.length) real = parsed;
+        } catch (e) { /* ignora, cai no fallback */ }
+    }
+    if (!real) real = readLocalOisst();
+
+    let data;
+    if (real) {
+        const latestDate = real.date || (real.latest && real.latest.date) || new Date().toISOString().slice(0, 10);
+        data = {
+            geojson: real.geojson,
+            timeline: [{ date: latestDate, isForecast: false, geojson: real.geojson }],
+            latest: { date: latestDate },
+            fonte: real.fonte || 'NOAA OISST v2.1 (anomalia)',
+            atualizadoEm: real.atualizadoEm || new Date().toISOString(),
+            real: true,
+        };
+    } else {
+        // Fallback ilustrativo: grade sintetica baseada no ultimo ONI.
         const enso = require('../_lib/enso');
         const ultima = await enso.ultimaAmostra('ONI');
         const baseAnom = (ultima && typeof ultima.valor === 'number') ? ultima.valor : 1.2;
-        latestDate = ultima?.observadoEm || new Date().toISOString().slice(0, 10);
+        const latestDate = ultima?.observadoEm || new Date().toISOString().slice(0, 10);
 
-        const lonCount = 1440; // 0.25° global
-        const latCount = 720;
-        // Só geramos região Niño 3.4 + entorno (economia)
-        const lonStart = Math.round((180 + 170) / 0.25); // ~1400
-        const lonEnd = Math.round((180 + 120) / 0.25);   // ~1200
-        const latStart = Math.round((90 + 5) / 0.25);    // ~380
-        const latEnd = Math.round((90 - 5) / 0.25);      // ~340
-
-        anomGrid = [];
-        for (let latIdx = latEnd; latIdx <= latStart; latIdx += 2) { // stride 0.5°
-            const lat = 90 - latIdx * 0.25;
-            for (let lonIdx = lonEnd; lonIdx <= lonStart; lonIdx += 2) {
-                const lon = -180 + lonIdx * 0.25;
-                // Anomalia decai fora da faixa equatorial
+        const anomGrid = [];
+        const latStart = 5, latEnd = -5, lonStart = -170, lonEnd = -120;
+        for (let lat = latEnd; lat <= latStart; lat += 0.5) {
+            for (let lon = lonEnd; lon <= lonStart; lon += 0.5) {
                 const latFactor = Math.max(0, 1 - Math.abs(lat) / 10);
                 const noise = (Math.sin(lon * 0.5) * Math.cos(lat * 0.3)) * 0.3;
                 const anom = baseAnom * latFactor + noise;
                 anomGrid.push({ lat, lon, anom: Number(anom.toFixed(2)) });
             }
         }
-    }
-
-    // Converte para GeoJSON (FeatureCollection de Polygons grid)
-    const features = anomGrid.map(p => ({
-        type: 'Feature',
-        geometry: {
-            type: 'Polygon',
-            coordinates: [[
-                [p.lon - 0.125, p.lat - 0.125],
-                [p.lon + 0.125, p.lat - 0.125],
-                [p.lon + 0.125, p.lat + 0.125],
-                [p.lon - 0.125, p.lat + 0.125],
-                [p.lon - 0.125, p.lat - 0.125],
-            ]],
-        },
-        properties: { anom: p.anom, date: latestDate },
-    }));
-
-    // Timeline: últimos 30 dias + 7 dias previsão (mock)
-    const timeline = [];
-    const baseDate = new Date(latestDate);
-    for (let i = -29; i <= 7; i++) {
-        const d = new Date(baseDate);
-        d.setDate(d.getDate() + i);
-        const iso = d.toISOString().slice(0, 10);
-        // Variação suave ao longo do tempo
-        const phase = (i + 30) / 37 * Math.PI * 2;
-        const variation = Math.sin(phase) * 0.4;
-        const grid = anomGrid.map(p => ({
-            ...p,
-            anom: Number((p.anom + variation * (1 - Math.abs(p.lat) / 10)).toFixed(2)),
-        }));
-        const frameFeatures = grid.map(p => ({
+        const features = anomGrid.map(p => ({
             type: 'Feature',
             geometry: {
                 type: 'Polygon',
                 coordinates: [[
-                    [p.lon - 0.125, p.lat - 0.125],
-                    [p.lon + 0.125, p.lat - 0.125],
-                    [p.lon + 0.125, p.lat + 0.125],
-                    [p.lon - 0.125, p.lat + 0.125],
-                    [p.lon - 0.125, p.lat - 0.125],
+                    [p.lon - 0.25, p.lat - 0.25],
+                    [p.lon + 0.25, p.lat - 0.25],
+                    [p.lon + 0.25, p.lat + 0.25],
+                    [p.lon - 0.25, p.lat + 0.25],
+                    [p.lon - 0.25, p.lat - 0.25],
                 ]],
             },
-            properties: { anom: p.anom, date: iso },
+            properties: { anom: p.anom, date: latestDate },
         }));
-        timeline.push({
-            date: iso,
-            isForecast: i > 0,
-            geojson: { type: 'FeatureCollection', features: frameFeatures },
-        });
+        const geojson = { type: 'FeatureCollection', features };
+        data = {
+            geojson,
+            timeline: [{ date: latestDate, isForecast: false, geojson }],
+            latest: { date: latestDate },
+            fonte: 'Grade sintetica ilustrativa (baseada no ONI) - configure OISST real',
+            atualizadoEm: new Date().toISOString(),
+            ilustrativo: true,
+        };
     }
-
-    const data = {
-        geojson: { type: 'FeatureCollection', features },
-        timeline,
-        latest: { date: latestDate, anomMax: Math.max(...anomGrid.map(p => p.anom)), anomMin: Math.min(...anomGrid.map(p => p.anom)) },
-        fonte: 'NOAA OISST v2 (0.25°) · anomalia vs climatologia 1991-2020',
-        atualizadoEm: new Date().toISOString(),
-    };
 
     sstCache = { updatedAt: now, data };
     return data;
 }
 
 /* ---------------------- Focos de Calor (INPE/FIRMS) ---------------------- */
-async function buildFocosGeoJSON() {
+async function buildFocosGeoJSON(opts) {
+    opts = opts || {};
+    const diasRaw = Number(opts.dias);
+    const dias = Number.isFinite(diasRaw) ? Math.min(7, Math.max(1, Math.round(diasRaw))) : 3;
+    const regiao = opts.regiao === 'brasil' ? 'brasil' : 'mt';
+    const cacheKey = regiao + ':' + dias;
     const now = Date.now();
-    if (focosCache.data && now - focosCache.updatedAt < CACHE_TTL_FOCOS * 1000) {
-        return { ...focosCache.data, _cached: true };
+    const cached = focosCache[cacheKey];
+    if (cached && now - cached.updatedAt < CACHE_TTL_FOCOS * 1000) {
+        return { ...cached.data, _cached: true };
     }
 
-    let features = [];
-    let updated = new Date().toISOString();
-    let fonte = 'INPE/Queimadas';
+    const bbox = regiao === 'brasil'
+        ? '-74.0,-33.8,-34.8,5.3'
+        : '-61.7,-18.1,-50.2,-7.3';
 
-    try {
-        // Tenta FIRMS se tiver API key
-        const firmsKey = process.env.FIRMS_API_KEY;
-        if (firmsKey) {
-            const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${firmsKey}/MODIS_NRT/-180,-90,180,90/1`;
+    let features = [];
+    let fonte = 'NASA FIRMS (VIIRS SNPP NRT)';
+    let erro = null;
+    const updated = new Date().toISOString();
+
+    const mapKey = (process.env.FIRMS_MAP_KEY || '').trim();
+    if (!mapKey) {
+        fonte = 'NASA FIRMS (MAP_KEY nao configurado)';
+        erro = 'FIRMS_MAP_KEY ausente no servidor.';
+    } else {
+        const url = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/' + mapKey + '/VIIRS_SNPP_NRT/' + bbox + '/' + dias;
+        try {
             const res = await fetchWithTimeout(url);
             const csv = await res.text();
-            const lines = csv.trim().split('\n').slice(1); // header
-            features = lines.slice(0, 5000).map(line => {
-                const [lat, lon, brightness, scan, track, acq_date, acq_time, satellite, instrument, confidence, version, bright_t31, frp, daynight] = line.split(',');
-                return {
-                    type: 'Feature',
-                    geometry: { type: 'Point', coordinates: [parseFloat(lon), parseFloat(lat)] },
-                    properties: {
-                        lat: parseFloat(lat),
-                        lon: parseFloat(lon),
-                        frp: parseFloat(frp),
-                        satellite,
-                        data_hora: `${acq_date}T${acq_time.padStart(4, '0')}:00`,
-                        bioma: '—',
-                    },
-                });
-            }).filter(f => Number.isFinite(f.geometry.coordinates[0]) && Number.isFinite(f.geometry.coordinates[1]));
-            fonte = 'NASA FIRMS (MODIS NRT)';
-        } else {
-            // Fallback: INPE Queimadas (CSV público) - simplificado
-            // Em produção, baixar shapefile/CSV diário do INPE
-            // Mock realista para Brasil
-            const estados = ['MT', 'PA', 'AM', 'RO', 'AC', 'RR', 'AP', 'TO', 'MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'];
-            for (let i = 0; i < 200; i++) {
-                const uf = estados[Math.floor(Math.random() * estados.length)];
-                const lat = -10 + Math.random() * 5;
-                const lon = -65 + Math.random() * 15;
+            const linhas = csv.trim().split(/\r?\n/);
+            if (linhas.length < 2) throw new Error('CSV vazio');
+            const header = linhas[0].split(',').map(h => h.trim().toLowerCase());
+            const idx = (name) => header.indexOf(name);
+            const iLat = idx('latitude');
+            const iLon = idx('longitude');
+            const iDate = idx('acq_date');
+            const iTime = idx('acq_time');
+            const iSat = idx('satellite');
+            const iConf = idx('confidence');
+            const iFrp = idx('frp');
+            for (let i = 1; i < linhas.length; i++) {
+                const cols = linhas[i].split(',');
+                if (cols.length < header.length) continue;
+                const lat = parseFloat(cols[iLat]);
+                const lon = parseFloat(cols[iLon]);
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+                const acqDate = (cols[iDate] || '').trim();
+                const acqTime = (cols[iTime] || '').trim().padStart(4, '0');
+                const dataHora = acqDate ? (acqDate + 'T' + acqTime.slice(0,2) + ':' + acqTime.slice(2,4) + ':00') : new Date().toISOString();
+                const frp = parseFloat(cols[iFrp]);
+                const conf = (cols[iConf] || '').trim();
+                const sat = (cols[iSat] || '').trim();
                 features.push({
                     type: 'Feature',
                     geometry: { type: 'Point', coordinates: [lon, lat] },
                     properties: {
                         lat, lon,
-                        frp: Number((Math.random() * 100).toFixed(1)),
-                        satellite: 'AQUA_M-TERRA_M',
-                        data_hora: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-                        bioma: uf === 'MT' || uf === 'PA' || uf === 'AM' ? 'Amazônia' : 'Cerrado',
+                        frp: Number.isFinite(frp) ? frp : null,
+                        satellite: sat || 'VIIRS SNPP',
+                        data_hora: dataHora,
+                        confianca: conf || null,
                     },
                 });
             }
-            fonte = 'INPE/Queimadas (mock — configurar FIRMS_API_KEY para dados reais)';
+        } catch (e) {
+            console.warn('[elnino-mapa] falha ao buscar focos FIRMS:', e.message);
+            fonte = 'NASA FIRMS (falha: ' + e.message + ')';
+            erro = e.message;
+            features = [];
         }
-    } catch (e) {
-        console.warn('[elnino-mapa] falha ao buscar focos:', e.message);
-        // Mock mínimo para não quebrar o front
-        features = [{
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [-55, -12] },
-            properties: { lat: -12, lon: -55, frp: 10, satellite: 'MOCK', data_hora: new Date().toISOString(), bioma: 'Mock' },
-        }];
-        fonte = 'Mock (falha na fonte real)';
     }
 
     const data = {
@@ -249,9 +225,13 @@ async function buildFocosGeoJSON() {
         total: features.length,
         updated,
         fonte,
+        atualizadoEm: updated,
+        regiao,
+        dias,
+        erro: erro || undefined,
     };
 
-    focosCache = { updatedAt: now, data };
+    focosCache[cacheKey] = { updatedAt: now, data };
     return data;
 }
 
@@ -301,7 +281,7 @@ module.exports = serve(async function handler(req) {
         if (camada === 'sst') {
             data = await buildSSTGeoJSON();
         } else if (camada === 'focos') {
-            data = await buildFocosGeoJSON();
+            data = await buildFocosGeoJSON({ dias: ru?.searchParams?.get('dias'), regiao: ru?.searchParams?.get('regiao') });
             ttl = CACHE_TTL_FOCOS;
         } else if (camada === 'nino34-series') {
             data = await buildNino34Series();

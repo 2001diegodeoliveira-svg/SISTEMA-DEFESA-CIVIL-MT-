@@ -741,7 +741,28 @@ async function lerFonteStatus() {
   try {
     const col = await readCollection('system_config');
     const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-fonte-status');
-    return (doc && doc.fontes && typeof doc.fontes === 'object') ? doc.fontes : {};
+    const fontes = (doc && doc.fontes && typeof doc.fontes === 'object') ? doc.fontes : {};
+    const agora = Date.now();
+    const limite = staleHoras() * 3600000;
+    for (const id of Object.keys(fontes)) {
+      const f = fontes[id] || {};
+      const ref = f.ultimoSucesso ? Date.parse(f.ultimoSucesso) : 0;
+      f.stale = !ref || (agora - ref > limite);
+      f.ultimaTentativa = f.ultimaTentativa || f.ultimoErro || f.ultimoSucesso || null;
+      f.ultimoSucesso = f.ultimoSucesso || null;
+      f.ultimoErro = f.ultimoErro || null;
+      if (!f.ultimoSucesso) {
+        f.status = f.ok ? 'ok' : 'falhou';
+      } else if (f.stale) {
+        f.status = 'atrasado';
+      } else if (f.ok === false) {
+        f.status = 'falhou';
+      } else {
+        f.status = 'ok';
+      }
+      fontes[id] = f;
+    }
+    return fontes;
   } catch {
     return {};
   }
@@ -785,13 +806,22 @@ async function ultimaAmostra(indice) {
     const col = await readCollection('system_config');
     const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-indice');
     const lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
-    if (indice) {
-      for (let i = lista.length - 1; i >= 0; i -= 1) {
-        if (lista[i] && lista[i].indice === indice) return lista[i];
+    const candidatos = indice ? lista.filter((a) => a && a.indice === indice) : lista.slice();
+    if (!candidatos.length) return null;
+    const temReal = candidatos.some((a) => !a.mock);
+    // Prefere amostras reais (mock=false) quando existirem.
+    const pool = temReal ? candidatos.filter((a) => !a.mock) : candidatos;
+    // ǧltima por observadoEm (cronol��gico), desempate por registradoEm.
+    let escolhido = null;
+    for (const a of pool) {
+      const chave = `${a.observadoEm || ''}|${a.registradoEm || ''}`;
+      if (!escolhido) escolhido = a;
+      else {
+        const chaveAtual = `${escolhido.observadoEm || ''}|${escolhido.registradoEm || ''}`;
+        if (chave > chaveAtual) escolhido = a;
       }
-      return null;
     }
-    return lista.length ? lista[lista.length - 1] : null;
+    return escolhido;
   } catch {
     return null;
   }
@@ -806,16 +836,20 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
   const agora = Date.now();
   const amostras = [];
   for (const c of coletores) {
+    const ant = fontes[c.id] || {};
+    fontes[c.id] = { ...ant, ultimaTentativa: new Date().toISOString() };
     try {
       const resultado = await c.coletar({ timeoutMs });
       const lote = Array.isArray(resultado) ? resultado : [resultado];
       await registrarAmostras(lote);
       amostras.push(...lote);
       const resumo = lote.map((a) => `${a.indice}=${a.valor}`).join(', ');
-      fontes[c.id] = { ok: true, ultimoSucesso: new Date().toISOString(), ultimoErro: null, mensagem: `OK (${resumo}°C)` };
+      const tentativaIso = new Date().toISOString();
+      fontes[c.id] = { ...ant, ok: true, ultimoSucesso: tentativaIso, ultimaTentativa: tentativaIso, ultimoErro: null, mensagem: `OK (${resumo}°C)` };
       logger.info('enso.coleta.ok', `${c.id}: ${lote.length} amostra(s).`, { fonte: c.id });
     } catch (e) {
-      fontes[c.id] = { ...(fontes[c.id] || {}), ok: false, ultimoErro: new Date().toISOString(), mensagem: e.message };
+      const errIso = new Date().toISOString();
+      fontes[c.id] = { ...ant, ...fontes[c.id], ok: false, ultimaTentativa: errIso, ultimoErro: errIso, mensagem: e.message };
       logger.warn('enso.coleta.falhou', `${c.id}: ${e.message} (módulo segue operando).`, { fonte: c.id });
     }
   }
@@ -823,7 +857,17 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
   for (const id of Object.keys(fontes)) {
     const f = fontes[id];
     const ref = f.ultimoSucesso ? Date.parse(f.ultimoSucesso) : 0;
-    f.stale = agora - ref > limiteStale;
+    f.stale = !ref || (agora - ref > limiteStale);
+    f.ultimaTentativa = f.ultimaTentativa || f.ultimoErro || f.ultimoSucesso || null;
+    if (!f.ultimoSucesso) {
+      f.status = f.ok ? 'ok' : 'falhou';
+    } else if (f.stale) {
+      f.status = 'atrasado';
+    } else if (f.ok === false) {
+      f.status = 'falhou';
+    } else {
+      f.status = 'ok';
+    }
   }
   await gravarFonteStatus(fontes);
   return { amostras, fontes };

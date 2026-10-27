@@ -1,12 +1,9 @@
 name: Coleta Automática El Niño (ENOS)
 
 on:
-  schedule:
-    # Diário às 06:00 UTC (03:00 Brasília) — após publicação NOAA
-    - cron: '0 6 * * *'
-    # Semanal às segundas 06:00 UTC para atualização completa
-    - cron: '0 6 * * 1'
-  workflow_dispatch: {}  # execução manual via Actions tab
+  # Agendamento automático fica por conta do Vercel Cron (ver vercel.json).
+  # Este workflow serve apenas para execução manual / debug.
+  workflow_dispatch: {}
 
 env:
   # Configuração do módulo ENOS (mesmas vars do serverless)
@@ -65,38 +62,24 @@ jobs:
         run: |
           # Chama a rota pública de coleta (aceita POST sem auth, com rate-limit)
           # Usa o backend local (npm start) ou URL de produção via secret
-          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
-          echo "Chamando $API_BASE/api/enso (coleta)..."
-          RESPONSE=$(curl -s -X POST "$API_BASE/api/enso" \
-            -H "Content-Type: application/json" \
-            -d '{"acao":"coletar","usarMock":false}' \
+          API_BASE="${{ secrets.ELNINO_API_BASE }}"
+          if [ -z "$API_BASE" ]; then echo "ELNINO_API_BASE ausente"; exit 1; fi
+          CRON_SECRET="${{ secrets.ENSO_CRON_SECRET || secrets.CRON_SECRET }}"
+          echo "Chamando $API_BASE/api/enso/cron ..."
+          RESPONSE=$(curl -s -X GET "$API_BASE/api/enso/cron" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             --max-time 60)
           echo "Resposta: $RESPONSE"
           echo "response<<EOF" >> $GITHUB_OUTPUT
           echo "$RESPONSE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Avaliar última medição (dispara regras)
-        if: fromJson(steps.coleta.outputs.response).coletado == true
-        run: |
-          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
-          # Pega a última amostra ONI registrada
-          ULTIMA=$(curl -s "$API_BASE/api/enso" | jq -r '.amostra')
-          if [ "$ULTIMA" != "null" ] && [ -n "$ULTIMA" ]; then
-            VALOR=$(echo "$ULTIMA" | jq -r '.valor')
-            INDICE=$(echo "$ULTIMA" | jq -r '.indice')
-            echo "Avaliando $INDICE = $VALOR °C..."
-            curl -s -X POST "$API_BASE/api/enso/avaliar" \
-              -H "Content-Type: application/json" \
-              -d "{\"valor\":$VALOR,\"indice\":\"$INDICE\",\"fonte\":\"auto:github-actions\"}" \
-              --max-time 30
-          else
-            echo "Nenhuma amostra nova para avaliar."
-          fi
+      - name: Avaliar ultima medicao (feito pelo cron)
+        run: echo "Avaliacao executada internamente pelo /api/enso/cron."
 
       - name: Health check das fontes
         run: |
-          API_BASE="${{ secrets.ELNINO_API_BASE || 'http://localhost:3000' }}"
+          API_BASE="${{ secrets.ELNINO_API_BASE }}"
           STATUS=$(curl -s "$API_BASE/api/enso" | jq -r '.fonteStatus')
           echo "Status das fontes:"
           echo "$STATUS" | jq '.'
