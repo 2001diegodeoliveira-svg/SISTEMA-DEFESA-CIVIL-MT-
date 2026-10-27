@@ -63,7 +63,7 @@ async function elninoLoadSST() {
     const meta = document.getElementById('elninoSstMeta');
     if (meta) meta.innerHTML = 'NOAA OISST · <b>carregando...</b>';
     try {
-        const res = await dcProxyFetch('/api/elnino-mapa?camada=sst');
+        const res = await fetch('/api/elnino-mapa?camada=sst');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!data.geojson || !data.geojson.features?.length) throw new Error('GeoJSON vazio');
@@ -129,7 +129,7 @@ async function elninoLoadFocos() {
     const dias = (document.getElementById('elninoFocosDias')?.value) || '3';
     const regiao = (document.getElementById('elninoFocosRegiao')?.value) || 'mt';
     try {
-        const res = await dcProxyFetch('/api/elnino-mapa?camada=focos&dias=' + encodeURIComponent(dias) + '&regiao=' + encodeURIComponent(regiao));
+        const res = await fetch('/api/elnino-mapa?camada=focos&dias=' + encodeURIComponent(dias) + '&regiao=' + encodeURIComponent(regiao));
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!data.geojson || !data.geojson.features?.length) throw new Error('Sem focos');
@@ -179,7 +179,7 @@ async function elninoLoadInmetAvisos() {
     const el = document.getElementById('inmetAvisosLista');
     if (!el) return;
     try {
-        const res = await dcProxyFetch('/api/inmet-avisos');
+        const res = await fetch('/api/inmet-avisos');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const avisos = data.avisos || [];
@@ -204,7 +204,7 @@ async function elninoLoadNino34Chart() {
     const canvas = document.getElementById('elninoNino34Chart');
     if (!canvas) return;
     try {
-        const res = await dcProxyFetch('/api/elnino-mapa?camada=nino34-series');
+        const res = await fetch('/api/elnino-mapa?camada=nino34-series');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!data.series?.length) throw new Error('Série vazia');

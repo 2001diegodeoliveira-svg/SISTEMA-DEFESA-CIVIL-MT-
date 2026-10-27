@@ -58,6 +58,7 @@ const handlers = {
   'noticias': require('./_routes/noticias'),
   'inmet-chuva': require('./_routes/inmet-chuva'),
   'inmet-avisos': require('./_routes/inmet-avisos'),
+  'elnino-mapa': require('./_routes/elnino-mapa'),
   'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),

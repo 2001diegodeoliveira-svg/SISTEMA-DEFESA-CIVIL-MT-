@@ -28,6 +28,10 @@
    ============================================================ */
 const { readCollection, writeCollection, push } = require('./store');
 
+// Cache em memória da última coleta (para quando o banco estiver indisponível).
+const LAST = { amostras: [], fonteStatus: {} };
+
+
 /* ---------- utilidades de config (mesmo padrão de pluvialerta) ---------- */
 function clampNum(v, min, max, dflt) {
   const n = Number(v);
@@ -738,34 +742,35 @@ function intervaloColetaMs() {
 }
 
 async function lerFonteStatus() {
+  let fontes = {};
   try {
     const col = await readCollection('system_config');
     const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-fonte-status');
-    const fontes = (doc && doc.fontes && typeof doc.fontes === 'object') ? doc.fontes : {};
-    const agora = Date.now();
-    const limite = staleHoras() * 3600000;
-    for (const id of Object.keys(fontes)) {
-      const f = fontes[id] || {};
-      const ref = f.ultimoSucesso ? Date.parse(f.ultimoSucesso) : 0;
-      f.stale = !ref || (agora - ref > limite);
-      f.ultimaTentativa = f.ultimaTentativa || f.ultimoErro || f.ultimoSucesso || null;
-      f.ultimoSucesso = f.ultimoSucesso || null;
-      f.ultimoErro = f.ultimoErro || null;
-      if (!f.ultimoSucesso) {
-        f.status = f.ok ? 'ok' : 'falhou';
-      } else if (f.stale) {
-        f.status = 'atrasado';
-      } else if (f.ok === false) {
-        f.status = 'falhou';
-      } else {
-        f.status = 'ok';
-      }
-      fontes[id] = f;
-    }
-    return fontes;
-  } catch {
-    return {};
+    fontes = (doc && doc.fontes && typeof doc.fontes === 'object') ? doc.fontes : {};
+  } catch (e) {
+    fontes = LAST.fonteStatus || {};
   }
+  const agora = Date.now();
+  const limite = staleHoras() * 3600000;
+  for (const id of Object.keys(fontes)) {
+    const f = fontes[id] || {};
+    const ref = f.ultimoSucesso ? Date.parse(f.ultimoSucesso) : 0;
+    f.stale = !ref || (agora - ref > limite);
+    f.ultimaTentativa = f.ultimaTentativa || f.ultimoErro || f.ultimoSucesso || null;
+    f.ultimoSucesso = f.ultimoSucesso || null;
+    f.ultimoErro = f.ultimoErro || null;
+    if (!f.ultimoSucesso) {
+      f.status = f.ok ? 'ok' : 'falhou';
+    } else if (f.stale) {
+      f.status = 'atrasado';
+    } else if (f.ok === false) {
+      f.status = 'falhou';
+    } else {
+      f.status = 'ok';
+    }
+    fontes[id] = f;
+  }
+  return fontes;
 }
 
 async function gravarFonteStatus(fontes) {
@@ -779,21 +784,26 @@ async function gravarFonteStatus(fontes) {
 /** Upsert em lote (1 leitura + 1 escrita) — evita N roundtrips ao
  *  banco quando um coletor devolve dezenas de amostras. */
 async function registrarAmostras(lote) {
-  const col = await readCollection('system_config');
-  const resto = (Array.isArray(col) ? col : []).filter((d) => !d || d.id !== 'enso-indice');
-  const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-indice');
-  const lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
-  const vistos = new Set(lista.map((a) => `${a.fonte}|${a.observadoEm}`));
   const agoraIso = new Date().toISOString();
-  for (const amostra of lote || []) {
-    const chave = `${amostra.fonte}|${amostra.observadoEm}`;
-    if (vistos.has(chave)) continue;
-    vistos.add(chave);
-    lista.push({ ...amostra, registradoEm: agoraIso });
+  try {
+    const col = await readCollection('system_config');
+    const resto = (Array.isArray(col) ? col : []).filter((d) => !d || d.id !== 'enso-indice');
+    const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-indice');
+    const lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
+    const vistos = new Set(lista.map((a) => a.fonte + '|' + a.observadoEm));
+    for (const amostra of lote || []) {
+      const chave = amostra.fonte + '|' + amostra.observadoEm;
+      if (vistos.has(chave)) continue;
+      vistos.add(chave);
+      lista.push({ ...amostra, registradoEm: agoraIso });
+    }
+    resto.push({ id: 'enso-indice', lista: lista.slice(-500), updatedAt: agoraIso });
+    await writeCollection('system_config', resto);
+    return lista;
+  } catch (e) {
+    logger.warn('enso.registrarAmostras.falhou', e.message);
+    return [];
   }
-  resto.push({ id: 'enso-indice', lista: lista.slice(-500), updatedAt: agoraIso });
-  await writeCollection('system_config', resto);
-  return lista;
 }
 
 /** Upsert idempotente por (fonte, observadoEm) no doc "enso-indice". */
@@ -802,29 +812,31 @@ async function registrarAmostra(amostra) {
 }
 
 async function ultimaAmostra(indice) {
+  let lista = [];
+  let dbOk = false;
   try {
     const col = await readCollection('system_config');
     const doc = (Array.isArray(col) ? col : []).find((d) => d && d.id === 'enso-indice');
-    const lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
-    const candidatos = indice ? lista.filter((a) => a && a.indice === indice) : lista.slice();
-    if (!candidatos.length) return null;
-    const temReal = candidatos.some((a) => !a.mock);
-    // Prefere amostras reais (mock=false) quando existirem.
-    const pool = temReal ? candidatos.filter((a) => !a.mock) : candidatos;
-    // ǧltima por observadoEm (cronol��gico), desempate por registradoEm.
-    let escolhido = null;
-    for (const a of pool) {
-      const chave = `${a.observadoEm || ''}|${a.registradoEm || ''}`;
-      if (!escolhido) escolhido = a;
-      else {
-        const chaveAtual = `${escolhido.observadoEm || ''}|${escolhido.registradoEm || ''}`;
-        if (chave > chaveAtual) escolhido = a;
-      }
-    }
-    return escolhido;
-  } catch {
-    return null;
+    lista = Array.isArray(doc && doc.lista) ? doc.lista : [];
+    dbOk = true;
+  } catch (e) {
+    lista = [];
   }
+  if (!dbOk && !lista.length) lista = LAST.amostras.slice();
+  const candidatos = indice ? lista.filter((a) => a && a.indice === indice) : lista.slice();
+  if (!candidatos.length) return null;
+  const temReal = candidatos.some((a) => !a.mock);
+  const pool = temReal ? candidatos.filter((a) => !a.mock) : candidatos;
+  let escolhido = null;
+  for (const a of pool) {
+    const chave = (a.observadoEm || '') + '|' + (a.registradoEm || '');
+    if (!escolhido) escolhido = a;
+    else {
+      const chaveAtual = (escolhido.observadoEm || '') + '|' + (escolhido.registradoEm || '');
+      if (chave > chaveAtual) escolhido = a;
+    }
+  }
+  return escolhido;
 }
 
 /** Executa os coletores com falha isolada. Nunca lança.
@@ -841,7 +853,7 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
     try {
       const resultado = await c.coletar({ timeoutMs });
       const lote = Array.isArray(resultado) ? resultado : [resultado];
-      await registrarAmostras(lote);
+      try { await registrarAmostras(lote); } catch (e) { logger.warn('enso.registrarAmostras.falhou', e.message, { fonte: c.id }); }
       amostras.push(...lote);
       const resumo = lote.map((a) => `${a.indice}=${a.valor}`).join(', ');
       const tentativaIso = new Date().toISOString();
@@ -869,7 +881,9 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
       f.status = 'ok';
     }
   }
-  await gravarFonteStatus(fontes);
+  try { await gravarFonteStatus(fontes); } catch (e) { logger.warn('enso.gravarFonteStatus.falhou', e.message); }
+  LAST.amostras = amostras.slice();
+  LAST.fonteStatus = fontes;
   return { amostras, fontes };
 }
 
