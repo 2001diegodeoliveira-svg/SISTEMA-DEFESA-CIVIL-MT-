@@ -26,7 +26,7 @@ let activeOverlay = 'none';
 let frameIdx = 0, playing = true, playTimer = null;
 let overlayOpacity = 0.8;
 
-let mtLayer = null, munLayer = null, ucWms = null, focosLayer = null;
+let mtLayer = null, munLayer = null, ucWms = null, biomasWms = null, tiWms = null, ucIcmbioWms = null, focosLayer = null;
 let focosFilteredLayer = null;
 let focosLoaded = false, focosLoading = false, focosCount = 0;
 let focosReloadTimer = null;

@@ -25,9 +25,39 @@ function loadUCs() {
     });
 }
 
+/* ================= Delimitações: Biomas (IBGE) ================= */
+function loadBiomas() {
+    biomasWms = L.tileLayer.wms('https://geoservicos.ibge.gov.br/geoserver/ows', {
+        layers: 'CREN:lm_bioma_250',
+        format: 'image/png', transparent: true, version: '1.3.0',
+        pane: 'ambiente', opacity: .7,
+        attribution: 'IBGE · Biomas 1:250.000'
+    });
+}
+
+/* ================= Delimitações: Terras Indígenas (FUNAI) ================= */
+function loadTerrasIndigenas() {
+    tiWms = L.tileLayer.wms('https://cmr.funai.gov.br/geoserver/ows', {
+        layers: 'CMR-PUBLICO:lim_terra_indigena_a',
+        format: 'image/png', transparent: true, version: '1.3.0',
+        pane: 'ambiente', opacity: .75,
+        attribution: 'FUNAI · Terras Indígenas'
+    });
+}
+
+/* ================= Delimitações: UCs federais (ICMBio) ================= */
+function loadUCsIcmbio() {
+    ucIcmbioWms = L.tileLayer.wms('https://geoservicos.inde.gov.br/geoserver/ICMBio/ows', {
+        layers: 'ICMBio:limiteucsfederais_a',
+        format: 'image/png', transparent: true, version: '1.3.0',
+        pane: 'ambiente', opacity: .8,
+        attribution: 'ICMBio · Unidades de Conservação Federais'
+    });
+}
+
 /* ================= Toggles de camadas (checkbox) ================= */
-const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, focos: () => focosLayer, barragens: () => barragensLayer, anaHydrology: () => anaHydrologyLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, deter: () => deterLayer, qualidadeAr: () => qualidadeArLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer, tempestadePotencial: () => avisosLayer };
-const checkState = { mtOutline: true, municipios: true, ucs: false, deter: false, qualidadeAr: false, focos: false, barragens: false,
+const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, biomas: () => biomasWms, terrasIndigenas: () => tiWms, ucsIcmbio: () => ucIcmbioWms, focos: () => focosLayer, barragens: () => barragensLayer, anaHydrology: () => anaHydrologyLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, deter: () => deterLayer, qualidadeAr: () => qualidadeArLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer, tempestadePotencial: () => avisosLayer };
+const checkState = { mtOutline: true, municipios: true, ucs: false, biomas: false, terrasIndigenas: false, ucsIcmbio: false, deter: false, qualidadeAr: false, focos: false, barragens: false,
 anaHydrology: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true,
 camsSinfra: true, chuvaInmet: false, tempestadePotencial: true };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
@@ -96,6 +126,9 @@ function setCheck(key, val) {
     if (key === 'reports' && val && !reportsLoaded && !reportsLoading) loadReports();
     if (key === 'abrigos' && val && !abrigosLoaded && !abrigosLoading) loadAbrigos();
     if (key === 'camsSinfra' && val && !camSinfraLoaded && !camSinfraLoading) loadCamerasSinfra();
+    if (key === 'biomas' && val && !biomasWms) loadBiomas();
+    if (key === 'terrasIndigenas' && val && !tiWms) loadTerrasIndigenas();
+    if (key === 'ucsIcmbio' && val && !ucIcmbioWms) loadUCsIcmbio();
     if (key === 'tempestadePotencial') {
         avisosSeverityFilter = val ? 'Perigo Potencial' : null;
         refreshAvisosLayer();
@@ -109,6 +142,9 @@ function applyChecks() {
     const mostraMun = checkState.municipios && map.getZoom() >= 7;
     if (munLayer) mostraMun ? munLayer.addTo(map) : map.removeLayer(munLayer);
     if (ucWms) checkState.ucs ? ucWms.addTo(map) : map.removeLayer(ucWms);
+    if (biomasWms) checkState.biomas ? biomasWms.addTo(map) : map.removeLayer(biomasWms);
+    if (tiWms) checkState.terrasIndigenas ? tiWms.addTo(map) : map.removeLayer(tiWms);
+    if (ucIcmbioWms) checkState.ucsIcmbio ? ucIcmbioWms.addTo(map) : map.removeLayer(ucIcmbioWms);
     if (checkState.focos) {
         if (focosFiltrosAtivos() && focosFilteredLayer) {
             focosFilteredLayer.addTo(map);
@@ -165,6 +201,9 @@ function refreshLegend() {
     document.getElementById('legRadar').style.display = activeOverlay === 'radar' ? '' : 'none';
     document.getElementById('legMun').style.display = (checkState.municipios && munLayer && map.getZoom() >= 7) ? '' : 'none';
     document.getElementById('legUc').style.display = checkState.ucs && ucWms ? '' : 'none';
+    const legBiomas = document.getElementById('legBiomas'); if (legBiomas) legBiomas.style.display = checkState.biomas && biomasWms ? '' : 'none';
+    const legTI = document.getElementById('legTI'); if (legTI) legTI.style.display = checkState.terrasIndigenas && tiWms ? '' : 'none';
+    const legUcIcmbio = document.getElementById('legUcIcmbio'); if (legUcIcmbio) legUcIcmbio.style.display = checkState.ucsIcmbio && ucIcmbioWms ? '' : 'none';
     document.getElementById('legBarr').style.display = checkState.barragens && barragensLayer ? '' : 'none';
     document.getElementById('legAnaHydrology').style.display = checkState.anaHydrology && anaHydrologyLayer ? '' : 'none';
     document.getElementById('legInmet').style.display = checkState.inmetStations && inmetLayer ? '' : 'none';
@@ -178,7 +217,7 @@ function refreshLegend() {
     document.getElementById('legVigiaMais').style.display = checkState.vigiaMais && vigiaMaisLayer ? '' : 'none';
     document.getElementById('legAbrigos').style.display = checkState.abrigos && abrigosLayer ? '' : 'none';
     document.getElementById('legCamsSinfra').style.display = checkState.camsSinfra && camSinfraLayer ? '' : 'none';
-    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.barragens || checkState.anaHydrology || checkState.inmetStations || checkState.chuvaInmet || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
+    const anyVisible = activeOverlay === 'radar' || activeOverlay === 'clouds' || checkState.municipios || checkState.ucs || checkState.biomas || checkState.terrasIndigenas || checkState.ucsIcmbio || checkState.barragens || checkState.anaHydrology || checkState.inmetStations || checkState.chuvaInmet || checkState.sipam || checkState.wmsFocos48h || checkState.reports || checkState.vigiaMais || checkState.abrigos || checkState.camsSinfra;
     box.classList.toggle('show', anyVisible);
 }
 

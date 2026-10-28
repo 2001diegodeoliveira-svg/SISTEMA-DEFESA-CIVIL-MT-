@@ -1,0 +1,35 @@
+{
+  "versao": "1.0",
+  "focos": {
+    "distanciaComunidadeKm": 10,
+    "focosPorMunicipio24hAlto": 5,
+    "raioClusterKm": 5
+  },
+  "deter": {
+    "areaMinimaHaAlerta": 10
+  },
+  "rios": {
+    "cotas": {
+      "Juruena": { "atencao": 3.0, "emergencia": 5.0 },
+      "Teles Pires": { "atencao": 3.0, "emergencia": 5.0 },
+      "Xingu": { "atencao": 3.0, "emergencia": 5.0 },
+      "Araguaia": { "atencao": 3.0, "emergencia": 5.0 }
+    }
+  },
+  "riscoMunicipio": {
+    "pesos": {
+      "diasSemChuva": 0.25,
+      "riscoFogo": 0.25,
+      "focos7d": 0.2,
+      "deterRecente": 0.15,
+      "cotaRio": 0.1,
+      "anomaliaChuva": 0.05
+    }
+  },
+  "severidade": {
+    "critico": "CRITICO",
+    "alto": "ALTO",
+    "medio": "MEDIO",
+    "baixo": "BAIXO"
+  }
+}
