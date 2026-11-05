@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pantanal · Monitor de fogo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#f3f5f1;--panel:#fbfcfa;--ink:#16241f;--mute:#5d6c65;--line:#d5dcd6;--ember:#c8420f;--water:#1d5c63;--ok:#5f8f5a}
+@media (prefers-color-scheme:dark){:root{--bg:#10191a;--panel:#162224;--ink:#e6efe9;--mute:#98aaa2;--line:#2b3b3d;--ember:#ff7a45;--water:#6cc3c9;--ok:#8cc084}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.5 "Source Sans 3",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex}
+aside{width:340px;max-width:100%;background:var(--panel);border-right:1px solid var(--line);padding:18px;overflow:auto;display:flex;flex-direction:column;gap:16px;z-index:5}
+h1{font:600 22px/1.2 Georgia,serif;margin:0}
+h2{font:600 15px Georgia,serif;margin:0 0 6px}
+p{margin:0;color:var(--mute);font-size:13px}
+label{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
+input,select,button{font:inherit;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+button{background:var(--water);color:#fff;border-color:var(--water);cursor:pointer;font-weight:600}
+button.sec{background:transparent;color:var(--ink);border-color:var(--line)}
+:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.row{display:flex;gap:8px}
+.stat{display:flex;align-items:baseline;gap:8px}
+.stat b{font:600 38px Georgia,serif;color:var(--ember)}
+.legend{display:grid;gap:4px;font-size:13px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:8px;vertical-align:-2px}
+#info{font-size:13px;border-top:1px solid var(--line);padding-top:12px}
+#status{font-size:12px;color:var(--mute)}
+#map{flex:1;min-height:100%}
+@media(max-width:760px){body{flex-direction:column-reverse}aside{width:100%;height:46%;border-right:0;border-top:1px solid var(--line)}#map{height:54%;min-height:0}}
+</style>
+</head>
+<body>
+<aside>
+  <a href="index.html" style="font-size:13px;color:var(--water);text-decoration:none;font-weight:600;">&larr; Voltar ao início</a>
+  <div>
+    <h1>Pantanal · monitor de fogo</h1>
+    <p>Focos de calor de satélite e mapa de risco por clima, atualizados automaticamente.</p>
+  </div>
+  <div class="stat"><b id="count">–</b><span id="countLbl">focos de calor</span></div>
+  <div id="status">Aguardando dados…</div>
+
+  <div>
+    <label for="key">Chave NASA FIRMS (MAP_KEY)</label>
+    <input id="key" type="password" placeholder="Cole sua chave gratuita" autocomplete="off">
+    <p style="margin-top:4px">Peça em firms.modaps.eosdis.nasa.gov/api/map_key. Sem chave, o mapa mostra focos de demonstração.</p>
+  </div>
+  <div class="row">
+    <div><label for="days">Período</label>
+      <select id="days"><option value="1">Últimas 24 h</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option></select></div>
+    <div><label for="src">Satélite</label>
+      <select id="src"><option value="VIIRS_SNPP_NRT">VIIRS S-NPP</option><option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20</option><option value="MODIS_NRT">MODIS</option></select></div>
+  </div>
+  <div class="row"><button id="go">Atualizar agora</button><button id="base" class="sec">Satélite / Mapa</button></div>
+
+  <div>
+    <h2>Risco climático (1 a 3 dias)</h2>
+    <div class="legend">
+      <span><i style="background:#5f8f5a"></i>Baixo</span>
+      <span><i style="background:#e0b832"></i>Moderado</span>
+      <span><i style="background:#e8761f"></i>Alto</span>
+      <span><i style="background:#a3141b"></i>Extremo</span>
+      <span><i style="background:#16241f;border-radius:50%"></i>Foco de calor (maior = mais intenso)</span>
+    </div>
+    <p style="margin-top:6px">Índice heurístico: dias sem chuva, umidade, temperatura e vento (Open-Meteo). Serve como ponto de partida até o modelo de ML estar treinado.</p>
+  </div>
+  <div id="info">Clique em qualquer ponto do mapa para ver o clima e o risco local.</div>
+</aside>
+<div id="map"></div>
+
+<script>
+const BBOX={w:-58.9,s:-22.2,e:-54.9,n:-15.5};
+const map=L.map('map',{zoomControl:true}).fitBounds([[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]]);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'});
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:17,attribution:'Esri'});
+let useSat=true;sat.addTo(map);
+L.rectangle([[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]],{color:'#4aa3ad',weight:1,fill:false,dashArray:'6 6'}).addTo(map);
+const riskLayer=L.layerGroup().addTo(map), fireLayer=L.layerGroup().addTo(map);
+const $=id=>document.getElementById(id);
+const clamp=(x)=>Math.max(0,Math.min(1,x));
+function safeGet(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+$('key').value=safeGet('firms_key');
+
+/* ---------- risco ---------- */
+function risk(rh,t,wind,dry){
+  return Math.round(clamp(dry/14)*35+clamp((60-rh)/45)*30+clamp((t-25)/15)*20+clamp(wind/30)*15);
+}
+function riskClass(s){return s<25?['Baixo','#5f8f5a']:s<45?['Moderado','#e0b832']:s<65?['Alto','#e8761f']:['Extremo','#a3141b']}
+function dryDays(precip){ // precip: array diário, último passado antes do índice de hoje
+  let d=0;for(let i=precip.length-1;i>=0;i--){if((precip[i]||0)<1)d++;else break}return d;
+}
+async function wx(lats,lons){
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lons.join(',')}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=14&forecast_days=1&timezone=auto`;
+  const r=await fetch(u);if(!r.ok)throw new Error('Open-Meteo '+r.status);
+  const j=await r.json();return Array.isArray(j)?j:[j];
+}
+async function loadRisk(){
+  const pts=[];
+  for(let la=-21.8;la<=-16;la+=0.8)for(let lo=-58.6;lo<=-55.2;lo+=0.6)pts.push([la,lo]);
+  const res=await wx(pts.map(p=>p[0]),pts.map(p=>p[1]));
+  riskLayer.clearLayers();
+  res.forEach((d,i)=>{
+    const c=d.current,s=risk(c.relative_humidity_2m,c.temperature_2m,c.wind_speed_10m,dryDays(d.daily.precipitation_sum.slice(0,-1)));
+    const [name,col]=riskClass(s),[la,lo]=pts[i];
+    L.rectangle([[la-.4,lo-.3],[la+.4,lo+.3]],{stroke:false,fillColor:col,fillOpacity:.38,interactive:false}).addTo(riskLayer);
+  });
+}
+map.on('click',async e=>{
+  $('info').textContent='Consultando clima…';
+  try{
+    const [d]=await wx([e.latlng.lat],[e.latlng.lng]);
+    const c=d.current,dry=dryDays(d.daily.precipitation_sum.slice(0,-1));
+    const s=risk(c.relative_humidity_2m,c.temperature_2m,c.wind_speed_10m,dry),[n,col]=riskClass(s);
+    $('info').innerHTML=`<h2>${e.latlng.lat.toFixed(3)}, ${e.latlng.lng.toFixed(3)}</h2>
+      <p style="color:var(--ink)"><b style="color:${col}">Risco ${n} (${s}/100)</b><br>
+      ${c.temperature_2m} °C · umidade ${c.relative_humidity_2m}% · vento ${c.wind_speed_10m} km/h (${c.wind_direction_10m}°)<br>
+      ${dry} dia(s) seguidos sem chuva relevante.</p>`;
+  }catch(err){$('info').textContent='Não foi possível obter o clima: '+err.message}
+});
+
+/* ---------- focos ---------- */
+function parseCSV(t){
+  const L_=t.trim().split('\n');if(L_.length<2)return[];
+  const h=L_[0].split(',');return L_.slice(1).map(l=>{const v=l.split(',');const o={};h.forEach((k,i)=>o[k]=v[i]);return o});
+}
+function demo(){
+  const out=[];const now=Date.now();
+  for(let i=0;i<60;i++)out.push({latitude:-21+Math.random()*5.2,longitude:-58+Math.random()*2.8,frp:Math.random()*60,acq_date:new Date(now-Math.random()*3*864e5).toISOString().slice(0,10),acq_time:'1830',demo:1});
+  return out;
+}
+async function loadFires(){
+  const key=$('key').value.trim();safeSet('firms_key',key);
+  let rows,isDemo=false;
+  if(!key){rows=demo();isDemo=true}
+  else{
+    const url=`https://firms.modaps.eosdis.nasa.gov/api/area/csv/${key}/${$('src').value}/${BBOX.w},${BBOX.s},${BBOX.e},${BBOX.n}/${$('days').value}`;
+    const r=await fetch(url);if(!r.ok)throw new Error('FIRMS '+r.status);
+    const t=await r.text();if(t.startsWith('Invalid')||t.includes('Error'))throw new Error(t.slice(0,80));
+    rows=parseCSV(t);
+  }
+  fireLayer.clearLayers();
+  const now=Date.now();
+  rows.forEach(f=>{
+    const la=+f.latitude,lo=+f.longitude,frp=+f.frp||1;
+    const hh=(f.acq_time||'0000').padStart(4,'0');
+    const when=new Date(`${f.acq_date}T${hh.slice(0,2)}:${hh.slice(2)}:00Z`);
+    const age=(now-when)/36e5, col=age<6?'#ff2a00':age<24?'#ff8a00':'#ffc400';
+    L.circleMarker([la,lo],{radius:4+Math.min(10,Math.sqrt(frp)),color:'#16241f',weight:1,fillColor:col,fillOpacity:.85})
+     .bindPopup(`<b>Foco de calor</b>${isDemo?' (demo)':''}<br>${when.toLocaleString('pt-BR')}<br>Potência (FRP): ${frp.toFixed(1)} MW<br>Há ${age.toFixed(0)} h`).addTo(fireLayer);
+  });
+  $('count').textContent=rows.length;
+  $('countLbl').textContent=isDemo?'focos (demonstração)':'focos de calor';
+  return isDemo;
+}
+
+async function refresh(){
+  $('status').textContent='Atualizando…';
+  const msgs=[];
+  try{const d=await loadFires();if(d)msgs.push('Focos em modo demonstração: informe a chave FIRMS.')}catch(e){msgs.push('Focos: '+e.message)}
+  try{await loadRisk()}catch(e){msgs.push('Risco: '+e.message)}
+  $('status').textContent=(msgs.length?msgs.join(' · ')+' · ':'')+'Atualizado às '+new Date().toLocaleTimeString('pt-BR');
+}
+$('go').onclick=refresh;
+$('base').onclick=()=>{useSat?(map.removeLayer(sat),osm.addTo(map)):(map.removeLayer(osm),sat.addTo(map));useSat=!useSat;riskLayer.eachLayer(l=>l.bringToFront());};
+refresh();setInterval(refresh,5*60*1000);
+</script>
+</body>
+</html>
