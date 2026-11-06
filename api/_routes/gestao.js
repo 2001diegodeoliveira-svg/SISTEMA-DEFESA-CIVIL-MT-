@@ -7,17 +7,14 @@
    POST   /api/gestao                     → upsert de item { municipio, secao, item }
    DELETE /api/gestao?municipio=&secao=&id= → remove item
 
-   Permissões:
-     admin      → leitura de qualquer município + panorama estadual (dashboard)
-     avancado   → leitura de qualquer município + panorama estadual
-     municipal  → leitura/escrita SOMENTE no próprio município
-     comum      → sem acesso
+   Acesso: público — leitura e edição não exigem login nem senha.
+   Usuários autenticados continuam registrados em criadoPor/atualizadoPor.
    ============================================================ */
 const fs = require('fs');
 const path = require('path');
 
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
-const { verifyToken, isLoginEnabled, isSessaoLiberada } = require('../_lib/auth');
+const { verifyToken } = require('../_lib/auth');
 const { readCollection, writeCollection, driver, resumoGestao } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 const { MUNICIPIOS_MT, normUsuario } = require('../_lib/municipios');
@@ -76,15 +73,17 @@ module.exports = serve(async function handler(req) {
 
   const token = bearerToken(req);
   const payload = token && verifyToken(token);
+  const autor = (payload && payload.usuario) || 'Acesso público';
 
   if (method === 'GET') {
-    if (!payload) return jsonResponse(401, { erro: 'Autenticação necessária.' }, origin);
-    if (payload.perfil === 'comum') {
+    /* Gestão pública: leitura liberada sem login/senha. Restrições de perfil
+       só se aplicam quando há um usuário autenticado de fato. */
+    if (payload && !payload.liberada && payload.perfil === 'comum') {
       return jsonResponse(403, { erro: 'Seu perfil não pode visualizar a gestão.' }, origin);
     }
 
     if (qp('visao') === 'geral') {
-      if (payload.perfil === 'municipal') {
+      if (payload && !payload.liberada && payload.perfil === 'municipal') {
         return jsonResponse(403, { erro: 'O panorama estadual é exclusivo dos gestores estaduais.' }, origin);
       }
       const porMun = {};
@@ -130,7 +129,7 @@ module.exports = serve(async function handler(req) {
 
     const municipio = qp('municipio');
     if (!municipio) return jsonResponse(400, { erro: 'Informe ?municipio=<nome>.' }, origin);
-    if (payload.perfil === 'municipal') {
+    if (payload && !payload.liberada && payload.perfil === 'municipal') {
       const me = await userForPayload(payload);
       if (!me || !me.municipio) {
         return jsonResponse(403, { erro: 'Seu perfil não está vinculado a um município.' }, origin);
@@ -143,18 +142,8 @@ module.exports = serve(async function handler(req) {
     return jsonResponse(200, { ok: true, municipio: doc.nome, secoes: doc.secoes }, origin);
   }
 
-  const podeEscrever = async () => {
-    if (!isLoginEnabled()) return { ok: true, munVinculado: null };
-    if (!payload) return { ok: false, erro: 'Autenticação necessária.' };
-    /* Janela de demonstração: edição liberada sem conta vinculada. */
-    if (isSessaoLiberada(payload)) return { ok: true, munVinculado: null };
-    if (payload.perfil !== 'municipal') {
-      return { ok: false, erro: 'Somente o gestor municipal do próprio município pode editar a gestão.' };
-    }
-    const me = await userForPayload(payload);
-    if (!me || !me.municipio) return { ok: false, erro: 'Seu perfil não está vinculado a um município.' };
-    return { ok: true, munVinculado: norm(me.municipio) };
-  };
+  /* Gestão pública: escrita liberada sem login/senha. */
+  const podeEscrever = async () => ({ ok: true, munVinculado: null });
 
   if (method === 'POST' || method === 'PUT') {
     const perm = await podeEscrever();
@@ -176,9 +165,9 @@ module.exports = serve(async function handler(req) {
     const base = Object.assign({}, item, { id });
     const idx = lista.findIndex(x => String(x.id) === String(id));
     if (idx >= 0) {
-      lista[idx] = Object.assign({}, lista[idx], base, { atualizadoEm: new Date().toISOString(), atualizadoPor: payload.usuario });
+      lista[idx] = Object.assign({}, lista[idx], base, { atualizadoEm: new Date().toISOString(), atualizadoPor: autor });
     } else {
-      lista.push(Object.assign({}, base, { criadoEm: new Date().toISOString(), criadoPor: payload.usuario }));
+      lista.push(Object.assign({}, base, { criadoEm: new Date().toISOString(), criadoPor: autor }));
     }
     doc.secoes[sec] = lista;
     doc.updatedAt = Date.now();

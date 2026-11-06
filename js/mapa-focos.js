@@ -123,14 +123,16 @@ async function loadFocosPeriodo(dias) {
         return;
     }
 
-    // Remove duplicados, filtra pela UF selecionada e aplica teto de pontos.
-    // Sem UF (visão Brasil): cobertura nacional até o teto.
+    // Remove duplicados, filtra pela UF selecionada e, quando houver,
+    // pelo município escolhido no seletor de território.
     const siglaUF = ufSiglaCorrente();
     const nomeUF = ufNomeCorrente();
-    const base = nomeUF
+    const base = (nomeUF
         ? collect.filter(f => (f.estado || '').trim().toUpperCase() === nomeUF)
-        : collect;
-    const rotuloUF = siglaUF ? ' em ' + siglaUF : ' no Brasil';
+        : collect).filter(f => registroNoEscopo(f.municipio, f.lat, f.lon));
+    const rotuloUF = selectedMunCod
+        ? ' em ' + selectedMunNome
+        : (siglaUF ? ' em ' + siglaUF : ' no Brasil');
     const seen = new Set();
     const rows = [];
     for (const f of base) {
@@ -163,6 +165,10 @@ async function loadFocosPeriodo(dias) {
             `<div id="legFocos" class="leg-row" style="display:none;"><span style="width:10px;height:10px;border-radius:50%;background:#ff4d00;display:inline-block;"></span> Focos de calor (INPE)</div>`);
     }
     refreshLegend();
+    try {
+        if (typeof renderDataTable === 'function' &&
+            document.getElementById('dataTablePanel')?.classList.contains('show')) renderDataTable();
+    } catch (e) {}
 
     if (checkState.focos) {
         if (focosFiltrosAtivos()) renderFocosFiltered();

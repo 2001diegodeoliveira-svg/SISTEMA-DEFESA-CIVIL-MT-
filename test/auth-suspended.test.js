@@ -66,13 +66,15 @@ test('suspenso bloqueia login e escrita; token antigo não autoriza', async () =
     assert.equal(login.status, 503);
     assert.match((await login.json()).erro, /suspenso para manutenção/i);
 
+    /* Gestão é pública: a leitura continua liberada durante a suspensão. */
     const leitura = await call('GET', 'gestao?municipio=cuiaba');
-    assert.equal(leitura.status, 503);
+    assert.equal(leitura.status, 200);
 
     const antigo = jwt.sign({ sub: 'U1', usuario: 'admin', perfil: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const comToken = await call('GET', 'gestao?municipio=cuiaba', null, antigo);
-    assert.equal(comToken.status, 401);
+    assert.equal(comToken.status, 200);
 
+    /* Escrita permanece bloqueada pela suspensão (fail-closed): token antigo → 401. */
     const escrita = await call('POST', 'gestao?municipio=cuiaba', { secoes: {} }, antigo);
     assert.equal(escrita.status, 401);
 

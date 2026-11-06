@@ -69,7 +69,10 @@ async function loadBarragens() {
         const res = await fetch(apiUrl('/api/barragens?uf=' + siglaUF + '&limit=2000'));
         const j = await res.json();
         if (!res.ok) throw new Error((j && j.erro) || ('HTTP ' + res.status));
-        const data = Array.isArray(j.barragens) ? j.barragens : [];
+        const data = (Array.isArray(j.barragens) ? j.barragens : [])
+            .filter(b => isFinite(b.lat) && isFinite(b.lon) &&
+                registroNoEscopo(b.mun || b.municipio, b.lat, b.lon));
+        if (barragensLayer) { try { map.removeLayer(barragensLayer); } catch (e) {} }
         barragensLayer = L.layerGroup();
         data.forEach(b => {
             if (!isFinite(b.lat) || !isFinite(b.lon)) return;
@@ -79,10 +82,10 @@ async function loadBarragens() {
                 riseOnHover: true
             }).bindPopup(barragemPopupHTML(b)).addTo(barragensLayer);
         });
-        barragensLayer.addTo(map);
+        if (checkState.barragens) barragensLayer.addTo(map);
         barragensLoaded = true;
         barragensLoading = false;
-        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em ${(siglaUF || j.uf || "BR")}${j.parcial ? ' (parcial — refine a busca)' : ''} · ${j.atualizadoEm ? 'atualizado ' + new Date(j.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'dados na barragem'}`;
+        meta.innerHTML = `ANA/SNISB · <b>${data.length.toLocaleString('pt-BR')}</b> em ${selectedMunCod ? selectedMunNome : (siglaUF || j.uf || "BR")}${j.parcial ? ' (parcial — refine a busca)' : ''} · ${j.atualizadoEm ? 'atualizado ' + new Date(j.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'dados na barragem'}`;
         if (window.lucide) lucide.createIcons();
         refreshLegend();
     } catch (e) {
@@ -113,9 +116,15 @@ async function loadAnaHydrology() {
                 ? response.data.erro
                 : 'Serviço da ANA indisponível.');
         }
-        const stations = response.data && Array.isArray(response.data.estacoes)
+        const stations = (response.data && Array.isArray(response.data.estacoes)
             ? response.data.estacoes
-            : [];
+            : [])
+            .filter(station => registroNoEscopo(
+                station.municipio,
+                Number(station.latitude),
+                Number(station.longitude)
+            ));
+        if (anaHydrologyLayer) { try { map.removeLayer(anaHydrologyLayer); } catch (e) {} }
         anaHydrologyLayer = L.layerGroup();
         stations.forEach(station => {
             const lat = Number(station.latitude), lon = Number(station.longitude);
@@ -143,7 +152,7 @@ async function loadAnaHydrology() {
         });
         if (checkState.anaHydrology) anaHydrologyLayer.addTo(map);
         anaHydrologyLoaded = true;
-        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em ${(siglaUF || "BR")} · cadastro`;
+        if (meta) meta.innerHTML = `ANA/Telemetria · <b>${stations.length.toLocaleString('pt-BR')}</b> estações ativas em ${selectedMunCod ? selectedMunNome : (siglaUF || "BR")} · cadastro`;
         refreshLegend();
     } catch (error) {
         if (meta) meta.textContent = `ANA/Telemetria · ${error.message || 'falha ao carregar estações'}`;

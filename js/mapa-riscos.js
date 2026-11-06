@@ -53,7 +53,7 @@ function buildMsnOverviewUrl(lat, lon) {
 
 function populateMsnCity() {
     const sel = document.getElementById('msnCity');
-    const cur = sel.value;
+    const cur = selectedMunCod || sel.value;
     const src = Object.keys(munNomeByCod).length ? munNomeByCod
         : Object.fromEntries(Object.keys(centroidByCod).map(c => [c, 'Município ' + c]));
     sel.innerHTML = '';
@@ -197,6 +197,7 @@ document.getElementById('msnRefresh')?.addEventListener('click', () => {
     if (cod) loadMsnOverview(cod);
 });
 function msnCityDefault() {
+    if (selectedMunCod && centroidByCod[selectedMunCod]) return selectedMunCod;
     const c = centroidByCod['5103403']; // Cuiabá
     return c ? '5103403' : (Object.keys(centroidByCod)[0] || '');
 }
@@ -219,7 +220,10 @@ function sipamFmtData(iso) {
     } catch { return iso; }
 }
 
+let sipamTimer = null;
+
 async function loadSIPAM() {
+    if (sipamLoading) return;
     sipamLoading = true;
     const meta = document.getElementById('metaSipam');
     meta.innerHTML = 'CENSIPAM · <b>carregando eventos...</b>';
@@ -229,6 +233,7 @@ async function loadSIPAM() {
     const siglaUF = ufSiglaCorrente();
     if (!siglaUF) {
         meta.textContent = 'CENSIPAM · selecione uma UF da Amazônia Legal';
+        if (sipamLayer) { try { map.removeLayer(sipamLayer); } catch (e) {} sipamLayer = null; }
         sipamLoading = false;
         sipamLoaded = true;
         sipamData = [];
@@ -236,6 +241,7 @@ async function loadSIPAM() {
     }
     if (!UF_AMZ.includes(siglaUF)) {
         meta.textContent = `CENSIPAM · fora da área de cobertura (Amazônia Legal) para ${siglaUF}`;
+        if (sipamLayer) { try { map.removeLayer(sipamLayer); } catch (e) {} sipamLayer = null; }
         sipamLoading = false;
         sipamLoaded = true;
         sipamData = [];
@@ -244,15 +250,26 @@ async function loadSIPAM() {
     try {
         const res = await dcProxyFetch('https://panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=' + siglaUF);
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        const eventos = await res.json();
-        if (!Array.isArray(eventos) || !eventos.length) {
+        const lista = await res.json();
+        if (!Array.isArray(lista) || !lista.length) {
             meta.textContent = `CENSIPAM · nenhum evento ativo em ${siglaUF}`;
+            if (sipamLayer) { try { map.removeLayer(sipamLayer); } catch (e) {} sipamLayer = null; }
+            sipamLoading = false;
+            sipamLoaded = true;
+            sipamData = [];
+            return;
+        }
+        const eventos = lista.filter(ev => registroNoEscopo(ev.municipio, ev.latitude, ev.longitude));
+        if (!eventos.length) {
+            meta.textContent = `CENSIPAM · nenhum evento ativo em ${selectedMunCod ? selectedMunNome : siglaUF}`;
+            if (sipamLayer) { try { map.removeLayer(sipamLayer); } catch (e) {} sipamLayer = null; }
             sipamLoading = false;
             sipamLoaded = true;
             sipamData = [];
             return;
         }
         sipamData = eventos;
+        if (sipamLayer) { try { map.removeLayer(sipamLayer); } catch (e) {} }
         sipamLayer = L.layerGroup();
         eventos.forEach(ev => {
             const lat = ev.latitude, lng = ev.longitude;
@@ -291,13 +308,14 @@ async function loadSIPAM() {
                     </a>
                 </div>`).addTo(sipamLayer);
         });
-        sipamLayer.addTo(map);
+        if (checkState.sipam) sipamLayer.addTo(map);
         sipamLoaded = true;
         sipamLoading = false;
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        meta.innerHTML = `CENSIPAM · <b>${eventos.length.toLocaleString('pt-BR')} evento(s)</b> em ${siglaUF} · atualizado ${hora}`;
+        meta.innerHTML = `CENSIPAM · <b>${eventos.length.toLocaleString('pt-BR')} evento(s)</b> em ${selectedMunCod ? selectedMunNome : siglaUF} · atualizado ${hora}`;
         refreshLegend();
-        setTimeout(loadSIPAM, 10 * 60 * 1000);
+        clearTimeout(sipamTimer);
+        sipamTimer = setTimeout(loadSIPAM, 10 * 60 * 1000);
     } catch (e) {
         sipamLoading = false;
         meta.textContent = 'CENSIPAM · indisponível';
@@ -396,8 +414,11 @@ async function loadReports() {
                 description: x.description || ''
             }));
         }
-        // Limita às ocorrências dentro do território de Mato Grosso
-        // Fase 3+: sem recorte MT — nacional, orientado aos dados da API.
+        // Recorte territorial: município escolhido no seletor (quando houver).
+        if (selectedMunCod) {
+            points = points.filter(rep =>
+                registroNoEscopo(rep.city, Number(rep.latitude), Number(rep.longitude)));
+        }
 
         if (!reportsLayer) reportsLayer = L.layerGroup();
         let novos = 0, novosClimaticos = [];
@@ -443,7 +464,7 @@ async function loadReports() {
         reportsLoaded = true;
         reportsLoading = false;
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        if (meta) meta.innerHTML = `Ocorrências · <b>${reportMarkerIds.size.toLocaleString('pt-BR')}</b> acontecimento(s) em MT · ao vivo ${hora}${novos ? ' · <b style="color:#38bdf8;">+' + novos + '</b> novo(s)' : ''}`;
+        if (meta) meta.innerHTML = `Ocorrências · <b>${reportMarkerIds.size.toLocaleString('pt-BR')}</b> acontecimento(s) em ${selectedMunCod ? selectedMunNome : ((typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'MT')} · ao vivo ${hora}${novos ? ' · <b style="color:#38bdf8;">+' + novos + '</b> novo(s)' : ''}`;
         applyChecks();
         if (window.lucide) lucide.createIcons();
         // Popup em tempo real da(s) ocorrência(s) climática(s) recém-chegadas (apenas em atualizações posteriores)

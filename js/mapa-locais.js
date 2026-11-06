@@ -10,8 +10,10 @@ async function loadAbrigos() {
         const res = await fetch('js/abrigos_mt.json');
         const data = await res.json();
         if (!Array.isArray(data)) throw new Error('formato inválido');
+        const abrigos = data.filter(a => registroNoEscopo(a.municipio, a.lat, a.lng));
+        if (abrigosLayer) { try { map.removeLayer(abrigosLayer); } catch (e) {} }
         abrigosLayer = L.layerGroup();
-        data.forEach(a => {
+        abrigos.forEach(a => {
             const lat = Number(a.lat), lng = Number(a.lng);
             if (!isFinite(lat) || !isFinite(lng)) return;
             const statusCor = a.status === 'operacional' ? '#34d399' : '#f59e0b';
@@ -40,10 +42,10 @@ async function loadAbrigos() {
                     ${reportMarkerBtn(lat, lng)}
                 </div>`).addTo(abrigosLayer);
         });
-        abrigosLayer.addTo(map);
+        if (checkState.abrigos) abrigosLayer.addTo(map);
         abrigosLoaded = true;
         abrigosLoading = false;
-        if (meta) meta.innerHTML = `Abrigos temporários · <b>${data.length.toLocaleString('pt-BR')}</b> cadastrados em MT`;
+        if (meta) meta.innerHTML = `Abrigos temporários · <b>${abrigos.length.toLocaleString('pt-BR')}</b> cadastrados em ${selectedMunCod ? selectedMunNome : 'MT'}`;
         if (window.lucide) lucide.createIcons();
         refreshLegend();
     } catch (e) {
@@ -139,7 +141,8 @@ async function loadCamerasSinfra() {
             data = await res.json();
         }
         data = data.map(c => ({ ...c, slug: cameraSlug(c.link) }))
-            .filter(c => c.slug && isFinite(Number(c.lat)) && isFinite(Number(c.lng)));
+            .filter(c => c.slug && isFinite(Number(c.lat)) && isFinite(Number(c.lng)) &&
+                registroNoEscopo(c.municipio, c.lat, c.lng));
         camSinfraData = data;
         await probeCamerasStatus(data);
         if (!camSinfraLayer) camSinfraLayer = L.layerGroup();
@@ -156,7 +159,7 @@ async function loadCamerasSinfra() {
         camSinfraLoaded = true;
         camSinfraLoading = false;
         const live = data.filter(c => c.online).length;
-        if (meta) meta.innerHTML = `SINFRA MT · <b>${data.length.toLocaleString('pt-BR')}</b> câmeras · <b style="color:#34d399;">${live} ao vivo</b> · <b style="color:#94a3b8;">${data.length - live} offline</b>`;
+        if (meta) meta.innerHTML = `SINFRA MT · <b>${data.length.toLocaleString('pt-BR')}</b> câmeras${selectedMunCod ? ' em ' + selectedMunNome : ''} · <b style="color:#34d399;">${live} ao vivo</b> · <b style="color:#94a3b8;">${data.length - live} offline</b>`;
         if (window.lucide) lucide.createIcons();
         refreshLegend();
     } catch (e) {

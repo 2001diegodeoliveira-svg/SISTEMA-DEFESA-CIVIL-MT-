@@ -26,12 +26,22 @@ function ensureWmsClipPane() {
     return true;
 }
 function updateMtClip() {
-    if (!mtClipPath || !MT_GEOM.length) return;
+    if (!mtClipPath) return;
+    const pane = map.getPane('wmsPane');
+    if (!MT_GEOM.length) {
+        mtClipPath.setAttribute('d', '');
+        if (pane) { pane.style.clipPath = 'none'; pane.style.webkitClipPath = 'none'; }
+        return;
+    }
     const pts = MT_GEOM.map(([la, ln]) => {
         const p = map.latLngToContainerPoint([la, ln]);
         return p.x.toFixed(1) + ',' + p.y.toFixed(1);
     });
     mtClipPath.setAttribute('d', 'M' + pts.join(' L') + ' Z');
+    if (pane) {
+        pane.style.clipPath = 'url(#mtFocosClip)';
+        pane.style.webkitClipPath = 'url(#mtFocosClip)';
+    }
 }
 function loadWmsFocos48h() {
     if (wmsFocos48hLayer) return;
@@ -48,6 +58,16 @@ function loadWmsFocos48h() {
     vigiarTilesWms(wmsFocos48hLayer, 'metaWmsFocos48h', 'TerraBrasilis');
     if (checkState.wmsFocos48h) wmsFocos48hLayer.addTo(map);
     loadWmsFocos48hDetalhe();
+}
+
+/* Recria a camada WMS quando o recorte territorial muda (UF ou município),
+   aplicando o novo clip/bounds. */
+function resetWmsFocos48h() {
+    if (wmsFocos48hLayer) { try { map.removeLayer(wmsFocos48hLayer); } catch (e) {} wmsFocos48hLayer = null; }
+    if (wmsFocoDetalheLayer) { try { map.removeLayer(wmsFocoDetalheLayer); } catch (e) {} wmsFocoDetalheLayer = null; }
+    clearTimeout(wmsFocoDetalheTimer);
+    updateMtClip();
+    if (checkState.wmsFocos48h) loadWmsFocos48h();
 }
 
 /* ================= DETER — alertas de desmatamento (raster nacional) ===============
@@ -162,6 +182,7 @@ function buildWmsFoco48hDetalhe(features, totalFeatures) {
         if (geom.type !== 'Point') continue;
         const [lon, lat] = geom.coordinates;
         if (!isFinite(lat) || !isFinite(lon)) continue;
+        if (!registroNoEscopo(p.municipio, lat, lon)) continue;
         const k = lat.toFixed(4) + ',' + lon.toFixed(4);
         if (seen.has(k)) continue;
         seen.add(k);
@@ -202,7 +223,7 @@ function buildWmsFoco48hDetalhe(features, totalFeatures) {
     if (meta) {
         const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const total = Math.max(rows.length, totalFeatures || 0);
-        const rot = (typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || '';
+        const rot = selectedMunCod ? selectedMunNome : ((typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || '');
         meta.innerHTML = `TerraBrasilis · raster + vetorial 48h · <b>${shown.length.toLocaleString('pt-BR')} exibidos de ${total.toLocaleString('pt-BR')} focos${rot ? ' em ' + rot : ' no Brasil'}</b> · todos satélites · ${hora}`;
     }
     const leg = document.getElementById('legFocosWms');

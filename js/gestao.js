@@ -171,11 +171,30 @@
         loadingErro((r && r.data && r.data.erro) || msgRede);
     }
 
+    /* Catálogo oficial de municípios de MT pelo proxy próprio (/api/ibge),
+       que já aplica cache de 24h e fallback para o último JSON válido.
+       A BrasilAPI era instável (HTTP 504) e não tem cache local. */
+    function fetchMunicipiosMT() {
+        var base = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
+        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : null;
+        return fetch(base + '/api/ibge/municipios?uf=51', {
+            headers: { 'Accept': 'application/json' },
+            signal: ctrl ? ctrl.signal : undefined,
+        }).then(function (r) {
+            if (timer) clearTimeout(timer);
+            if (!r.ok) throw new Error('IBGE HTTP ' + r.status);
+            return r.json();
+        }, function (e) {
+            if (timer) clearTimeout(timer);
+            throw e;
+        });
+    }
+
     function loadMunis() {
         var sel = $('munSel');
         var saved = sessionStorage.getItem('dcm_gestao_mun') || '';
-        dcProxyFetch('https://brasilapi.com.br/api/ibge/municipios/v1/MT')
-            .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); })
+        fetchMunicipiosMT()
             .then(function (list) {
                 if (!Array.isArray(list) || !list.length) throw new Error('vazio');
                 sel.innerHTML = list.map(function (m) { return '<option value="' + esc(m.nome) + '">' + esc(m.nome) + '</option>'; }).join('');
@@ -184,7 +203,7 @@
             })
             .catch(function () {
                 sel.innerHTML = FALLBACK_MUNS.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join('');
-                sel.value = saved || 'Cuiabá';
+                sel.value = FALLBACK_MUNS.indexOf(saved) >= 0 ? saved : 'Cuiabá';
                 onMun();
             });
     }

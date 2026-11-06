@@ -39,6 +39,78 @@ function normalizarNome(s) {
     return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 }
 
+/* ================= Escopo municipal =================
+   Quando o usuário escolhe um município no seletor "Município", as
+   mesmas camadas/funções disponíveis para a UF passam a mostrar apenas
+   os dados daquele município (nome normalizado ou ponto dentro do
+   polígono oficial do IBGE). Sem município, o escopo é a UF inteira. */
+let selectedMunCod = '';
+let selectedMunNome = '';
+let selectedMunGeom = null;
+let selectedMunBounds = null;
+let ufGeom = null;
+let ufBBox = null;
+
+function escopoMunicipalAtivo() {
+    return Boolean(selectedMunCod);
+}
+
+function rotuloEscopo() {
+    const uf = (typeof ufSiglaCorrente === 'function' ? ufSiglaCorrente() : null) || '';
+    if (selectedMunCod) return selectedMunNome + (uf ? ' · ' + uf : '');
+    return uf || 'Brasil';
+}
+
+/* Ray casting em anel GeoJSON ([lon, lat]). */
+function pontoEmAnel(lat, lng, ring) {
+    if (!ring || ring.length < 3) return false;
+    let dentro = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = Number(ring[i][0]), yi = Number(ring[i][1]);
+        const xj = Number(ring[j][0]), yj = Number(ring[j][1]);
+        if (!isFinite(xi) || !isFinite(yi) || !isFinite(xj) || !isFinite(yj)) continue;
+        if (((yi > lat) !== (yj > lat)) &&
+            (lng < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi)) {
+            dentro = !dentro;
+        }
+    }
+    return dentro;
+}
+
+function pontoEmGeometria(lat, lng, geom) {
+    if (!geom) return true;
+    const polys = geom.type === 'Polygon'
+        ? [geom.coordinates]
+        : (geom.type === 'MultiPolygon' ? (geom.coordinates || []) : []);
+    for (const poly of polys) {
+        if (!poly || !poly.length) continue;
+        if (!pontoEmAnel(lat, lng, poly[0])) continue;
+        let emBuraco = false;
+        for (let i = 1; i < poly.length; i++) {
+            if (pontoEmAnel(lat, lng, poly[i])) { emBuraco = true; break; }
+        }
+        if (!emBuraco) return true;
+    }
+    return false;
+}
+
+function pontoNoMunicipio(lat, lng) {
+    if (!selectedMunCod) return true;
+    const la = Number(lat), ln = Number(lng);
+    if (!isFinite(la) || !isFinite(ln)) return false;
+    if (selectedMunBounds && !selectedMunBounds.contains([la, ln])) return false;
+    if (!selectedMunGeom) return true;
+    return pontoEmGeometria(la, ln, selectedMunGeom);
+}
+
+/* Aceita um registro pelo nome do município (campo "municipio"/"city"/"mun")
+   ou, quando o nome não bate/está vazio, pela coordenada dentro do polígono. */
+function registroNoEscopo(nome, lat, lng) {
+    if (!selectedMunCod) return true;
+    if (nome && normalizarNome(nome) === normalizarNome(selectedMunNome)) return true;
+    return pontoNoMunicipio(lat, lng);
+}
+
 /* ================= Utilidades ================= */
 function toast(msg, info = false) {
     const t = document.getElementById('toast');

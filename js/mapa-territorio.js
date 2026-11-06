@@ -75,6 +75,7 @@ async function loadTerritorio() {
 
         ufSelect.addEventListener('change', () => selecionarUf(ufSelect.value));
         document.getElementById('territoryMunicipio').addEventListener('change', evento => {
+            selecionarMunicipio(evento.target.value);
             focarMunicipioPorCodigo(evento.target.value);
             if (typeof loadCptec === 'function') loadCptec();
         });
@@ -119,6 +120,88 @@ function atualizarContextoOrganizacao(codigoUf) {
     }
 }
 
+/* ================= Escopo municipal =================
+   Recalcula o polígono usado no recorte do WMS de focos 48h: município
+   selecionado (se houver) ou limite da UF. */
+function atualizarGeometriaEscopo() {
+    if (selectedMunCod && selectedMunGeom) {
+        const rings = selectedMunGeom.type === 'Polygon'
+            ? [selectedMunGeom.coordinates]
+            : (selectedMunGeom.coordinates || []);
+        MT_GEOM = rings[0] && rings[0][0] ? rings[0][0].map(point => [point[1], point[0]]) : [];
+        MT_BBOX = selectedMunBounds || null;
+    } else {
+        MT_GEOM = ufGeom || [];
+        MT_BBOX = ufBBox || null;
+    }
+    if (typeof updateMtClip === 'function') { try { updateMtClip(); } catch (e) {} }
+}
+
+function limparEscopoMunicipal() {
+    selectedMunCod = '';
+    selectedMunNome = '';
+    selectedMunGeom = null;
+    selectedMunBounds = null;
+    atualizarGeometriaEscopo();
+}
+
+/* Aplica (ou remove, com cod vazio) o filtro municipal em todas as
+   camadas e painéis que hoje respondem à UF. */
+function selecionarMunicipio(cod) {
+    const codStr = String(cod || '');
+    if (!codStr) {
+        limparEscopoMunicipal();
+        atualizarContextoOrganizacao(selectedUfCode);
+    } else {
+        const alvo = (munLayer && munLayer.getLayers ? munLayer.getLayers() : []).find(item =>
+            String(item.feature && item.feature.properties && item.feature.properties.codarea || '') === codStr);
+        if (!alvo) return;
+        selectedMunCod = codStr;
+        selectedMunNome = munNomeByCod[codStr] || '';
+        selectedMunGeom = alvo.feature.geometry;
+        selectedMunBounds = alvo.getBounds();
+        atualizarGeometriaEscopo();
+    }
+
+    try {
+        const url = new URL(window.location.href);
+        if (selectedMunCod) url.searchParams.set('municipio', selectedMunCod);
+        else url.searchParams.delete('municipio');
+        if (window.history && window.history.replaceState) window.history.replaceState(null, '', url);
+    } catch (e) {}
+
+    atualizarContextoMunicipal();
+
+    // Camadas que não dependem de novo fetch (Vigia Mais, por centroide).
+    const ufAtual = (typeof ufSiglaCorrente === 'function' ? ufSiglaCorrente() : null);
+    if (typeof buildVigiaMaisLayer === 'function' && (!ufAtual || ufAtual === 'MT')) {
+        buildVigiaMaisLayer(munNomeByCod);
+    }
+
+    // Recarrega tudo que é sensível ao recorte territorial.
+    recarregarCamadasUF();
+}
+
+function atualizarContextoMunicipal() {
+    const scopeLabel = document.getElementById('mapScopeLabel');
+    const title = document.querySelector('title');
+    const sigla = (typeof ufSiglaCorrente === 'function' ? ufSiglaCorrente() : null) || 'BR';
+    if (scopeLabel) {
+        scopeLabel.textContent = 'MAPA INTEGRADO · ' +
+            (selectedMunCod ? selectedMunNome + ' · ' + sigla : (sigla === 'BR' ? 'BRASIL' : sigla));
+    }
+    if (title) title.textContent = 'Mapa Integrado — SGI PROTEGE | ' +
+        (selectedMunCod ? selectedMunNome : (sigla === 'BR' ? 'Brasil' : sigla));
+    const status = document.getElementById('territoryStatus');
+    if (status) {
+        status.textContent = selectedMunCod
+            ? 'Escopo municipal: ' + selectedMunNome + ' — camadas ativas filtradas pelo município.'
+            : 'Escopo estadual — selecione um município para filtrar as camadas.';
+    }
+    const munSelect = document.getElementById('territoryMunicipio');
+    if (munSelect && selectedMunCod && munSelect.value !== selectedMunCod) munSelect.value = selectedMunCod;
+}
+
 function aplicarDisponibilidadeRegional(codigoUf) {
     // Fase 3+: só o que é intrinsecamente MT fica restrito à UF.
     // Camadas nacionais (focos, barragens, ANA, INMET, chuva, WMS,
@@ -160,6 +243,8 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
     const estado = ibgeStates.find(item => String(item.id).padStart(2, '0') === codigo);
     if (codigoUf && !estado) return;
 
+    // Trocar de UF sempre volta ao escopo estadual.
+    limparEscopoMunicipal();
     atualizarContextoOrganizacao(estado ? codigo : '');
     aplicarDisponibilidadeRegional(estado ? codigo : '');
     const cidadeSelect = document.getElementById('territoryMunicipio');
@@ -172,6 +257,7 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
         const url = new URL(window.location.href);
         if (estado) url.searchParams.set('uf', codigo);
         else url.searchParams.delete('uf');
+        url.searchParams.delete('municipio');
         window.history.replaceState(null, '', url);
     }
     window.dispatchEvent(new Event('dc:organization-scope'));
@@ -187,8 +273,9 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
         const label = document.getElementById('municipalityLayerLabel');
         if (label) label.textContent = 'Municípios no Brasil';
         atualizarStatusTerritorio('Fonte: IBGE · limites estaduais nacionais. Selecione uma UF para carregar seus municípios.');
-        MT_GEOM = [];
-        MT_BBOX = null;
+        ufGeom = null;
+        ufBBox = null;
+        atualizarGeometriaEscopo();
         return;
     }
 
@@ -227,6 +314,7 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
                 layer.on('mouseout', () => munLayer.resetStyle(layer));
                 layer.on('click', () => {
                     cidadeSelect.value = code;
+                    if (selectedMunCod !== code) selecionarMunicipio(code);
                     const bounds = layer.getBounds();
                     const area = geomAreaKm2(feature.geometry);
                     const organizacao = DC_ORGANIZACAO.organizacaoPorUf(codigo, ibgeStates);
@@ -257,16 +345,15 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
         if (stateFeature) {
             const bounds = stateFeature.getBounds();
             map.fitBounds(bounds, { padding: [40, 40] });
-            if (codigo === '51') {
-                MT_BBOX = bounds;
-                const geometry = stateFeature.feature.geometry;
-                const rings = geometry.type === 'Polygon' ? [geometry.coordinates] : (geometry.coordinates || []);
-                MT_GEOM = rings[0] && rings[0][0] ? rings[0][0].map(point => [point[1], point[0]]) : [];
-            } else {
-                MT_GEOM = [];
-                MT_BBOX = null;
-            }
+            const geometry = stateFeature.feature.geometry;
+            const rings = geometry.type === 'Polygon' ? [geometry.coordinates] : (geometry.coordinates || []);
+            ufGeom = rings[0] && rings[0][0] ? rings[0][0].map(point => [point[1], point[0]]) : [];
+            ufBBox = bounds;
+        } else {
+            ufGeom = null;
+            ufBBox = null;
         }
+        atualizarGeometriaEscopo();
         const label = document.getElementById('municipalityLayerLabel');
         if (label) label.textContent = 'Municípios de ' + estado.sigla + ' (' + municipios.length.toLocaleString('pt-BR') + ')';
         atualizarStatusTerritorio('Fonte: IBGE · ' + municipios.length.toLocaleString('pt-BR') +
@@ -278,14 +365,15 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
             focarMunicipioInicial();
             aplicarRestricaoMunicipio();
             buildVigiaMaisLayer(munNomeByCod);
-            populateMsnCity();
             if (wmsFocos48hLayer && !map.getPane('wmsPane')) {
                 map.removeLayer(wmsFocos48hLayer);
                 wmsFocos48hLayer = null;
                 if (checkState.wmsFocos48h) loadWmsFocos48h();
             }
         }
-        recarregarCamadasUF();
+        populateMsnCity();
+        aplicarEscopoDaUrl();
+        if (!selectedMunCod) recarregarCamadasUF();
     } catch (error) {
         console.error('[territorio] falha ao carregar municípios da UF:', error);
         if (munLayer) {
@@ -297,16 +385,20 @@ async function selecionarUf(codigoUf, atualizarUrl = true) {
     }
 }
 
-/* Fase 3: ao trocar de UF, recarrega as camadas visíveis que dependem
-   da UF (focos, INMET, chuva, ANA, SIPAM, barragens, previsão). */
+/* Fase 3+/escopo municipal: recarrega todas as camadas sensíveis ao
+   recorte territorial (UF inteira ou município selecionado). */
 function recarregarCamadasUF() {
     const alvos = [
-        ['focos', 'loadFocos', () => { focosLoaded = false; }],
-        ['anaHydrology', 'loadAnaHydrology', () => { anaHydrologyLoaded = false; }],
-        ['inmetStations', 'loadInmetStations', () => { inmetLoaded = false; }],
-        ['chuvaInmet', 'loadChuvaInmet', () => { chuvaInmetLoaded = false; }],
-        ['sipam', 'loadSIPAM', () => { sipamLoaded = false; }],
-        ['barragens', 'loadBarragens', () => { barragensLoaded = false; }],
+        ['focos', 'loadFocos', () => { focosLoaded = false; focosLoading = false; }],
+        ['anaHydrology', 'loadAnaHydrology', () => { anaHydrologyLoaded = false; anaHydrologyLoading = false; }],
+        ['inmetStations', 'loadInmetStations', () => { inmetLoaded = false; inmetLoading = false; }],
+        ['chuvaInmet', 'loadChuvaInmet', () => { chuvaInmetLoaded = false; chuvaInmetLoading = false; }],
+        ['sipam', 'loadSIPAM', () => { sipamLoaded = false; sipamLoading = false; }],
+        ['barragens', 'loadBarragens', () => { barragensLoaded = false; barragensLoading = false; }],
+        ['qualidadeAr', 'loadQualidadeAr', () => { qualidadeArLoaded = false; qualidadeArLoading = false; }],
+        ['abrigos', 'loadAbrigos', () => { abrigosLoaded = false; abrigosLoading = false; }],
+        ['camsSinfra', 'loadCamerasSinfra', () => { camSinfraLoaded = false; camSinfraLoading = false; }],
+        ['reports', 'loadReports', () => { reportsLoading = false; }],
     ];
     try {
         alvos.forEach(([check, loader, reset]) => {
@@ -322,12 +414,46 @@ function recarregarCamadasUF() {
         });
     } catch (e) {}
     try { if (typeof loadCptec === 'function') loadCptec(); } catch (e) {}
-    try { if (typeof loadWmsFocos48hDetalhe === 'function') loadWmsFocos48hDetalhe(); } catch (e) {}
+    // WMS 48h precisa ser recriado para aplicar o novo recorte (clip/bounds).
+    try { if (typeof resetWmsFocos48h === 'function') resetWmsFocos48h(); } catch (e) {}
+    // MSN acompanha o município selecionado.
+    try {
+        const sel = document.getElementById('msnCity');
+        if (sel && selectedMunCod && sel.value !== selectedMunCod) {
+            if (!sel.options.length) populateMsnCity();
+            if (Array.from(sel.options).some(o => o.value === selectedMunCod)) {
+                sel.value = selectedMunCod;
+                if (document.getElementById('msnContent')?.style.display === 'block') loadMsnOverview(selectedMunCod);
+            }
+        }
+    } catch (e) {}
+    // Painel de pluviômetros, se já estiver aberto/carregado.
+    try {
+        if (typeof pluvStations !== 'undefined' && pluvStations.length &&
+            typeof loadInmetPluvio === 'function') loadInmetPluvio();
+    } catch (e) {}
+    try {
+        if (typeof renderDataTable === 'function' &&
+            document.getElementById('dataTablePanel')?.classList.contains('show')) renderDataTable();
+    } catch (e) {}
     try {
         if (typeof avisosLayer !== 'undefined' && avisosLayer) {
             avisosLayer.eachLayer(l => { try { avisosLayer.removeLayer(l); } catch (e2) {} });
         }
     } catch (e) {}
+}
+
+/* Aplica ?municipio= (código IBGE ou nome) depois que a malha da UF
+   está carregada, restaurando o escopo municipal em links compartilhados. */
+function aplicarEscopoDaUrl() {
+    let alvo = '';
+    try { alvo = new URLSearchParams(location.search).get('municipio') || ''; } catch (e) {}
+    if (!alvo) return;
+    const cod = /^\d+$/.test(alvo) ? alvo : codByNomeNormalizado[normalizarNome(alvo)];
+    if (!cod || !munNomeByCod[cod]) return;
+    const sel = document.getElementById('territoryMunicipio');
+    if (sel) sel.value = cod;
+    if (selectedMunCod !== cod) selecionarMunicipio(cod);
 }
 
 function focarMunicipioPorCodigo(codigo) {
@@ -348,7 +474,8 @@ function focarMunicipioPorCodigo(codigo) {
    não a posição real de cada câmera. */
 function buildVigiaMaisLayer(nomeByCod) {
     vigiaMaisLayer = L.layerGroup();
-    Object.entries(nomeByCod).forEach(([cod, nome]) => {
+    const entradas = Object.entries(nomeByCod).filter(([cod]) => !selectedMunCod || String(cod) === String(selectedMunCod));
+    entradas.forEach(([cod, nome]) => {
         const c = centroidByCod[cod];
         if (!c) return;
         L.marker([c.lat, c.lng], { icon: iconDivMarker('cctv', '#7c3aed', 22) }).bindPopup(`
@@ -363,7 +490,9 @@ function buildVigiaMaisLayer(nomeByCod) {
                 </div>
             </div>`).addTo(vigiaMaisLayer);
     });
-    document.getElementById('metaVigiaMais').textContent = `SESP-MT · ${Object.keys(nomeByCod).length} municípios aderidos (cobertura, não são pontos reais de câmera)`;
+    document.getElementById('metaVigiaMais').textContent = selectedMunCod
+        ? `SESP-MT · cobertura em ${selectedMunNome} (marcador no centroide, não é ponto real de câmera)`
+        : `SESP-MT · ${entradas.length} municípios aderidos (cobertura, não são pontos reais de câmera)`;
     applyChecks();
 }
 

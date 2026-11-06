@@ -257,7 +257,7 @@ async function loadQualidadeAr() {
             ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF)
             : data.slice())
             .map(s => ({ lat: parseFloat(s.VL_LATITUDE), lon: parseFloat(s.VL_LONGITUDE), nome: s.DC_NOME, codigo: s.CD_ESTACAO }))
-            .filter(pt => pt.lat && pt.lon);
+            .filter(pt => pt.lat && pt.lon && pontoNoMunicipio(pt.lat, pt.lon));
         if (!pontos.length) throw new Error('Sem estações de referência.');
         const resultados = [];
         for (let i = 0; i < pontos.length; i += 40) {
@@ -510,12 +510,14 @@ async function loadInmetStations() {
         const ufStations = ufSiglaCorrente()
             ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF && s.VL_LATITUDE && s.VL_LONGITUDE)
             : data.filter(s => s.VL_LATITUDE && s.VL_LONGITUDE);
+        if (inmetLayer) { try { map.removeLayer(inmetLayer); } catch (e) {} }
         inmetLayer = L.layerGroup();
-        let nOper = 0, nPane = 0;
-        ufStations.forEach(s => {
-            const lat = parseFloat(s.VL_LATITUDE);
+        let nOper = 0, nPane = 0, nMostradas = 0;
+        ufStations.forEach(s => {            const lat = parseFloat(s.VL_LATITUDE);
             const lon = parseFloat(s.VL_LONGITUDE);
             if (!lat || !lon) return;
+            if (!pontoNoMunicipio(lat, lon)) return;
+            nMostradas++;
             const codigo = s.CD_ESTACAO;
             const operante = String(s.CD_SITUACAO || '').toLowerCase() === 'operante';
             if (operante) nOper++; else nPane++;
@@ -568,10 +570,10 @@ async function loadInmetStations() {
                     </div>
                 </div>`).addTo(inmetLayer);
         });
-        inmetLayer.addTo(map);
+        if (checkState.inmetStations) inmetLayer.addTo(map);
         inmetLoaded = true;
         inmetLoading = false;
-        meta.innerHTML = `INMET · <b>${ufStations.length}</b> EAM ${siglaUF === 'BR' ? 'no Brasil' : 'em ' + siglaUF} · <b style="color:#4ade80;">${nOper} operantes</b> · <b style="color:#94a3b8;">${nPane} em pane</b>`;
+        meta.innerHTML = `INMET · <b>${nMostradas}</b> EAM ${selectedMunCod ? 'em ' + selectedMunNome : (siglaUF === 'BR' ? 'no Brasil' : 'em ' + siglaUF)} · <b style="color:#4ade80;">${nOper} operantes</b> · <b style="color:#94a3b8;">${nPane} em pane</b>`;
     } catch (e) {
         inmetLoading = false;
         meta.textContent = 'INMET · indisponível';
@@ -595,9 +597,10 @@ async function loadChuvaInmet() {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (!Array.isArray(data.estacoes)) throw new Error('Resposta inválida');
+        const estacoes = data.estacoes.filter(s => s.lat && s.lon && pontoNoMunicipio(s.lat, s.lon));
         if (chuvaInmetLayer) { try { map.removeLayer(chuvaInmetLayer); } catch {} }
         chuvaInmetLayer = L.layerGroup();
-        data.estacoes.forEach(s => {
+        estacoes.forEach(s => {
             if (!s.lat || !s.lon) return;
             const cor = RAIN_COR(s.chuva24h || 0);
             const r24 = 8 + Math.min(18, Math.sqrt(s.chuva24h || 0) * 4);
@@ -632,10 +635,10 @@ async function loadChuvaInmet() {
                 </div>`);
             mk.addTo(chuvaInmetLayer);
         });
-        chuvaInmetLayer.addTo(map);
+        if (checkState.chuvaInmet) chuvaInmetLayer.addTo(map);
         chuvaInmetLoaded = true;
-        const topS = data.estacoes[0];
-        meta.innerHTML = `INMET BDMEP · <b>${data.totalEstacoes}</b> estações · máx 24h <b style="color:#dc2626;">${pluvChip(topS && topS.chuva24h)} mm</b> · cobertura ${data.cobertura ? data.cobertura.slice(0, 10) : '—'}`;
+        const topS = estacoes[0];
+        meta.innerHTML = `INMET BDMEP · <b>${estacoes.length}</b> estações ${selectedMunCod ? 'em ' + selectedMunNome : (siglaUF === 'BR' ? 'no Brasil' : 'em ' + siglaUF)} · máx 24h <b style="color:#dc2626;">${pluvChip(topS && topS.chuva24h)} mm</b> · cobertura ${data.cobertura ? data.cobertura.slice(0, 10) : '—'}`;
         if (window.lucide) lucide.createIcons();
     } catch (e) {
         meta.textContent = 'INMET BDMEP · indisponível';
@@ -1008,9 +1011,10 @@ async function loadInmetPluvio() {
         const data = await res.json();
         // Fase 3+: nacional — mesma base de estações da camada INMET.
         const siglaUF = ufSiglaCorrente() || 'BR';
-        const ufStations = ufSiglaCorrente()
+        const ufStations = (ufSiglaCorrente()
             ? data.filter(s => (s.SG_ESTADO || '').toUpperCase() === siglaUF && s.VL_LATITUDE && s.VL_LONGITUDE)
-            : data.filter(s => s.VL_LATITUDE && s.VL_LONGITUDE);
+            : data.filter(s => s.VL_LATITUDE && s.VL_LONGITUDE))
+            .filter(s => pontoNoMunicipio(parseFloat(s.VL_LATITUDE), parseFloat(s.VL_LONGITUDE)));
         // Agrupa em lotes (Open-Meteo aceita até ~50 pontos por chamada)
         const chunks = [];
         for (let i = 0; i < ufStations.length; i += 40) chunks.push(ufStations.slice(i, i + 40));
@@ -1152,7 +1156,7 @@ function renderPluvTable() {
     });
     total.textContent = pluvStations.length;
     const pluvUfEl = document.getElementById('pluvUf');
-    if (pluvUfEl) pluvUfEl.textContent = '— ' + ((typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'BR');
+    if (pluvUfEl) pluvUfEl.textContent = '— ' + (typeof rotuloEscopo === 'function' ? rotuloEscopo() : ((typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'BR'));
     oper.textContent = pluvStations.filter(s => s.sit === 'Operante').length;
     pane.textContent = pluvStations.filter(s => s.sit !== 'Operante').length;
     const max24 = pluvStations.reduce((m, s) => (s.c24 > m) ? s.c24 : m, 0);

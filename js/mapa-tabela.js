@@ -107,7 +107,8 @@ function renderDataTable() {
     const body = document.getElementById('dtBody');
     const count = document.getElementById('dtCount');
     const data = focosFilteredData.length ? focosFilteredData : focosRawData;
-    count.textContent = `— ${data.length.toLocaleString('pt-BR')} registros (todos)`;
+    const escopo = (typeof rotuloEscopo === 'function' ? rotuloEscopo() : '');
+    count.textContent = `— ${data.length.toLocaleString('pt-BR')} registros${escopo ? ' · ' + escopo : ''}`;
     const show = data.slice(0, FOCO_MAX_PONTOS);
     body.innerHTML = show.map(f => {
         const cor = focoRiscoCor(f.risco_fogo);
