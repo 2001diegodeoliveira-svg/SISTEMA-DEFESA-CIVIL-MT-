@@ -98,6 +98,26 @@ que sempre envia o parâmetro).
 - `GET /api/barragens?uf=&bbox=&limit=&offset=` — ArcGIS REST
   oficial do SNISB (`portal1.snirh.gov.br/.../Barragens_SNISB`),
   paginado (MaxRecordCount 2000), cache 24h.
+- `GET /api/ambiental-pantanal?bbox=&camadas=&max=` — mapeamento
+  ambiental oficial do Pantanal (verificado ao vivo em 2026-11-06):
+  - **ICMBio** — WFS do INDE `geoservicos.inde.gov.br/geoserver/ICMBio/ows`
+  (HTTP 200; WFS 2.0 + GeoJSON + filtro `bbox` no servidor).
+  Camadas: `ICMBio:limiteucsfederais_a` (4 UCs federais no Pantanal,
+  inclui PARNA do Pantanal Matogrossense) e
+  `ICMBio:autos_infracao_icmbio` (243 autos no bbox, `numberMatched`
+  confirma o total). Campos `autuado` e `cpf_cnpj` são descartados
+  no servidor (privacidade).
+  - **IBAMA** — CSV de coordenadas de termos de embargo dos Dados
+  Abertos (`stibamadadosabertosprd.blob.core.windows.net/.../TERMO_
+  EMBARGO_COORDENADAS/termo_de_embargo_coordenadas.csv`, ~20 MB,
+  latin1 `;`). Sem filtro por servidor: baixa, recorta pelo bbox e
+  agrupa em polígonos por `(SEQ_TAD, SEQ_POLIGONO)`. Medido local:
+  4,6 s de download + 0,4 s de parse para 128.502 linhas → 74
+  polígonos no Pantanal. Cache em memória de 24 h.
+  - **Descartados com evidência**: `sisfogo-roi` tem 605 MB e **não
+  tem coluna de coordenada** (lat/lon só em texto livre em
+  `OBSERVACAO`); `siscom.ibama.gov.br/geoserver` → 404; SHP do
+  PAMGIA (`adm_embargo_ibama_a.shp.zip`) → 404.
 - Previsão por município: BrasilAPI CPTEC **fora do ar (HTTP 500)** —
   substituída por Open-Meteo por coordenada (nacional, verificada).
 - Focos 48h WFS: filtro por UF + `bbox` da viewport (WFS 1.1.0,

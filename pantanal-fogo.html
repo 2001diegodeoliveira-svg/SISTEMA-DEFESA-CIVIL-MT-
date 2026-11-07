@@ -26,6 +26,9 @@ button.sec{background:transparent;color:var(--ink);border-color:var(--line)}
 .stat b{font:600 38px Georgia,serif;color:var(--ember)}
 .legend{display:grid;gap:4px;font-size:13px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:8px;vertical-align:-2px}
+label.chk{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;margin:3px 0;cursor:pointer}
+label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
+.legend b{font-weight:600;color:var(--ink)}
 #info{font-size:13px;border-top:1px solid var(--line);padding-top:12px}
 #status{font-size:12px;color:var(--mute)}
 #map{flex:1;min-height:100%}
@@ -56,6 +59,19 @@ button.sec{background:transparent;color:var(--ink);border-color:var(--line)}
   <div class="row"><button id="go">Atualizar agora</button><button id="base" class="sec">Satélite / Mapa</button></div>
 
   <div>
+    <h2>Mapeamento oficial · ICMBio / IBAMA</h2>
+    <label class="chk"><input type="checkbox" id="lyUcs" checked> Unidades de conservação federais</label>
+    <label class="chk"><input type="checkbox" id="lyAutos" checked> Autos de infração do ICMBio</label>
+    <label class="chk"><input type="checkbox" id="lyEmbargos" checked> Termos de embargo do IBAMA</label>
+    <div class="legend" style="margin-top:8px">
+      <span><i style="background:#5f8f5a"></i>UC federal · <b id="nUcs">–</b></span>
+      <span><i style="background:#e0b832;border-radius:50%"></i>Auto de infração · <b id="nAutos">–</b></span>
+      <span><i style="background:#c8420f"></i>Área embargada · <b id="nEmbargos">–</b></span>
+    </div>
+    <p style="margin-top:6px">Limites de UC e autos vêm do WFS do ICMBio (INDE); embargos, dos Dados Abertos do IBAMA. Nome do autuado e CPF/CNPJ não são exibidos.</p>
+  </div>
+
+  <div>
     <h2>Risco climático (1 a 3 dias)</h2>
     <div class="legend">
       <span><i style="background:#5f8f5a"></i>Baixo</span>
@@ -77,7 +93,7 @@ const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZ
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:17,attribution:'Esri'});
 let useSat=true;sat.addTo(map);
 L.rectangle([[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]],{color:'#4aa3ad',weight:1,fill:false,dashArray:'6 6'}).addTo(map);
-const riskLayer=L.layerGroup().addTo(map), fireLayer=L.layerGroup().addTo(map);
+const riskLayer=L.layerGroup().addTo(map), fireLayer=L.layerGroup().addTo(map), ambientalLayer=L.layerGroup().addTo(map);
 const $=id=>document.getElementById(id);
 const clamp=(x)=>Math.max(0,Math.min(1,x));
 function safeGet(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
@@ -156,10 +172,86 @@ async function loadFires(){
   return isDemo;
 }
 
+/* ---------- mapeamento oficial ICMBio/IBAMA ---------- */
+const PANTANAL_BBOX=`${BBOX.w},${BBOX.s},${BBOX.e},${BBOX.n}`;
+const camadasAmb={ucs:true,autos:true,embargos:true};
+let dadosAmb=null;
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtInt=n=>Number(n||0).toLocaleString('pt-BR');
+const fmtMoeda=v=>v==null?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtData=d=>{if(!d)return '—';const t=new Date(d);return isNaN(t)?esc(d):t.toLocaleDateString('pt-BR',{timeZone:'UTC'})};
+
+function popUC(p){
+  return `<b>${esc(p.nome)||'UC federal'}</b><br>${esc(p.categoria)||'—'} · ${esc(p.uf)||'—'}<br>
+    Bioma: ${esc(p.bioma)||'—'}<br>Área: ${p.areaHa==null?'—':fmtInt(p.areaHa)+' ha'}<br>
+    Criação: ${p.criacao||'—'}<br>CNUC: ${esc(p.cnuc)||'—'}`;
+}
+function popAuto(p){
+  return `<b>Auto de infração ${esc(p.numero)||''}</b><br>${esc(p.tipo)||'—'} · ${fmtMoeda(p.valor)}<br>
+    Data: ${fmtData(p.data)}<br>UC: ${esc(p.uc)||'—'}<br>${esc(p.municipio)||'—'}/${esc(p.uf)||'—'}<br>
+    Embargo: ${p.embargo?'sim':'não'} · Apreensão: ${p.apreensao?'sim':'não'}<br>
+    ${p.descricao?'<i>'+esc(p.descricao)+'</i>':''}`;
+}
+function popEmb(p){
+  return `<b>Termo de embargo ${esc(p.numTad)||''}</b><br>Polígono ${esc(p.poligono)||'—'} · ${fmtInt(p.vertices)} vértice(s)<br>
+    <span style="color:var(--mute)">Fonte: IBAMA — Dados Abertos (termos de embargo)</span>`;
+}
+
+function montarAmbiental(){
+  ambientalLayer.clearLayers();
+  if(!dadosAmb)return;
+  if(camadasAmb.ucs&&dadosAmb.ucs){
+    L.geoJSON(dadosAmb.ucs,{
+      style:()=>({color:'#5f8f5a',weight:2,fillColor:'#5f8f5a',fillOpacity:.16}),
+      onEachFeature:(f,l)=>l.bindPopup(popUC(f.properties))
+    }).addTo(ambientalLayer);
+  }
+  if(camadasAmb.autos&&dadosAmb.autos){
+    dadosAmb.autos.features.forEach(f=>{
+      const geo=f.geometry;
+      if(!geo)return;
+      // O WFS do ICMBio devolve os autos como MultiPoint.
+      const coords=geo.type==='Point'?[geo.coordinates]:(geo.type==='MultiPoint'?(geo.coordinates||[]):[]);
+      coords.forEach(c=>{
+        if(!Array.isArray(c)||c.length<2)return;
+        const [lo,la]=c;
+        L.circleMarker([la,lo],{radius:5,color:'#16241f',weight:1,fillColor:'#e0b832',fillOpacity:.9})
+         .bindPopup(popAuto(f.properties)).addTo(ambientalLayer);
+      });
+    });
+  }
+  if(camadasAmb.embargos&&dadosAmb.embargos){
+    L.geoJSON(dadosAmb.embargos,{
+      style:()=>({color:'#c8420f',weight:1.5,fillColor:'#c8420f',fillOpacity:.28}),
+      pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:4,color:'#16241f',weight:1,fillColor:'#c8420f',fillOpacity:.85}),
+      onEachFeature:(f,l)=>l.bindPopup(popEmb(f.properties))
+    }).addTo(ambientalLayer);
+  }
+}
+function atualizarContadores(){
+  const t=(dadosAmb&&dadosAmb.totais)||{};
+  const p=(dadosAmb&&dadosAmb.parciais)||{};
+  const marca=(id,v,parcial)=>{$(id).textContent=dadosAmb?fmtInt(v)+(parcial?'+':''):'–'};
+  marca('nUcs',t.ucs,p.ucs);
+  marca('nAutos',t.autos,p.autos);
+  marca('nEmbargos',t.embargos,p.embargos);
+}
+async function loadAmbiental(){
+  const r=await fetch(`/api/ambiental-pantanal?bbox=${PANTANAL_BBOX}`);
+  if(!r.ok)throw new Error('API '+r.status);
+  dadosAmb=await r.json();
+  montarAmbiental();atualizarContadores();
+  return dadosAmb;
+}
+[['lyUcs','ucs'],['lyAutos','autos'],['lyEmbargos','embargos']].forEach(([id,chave])=>{
+  $(id).onchange=e=>{camadasAmb[chave]=e.target.checked;montarAmbiental();};
+});
+
 async function refresh(){
   $('status').textContent='Atualizando…';
   const msgs=[];
   try{const d=await loadFires();if(d)msgs.push('Focos em modo demonstração: informe a chave FIRMS.')}catch(e){msgs.push('Focos: '+e.message)}
+  try{const a=await loadAmbiental();if(a.avisos&&a.avisos.length)msgs.push('ICMBio/IBAMA: '+a.avisos.join(' · '))}catch(e){msgs.push('ICMBio/IBAMA: '+e.message)}
   try{await loadRisk()}catch(e){msgs.push('Risco: '+e.message)}
   $('status').textContent=(msgs.length?msgs.join(' · ')+' · ':'')+'Atualizado às '+new Date().toLocaleTimeString('pt-BR');
 }
