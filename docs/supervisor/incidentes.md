@@ -2,7 +2,8 @@
 
 ## INC-001 — Escrita pública em `/api/gestao` (CRÍTICO) — 2026-11-06
 
-**Status:** correção aplicada no working tree; aguardando commit. **Já está em `origin/main`.**
+**Status:** RESOLVIDO. Correção publicada em `origin/main` no commit `a9aaf11`
+(`api/_routes/gestao.js` + `api/_lib/access-control.js`).
 
 ### Evidência
 - Commit `cad612d` ("ATT", autor `2001diegodeoliveira-svg`, 2026-11-05 21:39 -04), merged e
@@ -30,8 +31,14 @@ Qualquer pessoa, sem token, podia criar/alterar/excluir itens de `areasDeRisco`,
   - `DELETE /api/gestao` anônimo → `401`
   - `GET /api/gestao?municipio=...` → `200` (leitura pública preservada)
 
+### Verificação no remoto (2026-11-07)
+- `git show a9aaf11:api/_routes/gestao.js` → contém `isLoginEnabled`/`isSessaoLiberada` e
+  `podeEscrever` autenticado.
+- `git show a9aaf11:api/_lib/access-control.js` → contém a política explícita de `gestao`.
+- `origin/main` = `a9aaf11`, portanto a escrita pública não está mais no remoto.
+
 ### Pendência
-Commit da correção. O `pre-commit` está bloqueando até os demais itens (INC-002/003) serem resolvidos.
+Apenas confirmar o deploy (Vercel) do commit `a9aaf11`. Não verificável apenas com o repositório.
 
 ---
 
