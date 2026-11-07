@@ -114,11 +114,16 @@
         throw ultimoErro;
     }
 
+    function baseUrl() {
+        try { return (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : ''; }
+        catch (erro) { return ''; }
+    }
+
     async function fetchIBGE(path) {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 10000);
         try {
-            const res = await fetch('/api/ibge' + path, {
+            const res = await fetch(baseUrl() + '/api/ibge' + path, {
                 headers: { 'Accept': 'application/json' },
                 signal: ctrl.signal,
             });
@@ -133,11 +138,28 @@
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 15000);
         try {
-            const res = await fetch('/api/ibge/malhas' + path, {
+            const res = await fetch(baseUrl() + '/api/ibge/malhas' + path, {
                 headers: { 'Accept': 'application/vnd.geo+json' },
                 signal: ctrl.signal,
             });
             if (!res.ok) throw new Error('IBGE Malha HTTP ' + res.status);
+            return res.json();
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    /* Malhas oficiais empacotadas no deploy (geo/malhas). Servidas pela CDN,
+       sem depender do servicodados em tempo real. */
+    async function fetchMalhaEstatica(path) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);
+        try {
+            const res = await fetch(baseUrl() + path, {
+                headers: { 'Accept': 'application/vnd.geo+json, application/json' },
+                signal: ctrl.signal,
+            });
+            if (!res.ok) throw new Error('Malha estática HTTP ' + res.status);
             return res.json();
         } finally {
             clearTimeout(timer);
@@ -210,7 +232,8 @@
 
     function obterMalhaEstados() {
         if (!malhaEstadosPromise) {
-            malhaEstadosPromise = fetchIBGEMalha('/estados')
+            malhaEstadosPromise = fetchMalhaEstatica('/geo/malhas/estados.geojson')
+                .catch(function () { return fetchIBGEMalha('/estados'); })
                 .then(function (valor) {
                     const malha = validarMalha(valor, 'estados');
                     if (!malha.features.length) throw new Error('Malha de estados vazia.');
@@ -230,7 +253,8 @@
             return Promise.reject(new TypeError('Informe o código IBGE de dois dígitos da UF.'));
         }
         if (!malhasMunicipaisPorUf.has(uf)) {
-            const malhaPromise = fetchIBGEMalha('/estados/' + encodeURIComponent(uf))
+            const malhaPromise = fetchMalhaEstatica('/geo/malhas/uf-' + uf + '.geojson')
+                .catch(function () { return fetchIBGEMalha('/estados/' + encodeURIComponent(uf)); })
                 .then(function (valor) {
                     const malha = validarMalha(valor, 'municípios da UF');
                     if (!malha.features.length) throw new Error('Malha de municípios vazia.');

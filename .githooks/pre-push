@@ -1,0 +1,6 @@
+#!/bin/sh
+# Gate do supervisor antes do push: guard + suite de testes.
+# Bypass consciente: SUPERVISOR_BYPASS="motivo" git push ...
+node "$(git rev-parse --show-toplevel)/scripts/supervisor-guard.js"
+node "$(git rev-parse --show-toplevel)/scripts/supervisor-guard.js" --staged
+npm test

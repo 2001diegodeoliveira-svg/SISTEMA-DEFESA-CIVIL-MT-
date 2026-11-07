@@ -655,12 +655,24 @@
         }).addTo(m);
         var porNorm = {};
         (dado.municipios || []).forEach(function (x) { porNorm[norm(x.nome)] = x; });
-        dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima')
-            .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); })
-            .then(function (geo) {
+        var malhaPromise = (window.DC_ORGANIZACAO && typeof DC_ORGANIZACAO.obterMalhaMunicipios === 'function')
+            ? DC_ORGANIZACAO.obterMalhaMunicipios('51')
+            : dcProxyFetch('https://servicodados.ibge.gov.br/api/v3/malhas/estados/51?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima')
+                .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); });
+        var nomesPromise = (window.DC_ORGANIZACAO && typeof DC_ORGANIZACAO.obterMunicipios === 'function')
+            ? DC_ORGANIZACAO.obterMunicipios('51')
+            : Promise.resolve([]);
+        Promise.all([malhaPromise, nomesPromise])
+            .then(function (resultado) {
+                var geo = resultado[0];
+                var nomePorCod = {};
+                (resultado[1] || []).forEach(function (municipio) {
+                    nomePorCod[String(municipio.id)] = municipio.nome;
+                });
                 var features = (geo && geo.features) ? geo.features : [];
                 features.forEach(function (f) {
-                    var nome = f.properties && (f.properties.nome || f.properties.name || '');
+                    var codarea = String(f.properties && f.properties.codarea || '');
+                    var nome = nomePorCod[codarea] || (f.properties && (f.properties.nome || f.properties.name)) || '';
                     var info = porNorm[norm(nome)] || null;
                     var pre = info ? info.preenchidas : 0;
                     L.geoJSON(f, {

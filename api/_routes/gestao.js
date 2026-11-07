@@ -7,14 +7,14 @@
    POST   /api/gestao                     → upsert de item { municipio, secao, item }
    DELETE /api/gestao?municipio=&secao=&id= → remove item
 
-   Acesso: público — leitura e edição não exigem login nem senha.
-   Usuários autenticados continuam registrados em criadoPor/atualizadoPor.
+   Acesso: leitura pública; escrita exige gestor municipal do próprio
+   município (compatível com docs/APIs.md).
    ============================================================ */
 const fs = require('fs');
 const path = require('path');
 
 const { jsonResponse, readJson, bearerToken } = require('../_lib/http');
-const { verifyToken } = require('../_lib/auth');
+const { verifyToken, isLoginEnabled, isSessaoLiberada } = require('../_lib/auth');
 const { readCollection, writeCollection, driver, resumoGestao } = require('../_lib/store');
 const { serve } = require('../_lib/serverless');
 const { MUNICIPIOS_MT, normUsuario } = require('../_lib/municipios');
@@ -142,8 +142,18 @@ module.exports = serve(async function handler(req) {
     return jsonResponse(200, { ok: true, municipio: doc.nome, secoes: doc.secoes }, origin);
   }
 
-  /* Gestão pública: escrita liberada sem login/senha. */
-  const podeEscrever = async () => ({ ok: true, munVinculado: null });
+  const podeEscrever = async () => {
+    if (!isLoginEnabled()) return { ok: true, munVinculado: null };
+    if (!payload) return { ok: false, erro: 'Autenticação necessária.' };
+    /* Janela de demonstração: edição liberada sem conta vinculada. */
+    if (isSessaoLiberada(payload)) return { ok: true, munVinculado: null };
+    if (payload.perfil !== 'municipal') {
+      return { ok: false, erro: 'Somente o gestor municipal do próprio município pode editar a gestão.' };
+    }
+    const me = await userForPayload(payload);
+    if (!me || !me.municipio) return { ok: false, erro: 'Seu perfil não está vinculado a um município.' };
+    return { ok: true, munVinculado: norm(me.municipio) };
+  };
 
   if (method === 'POST' || method === 'PUT') {
     const perm = await podeEscrever();

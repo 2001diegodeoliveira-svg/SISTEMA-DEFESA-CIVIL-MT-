@@ -39,6 +39,7 @@ const handlers = {
   'ibge': require('./_routes/ibge'),
   'ibge/estados': require('./_routes/ibge'),
   'ibge/municipios': require('./_routes/ibge'),
+  'ibge/indicadores': require('./_routes/ibge'),
   'ibge/malhas/estados': require('./_routes/ibge'),
   'ibge/malhas/estados/': require('./_routes/ibge'),
   'ibge/malhas/estados/51': require('./_routes/ibge'),

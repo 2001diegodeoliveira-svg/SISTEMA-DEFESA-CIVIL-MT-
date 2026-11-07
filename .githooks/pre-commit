@@ -1,0 +1,4 @@
+#!/bin/sh
+# Gate do supervisor: bloqueia commit com violacoes CRITICAL/HIGH.
+# Bypass consciente: SUPERVISOR_BYPASS="motivo" git commit ...
+node "$(git rev-parse --show-toplevel)/scripts/supervisor-guard.js" --staged

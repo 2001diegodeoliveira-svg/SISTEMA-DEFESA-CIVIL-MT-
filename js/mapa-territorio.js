@@ -79,8 +79,7 @@ async function loadTerritorio() {
             focarMunicipioPorCodigo(evento.target.value);
             if (typeof loadCptec === 'function') loadCptec();
         });
-        document.getElementById('territoryStatus').textContent =
-            'Fonte: IBGE · malhas territoriais oficiais. Selecione uma UF para carregar seus municípios.';
+        atualizarStatusTerritorio('Fonte: IBGE · malhas territoriais oficiais carregadas.');
 
         if (wmsFocos48hLayer && !map.getPane('wmsPane')) {
             const ativo = checkState.wmsFocos48h;
@@ -99,7 +98,8 @@ async function loadTerritorio() {
 
 function atualizarStatusTerritorio(texto) {
     const status = document.getElementById('territoryStatus');
-    if (status) status.textContent = texto;
+    if (!status) return;
+    status.textContent = texto + (selectedMunCod ? ' · Escopo municipal: ' + selectedMunNome + '.' : '');
 }
 
 function atualizarContextoOrganizacao(codigoUf) {
@@ -155,12 +155,14 @@ function selecionarMunicipio(cod) {
     } else {
         const alvo = (munLayer && munLayer.getLayers ? munLayer.getLayers() : []).find(item =>
             String(item.feature && item.feature.properties && item.feature.properties.codarea || '') === codStr);
-        if (!alvo) return;
         selectedMunCod = codStr;
         selectedMunNome = munNomeByCod[codStr] || '';
-        selectedMunGeom = alvo.feature.geometry;
-        selectedMunBounds = alvo.getBounds();
+        selectedMunGeom = alvo ? alvo.feature.geometry : null;
+        selectedMunBounds = alvo ? alvo.getBounds() : null;
         atualizarGeometriaEscopo();
+        if (!alvo) {
+            toast('Malha do município ainda não disponível no IBGE; filtro por nome aplicado.');
+        }
     }
 
     try {
@@ -199,7 +201,10 @@ function atualizarContextoMunicipal() {
             : 'Escopo estadual — selecione um município para filtrar as camadas.';
     }
     const munSelect = document.getElementById('territoryMunicipio');
-    if (munSelect && selectedMunCod && munSelect.value !== selectedMunCod) munSelect.value = selectedMunCod;
+    if (munSelect) {
+        if (selectedMunCod && munSelect.value !== selectedMunCod) munSelect.value = selectedMunCod;
+        else if (!selectedMunCod && munSelect.value) munSelect.value = '';
+    }
 }
 
 function aplicarDisponibilidadeRegional(codigoUf) {
@@ -523,6 +528,60 @@ async function loadServicosProximos(lat, lon) {
     }
 }
 
+/* ===== Indicadores do município (snapshot local; SIDRA como reforço) =====
+   geo/indicadores.json é gerado por scripts/gerar-snapshot-ibge.js com
+   Censo 2022 (população, área, densidade, urbanização) e PIB 2023.
+   Se o snapshot não tiver o código, cai para /api/ibge/indicadores. */
+let indicadoresSnapshotPromise = null;
+const indicadoresLivePorCod = {};
+
+function urlMapa(path) {
+    try {
+        const base = (typeof apiBase === 'function') ? apiBase() : '';
+        return base + path;
+    } catch (e) { return path; }
+}
+
+async function carregarJsonMapa(path) {
+    const res = await fetch(urlMapa(path), { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+}
+
+async function obterIndicadoresMunicipio(cod) {
+    if (!indicadoresSnapshotPromise) {
+        indicadoresSnapshotPromise = Promise.all([
+            carregarJsonMapa('/geo/indicadores.json').catch(() => null),
+            carregarJsonMapa('/geo/atlas.json').catch(() => null),
+        ]).then(([censo, atlas]) => ({ censo, atlas }));
+    }
+    const snap = await indicadoresSnapshotPromise;
+    const censo = snap.censo && snap.censo.municipios ? snap.censo.municipios[cod] : null;
+    const atlas = snap.atlas && snap.atlas.municipios ? snap.atlas.municipios[cod] : null;
+    if (censo || atlas) return Object.assign({}, censo || {}, atlas || {});
+
+    if (!indicadoresLivePorCod[cod]) {
+        indicadoresLivePorCod[cod] = fetch(urlMapa('/api/ibge/indicadores?cod=' + encodeURIComponent(cod)), {
+            headers: { Accept: 'application/json' },
+        })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .catch(() => null);
+    }
+    return indicadoresLivePorCod[cod];
+}
+
+function setTextoMapa(id, valor) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = valor;
+}
+
+function formatarMoedaCompacta(reais) {
+    if (!isFinite(reais)) return '—';
+    if (reais >= 1e9) return 'R$ ' + (reais / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' bi';
+    if (reais >= 1e6) return 'R$ ' + (reais / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+    return 'R$ ' + Math.round(reais).toLocaleString('pt-BR');
+}
+
 window.previsaoMun = function (cod) {
     map.closePopup();
     const c = centroidByCod[cod];
@@ -540,78 +599,60 @@ window.previsaoMun = function (cod) {
     document.getElementById('mpContatos').textContent = 'SGI PROTEGE: 199 · Bombeiros: 193 · SAMU: 192';
     loadServicosProximos(c.lat, c.lng);
 
-    // ===== DADOS IBGE =====
-    // Nome e localização
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v1/localidades/municipios/${cod}`)
-        .then(r => r.json())
-        .then(mun => {
-            document.getElementById('mpNome').textContent = mun.nome;
-            const meso = mun.microrregiao?.mesorregiao?.nome || '';
-            const micro = mun.microrregiao?.nome || '';
-            document.getElementById('mpSub').innerHTML = `${micro} · ${meso} · MT<br><span style="font-size:9px;color:#64748b;">Código IBGE: ${mun.id} · Gentílico: ${mun.microrregiao?.mesorregiao?.UF?.nome || 'Mato Grosso'}</span>`;
-        })
-        .catch(() => { document.getElementById('mpNome').textContent = 'Município ' + cod; });
+    // ===== DADOS IBGE (snapshot local + SIDRA como reforço) =====
+    const mun = (ibgeMunicipiosDaUf || []).find(m => String(m.id) === String(cod));
+    const siglaUf = (typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'MT';
+    document.getElementById('mpNome').textContent = (mun && mun.nome) || munNomeByCod[cod] || ('Município ' + cod);
+    const micro = (mun && mun.micro) || '';
+    const meso = (mun && mun.meso) || '';
+    document.getElementById('mpSub').innerHTML =
+        (micro || meso ? micro + ' · ' + meso + ' · ' + siglaUf : siglaUf) +
+        '<br><span style="font-size:9px;color:#64748b;">Código IBGE: ' + cod + '</span>';
 
-    // População e área
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2022/variaveis/9324?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
-            if (v) document.getElementById('mpPop').textContent = parseInt(v).toLocaleString('pt-BR');
-        }).catch(() => {});
+    // IDHM / saúde / educação: Atlas do Desenvolvimento Humano (Censo 2010).
+    ['mpIdh', 'mpIdhR', 'mpIdhL', 'mpIdhE', 'mpMort', 'mpEscol', 'mpIdade'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = 'n/d';
+            el.title = 'Fonte: Atlas do Desenvolvimento Humano no Brasil 2013 (Censo 2010).';
+        }
+    });
 
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/4455?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
-            if (v) document.getElementById('mpArea').textContent = parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:1 });
-        }).catch(() => {});
-
-    // Densidade demográfica
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/3706/periodos/2022/variaveis/93?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
-            if (v) document.getElementById('mpDens').textContent = parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:1 }) + '/km²';
-        }).catch(() => {});
-
-    // IDHM (2010)
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30255/periodos/2010/variaveis/30255?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
-            if (v) document.getElementById('mpIdh').textContent = parseFloat(v).toFixed(3);
-        }).catch(() => {});
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30260/periodos/2010/variaveis/30260?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
-            if (v) document.getElementById('mpIdhL').textContent = parseFloat(v).toFixed(3);
-        }).catch(() => {});
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30266/periodos/2010/variaveis/30266?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
-            if (v) document.getElementById('mpIdhE').textContent = parseFloat(v).toFixed(3);
-        }).catch(() => {});
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/30272/periodos/2010/variaveis/30272?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2010'];
-            if (v) document.getElementById('mpIdhR').textContent = parseFloat(v).toFixed(3);
-        }).catch(() => {});
-
-    // PIB per capita (2021)
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3706?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2021'];
-            if (v) document.getElementById('mpPib').textContent = 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { maximumFractionDigits:2 });
-        }).catch(() => {});
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4700/periodos/2021/variaveis/3713?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2021'];
-            if (v) document.getElementById('mpPibTot').textContent = 'R$ ' + (parseFloat(v) / 1e6).toFixed(1) + ' mi';
-        }).catch(() => {});
-
-    // Mortalidade infantil
-    dcProxyFetch(`https://servicodados.ibge.gov.br/api/v3/agregados/4561/periodos/2022/variaveis/20712?localidades=N6[${cod}]`)
-        .then(r => r.json()).then(d => {
-            const v = d[0]?.resultados[0]?.series[0]?.serie?.['2022'];
-            if (v) document.getElementById('mpMort').textContent = parseFloat(v).toFixed(1) + '‰';
-        }).catch(() => {});
+    obterIndicadoresMunicipio(cod).then(ind => {
+        if (!ind) return;
+        if (ind.populacao != null) {
+            document.getElementById('mpPop').textContent = Math.round(ind.populacao).toLocaleString('pt-BR');
+        }
+        if (ind.areaKm2 != null) {
+            document.getElementById('mpArea').textContent = Number(ind.areaKm2).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+        }
+        if (ind.densidade != null) {
+            document.getElementById('mpDens').textContent = Number(ind.densidade).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '/km²';
+        }
+        if (ind.urbanizacaoPct != null) {
+            document.getElementById('mpUrb').textContent = Number(ind.urbanizacaoPct).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+        }
+        if (ind.pibMilReais != null) {
+            const reais = ind.pibMilReais * 1000;
+            document.getElementById('mpPibTot').textContent = formatarMoedaCompacta(reais);
+            if (ind.populacao) {
+                document.getElementById('mpPib').textContent = 'R$ ' +
+                    Math.round(reais / ind.populacao).toLocaleString('pt-BR');
+            }
+        } else if (ind.pibPerCapita != null) {
+            document.getElementById('mpPib').textContent = 'R$ ' +
+                Number(ind.pibPerCapita).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+        }
+        // Atlas Brasil 2013 — Censo 2010
+        if (ind.idhm != null) setTextoMapa('mpIdh', Number(ind.idhm).toFixed(3));
+        if (ind.idhmRenda != null) setTextoMapa('mpIdhR', Number(ind.idhmRenda).toFixed(3));
+        if (ind.idhmLongevidade != null) setTextoMapa('mpIdhL', Number(ind.idhmLongevidade).toFixed(3));
+        if (ind.idhmEducacao != null) setTextoMapa('mpIdhE', Number(ind.idhmEducacao).toFixed(3));
+        if (ind.mortalidadeInfantil != null) setTextoMapa('mpMort', Number(ind.mortalidadeInfantil).toFixed(1) + '‰');
+        if (ind.escolarizacao != null) setTextoMapa('mpEscol', Number(ind.escolarizacao).toFixed(1) + '%');
+        if (ind.esperancaVida != null) setTextoMapa('mpIdade', Number(ind.esperancaVida).toFixed(1) + ' anos');
+        document.getElementById('mpFontes').textContent = 'IBGE (Censo 2022 · PIB 2023) · Atlas Brasil (2010) · INPE · Open-Meteo · OpenStreetMap';
+    }).catch(() => {});
 
     // ===== FOCOS INPE =====
     if (focosLoaded && focosLayer) {
@@ -655,7 +696,7 @@ window.previsaoMun = function (cod) {
             document.getElementById('mpRisco').textContent = riscoTxt;
             document.getElementById('mpRisco').style.color = riscoCor;
             document.getElementById('mpRiskBar').innerHTML = `<div class="fill" style="width:${risco}%;background:${riscoCor};"></div>`;
-            document.getElementById('mpFontes').textContent = 'IBGE · INPE · Open-Meteo · OpenStreetMap';
+            document.getElementById('mpFontes').textContent = 'IBGE (Censo 2022 · PIB 2023) · Atlas Brasil (2010) · INPE · Open-Meteo · OpenStreetMap';
         })
         .catch(() => {});
 };

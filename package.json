@@ -8,7 +8,11 @@
     "start": "node server.js",
     "dev": "node server.js",
     "db:migrate": "node db/migrate.js",
-    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
+    "snapshot:ibge": "node scripts/gerar-snapshot-ibge.js",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
+    "audit:guard": "node scripts/supervisor-guard.js",
+    "audit:guard:staged": "node scripts/supervisor-guard.js --staged",
+    "audit:watch": "node scripts/supervisor-watch.js 15"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

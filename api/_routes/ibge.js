@@ -12,10 +12,78 @@ const { jsonResponse, cacheHeaders, reqUrl, bearerToken } = require('../_lib/htt
 const { serve } = require('../_lib/serverless');
 const { origemPara, FONTES } = require('../_lib/origens');
 const { readCollection, writeCollection } = require('../_lib/store');
+const LOCALIDADES = require('../_lib/ibge-localidades.json');
 
 const BRASILAPI_BASE = 'https://brasilapi.com.br/api/ibge';
 const IBGE_MALHAS_BASE = 'https://servicodados.ibge.gov.br/api/v3/malhas';
 const TIMEOUT_MS = 10000;
+
+/* Snapshot local do IBGE (gerado por scripts/gerar-snapshot-ibge.js).
+   Evita depender do servicodados em tempo real, que fica instável fora
+   do Brasil. Os dados de localidades mudam raramente (novos municípios). */
+const SNAPSHOT_ESTADOS = Array.isArray(LOCALIDADES.estados)
+  ? LOCALIDADES.estados.slice().sort((a, b) => Number(a.id) - Number(b.id))
+  : [];
+const SNAPSHOT_MUNICIPIOS = (LOCALIDADES.municipios && typeof LOCALIDADES.municipios === 'object')
+  ? LOCALIDADES.municipios
+  : {};
+const SNAPSHOT_ATUALIZADO = LOCALIDADES.atualizadoEm || null;
+
+function todosMunicipiosSnapshot() {
+  return Object.keys(SNAPSHOT_MUNICIPIOS)
+    .sort()
+    .reduce((acc, uf) => acc.concat(SNAPSHOT_MUNICIPIOS[uf] || []), []);
+}
+
+/* Indicadores do painel do município via SIDRA (Censo 2022 + PIB 2023). */
+async function buscarIndicadores(codigo) {
+  const alvos = [
+    `https://apisidra.ibge.gov.br/values/t/4714/n6/${codigo}/v/93,6318,614/p/2022`,
+    `https://apisidra.ibge.gov.br/values/t/9923/n6/${codigo}/v/93/p/2022/c1/1,2`,
+    `https://apisidra.ibge.gov.br/values/t/5938/n6/${codigo}/v/37/p/2023`,
+  ];
+  const respostas = await Promise.allSettled(alvos.map((upstreamUrl) =>
+    buscarOrigemComFallback({
+      parsed: new URL(upstreamUrl),
+      origemId: 'ibge-sidra',
+      timeoutMs: 20000,
+      maxBytes: 5 * 1024 * 1024,
+    }).then((result) => JSON.parse(result.buf.toString('utf8')))
+  ));
+
+  const dados = { codigo, fonte: 'IBGE — SIDRA (Censo 2022 / PIB 2023)', anos: { populacao: 2022, pib: 2023 } };
+  const tabela = (idx) => {
+    const r = respostas[idx];
+    return r && r.status === 'fulfilled' && Array.isArray(r.value) ? r.value.slice(1) : [];
+  };
+
+  for (const row of tabela(0)) {
+    const valor = parseFloat(row.V);
+    if (!Number.isFinite(valor)) continue;
+    if (row.D2C === '93') dados.populacao = valor;
+    else if (row.D2C === '6318') dados.areaKm2 = valor;
+    else if (row.D2C === '614') dados.densidade = valor;
+  }
+  for (const row of tabela(1)) {
+    const valor = parseFloat(row.V);
+    if (!Number.isFinite(valor)) continue;
+    if (row.D4C === '1') dados.populacaoUrbana = valor;
+    else if (row.D4C === '2') dados.populacaoRural = valor;
+  }
+  for (const row of tabela(2)) {
+    const valor = parseFloat(row.V);
+    if (!Number.isFinite(valor)) continue;
+    if (row.D2C === '37') dados.pibMilReais = valor;
+  }
+  if (dados.populacaoUrbana != null && dados.populacaoRural != null) {
+    const total = dados.populacaoUrbana + dados.populacaoRural;
+    if (total > 0) dados.urbanizacaoPct = Math.round((dados.populacaoUrbana / total) * 1000) / 10;
+  }
+  if (dados.pibMilReais != null && dados.populacao) {
+    dados.pibPerCapita = Math.round((dados.pibMilReais * 1000 / dados.populacao) * 100) / 100;
+  }
+  return dados;
+}
 
 const UF_POR_SIGLA = {
   RO:'11', AC:'12', AM:'13', RR:'14', PA:'15', AP:'16', TO:'17',
@@ -102,95 +170,42 @@ module.exports = serve(async function handler(req) {
     let data, ttlSeg, staleSeg, origemId, upstreamUrl;
 
     if (path === '/estados' || path === '/estados/') {
-      origemId = 'ibge';
-      upstreamUrl = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados';
-      let result;
-      try {
-        result = await buscarOrigemComFallback({
-          parsed: new URL(upstreamUrl),
-          origemId,
-          timeoutMs: 15000,
-          maxBytes: 10 * 1024 * 1024,
-        });
-        if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
-      } catch (e) {
-        // Fallback estático com todos os 27 estados
-        data = [
-          { id: 11, sigla: 'RO', nome: 'Rondônia' }, { id: 12, sigla: 'AC', nome: 'Acre' },
-          { id: 13, sigla: 'AM', nome: 'Amazonas' }, { id: 14, sigla: 'RR', nome: 'Roraima' },
-          { id: 15, sigla: 'PA', nome: 'Pará' }, { id: 16, sigla: 'AP', nome: 'Amapá' },
-          { id: 17, sigla: 'TO', nome: 'Tocantins' }, { id: 21, sigla: 'MA', nome: 'Maranhão' },
-          { id: 22, sigla: 'PI', nome: 'Piauí' }, { id: 23, sigla: 'CE', nome: 'Ceará' },
-          { id: 24, sigla: 'RN', nome: 'Rio Grande do Norte' }, { id: 25, sigla: 'PB', nome: 'Paraíba' },
-          { id: 26, sigla: 'PE', nome: 'Pernambuco' }, { id: 27, sigla: 'AL', nome: 'Alagoas' },
-          { id: 28, sigla: 'SE', nome: 'Sergipe' }, { id: 29, sigla: 'BA', nome: 'Bahia' },
-          { id: 31, sigla: 'MG', nome: 'Minas Gerais' }, { id: 32, sigla: 'ES', nome: 'Espírito Santo' },
-          { id: 33, sigla: 'RJ', nome: 'Rio de Janeiro' }, { id: 35, sigla: 'SP', nome: 'São Paulo' },
-          { id: 41, sigla: 'PR', nome: 'Paraná' }, { id: 42, sigla: 'SC', nome: 'Santa Catarina' },
-          { id: 43, sigla: 'RS', nome: 'Rio Grande do Sul' }, { id: 50, sigla: 'MS', nome: 'Mato Grosso do Sul' },
-          { id: 51, sigla: 'MT', nome: 'Mato Grosso' }, { id: 52, sigla: 'GO', nome: 'Goiás' },
-          { id: 53, sigla: 'DF', nome: 'Distrito Federal' }
-        ];
-        return jsonResponse(200, data, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback' });
-      }
-      data = JSON.parse(result.buf.toString('utf8'));
-      ttlSeg = 86400; staleSeg = 86400;
-      const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-      if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
-      return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
+      return jsonResponse(200, SNAPSHOT_ESTADOS, origin, {
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        'X-Fonte': 'snapshot-ibge',
+        'X-Snapshot-Atualizado': SNAPSHOT_ATUALIZADO || 'desconhecido',
+      });
 
     } else if (path === '/municipios' || path === '/municipios/') {
       const ufParam = String(params.get('uf') || '').trim();
-      // Catálogo nacional (contagem total) — usado pelo painel/território.
+      const cacheSnapshot = {
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        'X-Fonte': 'snapshot-ibge',
+        'X-Snapshot-Atualizado': SNAPSHOT_ATUALIZADO || 'desconhecido',
+      };
       if (ufParam.toLowerCase() === 'todos') {
-        origemId = 'ibge';
-        upstreamUrl = 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios';
-        let result;
-        try {
-          result = await buscarOrigemComFallback({
-            parsed: new URL(upstreamUrl),
-            origemId,
-            timeoutMs: 15000,
-            maxBytes: 10 * 1024 * 1024,
-          });
-          if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
-        } catch (e) {
-          throw e;
-        }
-        data = JSON.parse(result.buf.toString('utf8'));
-        ttlSeg = 86400; staleSeg = 86400;
-        const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-        if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
-        return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
+        return jsonResponse(200, todosMunicipiosSnapshot(), origin, cacheSnapshot);
       }
       const uf = validarUF(ufParam);
       if (!uf) return jsonResponse(400, { erro: 'Parâmetro uf obrigatório (ex.: 51).' }, origin);
-      origemId = 'ibge';
-      upstreamUrl = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`;
-      let result;
-      try {
-        result = await buscarOrigemComFallback({
-          parsed: new URL(upstreamUrl),
-          origemId,
-          timeoutMs: 15000,
-          maxBytes: 10 * 1024 * 1024,
-        });
-        if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
-      } catch (e) {
-        // Fallback estático para MT se tudo falhar
-        if (uf === '51') {
-          data = [{ id: 5103402, nome: 'Cuiabá' }, { id: 5106207, nome: 'Várzea Grande' }, { id: 5107007, nome: 'Rondonópolis' }];
-          return jsonResponse(200, data, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback' });
-        }
-        throw e;
+      const lista = SNAPSHOT_MUNICIPIOS[uf] || [];
+      if (!lista.length) {
+        return jsonResponse(404, { erro: 'UF sem municípios no snapshot local.', uf }, origin);
       }
-      data = JSON.parse(result.buf.toString('utf8'));
-      ttlSeg = 86400; staleSeg = 86400;
-      const resHeaders = { 'Cache-Control': cacheHeaders(ttlSeg, staleSeg)['Cache-Control'] };
-      if (result.stale) resHeaders['X-Stale'] = '1', resHeaders['X-Stale-Age-Seg'] = String(result.idadeSeg);
-      return new Response(JSON.stringify(data), { status: result.upstream.status, headers: Object.assign({}, headers, resHeaders, { 'Content-Type': result.contentType }) });
+      return jsonResponse(200, lista, origin, cacheSnapshot);
 
-} else if (path === '/malhas/estados' || path === '/malhas/estados/') {
+    } else if (path === '/indicadores' || path === '/indicadores/') {
+      const codigo = String(params.get('cod') || '').trim();
+      if (!/^\d{7}$/.test(codigo)) {
+        return jsonResponse(400, { erro: 'Parâmetro cod (código IBGE de 7 dígitos) obrigatório.' }, origin);
+      }
+      const indicadores = await buscarIndicadores(codigo);
+      return jsonResponse(200, indicadores, origin, {
+        'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000',
+        'X-Fonte': 'ibge-sidra',
+      });
+
+    } else if (path === '/malhas/estados' || path === '/malhas/estados/') {
       console.log('[ibge] fetching malhas estados');
       origemId = 'ibge';
       upstreamUrl = `${IBGE_MALHAS_BASE}/paises/BR?formato=application/vnd.geo+json&intrarregiao=UF&qualidade=minima`;
@@ -267,18 +282,20 @@ module.exports = serve(async function handler(req) {
         if (!result.upstream.ok) throw new Error('Upstream returned ' + result.upstream.status);
       } catch (e) {
         console.error('[ibge] malhas estado error:', uf, e.message);
-        // Fallback simplificado para MT
-        let fallbackMun = { type: 'FeatureCollection', features: [] };
-        if (uf === '51') {
-          fallbackMun = {
-            type: 'FeatureCollection',
-            features: [
-              { type: 'Feature', properties: { codarea: '5103402', nome: 'Cuiabá' }, geometry: { type: 'Polygon', coordinates: [[[-56.2,-15.7],[-55.8,-15.7],[-55.8,-15.4],[-56.2,-15.4],[-56.2,-15.7]]] } },
-              { type: 'Feature', properties: { codarea: '5106207', nome: 'Várzea Grande' }, geometry: { type: 'Polygon', coordinates: [[[-56.3,-15.8],[-55.9,-15.8],[-55.9,-15.5],[-56.3,-15.5],[-56.3,-15.8]]] } },
-              { type: 'Feature', properties: { codarea: '5107007', nome: 'Rondonópolis' }, geometry: { type: 'Polygon', coordinates: [[[-54.8,-16.6],[-54.5,-16.6],[-54.5,-16.3],[-54.8,-16.3],[-54.8,-16.6]]] } }
-            ]
-          };
+        // Último recurso: só MT tem um recorte simplificado embutido.
+        // Para as demais UFs, devolve erro explícito (o front usa o
+        // snapshot estático /geo/malhas e não depende deste fallback).
+        if (uf !== '51') {
+          return jsonResponse(502, { erro: 'IBGE indisponível para a malha municipal.', uf }, origin, { 'Cache-Control': 'no-store' });
         }
+        const fallbackMun = {
+          type: 'FeatureCollection',
+          features: [
+            { type: 'Feature', properties: { codarea: '5103403', nome: 'Cuiabá' }, geometry: { type: 'Polygon', coordinates: [[[-56.2,-15.7],[-55.8,-15.7],[-55.8,-15.4],[-56.2,-15.4],[-56.2,-15.7]]] } },
+            { type: 'Feature', properties: { codarea: '5108402', nome: 'Várzea Grande' }, geometry: { type: 'Polygon', coordinates: [[[-56.3,-15.8],[-55.9,-15.8],[-55.9,-15.5],[-56.3,-15.5],[-56.3,-15.8]]] } },
+            { type: 'Feature', properties: { codarea: '5107602', nome: 'Rondonópolis' }, geometry: { type: 'Polygon', coordinates: [[[-54.8,-16.6],[-54.5,-16.6],[-54.5,-16.3],[-54.8,-16.3],[-54.8,-16.6]]] } }
+          ]
+        };
         console.log('[ibge] usando fallback estático de municipios para', uf, 'com', fallbackMun.features.length, 'features');
         return jsonResponse(200, fallbackMun, origin, { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400', 'X-Stale': '1', 'X-Stale-Source': 'static-fallback-municipios' });
       }

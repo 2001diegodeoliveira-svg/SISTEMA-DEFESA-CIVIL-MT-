@@ -91,8 +91,9 @@ test('GET /api/ibge/estados retorna lista', async () => {
     assert.equal(res.status, 200);
     const j = await res.json();
     assert.ok(Array.isArray(j));
-    // Ordem da BrasilAPI: primeiro é RO (Rondônia)
+    // Ordem por código IBGE (contrato da API oficial): RO (11) primeiro.
     assert.equal(j[0].sigla, 'RO');
+    assert.ok(j.some((estado) => estado.sigla === 'MT'));
   } finally {
     await restore(snap);
     restoreEnv(prev);
@@ -114,7 +115,7 @@ test('GET /api/ibge/municipios?uf=51 retorna municípios', async () => {
     assert.equal(res.status, 200);
     const j = await res.json();
     assert.ok(Array.isArray(j));
-    assert.equal(j[0].nome, 'Cuiabá');
+    assert.ok(j.some((municipio) => municipio.nome === 'Cuiabá'));
   } finally {
     await restore(snap);
     restoreEnv(prev);

@@ -51,6 +51,13 @@ function canManageOrganization(access, organizationId, parentOrganizationId) {
 
 function apiPolicy(route, method) {
   const verb = String(method || 'GET').toUpperCase();
+  /* Gestão: leitura pública (docs/APIs.md), escrita restrita a gestores.
+     Sem isto, apiPolicy() cairia no default público e liberaria POST/DELETE. */
+  if (route === 'gestao') {
+    return verb === 'GET'
+      ? { public: true, write: false }
+      : { public: false, roles: [...WRITE_ROLES], write: true };
+  }
   if (route === 'user-registrations') {
     return verb === 'POST'
       ? { public: true, write: false }

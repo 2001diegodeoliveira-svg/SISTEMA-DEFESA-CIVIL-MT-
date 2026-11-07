@@ -25,6 +25,10 @@ portão global em `api/_lib/access-control.js` + checagem no handler.
 | `GET /api/alertas-motor/eventos?uf=&tipo=&desde=&limit=` | fila de eventos (novos primeiro) | store |
 | `GET /api/push/config` | `{ativo, vapidPublicKey\|null}` | env |
 | `GET /api/gestao?municipio=` / `?visao=geral` | gestão municipal / panorama 142 municípios | store (+`MUNICIPIOS_MT`) |
+| `GET /api/ibge/estados` | 27 UFs (código IBGE, sigla, nome, região) | snapshot `api/_lib/ibge-localidades.json`; `s-maxage=24h` |
+| `GET /api/ibge/municipios?uf=XX\|todos` | municípios com código IBGE, nome, micro/meso | snapshot local; `s-maxage=24h` |
+| `GET /api/ibge/indicadores?cod=` | população, área, densidade, urbanização, PIB total/per capita | SIDRA/Censo 2022 + PIB 2023; `s-maxage=7d` |
+| `GET /api/ibge/malhas/estados[/XX]` | GeoJSON de UFs/municípios (fallback do upstream) | front usa `geo/malhas/*.geojson` estático |
 | `GET /api/noticias[?q=][?n=]` | RSS Google Notícias filtrado | Google (sem chave) |
 | `GET /api/inmet-chuva?ano=&uf=` | chuva 24h/7d por estação (zip BDMEP via Range) | INMET; `s-maxage=6h` |
 | `GET /api/ana-hidrologia?uf=` | estações telemétricas ativas | ANA XML; cache 6h em memória |

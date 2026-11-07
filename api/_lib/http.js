@@ -16,13 +16,14 @@ function corsHeaders(origin) {
   return headers;
 }
 
-/* Resposta JSON padrão com CORS */
-function jsonResponse(status, body, origin) {
+/* Resposta JSON padrão com CORS. `extraHeaders` opcional (cache, X-*). */
+function jsonResponse(status, body, origin, extraHeaders) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Content-Type': 'application/json',
       ...corsHeaders(origin),
+      ...(extraHeaders && typeof extraHeaders === 'object' ? extraHeaders : {}),
     },
   });
 }
