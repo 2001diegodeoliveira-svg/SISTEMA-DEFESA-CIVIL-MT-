@@ -171,7 +171,8 @@
         .leaflet-popup-content-wrapper { background: rgba(15,23,42,.97) !important; color: var(--text) !important;
             border-radius: 8px !important; border: 1px solid var(--border); }
         .leaflet-popup-tip { background: rgba(15,23,42,.97) !important; }
-        .leaflet-popup-content { font-family: 'Inter', sans-serif !important; font-size: 11px !important; }
+        .leaflet-tooltip.ibge-tooltip { background: rgba(15,23,42,.92) !important; color: var(--text) !important;
+            border: 1px solid var(--border); border-radius: 6px; font-size: 10px; padding: 4px 8px; }
         .map-legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 14px; border-top: 1px solid var(--border);
                       font-size: 9px; color: var(--muted); }
         .map-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
@@ -299,7 +300,10 @@
             <div class="panel">
                 <div class="panel-hdr">
                     <h2><i data-lucide="earth" style="color:var(--green)"></i> Mapa de ocorrências</h2>
-                    <a class="muted" href="mapa.html">Abrir mapa completo ↗</a>
+                    <div class="btn-row">
+                        <button class="btn ghost" id="btnMalhaIbge" style="padding:5px 10px;font-size:10px"><i data-lucide="layers"></i> Municípios (IBGE)</button>
+                        <a class="muted" href="mapa.html">Abrir mapa completo ↗</a>
+                    </div>
                 </div>
                 <div id="mapaCentral"></div>
                 <div class="map-legend">
@@ -308,6 +312,7 @@
                     <span><i style="background:var(--moderada)"></i> Moderada</span>
                     <span><i style="background:var(--baixa)"></i> Baixa</span>
                     <span><i style="background:var(--muted)"></i> Sem prioridade</span>
+                    <span id="malhaStatus" class="muted" style="margin-left:auto"></span>
                 </div>
             </div>
         </div>

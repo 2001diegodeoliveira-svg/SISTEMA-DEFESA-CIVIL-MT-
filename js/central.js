@@ -34,6 +34,8 @@
         equipes: [],
         mapa: null,
         camada: null,
+        malhaIbge: null,
+        nomesMunicipios: {},
         temporizador: null,
         mfa: null
     };
@@ -738,7 +740,58 @@
             $('listaMunicipios').innerHTML = lista.map(function (m) {
                 return '<option value="' + escapeHtml(m.nome) + '"></option>';
             }).join('');
+            estado.nomesMunicipios = {};
+            lista.forEach(function (m) {
+                if (m && m.id != null) estado.nomesMunicipios[String(m.id)] = m.nome;
+            });
         } catch (e) { /* datalist é conveniência */ }
+    }
+
+    async function carregarMalhaIbge() {
+        if (estado.malhaIbge) return estado.malhaIbge;
+        $('malhaStatus').textContent = 'Carregando malha IBGE...';
+        try {
+            var r = await fetch('/api/ibge/malhas/estados/51');
+            if (!r.ok) throw new Error('IBGE indisponível');
+            var geojson = await r.json();
+            if (!geojson || !Array.isArray(geojson.features)) throw new Error('Malha inválida');
+            estado.malhaIbge = L.geoJSON(geojson, {
+                style: function () {
+                    return { color: 'rgba(56,189,248,.55)', weight: 1, fillColor: 'rgba(56,189,248,.06)', fillOpacity: 0.35 };
+                },
+                onEachFeature: function (feature, layer) {
+                    var codigo = feature && feature.properties ? feature.properties.codarea : '';
+                    var nome = estado.nomesMunicipios[String(codigo)] || ('Município ' + codigo);
+                    layer.bindTooltip(nome, { sticky: true, className: 'ibge-tooltip' });
+                    layer.on('mouseover', function () { layer.setStyle({ fillColor: 'rgba(249,115,22,.25)', color: '#f9731c' }); });
+                    layer.on('mouseout', function () { layer.setStyle({ color: 'rgba(56,189,248,.55)', fillColor: 'rgba(56,189,248,.06)' }); });
+                }
+            });
+            $('malhaStatus').textContent = geojson.features.length + ' municípios (IBGE)';
+            return estado.malhaIbge;
+        } catch (e) {
+            $('malhaStatus').textContent = 'Malha IBGE indisponível.';
+            return null;
+        }
+    }
+
+    async function toggleMalhaIbge() {
+        if (!estado.mapa) return;
+        var botao = $('btnMalhaIbge');
+        if (estado.mapa._malhaAtiva) {
+            if (estado.malhaIbge) estado.mapa.removeLayer(estado.malhaIbge);
+            estado.mapa._malhaAtiva = false;
+            botao.classList.remove('primary');
+            botao.classList.add('ghost');
+            $('malhaStatus').textContent = '';
+            return;
+        }
+        var camada = await carregarMalhaIbge();
+        if (!camada) return;
+        camada.addTo(estado.mapa);
+        estado.mapa._malhaAtiva = true;
+        botao.classList.remove('ghost');
+        botao.classList.add('primary');
     }
 
     function usarGps() {
@@ -786,8 +839,8 @@
             if (linha) { e.preventDefault(); abrirDetalhe(linha.getAttribute('data-id')); }
         });
 
+        $('btnMalhaIbge').addEventListener('click', toggleMalhaIbge);
         $('btnNova').addEventListener('click', function () {
-            if (!token()) { abrirModal('loginModal'); return; }
             abrirModal('formModal');
         });
         $('btnSalvar').addEventListener('click', salvarOcorrencia);

@@ -933,5 +933,6 @@ module.exports = {
   intervaloColetaMs,
   parseOniAscii, parseSstoi, dataDoTrimestre, urlNoaaOni, urlNoaaSst, noaaEnabled,
   lerFontes,
+  readCollection,
   logger,
 };

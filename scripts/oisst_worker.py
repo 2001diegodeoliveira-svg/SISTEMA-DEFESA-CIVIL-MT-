@@ -65,7 +65,10 @@ def main():
     for i, lat in enumerate(lats):
         for j, lon in enumerate(lons):
             v = vals[i, j]
-            if v is None or (isinstance(v, float) and (np.isnan(v) or np.isinf(v))):
+            try:
+                if v is None or np.isnan(v) or np.isinf(v):
+                    continue
+            except (TypeError, ValueError):
                 continue
             lon_deg = float(lon)
             if lon_deg > 180:
@@ -94,7 +97,7 @@ def main():
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+        json.dump(out, f, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     print("OK:", len(features), "celulas,", selected_date, "->", OUT_PATH)
 
 

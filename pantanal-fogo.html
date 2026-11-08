@@ -48,7 +48,7 @@ label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
   <div class="stat"><b id="count">–</b><span id="countLbl">focos de calor</span></div>
   <div id="status">Aguardando dados…</div>
 
-  <p style="margin-top:0">Focos NASA FIRMS consultados pelo servidor; a chave MAP_KEY fica configurada no backend.</p>
+  <p id="firmsStatus" style="margin-top:0">Consultando focos NASA FIRMS…</p>
   <div class="row">
     <div><label for="days">Período</label>
       <select id="days"><option value="1">Últimas 24 h</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option></select></div>
@@ -144,8 +144,9 @@ async function loadFires(){
   const qs=new URLSearchParams({dias:$('days').value,fonte:$('src').value,bbox:`${BBOX.w},${BBOX.s},${BBOX.e},${BBOX.n}`});
   const r=await fetch('/api/firms?'+qs);
   const j=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(j.erro||('FIRMS '+r.status));
+  if(!r.ok){$('firmsStatus').textContent='Focos NASA FIRMS: indisponível — '+(j.erro||('HTTP '+r.status));throw new Error(j.erro||('FIRMS '+r.status));}
   const rows=j.focos.map(f=>({latitude:f.lat,longitude:f.lon,frp:f.frp,acq_date:f.data,acq_time:(f.hora||'').replace(':','')}));
+  $('firmsStatus').textContent=`Focos NASA FIRMS: ${rows.length} detecção(ões) em tempo real, consultados via servidor.`;
   fireLayer.clearLayers();
   const now=Date.now();
   rows.forEach(f=>{

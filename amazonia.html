@@ -7,6 +7,8 @@
     <title>Amazônia · Monitoramento - SGI PROTEGE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="css/animated-icons.css">
     <style>
         :root {
@@ -166,6 +168,90 @@
             nav ul { display: none; }
             header { flex-wrap: wrap; gap: 12px; }
         }
+
+        /* ===== Mapa de Monitoramento (Amazônia) ===== */
+        .amz-map-wrap {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+            background: var(--bg-card);
+        }
+        .amz-map-wrap #amzMap {
+            height: 560px;
+            border: 0;
+            border-radius: 16px;
+        }
+        .amz-map-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .amz-map-controls .stat { padding: 6px 10px; margin: 0; }
+        .amz-map-controls select,
+        .amz-map-controls button {
+            width: auto;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .amz-map-controls button {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-green-deep));
+            color: #052e16;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .amz-map-controls button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 211, 153, 0.35);
+        }
+        .amz-map-legend {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            z-index: 500;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+        .amz-map-legend b { display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent-green); }
+        .amz-map-legend span { display: flex; align-items: center; gap: 7px; margin: 2px 0; }
+        .amz-map-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .amz-map-status {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .amz-map-delimit {
+            background: rgba(52, 211, 153, 0.12);
+            border: 1px dashed rgba(52, 211, 153, 0.5);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .amz-map-delimit b { color: var(--accent-green); }
+        @media (max-width: 720px) {
+            .amz-map-wrap #amzMap { height: 420px; }
+        }
     </style>
 </head>
 <body>
@@ -219,6 +305,7 @@
         <button data-tab="rios"><i data-lucide="waves"></i> Rios e Clima</button>
         <button data-tab="fogo"><i data-lucide="flames"></i> Fogo e Desmatamento</button>
         <button data-tab="acao"><i data-lucide="shield"></i> Monitoramento</button>
+        <button data-tab="mapa"><i data-lucide="map"></i> Mapa de Monitoramento</button>
     </div>
 
     <section id="view-visao" class="tab-view active">
@@ -361,6 +448,45 @@
         </div>
     </section>
 
+    <section id="view-mapa" class="tab-view">
+        <h3 class="section-title"><i data-lucide="map"></i> Mapa de Monitoramento — Focos de Calor na Amazônia (Mato Grosso)</h3>
+        <div class="amz-map-controls">
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="flame"></i></div>
+                <div class="s-txt"><b id="amzCount">—</b><span>Focos detectados</span></div>
+            </div>
+            <div class="stat">
+                <div class="s-ico"><i data-lucide="calendar"></i></div>
+                <div class="s-txt"><b id="amzPeriodo">3 dias</b><span>Período</span></div>
+            </div>
+            <div class="amz-map-delimit"><b>Delimitação:</b> bioma Amazônia em MT (norte do estado)</div>
+            <div style="display:flex;gap:8px;flex:1;min-width:220px;justify-content:flex-end;align-items:center;">
+                <select id="amzDias">
+                    <option value="1">Últimas 24 h</option>
+                    <option value="2">2 dias</option>
+                    <option value="3" selected>3 dias</option>
+                    <option value="5">5 dias</option>
+                </select>
+                <button id="amzAtualizar">Atualizar</button>
+            </div>
+        </div>
+        <div class="amz-map-wrap">
+            <div id="amzMap"></div>
+            <div class="amz-map-legend">
+                <b>Focos de calor (INPE)</b>
+                <span><i style="background:#ef4444;"></i>Alto (risco alto)</span>
+                <span><i style="background:#f9731c;"></i>Médio</span>
+                <span><i style="background:#eab308;"></i>Potencial</span>
+                <span style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,0.2);"><i style="background:transparent;border:1px dashed #34d399;border-radius:2px;width:14px;height:10px;"></i>Delimitação Amazônia/MT</span>
+            </div>
+        </div>
+        <p id="amzStatus" class="amz-map-status">Aguardando dados do INPE BDQueimadas...</p>
+        <div class="alert-note" style="margin-top:14px;">
+            <i data-lucide="info"></i>
+            <p>Fonte: <b>INPE BDQueimadas</b> (focos diários, Brasil). Filtrado para o bioma Amazônico em Mato Grosso. Os focos são detecções de satélite e não representam área queimada.</p>
+        </div>
+    </section>
+
     <footer>
         <span>&copy; 2026 SGI PROTEGE — Monitoramento Integrado</span>
         <span><a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a> · <a href="amazonia.html">Amazônia</a></span>
@@ -379,9 +505,129 @@
                 document.querySelectorAll('.tab-view').forEach(function (v) { v.classList.remove('active'); });
                 btn.classList.add('active');
                 document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+                if (btn.dataset.tab === 'mapa' && !window.__amzMapInited) initAmzMap();
             });
         });
         if (window.lucide) lucide.createIcons();
+    </script>
+    <script>
+    (function () {
+        var amzMap = null, amzMarkers = null;
+        var amzBbox = { w: -62.0, s: -16.5, e: -50.0, n: -7.0 };
+
+        function initAmzMap() {
+            window.__amzMapInited = true;
+            if (!window.L) { document.getElementById('amzStatus').textContent = 'Leaflet não carregado.'; return; }
+            amzMap = L.map('amzMap', { zoomControl: true }).fitBounds([[amzBbox.s, amzBbox.w], [amzBbox.n, amzBbox.e]]);
+            var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 17, attribution: 'Esri' });
+            var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' });
+            sat.addTo(amzMap);
+            L.control.layers({ 'Satélite': sat, 'Mapa': osm }, null, { position: 'topright' }).addTo(amzMap);
+            var delimit = L.rectangle([[amzBbox.s, amzBbox.w], [amzBbox.n, amzBbox.e]], { color: '#34d399', weight: 2, fill: true, fillColor: '#34d399', fillOpacity: 0.06, dashArray: '8 6', opacity: 0.9 }).addTo(amzMap);
+            delimit.bindTooltip('Delimitação: bioma Amazônia em Mato Grosso', { permanent: false, direction: 'center', className: 'amz-delimit-tooltip' });
+            amzMarkers = L.layerGroup().addTo(amzMap);
+            document.getElementById('amzAtualizar').addEventListener('click', loadAmzFocos);
+            document.getElementById('amzDias').addEventListener('change', function () {
+                document.getElementById('amzPeriodo').textContent = this.value + ' dia' + (this.value > 1 ? 's' : '');
+            });
+            loadAmzFocos();
+        }
+
+        function csvParseLine(line) {
+            var out = [], cur = '', inQ = false;
+            for (var i = 0; i < line.length; i++) {
+                var c = line[i];
+                if (inQ) {
+                    if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                    else if (c === '"') inQ = false;
+                    else cur += c;
+                } else {
+                    if (c === '"') inQ = true;
+                    else if (c === ',') { out.push(cur); cur = ''; }
+                    else cur += c;
+                }
+            }
+            out.push(cur);
+            return out;
+        }
+
+        async function loadAmzFocos() {
+            var dias = parseInt(document.getElementById('amzDias').value || '3', 10);
+            var status = document.getElementById('amzStatus');
+            var countEl = document.getElementById('amzCount');
+            status.textContent = 'Consultando focos de calor do INPE (BDQueimadas)...';
+            amzMarkers.clearLayers();
+            var txt = null, iso = null;
+            for (var i = 0; i < 4 && !txt; i++) {
+                var d = new Date(Date.now() - i * 86400000);
+                iso = d.toISOString().slice(0, 10).replaceAll('-', '');
+                try {
+                    var r = await dcProxyFetch('https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_' + iso + '.csv');
+                    if (!r.ok) continue;
+                    var t = await r.text();
+                    if (t && t.length > 200) txt = t;
+                } catch (e) { /* tenta próximo dia */ }
+            }
+            if (!txt) { status.textContent = 'Não foi possível obter os dados de focos de calor.'; return; }
+            var lines = txt.split(/\r?\n/).filter(function (l) { return l.trim(); });
+            if (!lines.length) { status.textContent = 'Sem dados de focos.'; return; }
+            var header = csvParseLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
+            var iLat = header.indexOf('lat'), iLon = header.indexOf('lon');
+            var iEstado = header.indexOf('estado'), iBioma = header.indexOf('bioma');
+            var iSat = header.indexOf('satelite'), iData = header.indexOf('data_pas'), iHora = header.indexOf('hora');
+            var iFrp = header.indexOf('frp'), iRisco = header.indexOf('risco_fogo');
+            var iMun = header.indexOf('municipio');
+            if (iLat < 0 || iLon < 0) { status.textContent = 'Formato de dados inesperado (sem lat/lon).'; return; }
+
+            var focos = [];
+            var corte = Date.now() - dias * 86400000;
+            for (var j = 1; j < lines.length; j++) {
+                var cols = csvParseLine(lines[j]);
+                if (cols.length < header.length) continue;
+                var lat = parseFloat(cols[iLat]), lon = parseFloat(cols[iLon]);
+                if (isNaN(lat) || isNaN(lon)) continue;
+                var estado = (cols[iEstado] || '').trim().toUpperCase();
+                if (estado !== 'MATO GROSSO') continue;
+                var bioma = iBioma >= 0 ? (cols[iBioma] || '').trim() : '';
+                if (bioma && bioma.toLowerCase().indexOf('amaz') < 0) continue;
+                if (lat < amzBbox.s || lat > amzBbox.n || lon < amzBbox.w || lon > amzBbox.e) continue;
+                var dataPas = iData >= 0 ? (cols[iData] || '').trim() : '';
+                var ts = dataPas ? new Date(dataPas + 'T00:00:00').getTime() : NaN;
+                if (!isNaN(ts) && ts < corte) continue;
+                var frp = iFrp >= 0 ? parseFloat(cols[iFrp]) : NaN;
+                var risco = iRisco >= 0 ? cols[iRisco] : '';
+                var sat = iSat >= 0 ? cols[iSat] : '';
+                var hora = iHora >= 0 ? cols[iHora] : '';
+                var mun = iMun >= 0 ? cols[iMun] : '';
+                focos.push({ lat: lat, lon: lon, frp: isNaN(frp) ? 1 : frp, risco: risco, sat: sat, data: dataPas, hora: hora, mun: mun, bioma: bioma });
+            }
+
+            focos.forEach(function (f) {
+                var r = Math.max(4, Math.min(14, 4 + (f.frp || 0) / 15));
+                var cor = (f.risco || '').toLowerCase().indexOf('alto') >= 0 ? '#ef4444' :
+                          (f.risco || '').toLowerCase().indexOf('medio') >= 0 ? '#f9731c' : '#eab308';
+                var mk = L.circleMarker([f.lat, f.lon], { radius: r, color: cor, fillColor: cor, fillOpacity: 0.75, weight: 1 });
+                mk.bindPopup(
+                    '<b>Foco de calor</b><br>' +
+                    (f.mun ? 'Município: ' + f.mun + '<br>' : '') +
+                    'Satélite: ' + (f.sat || '—') + '<br>' +
+                    'Data/hora: ' + (f.data || '—') + ' ' + (f.hora || '') + '<br>' +
+                    'FRP: ' + (isNaN(f.frp) ? '—' : f.frp.toFixed(1)) + '<br>' +
+                    'Risco de fogo: ' + (f.risco || '—') + '<br>' +
+                    'Bioma: ' + (f.bioma || '—')
+                );
+                mk.addTo(amzMarkers);
+            });
+
+            document.getElementById('amzCount').textContent = focos.length.toLocaleString('pt-BR');
+            document.getElementById('amzStatus').textContent = focos.length
+                ? focos.length + ' foco(s) de calor detectado(s) no período selecionado (bioma Amazônia, Mato Grosso).'
+                : 'Nenhum foco de calor detectado no período/bioma selecionado.';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.initAmzMap = initAmzMap;
+    })();
     </script>
 </body>
 </html>

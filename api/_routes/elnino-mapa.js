@@ -60,6 +60,24 @@ async function buildSSTGeoJSON() {
     const fs = require('fs');
     const path = require('path');
     function readLocalOisst() {
+        // Sanitiza e carrega o snapshot OISST (Python json.dump pode emitir NaN).
+        function sanitizar(raw) {
+            const texto = String(raw)
+                .replace(/:\s*NaN\b/g, ':null')
+                .replace(/:\s*Infinity\b/g, ':null')
+                .replace(/:\s*-Infinity\b/g, ':null');
+            const parsed = JSON.parse(texto);
+            if (!parsed || !parsed.geojson || !Array.isArray(parsed.geojson.features)) return null;
+            parsed.geojson.features = parsed.geojson.features.filter((f) => Number.isFinite(f?.properties?.anom));
+            if (!parsed.geojson.features.length) return null;
+            return parsed;
+        }
+        // require estático: garante que a Vercel inclua o arquivo no bundle.
+        try {
+            const raw = JSON.stringify(require('../../oisst-anomaly.json'));
+            const req = sanitizar(raw);
+            if (req) return req;
+        } catch (e) { /* arquivo ausente ou inválido; tenta fs */ }
         const candidates = [
             path.join(process.cwd(), 'data', 'oisst-anomaly.json'),
             path.join(process.cwd(), 'oisst-anomaly.json'),
@@ -69,9 +87,8 @@ async function buildSSTGeoJSON() {
         for (const p of candidates) {
             try {
                 if (fs.existsSync(p)) {
-                    const raw = fs.readFileSync(p, 'utf8');
-                    const parsed = JSON.parse(raw);
-                    if (parsed && parsed.geojson && Array.isArray(parsed.geojson.features) && parsed.geojson.features.length) return parsed;
+                    const parsed = sanitizar(fs.readFileSync(p, 'utf8'));
+                    if (parsed) return parsed;
                 }
             } catch (e) { /* ignora */ }
         }
