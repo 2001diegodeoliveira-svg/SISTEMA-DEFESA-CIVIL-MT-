@@ -69,6 +69,7 @@ const handlers = {
   'ambiental-pantanal': require('./_routes/ambiental-pantanal'),
   'pantanal-mt': require('./_routes/pantanal-mt'),
   'firms': require('./_routes/firms'),
+  'sema': require('./_routes/sema'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
   'enso': require('./_routes/enso'),
