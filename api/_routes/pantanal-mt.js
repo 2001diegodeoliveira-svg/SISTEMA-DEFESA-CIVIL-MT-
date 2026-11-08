@@ -41,11 +41,16 @@ const CACHE_RESPOSTA_TTL_MS = 15 * 60 * 1000;
 let cacheResposta = null;
 let cacheIbge = null;
 let cacheClima = null;
+/* Antiabuso: refresh=1 e publico e dispara 5 fontes externas pesadas.
+   Um cooldown por instancia evita que um loop externo zere o cache. */
+const REFRESH_COOLDOWN_MS = 60 * 1000;
+let ultimoRefreshForcado = 0;
 
 function limparCache() {
   cacheResposta = null;
   cacheIbge = null;
   cacheClima = null;
+  ultimoRefreshForcado = 0;
 }
 
 /* ---------- geometria da região ---------- */
@@ -359,7 +364,9 @@ module.exports = serve(async function handler(req) {
   if (req.method !== 'GET') return jsonResponse(405, { erro: 'Método não suportado.' }, origin, { Allow: 'GET' });
 
   const ru = reqUrl(req);
-  const force = ru ? ru.searchParams.get('refresh') === '1' : false;
+  const pediuRefresh = ru ? ru.searchParams.get('refresh') === '1' : false;
+  const force = pediuRefresh && (Date.now() - ultimoRefreshForcado >= REFRESH_COOLDOWN_MS);
+  if (force) ultimoRefreshForcado = Date.now();
   if (!force && cacheResposta && Date.now() - cacheResposta.ts < CACHE_RESPOSTA_TTL_MS) {
     const res = jsonResponse(200, cacheResposta.corpo, origin);
     Object.entries(cacheHeaders(900, 3600)).forEach(([k, v]) => res.headers.set(k, v));

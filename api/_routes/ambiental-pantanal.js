@@ -59,6 +59,10 @@ const CACHE_MAX_ENTRADAS = 6;
 
 const cacheIcmbio = new Map();
 const cacheEmbargos = new Map();
+/* Antiabuso: refresh=1 e publico e força download do CSV do IBAMA.
+   Um cooldown por instancia evita loops de cache-busting. */
+const REFRESH_COOLDOWN_MS = 60 * 1000;
+let ultimoRefreshForcado = 0;
 
 function lerCache(mapa, chave, ttl) {
   const item = mapa.get(chave);
@@ -83,6 +87,7 @@ function gravarCache(mapa, chave, dados) {
 function limparCache() {
   cacheIcmbio.clear();
   cacheEmbargos.clear();
+  ultimoRefreshForcado = 0;
 }
 
 /* ---------- validação ---------- */
@@ -347,7 +352,9 @@ module.exports = serve(async function handler(req) {
 
   const ru = reqUrl(req);
   const q = ru ? ru.searchParams : new URLSearchParams();
-  const force = q.get('refresh') === '1';
+  const pediuRefresh = q.get('refresh') === '1';
+  const force = pediuRefresh && (Date.now() - ultimoRefreshForcado >= REFRESH_COOLDOWN_MS);
+  if (force) ultimoRefreshForcado = Date.now();
 
   let bbox;
   let camadas;
