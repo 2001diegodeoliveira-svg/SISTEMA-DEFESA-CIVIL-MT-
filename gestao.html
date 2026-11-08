@@ -214,6 +214,40 @@
         .ov-prog { height: 12px; background: rgba(148,163,184,.14); border-radius: 7px; overflow: hidden; margin-bottom: 8px; }
         .ov-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent-orange), var(--blue-glow)); border-radius: 7px; transition: width .4s; }
         @media (max-width: 640px) { .ov-grid { grid-template-columns: 1fr; } }
+
+        /* ===== Abas internas da Gestão (Gestão / Frota / Contratos) ===== */
+        .gestao-tabs {
+            display: flex; align-items: center; gap: 6px; overflow-x: auto;
+            padding: 10px 4% 0; background: linear-gradient(180deg, rgba(11,19,41,.97), rgba(15,23,42,.9));
+            border-bottom: 1px solid var(--border-color);
+        }
+        .gestao-tab {
+            display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+            background: none; border: 1px solid transparent; border-bottom: none; color: var(--text-muted);
+            padding: 10px 16px; border-radius: 9px 9px 0 0; font-size: 13px; font-weight: 700;
+            cursor: pointer; text-decoration: none; transition: background .15s, color .15s, border-color .15s;
+        }
+        .gestao-tab:hover { color: var(--text-main); background: rgba(255,255,255,.04); }
+        .gestao-tab.active { color: var(--text-main); background: var(--bg-card); border-color: var(--border-color); }
+        .gestao-tab.active i { color: var(--accent-orange); }
+        .gestao-tab.ext { margin-left: auto; border-bottom: 1px solid transparent; padding: 8px 12px; }
+        .gestao-tab.ext:hover { border-color: var(--border-color); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .embed-toolbar {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 8px 4%; background: var(--bg-dark); border-bottom: 1px solid var(--border-color);
+            font-size: 11.5px; color: var(--text-muted);
+        }
+        .embed-toolbar .embed-actions { display: flex; gap: 8px; }
+        .embed-frame {
+            display: block; width: 100%; height: calc(100vh - 172px); min-height: 560px;
+            border: 0; background: #fff;
+        }
+        @media (max-width: 640px) {
+            .gestao-tab { padding: 9px 11px; font-size: 12px; }
+            .embed-frame { height: calc(100vh - 190px); min-height: 480px; }
+        }
     </style>
     <script src="js/demo.js"></script>
     <script src="js/protecao.js"></script>
@@ -235,7 +269,7 @@
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="painel.html">Painel</a></li>
                 <li><a href="gestao.html" class="active">Gestão</a></li>
-                <li><a href="gestaodefrota.html">Frota</a></li>
+                <li><a href="gestao.html#frota">Frota</a></li>
                 <li><a href="el-nino.html">El Niño</a></li>
                 <li><a href="amazonia.html">Amazônia</a></li>
             </ul>
@@ -243,6 +277,22 @@
         <div id="userArea"></div>
     </header>
 
+    <div class="gestao-tabs" role="tablist" aria-label="Áreas da Gestão">
+        <button type="button" class="gestao-tab active" data-aba="gestao" role="tab" aria-selected="true" aria-controls="pane-gestao">
+            <i data-lucide="layout-dashboard"></i> Gestão por Município
+        </button>
+        <button type="button" class="gestao-tab" data-aba="frota" role="tab" aria-selected="false" aria-controls="pane-frota">
+            <i data-lucide="car"></i> Frota
+        </button>
+        <button type="button" class="gestao-tab" data-aba="contratos" role="tab" aria-selected="false" aria-controls="pane-contratos">
+            <i data-lucide="file-signature"></i> Contratos
+        </button>
+        <a class="gestao-tab ext" id="abaAbrir" href="gestaodefrota.html" target="_blank" rel="noopener" title="Abrir a aba atual em nova janela">
+            <i data-lucide="external-link"></i>
+        </a>
+    </div>
+
+    <div id="pane-gestao" class="tab-pane active" role="tabpanel">
     <div class="page-wrap">
         <aside class="side">
             <div class="mun-box">
@@ -267,6 +317,27 @@
             </div>
         </main>
     </div>
+    </div>
+
+    <div id="pane-frota" class="tab-pane" role="tabpanel">
+        <div class="embed-toolbar">
+            <span><i data-lucide="car"></i> Gestão de Frota — viaturas, viagens, checklists e manutenção</span>
+            <span class="embed-actions">
+                <a class="btn-mini ghost" href="gestaodefrota.html" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Nova aba</a>
+            </span>
+        </div>
+        <iframe class="embed-frame" data-src="gestaodefrota.html" title="Gestão de Frota" loading="lazy"></iframe>
+    </div>
+
+    <div id="pane-contratos" class="tab-pane" role="tabpanel">
+        <div class="embed-toolbar">
+            <span><i data-lucide="file-signature"></i> Contratos — SGC (Sistema de Gestão Contratual)</span>
+            <span class="embed-actions">
+                <a class="btn-mini ghost" href="contratos.html" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Nova aba</a>
+            </span>
+        </div>
+        <iframe class="embed-frame" data-src="contratos.html" title="Contratos — SGC" loading="lazy"></iframe>
+    </div>
 
     <footer>
         <span><strong>SGI PROTEGE</strong> · Gestão por Município</span>
@@ -281,6 +352,50 @@
     <script src="js/api.js"></script>
     <script src="js/session.js"></script>
     <script src="js/gestao.js"></script>
+    <script>
+    (function () {
+        var abas = Array.prototype.slice.call(document.querySelectorAll('.gestao-tab[data-aba]'));
+        var paineis = { gestao: 'pane-gestao', frota: 'pane-frota', contratos: 'pane-contratos' };
+        var externos = { frota: 'gestaodefrota.html', contratos: 'contratos.html' };
+        var link = document.getElementById('abaAbrir');
+
+        function ativar(nome, silencioso) {
+            if (!paineis[nome]) nome = 'gestao';
+            abas.forEach(function (b) {
+                var on = b.getAttribute('data-aba') === nome;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            Object.keys(paineis).forEach(function (k) {
+                var p = document.getElementById(paineis[k]);
+                if (p) p.classList.toggle('active', k === nome);
+            });
+            var pane = document.getElementById(paineis[nome]);
+            var frame = pane && pane.querySelector('iframe[data-src]');
+            if (frame && !frame.getAttribute('src')) frame.setAttribute('src', frame.getAttribute('data-src'));
+            if (link) {
+                link.style.display = nome === 'gestao' ? 'none' : '';
+                if (externos[nome]) link.setAttribute('href', externos[nome]);
+            }
+            if (!silencioso) {
+                try {
+                    var url = location.pathname + location.search + (nome === 'gestao' ? '' : '#' + nome);
+                    history.replaceState(null, '', url);
+                } catch (e) {}
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        abas.forEach(function (b) {
+            b.addEventListener('click', function () { ativar(b.getAttribute('data-aba')); });
+        });
+        window.abrirAbaGestao = ativar;
+        ativar((location.hash || '').replace('#', '') || 'gestao', true);
+        window.addEventListener('hashchange', function () {
+            ativar((location.hash || '').replace('#', '') || 'gestao', true);
+        });
+    })();
+    </script>
     <script>if (window.lucide) lucide.createIcons();</script>
 </body>
 </html>

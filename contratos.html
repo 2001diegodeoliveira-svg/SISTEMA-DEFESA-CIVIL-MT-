@@ -99,9 +99,10 @@
 
         .contracts-login-visual {
             position: relative;
-            background-image: url('imagemlogincontratos/ChatGPT%20Image%203%20de%20ago.%20de%202026,%2000_42_04.png');
+            background-image: url('imagemlogincontratos/ChatGPT%20Image%203%20de%20ago.%20de%202026,%2000_42_04.png'), url('imagem-login-sgi.png');
             background-size: cover;
             background-position: center;
+            background-color: #0f2c59;
         }
 
         .contracts-login-visual::after {
@@ -3169,6 +3170,9 @@ if (content) content.style.display = shouldShow ? '' : 'none';
                 }
 
                 hideContractsLoginOverlay();
+                /* Recarrega para rodar a inicialização completa (listeners,
+                   permissões, contratos) agora que há token válido. */
+                window.location.reload();
             } catch (error) {
                 setContractsLoginError(error?.message || 'Não foi possível conectar ao servidor de autenticação.');
             } finally {
@@ -3317,7 +3321,10 @@ if (content) content.style.display = shouldShow ? '' : 'none';
                 localStorage.removeItem('userRole');
             }
             sessionStorage.removeItem('contractsAuthBootstrap');
-            window.location.href = getContractsLoginTarget();
+            /* Antes redirecionava para /frontend/login contrato.html, que não
+               existe neste deploy. O próprio contratos.html já tem o overlay
+               de login inline — basta exibi-lo. */
+            showContractsLoginOverlay();
         }
 
         function readContractsAuthBootstrap() {

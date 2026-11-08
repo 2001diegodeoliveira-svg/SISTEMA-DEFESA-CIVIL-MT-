@@ -9,17 +9,22 @@
 const { jsonResponse } = require('../_lib/http');
 const { serve } = require('../_lib/serverless');
 
+/* Buscas alinhadas ao escopo do sistema: proteção e defesa civil,
+   clima extremo, desastres, queimadas e Pantanal em Mato Grosso. */
 const BUSCAS = [
-  'SGI PROTEGE | Mato Grosso',
-  'tempo clima mato grosso',
+  'defesa civil mato grosso',
+  'proteção e defesa civil mato grosso',
+  'desastre natural mato grosso',
+  'alerta de chuva mato grosso',
+  'tempestade mato grosso',
+  'queimadas mato grosso pantanal',
   'ações climáticas mato grosso',
-  'cuiabá tempo chuva',
-  'queimadas mato grosso',
-  'chuva mato grosso',
+  'SGI PROTEGE | Mato Grosso',
 ];
 
 const RSS_URL = 'https://news.google.com/rss/search?q=%s&hl=pt-BR&gl=BR&ceid=BR:pt-419';
 const MAX_IDADE_MS = 1000 * 60 * 60 * 24 * 15; // aceita itens de até 15 dias (rede de segurança)
+const TIMEOUT_MS = 8000; // não deixa a rota pendurar se o Google demorar
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
 /* Descarta widgets/agregadores automáticos de webcam (ex.: "Clima ao Vivo em Cuiabá"). */
@@ -67,6 +72,7 @@ function decodeXml(s) {
 function tagDaTitulo(titulo) {
   const x = String(titulo || '').toLowerCase();
   const regras = [
+    [/defesa civil|prote[çc][aã]o e defesa|defesa sanit[aá]ria/, 'DEFESA CIVIL'],
     [/fogo|queimad|incendi|fuma[çc]a/, 'FOGO E QUEIMADAS'],
     [/chuva|alagamento|inunda[çc][aã]o|enchente|granizo|temporal/, 'CHUVA / TEMPESTADE'],
     [/vento|rajadas?/, 'VENTO FORTE'],
@@ -107,8 +113,12 @@ function parseItens(xml) {
 
 async function buscar(q) {
   const url = RSS_URL.replace('%s', encodeURIComponent(q));
+  const sinal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+    ? AbortSignal.timeout(TIMEOUT_MS)
+    : undefined;
   const r = await fetch(url, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SGIProtege/1.0)' },
+    signal: sinal,
   });
   if (!r.ok) throw new Error('http ' + r.status);
   return parseItens(await r.text());
@@ -126,6 +136,7 @@ module.exports = serve(async function handler(req) {
     (qs && qs.get('q')) ? qs.get('q').split(';').map(x => x.trim()).filter(Boolean) : BUSCAS
   );
   const limite = Math.min(parseInt((qs && qs.get('n')) || '6', 10) || 6, 10);
+  const fresco = Boolean(qs && qs.get('fresco'));
 
   const agora = Date.now();
   let itens = [];
@@ -157,10 +168,14 @@ module.exports = serve(async function handler(req) {
   const res = jsonResponse(200, {
     ok: true,
     geradosEm: agora,
-    fonte: 'Google Notícias — busca recente por clima, ações climáticas e SGI PROTEGE em Mato Grosso',
+    fonte: 'Google Notícias — busca recente por defesa civil, clima extremo, desastres e queimadas em Mato Grosso',
     noticias: itens,
   }, origin);
-  // Permite cache curto no CDN/navegador (feed é atualizado continuamente).
-  res.headers.set('Cache-Control', 'public, max-age=600, s-maxage=600');
+  // Feed atualizado continuamente: cache curto no CDN e revalidação em segundo plano.
+  // `fresco=1` (botão "Atualizar agora") ignora qualquer cache.
+  res.headers.set(
+    'Cache-Control',
+    fresco ? 'no-store' : 'public, max-age=300, s-maxage=300, stale-while-revalidate=600'
+  );
   return res;
 });

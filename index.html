@@ -857,7 +857,7 @@
                 <li><a href="mapa.html">Mapa</a></li>
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="gestao.html">Gestão</a></li>
-                <li><a href="gestaodefrota.html">Frota</a></li>
+                <li><a href="gestao.html#frota">Frota</a></li>
                 <li><a href="el-nino.html">El Niño</a></li>
                 <li><a href="amazonia.html">Amazônia</a></li>
                 <li><a href="pantanal-fogo.html">Pantanal</a></li>
@@ -943,7 +943,7 @@
                 <p>Faça parte da rede de voluntários da SGI PROTEGE</p>
             </div>
         </a>
-        <a href="gestaodefrota.html" class="quick-card">
+        <a href="gestao.html#frota" class="quick-card">
             <div class="quick-icon"><i data-lucide="truck"></i></div>
             <div class="quick-content">
                 <h3>Frota</h3>
@@ -959,6 +959,13 @@
         <div class="section-box">
             <div class="section-title">
                 <span>NOTÍCIAS E COMUNICADOS</span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span id="newsUpdatedAt" style="font-size:10px;color:var(--text-muted);font-weight:500;">—</span>
+                    <button type="button" onclick="carregarNoticiasMT({fresco:true})" title="Buscar notícias agora"
+                        style="display:inline-flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border-color);border-radius:6px;color:#38bdf8;font-size:10px;font-weight:600;padding:3px 8px;cursor:pointer;">
+                        <i data-lucide="rotate-cw" style="width:12px;height:12px;"></i> Atualizar
+                    </button>
+                </div>
             </div>
 
             <div id="mtClimateNews"></div>
@@ -1082,18 +1089,27 @@
                 '</div></div>';
         }
 
+        function marcarAtualizacaoNoticias(ms) {
+            const el = document.getElementById('newsUpdatedAt');
+            if (!el) return;
+            const d = new Date(ms || Date.now());
+            el.textContent = 'Atualizado ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            el.title = d.toLocaleString('pt-BR');
+        }
+
         function renderNoticiasMT(lista) {
             const container = document.getElementById('mtClimateNews');
             if (!container) return;
 
             if (!lista || !lista.length) {
-                container.innerHTML = `
-                    <div class="main-news-card" style="background:linear-gradient(135deg,#0a1b33 0%,#123a63 62%,#f97316 180%);opacity:.9;">
-                        <span class="badge-destaque">FONTE PENDENTE</span>
-                        <h4>Notícias nacionais ainda não integradas.</h4>
-                        <p>Este painel só exibirá notícias quando houver uma fonte configurada para o escopo selecionado.</p>
-                    </div>
-                `;
+                container.innerHTML =
+                    '<div class="main-news-card" style="background:linear-gradient(135deg,#0a1b33 0%,#123a63 62%,#f97316 180%);opacity:.9;">' +
+                    '<span class="badge-destaque">SEM NOTÍCIAS</span>' +
+                    '<h4>Nenhuma notícia recente encontrada.</h4>' +
+                    '<p>A busca por defesa civil, clima extremo e queimadas em Mato Grosso não retornou itens agora. O painel tenta novamente automaticamente a cada 5 minutos.</p>' +
+                    '<button type="button" onclick="carregarNoticiasMT({fresco:true})" style="align-self:flex-start;margin-top:8px;background:#f97316;border:0;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;">Tentar novamente</button>' +
+                    '</div>';
+                if (window.lucide) lucide.createIcons();
                 return;
             }
 
@@ -1102,31 +1118,62 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        /* Busca as notícias do dia no backend /api/noticias.
-           Sem backend, cai para a lista estática (sem data fixa). */
-        async function carregarNoticiasMT() {
-            if (DC_ORGANIZACAO.obterUfInicial() !== '51') {
+        const NEWS_INTERVALO_MS = 5 * 60 * 1000; // revalida o feed a cada 5 minutos
+        let newsTimer = null;
+
+        /* Busca notícias atualizadas no backend /api/noticias.
+           - silencioso: atualização automática (não troca o conteúdo por "carregando")
+           - fresco: ignora o cache (botão "Atualizar") */
+        async function carregarNoticiasMT(opcoes) {
+            const opts = opcoes || {};
+            const container = document.getElementById('mtClimateNews');
+            // Sem UF selecionada (home padrão/Brasil) ou com MT, exibe o feed de MT.
+            const ufAtual = DC_ORGANIZACAO.obterUfInicial();
+            if (ufAtual && ufAtual !== '51') {
                 renderNoticiasMT([]);
                 return;
             }
+
+            if (!opts.silencioso && container && !container.dataset.newsCarregada) {
+                container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12px;"><i data-lucide="loader" class="lucide-spin"></i> Buscando notícias atualizadas…</div>';
+                if (window.lucide) lucide.createIcons();
+            }
+
             const apiBase = (typeof BACKEND_BASE !== 'undefined' && BACKEND_BASE) ? BACKEND_BASE : '';
+            const query = '/api/noticias?n=6' + (opts.fresco ? '&fresco=1&t=' + Date.now() : '');
             try {
-                const r = await fetch(apiBase + '/api/noticias?n=6', { headers: { 'Accept': 'application/json' } });
+                const r = await fetch(apiBase + query, {
+                    headers: { 'Accept': 'application/json' },
+                    cache: opts.fresco ? 'no-store' : 'default'
+                });
                 if (r.ok) {
                     const j = await r.json();
                     if (j.ok && Array.isArray(j.noticias) && j.noticias.length) {
                         renderNoticiasMT(j.noticias);
+                        if (container) container.dataset.newsCarregada = '1';
+                        marcarAtualizacaoNoticias(j.geradosEm);
                         return;
                     }
                 }
-                renderNoticiasMT([]);
+                if (!(opts.silencioso && container && container.dataset.newsCarregada)) renderNoticiasMT([]);
             } catch (e) {
                 console.error('[noticias] feed indisponível:', e);
-                renderNoticiasMT([]);
+                if (!(opts.silencioso && container && container.dataset.newsCarregada)) renderNoticiasMT([]);
             }
         }
 
+        function agendarAtualizacaoNoticias() {
+            if (newsTimer) clearInterval(newsTimer);
+            newsTimer = setInterval(function () {
+                if (!document.hidden) carregarNoticiasMT({ silencioso: true });
+            }, NEWS_INTERVALO_MS);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) carregarNoticiasMT({ silencioso: true });
+            });
+        }
+
         carregarNoticiasMT();
+        agendarAtualizacaoNoticias();
     </script>
 
     <!-- Painel de alertas ativos no hero -->
