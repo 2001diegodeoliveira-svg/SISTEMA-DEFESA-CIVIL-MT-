@@ -48,16 +48,12 @@ label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
   <div class="stat"><b id="count">–</b><span id="countLbl">focos de calor</span></div>
   <div id="status">Aguardando dados…</div>
 
-  <div>
-    <label for="key">Chave NASA FIRMS (MAP_KEY)</label>
-    <input id="key" type="password" placeholder="Cole sua chave gratuita" autocomplete="off">
-    <p style="margin-top:4px">Peça em firms.modaps.eosdis.nasa.gov/api/map_key. Sem chave, o mapa mostra focos de demonstração.</p>
-  </div>
+  <p style="margin-top:0">Focos NASA FIRMS consultados pelo servidor; a chave MAP_KEY fica configurada no backend.</p>
   <div class="row">
     <div><label for="days">Período</label>
-      <select id="days"><option value="1">Últimas 24 h</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option></select></div>
+      <select id="days"><option value="1">Últimas 24 h</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option></select></div>
     <div><label for="src">Satélite</label>
-      <select id="src"><option value="VIIRS_SNPP_NRT">VIIRS S-NPP</option><option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20</option><option value="MODIS_NRT">MODIS</option></select></div>
+      <select id="src"><option value="VIIRS_SNPP_NRT">VIIRS S-NPP</option><option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20</option><option value="VIIRS_NOAA21_NRT">VIIRS NOAA-21</option><option value="MODIS_NRT">MODIS</option></select></div>
   </div>
   <div class="row"><button id="go">Atualizar agora</button><button id="base" class="sec">Satélite / Mapa</button></div>
 
@@ -105,9 +101,6 @@ L.rectangle([[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]],{color:'#4aa3ad',weight:1,fill:fal
 const riskLayer=L.layerGroup().addTo(map), fireLayer=L.layerGroup().addTo(map), ambientalLayer=L.layerGroup().addTo(map);
 const $=id=>document.getElementById(id);
 const clamp=(x)=>Math.max(0,Math.min(1,x));
-function safeGet(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
-function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
-$('key').value=safeGet('firms_key');
 
 /* ---------- risco ---------- */
 function risk(rh,t,wind,dry){
@@ -147,25 +140,12 @@ map.on('click',async e=>{
 });
 
 /* ---------- focos ---------- */
-function parseCSV(t){
-  const L_=t.trim().split('\n');if(L_.length<2)return[];
-  const h=L_[0].split(',');return L_.slice(1).map(l=>{const v=l.split(',');const o={};h.forEach((k,i)=>o[k]=v[i]);return o});
-}
-function demo(){
-  const out=[];const now=Date.now();
-  for(let i=0;i<60;i++)out.push({latitude:-21+Math.random()*5.2,longitude:-58+Math.random()*2.8,frp:Math.random()*60,acq_date:new Date(now-Math.random()*3*864e5).toISOString().slice(0,10),acq_time:'1830',demo:1});
-  return out;
-}
 async function loadFires(){
-  const key=$('key').value.trim();safeSet('firms_key',key);
-  let rows,isDemo=false;
-  if(!key){rows=demo();isDemo=true}
-  else{
-    const url=`https://firms.modaps.eosdis.nasa.gov/api/area/csv/${key}/${$('src').value}/${BBOX.w},${BBOX.s},${BBOX.e},${BBOX.n}/${$('days').value}`;
-    const r=await fetch(url);if(!r.ok)throw new Error('FIRMS '+r.status);
-    const t=await r.text();if(t.startsWith('Invalid')||t.includes('Error'))throw new Error(t.slice(0,80));
-    rows=parseCSV(t);
-  }
+  const qs=new URLSearchParams({dias:$('days').value,fonte:$('src').value,bbox:`${BBOX.w},${BBOX.s},${BBOX.e},${BBOX.n}`});
+  const r=await fetch('/api/firms?'+qs);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.erro||('FIRMS '+r.status));
+  const rows=j.focos.map(f=>({latitude:f.lat,longitude:f.lon,frp:f.frp,acq_date:f.data,acq_time:(f.hora||'').replace(':','')}));
   fireLayer.clearLayers();
   const now=Date.now();
   rows.forEach(f=>{
@@ -174,11 +154,10 @@ async function loadFires(){
     const when=new Date(`${f.acq_date}T${hh.slice(0,2)}:${hh.slice(2)}:00Z`);
     const age=(now-when)/36e5, col=age<6?'#ff2a00':age<24?'#ff8a00':'#ffc400';
     L.circleMarker([la,lo],{radius:4+Math.min(10,Math.sqrt(frp)),color:'#16241f',weight:1,fillColor:col,fillOpacity:.85})
-     .bindPopup(`<b>Foco de calor</b>${isDemo?' (demo)':''}<br>${when.toLocaleString('pt-BR')}<br>Potência (FRP): ${frp.toFixed(1)} MW<br>Há ${age.toFixed(0)} h`).addTo(fireLayer);
+     .bindPopup(`<b>Foco de calor</b><br>${when.toLocaleString('pt-BR')}<br>Potência (FRP): ${frp.toFixed(1)} MW<br>Há ${age.toFixed(0)} h`).addTo(fireLayer);
   });
   $('count').textContent=rows.length;
-  $('countLbl').textContent=isDemo?'focos (demonstração)':'focos de calor';
-  return isDemo;
+  $('countLbl').textContent='focos de calor (NASA FIRMS)';
 }
 
 /* ---------- mapeamento oficial ICMBio/IBAMA ---------- */
@@ -271,6 +250,7 @@ async function loadPantanalMT(){
   const ok=k=>s[k]==='ok';
   const linhas=[
     ok('focos')?pmtLinha('Focos de calor (48 h)',`${fmtInt(m.focos.total)} · FRP ${fmtInt(m.focos.frpTotalMW)} MW`):pmtLinha('Focos de calor','indisponível'),
+    ok('firms')?pmtLinha('Focos NASA FIRMS (24 h)',`${fmtInt(m.firms.total)} · FRP ${fmtInt(m.firms.frpTotalMW)} MW`):pmtLinha('Focos NASA FIRMS','indisponível'),
     ok('clima')?pmtLinha('Risco climático médio',`${m.clima.riscoMedio}/100 · pico ${esc(m.clima.riscoMaximo.classe)}`):pmtLinha('Risco climático','indisponível'),
     ok('clima')?pmtLinha('Temperatura · umidade',`${m.clima.temperaturaMediaC} °C · ${m.clima.umidadeMediaPct}%`):'',
     ok('clima')?pmtLinha('Dias seguidos sem chuva (máx.)',m.clima.diasSemChuvaMax):'',
@@ -290,7 +270,7 @@ async function loadPantanalMT(){
 async function refresh(){
   $('status').textContent='Atualizando…';
   const msgs=[];
-  try{const d=await loadFires();if(d)msgs.push('Focos em modo demonstração: informe a chave FIRMS.')}catch(e){msgs.push('Focos: '+e.message)}
+  try{await loadFires()}catch(e){msgs.push('Focos: '+e.message)}
   try{await loadPantanalMT()}catch(e){msgs.push('Pantanal MT: '+e.message)}
   try{const a=await loadAmbiental();if(a.avisos&&a.avisos.length)msgs.push('ICMBio/IBAMA: '+a.avisos.join(' · '))}catch(e){msgs.push('ICMBio/IBAMA: '+e.message)}
   try{await loadRisk()}catch(e){msgs.push('Risco: '+e.message)}

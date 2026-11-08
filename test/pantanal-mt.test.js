@@ -5,8 +5,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const REGIAO = require('../api/_lib/pantanal-mt.json');
-const apiHandler = require('../api/index');
 const rota = require('../api/_routes/pantanal-mt');
+const apiHandler = rota;
 const ana = require('../api/_routes/ana-hidrologia');
 const ambiental = require('../api/_routes/ambiental-pantanal');
 const inmet = require('../api/_routes/inmet-chuva');
@@ -14,7 +14,7 @@ const { demoReset } = require('../api/_lib/demo');
 
 const ENV_KEYS = [
   'AUTH_LOGIN_ENABLED', 'DEMO_HORAS', 'VERCEL', 'VERCEL_ENV', 'NODE_ENV',
-  'FILE_STORE', 'DATABASE_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN',
+  'FILE_STORE', 'DATABASE_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'FIRMS_MAP_KEY',
 ];
 
 function setupEnv() {

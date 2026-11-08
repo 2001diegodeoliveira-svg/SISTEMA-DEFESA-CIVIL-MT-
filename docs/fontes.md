@@ -123,6 +123,17 @@ que sempre envia o parâmetro).
 - Focos 48h WFS: filtro por UF + `bbox` da viewport (WFS 1.1.0,
   ordem lat,lon em EPSG:4326).
 
+## NASA FIRMS (`GET /api/firms`)
+
+- Area API oficial: `/api/area/csv/[MAP_KEY]/[SOURCE]/[west,south,east,north]/[DAY_RANGE]`.
+- **DAY_RANGE aceita 1 a 5** (a página antiga oferecia 7 dias e pedidos assim falhariam).
+- Fontes NRT: `VIIRS_SNPP_NRT`, `VIIRS_NOAA20_NRT`, `VIIRS_NOAA21_NRT`, `MODIS_NRT`.
+- Limite da NASA: 5.000 transações / 10 min; pedidos de vários dias contam como vários.
+- Chave: `FIRMS_MAP_KEY` no ambiente do servidor (ver `.env.example`). Nunca vai ao
+  navegador, nunca aparece em resposta ou log. Sem chave: 503 com mensagem clara.
+- Testado ao vivo: a NASA responde (chave recusada → HTTP 400, o que vira 502 sem vazar a chave).
+- Usado por `pantanal-fogo.html` (focos) e pela seção `firms` de `/api/pantanal-mt` (24 h, dentro do polígono).
+
 ## Pantanal-MT — delimitação e monitoramento (`GET /api/pantanal-mt`)
 
 - **Delimitação (IBGE)**: bioma `Pantanal` do shapefile 1:250.000

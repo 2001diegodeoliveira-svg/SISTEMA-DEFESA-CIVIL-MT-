@@ -62,6 +62,7 @@ const handlers = {
   'elnino-mapa': require('./_routes/elnino-mapa'),
   'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'ambiental-pantanal': require('./_routes/ambiental-pantanal'),
+  'firms': require('./_routes/firms'),
   'pantanal-mt': require('./_routes/pantanal-mt'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),

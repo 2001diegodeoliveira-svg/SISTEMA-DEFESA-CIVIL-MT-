@@ -11,6 +11,7 @@
 
    Seções de monitoramento (cada uma isolada: falha vira status "erro"):
      focos        INPE/TerraBrasilis WFS  focos_48h_br_todosats (bbox + recorte)
+     firms        NASA FIRMS (VIIRS S-NPP, 24 h) via api/_routes/firms.js
      clima        Open-Meteo (grade de pontos dentro da região) + índice de risco
      hidrologia   ANA telemetria (estações ativas dentro da região)
      chuva        INMET BDMEP (reaproveita /api/inmet-chuva)
@@ -22,6 +23,7 @@
 const { jsonResponse, cacheHeaders, reqUrl } = require('../_lib/http');
 const { serve } = require('../_lib/serverless');
 const REGIAO = require('../_lib/pantanal-mt.json');
+const firms = require('./firms');
 const ana = require('./ana-hidrologia');
 const inmet = require('./inmet-chuva');
 const ambiental = require('./ambiental-pantanal');
@@ -199,6 +201,28 @@ async function secaoFocos() {
   };
 }
 
+async function secaoFirms() {
+  const [minLon, minLat, maxLon, maxLat] = REGIAO.bbox;
+  const dados = await firms.buscarFocos({
+    bbox: { minLon, minLat, maxLon, maxLat },
+    dias: 1,
+    fonte: 'VIIRS_SNPP_NRT',
+  });
+  const dentro = dados.focos.filter((f) => naRegiao(f.lon, f.lat));
+  const frp = dentro.reduce((s, f) => s + (f.frp || 0), 0);
+  const ultimos = dentro
+    .slice()
+    .sort((a, b) => `${b.data} ${b.hora}`.localeCompare(`${a.data} ${a.hora}`))
+    .slice(0, 5)
+    .map((f) => ({ lat: f.lat, lon: f.lon, data: f.data, hora: f.hora, satelite: f.satelite, confianca: f.confianca, frp: f.frp }));
+  return {
+    fonte: dados.fonte + ' (últimas 24 h)',
+    total: dentro.length,
+    frpTotalMW: Math.round(frp * 10) / 10,
+    ultimos,
+  };
+}
+
 async function secaoClima() {
   if (cacheClima && Date.now() - cacheClima.ts < CACHE_CLIMA_TTL_MS) return cacheClima.dados;
   const pontos = pontosDaGrade();
@@ -302,6 +326,7 @@ async function secaoAmbiental() {
 
 const SECOES = {
   focos: { fn: secaoFocos, timeout: TIMEOUT.focos },
+  firms: { fn: secaoFirms, timeout: 30000 },
   clima: { fn: secaoClima, timeout: TIMEOUT.clima },
   hidrologia: { fn: secaoHidrologia, timeout: 20000 },
   chuva: { fn: secaoChuva, timeout: TIMEOUT.chuva },
