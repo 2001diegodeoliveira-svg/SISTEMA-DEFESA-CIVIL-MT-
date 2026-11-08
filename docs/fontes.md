@@ -123,6 +123,25 @@ que sempre envia o parâmetro).
 - Focos 48h WFS: filtro por UF + `bbox` da viewport (WFS 1.1.0,
   ordem lat,lon em EPSG:4326).
 
+## Pantanal-MT — delimitação e monitoramento (`GET /api/pantanal-mt`)
+
+- **Delimitação (IBGE)**: bioma `Pantanal` do shapefile 1:250.000
+  (`geoftp.ibge.gov.br/.../biomas/vetores/Biomas_250mil.zip`) ∩ malha
+  municipal de MT 2022 (`MT_Municipios_2022.zip`). Gerada por
+  `scripts/pantanal-mt/gerar-regiao.py` em `api/_lib/pantanal-mt.json`
+  (polígono simplificado em 0,002°, 11 municípios com ≥ 1% da área no
+  bioma). Regenerar quando o IBGE publicar nova versão do bioma.
+  Sede de Poconé fica fora do bioma (planalto); o município tem 80% no Pantanal.
+- **Nomes e códigos**: API do IBGE `servicodados.ibge.gov.br/api/v1/localidades/estados/51/municipios`
+  (cache 24 h; se cair, usa o snapshot e avisa em `avisos`).
+- **Focos 48 h**: TerraBrasilis WFS `dados_abertos:focos_48h_br_todosats`
+  (bbox da região + recorte por polígono; `id_2` = código IBGE do município).
+- **Clima**: Open-Meteo em grade de 0,25° dentro da região; índice heurístico
+  de risco (mesma fórmula de `pantanal-fogo.html`). Cache 30 min.
+- **Hidrologia**: ANA telemetria (`ana-hidrologia.fetchStations`), estações ativas, sem repetição.
+- **Chuva**: INMET BDMEP (`inmet-chuva.obterDados`), estações dentro da região.
+- **ICMBio/IBAMA**: reaproveita `ambiental-pantanal` (UCs, autos, embargos) recortado pela região.
+
 ## Fase 4 — novas camadas de risco (verificado ao vivo em 2026-10-13)
 
 - **DETER (desmatamento)** ✅ — WMS raster nacional sem chave:

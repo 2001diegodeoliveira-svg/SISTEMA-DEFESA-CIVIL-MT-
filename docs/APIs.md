@@ -20,6 +20,7 @@ portão global em `api/_lib/access-control.js` + checagem no handler.
 | `GET\|POST /api/fontes/vigilancia` | re-resolve hosts e audita quem aponta p/ faixa privada (mitigação TOCTOU; Vercel Cron a cada 5min ou `VIGILANCIA_INTERVAL_MIN` no standalone; exige Bearer/`?secret=` se `VIGILANCIA_SECRET` setado) | `system_config` (`fonte-vigilancia`) + `audit_logs` |
 | `GET /api/fontes` ou `/api/fontes/saude` | saúde das 22 fontes (ok/lento/fora, último sucesso/falha, latência) | `system_config` (`fonte-saude`) |
 | `GET /api/barragens?uf=&bbox=&limit=&offset=` | SNISB normalizado (+`parcial`) | ArcGIS REST SNISB; `s-maxage=24h` |
+| `GET /api/pantanal-mt?refresh=` | Delimitação oficial do Pantanal-MT (IBGE: bioma ∩ malha MT 2022, 11 municípios) + monitoramento: focos INPE 48 h, risco climático Open-Meteo, estações ANA, chuva INMET, UCs/autos ICMBio e embargos IBAMA. Seções isoladas (`status`/`avisos`); 502 só se todas falharem | Região: snapshot `api/_lib/pantanal-mt.json`; nomes via API IBGE (24 h); resposta em memória 15 min; `s-maxage=900` |
 | `GET /api/ambiental-pantanal?bbox=&camadas=&max=&refresh=` | UCs federais + autos de infração (ICMBio) e embargos (IBAMA) em GeoJSON, recortados por bbox (padrão Pantanal); omite autuado/CPF-CNPJ | WFS ICMBio/INDE + CSV de coordenadas do IBAMA; `s-maxage=1h`, cache em memória 24h (embargos) |
 | `GET /api/avisos` / `?id=` | RSS nacional / detalhe CAP+polígono | INMET; `s-maxage` 10min/1h |
 | `GET /api/areas-monitoradas` | áreas + regras | store |

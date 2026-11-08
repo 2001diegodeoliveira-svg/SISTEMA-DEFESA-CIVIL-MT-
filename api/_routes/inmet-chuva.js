@@ -357,3 +357,4 @@ module.exports = serve(async function handler(req) {
 });
 
 module.exports.limparCache = limparCache;
+module.exports.obterDados = obterDados;

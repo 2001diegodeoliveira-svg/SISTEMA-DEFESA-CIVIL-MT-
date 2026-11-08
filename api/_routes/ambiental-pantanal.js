@@ -440,3 +440,6 @@ module.exports.normalizarUC = normalizarUC;
 module.exports.normalizarAuto = normalizarAuto;
 module.exports.limparCache = limparCache;
 module.exports.PANTANAL_BBOX = PANTANAL_BBOX;
+module.exports.buscarIcmbio = buscarIcmbio;
+module.exports.buscarEmbargos = buscarEmbargos;
+module.exports.CAMADAS = CAMADAS;

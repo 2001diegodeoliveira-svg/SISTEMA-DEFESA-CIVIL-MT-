@@ -26,6 +26,9 @@ button.sec{background:transparent;color:var(--ink);border-color:var(--line)}
 .stat b{font:600 38px Georgia,serif;color:var(--ember)}
 .legend{display:grid;gap:4px;font-size:13px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:8px;vertical-align:-2px}
+.pmt-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.pmt-row span{color:var(--mute)}
+.pmt-row b{color:var(--ink);text-align:right}
 label.chk{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;margin:3px 0;cursor:pointer}
 label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
 .legend b{font-weight:600;color:var(--ink)}
@@ -57,6 +60,12 @@ label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
       <select id="src"><option value="VIIRS_SNPP_NRT">VIIRS S-NPP</option><option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20</option><option value="MODIS_NRT">MODIS</option></select></div>
   </div>
   <div class="row"><button id="go">Atualizar agora</button><button id="base" class="sec">Satélite / Mapa</button></div>
+
+  <div>
+    <h2>Pantanal MT · monitoramento</h2>
+    <div id="pmtResumo"></div>
+    <p id="pmtMeta" style="margin-top:6px"></p>
+  </div>
 
   <div>
     <h2>Mapeamento oficial · ICMBio / IBAMA</h2>
@@ -247,10 +256,42 @@ async function loadAmbiental(){
   $(id).onchange=e=>{camadasAmb[chave]=e.target.checked;montarAmbiental();};
 });
 
+/* ---------- Pantanal-MT: delimitação IBGE + monitoramento integrado ---------- */
+let regiaoLayer=null;
+function pmtLinha(rotulo,valor){return `<div class="pmt-row"><span>${rotulo}</span><b>${valor}</b></div>`}
+async function loadPantanalMT(){
+  const r=await fetch('/api/pantanal-mt');
+  if(!r.ok)throw new Error('API '+r.status);
+  const d=await r.json();
+  if(!regiaoLayer){
+    regiaoLayer=L.geoJSON(d.regiao.geojson,{style:{color:'#ffd400',weight:3,fill:false}})
+      .bindTooltip('Pantanal (MT) · delimitação IBGE').addTo(map);
+  }
+  const m=d.monitoramento,s=d.status;
+  const ok=k=>s[k]==='ok';
+  const linhas=[
+    ok('focos')?pmtLinha('Focos de calor (48 h)',`${fmtInt(m.focos.total)} · FRP ${fmtInt(m.focos.frpTotalMW)} MW`):pmtLinha('Focos de calor','indisponível'),
+    ok('clima')?pmtLinha('Risco climático médio',`${m.clima.riscoMedio}/100 · pico ${esc(m.clima.riscoMaximo.classe)}`):pmtLinha('Risco climático','indisponível'),
+    ok('clima')?pmtLinha('Temperatura · umidade',`${m.clima.temperaturaMediaC} °C · ${m.clima.umidadeMediaPct}%`):'',
+    ok('clima')?pmtLinha('Dias seguidos sem chuva (máx.)',m.clima.diasSemChuvaMax):'',
+    ok('hidrologia')?pmtLinha('Estações ANA ativas',fmtInt(m.hidrologia.total)):pmtLinha('Estações ANA','indisponível'),
+    ok('chuva')?pmtLinha('Chuva INMET 24 h (média)',m.chuva.chuva24hMediaMm==null?'—':`${m.chuva.chuva24hMediaMm} mm`):pmtLinha('Chuva INMET','indisponível'),
+    ok('ambiental')?pmtLinha('UCs federais · autos ICMBio',`${fmtInt(m.ambiental.ucs.total)} · ${fmtInt(m.ambiental.autos.total)}`):pmtLinha('ICMBio / IBAMA','indisponível'),
+    ok('ambiental')?pmtLinha('Embargos IBAMA na região',fmtInt(m.ambiental.embargos.total)):'',
+  ].join('');
+  const focosMun=ok('focos')?m.focos.porMunicipio.slice(0,3).map(x=>`${esc(x.nome)} (${x.focos})`).join(' · '):'';
+  $('pmtResumo').innerHTML=linhas+(focosMun?`<p style="margin-top:6px">Mais focos: ${focosMun}</p>`:'');
+  const falhas=Object.keys(s).filter(k=>s[k]!=='ok');
+  $('pmtMeta').textContent=(falhas.length?'Fontes com falha: '+falhas.join(', ')+' · ':'')+
+    `${d.regiao.municipios.length} municípios · atualizado às `+new Date(d.atualizadoEm).toLocaleTimeString('pt-BR');
+  return d;
+}
+
 async function refresh(){
   $('status').textContent='Atualizando…';
   const msgs=[];
   try{const d=await loadFires();if(d)msgs.push('Focos em modo demonstração: informe a chave FIRMS.')}catch(e){msgs.push('Focos: '+e.message)}
+  try{await loadPantanalMT()}catch(e){msgs.push('Pantanal MT: '+e.message)}
   try{const a=await loadAmbiental();if(a.avisos&&a.avisos.length)msgs.push('ICMBio/IBAMA: '+a.avisos.join(' · '))}catch(e){msgs.push('ICMBio/IBAMA: '+e.message)}
   try{await loadRisk()}catch(e){msgs.push('Risco: '+e.message)}
   $('status').textContent=(msgs.length?msgs.join(' · ')+' · ':'')+'Atualizado às '+new Date().toLocaleTimeString('pt-BR');

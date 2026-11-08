@@ -138,3 +138,6 @@ module.exports = serve(async function handler(req) {
     }, origin);
   }
 });
+
+module.exports.fetchStations = fetchStations;
+module.exports.limparCache = () => { cache = { updatedAt: 0, stations: null }; };
