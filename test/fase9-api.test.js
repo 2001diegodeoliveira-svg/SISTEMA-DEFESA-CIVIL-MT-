@@ -60,12 +60,20 @@ test('alertas GET combina curados + INMET ao vivo (mockado)', async () => {
   try {
     setupEnv();
     global.fetch = () => Promise.resolve(new Response(
-      '<rss><channel><item><guid>9</guid><description><![CDATA[<table>'
+      '<rss><channel>'
+      + '<item><guid>9</guid><description><![CDATA[<table>'
       + '<tr><th>Evento</th><td>Tempestade</td></tr>'
       + '<tr><th>Severidade</th><td>Perigo</td></tr>'
-      + '<tr><th>Área</th><td>Norte Mato-grossense</td></tr>'
+      + '<tr><th>Área</th><td>Aviso para as Áreas: Norte Mato-grossense</td></tr>'
       + '<tr><th>Fim</th><td>2099-01-01 00:00:00.0</td></tr>'
-      + '</table>]]></description></item></channel></rss>',
+      + '</table>]]></description></item>'
+      + '<item><guid>10</guid><description><![CDATA[<table>'
+      + '<tr><th>Evento</th><td>Chuvas Intensas</td></tr>'
+      + '<tr><th>Severidade</th><td>Perigo Potencial</td></tr>'
+      + '<tr><th>Área</th><td>Aviso para as Áreas: Sudeste Paulista</td></tr>'
+      + '<tr><th>Fim</th><td>2099-01-01 00:00:00.0</td></tr>'
+      + '</table>]]></description></item>'
+      + '</channel></rss>',
       { status: 200, headers: { 'content-type': 'application/rss+xml' } }
     ));
     const r = await apiHandler(get('alertas'));
@@ -74,6 +82,10 @@ test('alertas GET combina curados + INMET ao vivo (mockado)', async () => {
     assert.ok(Array.isArray(j.alertas));
     assert.ok(Array.isArray(j.inmet));
     assert.ok(j.inmet.some((a) => a.fonte === 'inmet' && a.evento === 'Tempestade'));
+    /* Regressão: avisos oficiais fora de MT também devem ser retornados. */
+    const nacional = j.inmet.find((a) => a.evento === 'Chuvas Intensas');
+    assert.ok(nacional, 'aviso do Sudeste Paulista deve estar na resposta nacional');
+    assert.match(nacional.areas, /Sudeste Paulista/);
     const sem = await apiHandler(get('alertas?inmet=0'));
     assert.equal(sem.status, 200);
     assert.deepEqual((await sem.json()).inmet, []);

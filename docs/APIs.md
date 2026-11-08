@@ -11,7 +11,7 @@ portão global em `api/_lib/access-control.js` + checagem no handler.
 |---|---|---|
 | `GET /api/` | índice da API | — |
 | `GET /api/demo` | janela de demonstração | store |
-| `GET /api/alertas[?inmet=0]` | alertas curados + INMET ao vivo | RSS INMET (10s timeout) |
+| `GET /api/alertas[?inmet=0]` | alertas curados + INMET ao vivo (avisos nacionais, sem recorte por UF) | RSS INMET (10s timeout) |
 | `GET /api/areas` | áreas desenhadas | store |
 | `GET /api/occurrences[?source=&type=&priority=&status=&period=][?view=map\|stats\|waze]` | ocorrências (coords arredondadas) | store |
 | `GET /api/occurrences/:id` | detalhe (404 se ausente) | store |

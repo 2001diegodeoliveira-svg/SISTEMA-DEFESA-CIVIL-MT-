@@ -633,17 +633,9 @@
         };
         const INMET_SEV = { 'Perigo Potencial': 2, 'Perigo': 1, 'Grande Perigo': 0 };
         const INMET_SEV_COR = { 0: '#ef4444', 1: '#f97316', 2: '#eab308' };
-        // Regiões de MT (mesorregiões IBGE). Evita "Sul Mato-grossense"/"Mato Grosso do Sul" (não é MT).
-        const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
-        const MESO_MT = ['Centro-Sul Mato-grossense', 'Norte Mato-grossense', 'Nordeste Mato-grossense', 'Sudeste Mato-grossense', 'Centro-Oeste de Mato Grosso', 'Sudoeste Mato-grossense'];
-
-        // Avisos do INMET costumam listar dezenas de mesorregiões de vários estados
-        // no mesmo aviso; mantém apenas as que pertencem a Mato Grosso para exibição.
-        function filtrarAreasMT(areaStr) {
-            const limpo = String(areaStr || '').replace(/^Aviso para as Áreas:\s*/i, '');
-            const partes = limpo.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean);
-            const soMt = partes.filter(p => MESO_MT.some(m => m.toLowerCase() === p.toLowerCase()));
-            return soMt.length ? soMt.join(', ') : limpo;
+        // Avisos do INMET são nacionais: preserva integralmente as áreas afetadas.
+        function limparAreas(areaStr) {
+            return String(areaStr || '').replace(/^Aviso para as Áreas:\s*/i, '').trim();
         }
 
         function hidratar(e, re) {
@@ -657,9 +649,6 @@
         }
 
         async function fetchInmetAvisos() {
-            if (scopeUf && scopeUf !== '51') {
-                return { avisos: [], error: 'Não há correspondência territorial validada para esta UF.' };
-            }
             try {
                 const r = await dcProxyFetch(INMET_RSS);
                 if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -672,7 +661,6 @@
                     if (!descMat) continue;
                     const html = descMat[1];
                     const area = campoTabela(html, 'Área');
-                    if (scopeUf === '51' && !REGIOES_MT.test(area)) continue;
 
                     const inicio = campoTabela(html, 'Início');
                     const fim = campoTabela(html, 'Fim');
@@ -688,7 +676,7 @@
 
                     avisos.push({
                         id, evento, severidade,
-                        inicio, fim, descricao, area: scopeUf === '51' ? filtrarAreasMT(area) : area, link,
+                        inicio, fim, descricao, area: limparAreas(area), link,
                         sev: INMET_SEV[severidade] !== undefined ? INMET_SEV[severidade] : 2,
                     });
                 }
@@ -718,8 +706,8 @@
             meta.innerHTML = g.error
                 ? 'Avisos indisponíveis · fonte <span class="src">INMET</span>'
                 : inmetCount
-                    ? `<i data-lucide="satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) · ${scopeUf === '51' ? 'Mato Grosso · ' : 'Brasil · '}fonte <span class="src">INMET</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-                    : `Nenhum aviso vigente retornado pelo INMET para ${scopeUf === '51' ? 'Mato Grosso' : 'o Brasil'}.`;
+                    ? `<i data-lucide="satellite-dish" style="margin-right:5px;"></i>${inmetCount} aviso(s) vigente(s) · Brasil · fonte <span class="src">INMET</span> · às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Nenhum aviso vigente retornado pelo INMET para o Brasil.';
             if (window.lucide) lucide.createIcons();
 
             if (g.error) {
@@ -728,7 +716,7 @@
                 return;
             }
             if (!g.avisos.length) {
-                grid.innerHTML = `<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para ${scopeUf === '51' ? 'Mato Grosso' : 'o Brasil'} neste momento.</div>`;
+                grid.innerHTML = '<div class="inmet-empty"><i data-lucide="check-circle" style="margin-right:8px;color:#4ade80;"></i>Sem avisos meteorológicos do INMET para o Brasil neste momento.</div>';
                 if (window.lucide) lucide.createIcons();
                 return;
             }

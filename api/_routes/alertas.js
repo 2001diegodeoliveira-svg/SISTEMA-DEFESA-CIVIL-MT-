@@ -1,18 +1,13 @@
-/* GET /api/alertas → { alertas:[...], atualizadoEm }  (curados + avisos INMET ao vivo) */
+/* GET /api/alertas → { alertas:[...], atualizadoEm }  (curados + avisos INMET ao vivo)
+   Avisos INMET: feed oficial nacional — sem recorte por UF. */
 const { jsonResponse, reqUrl } = require('../_lib/http');
 const { ALERTAS_SEED } = require('../_lib/seed');
 const { serve } = require('../_lib/serverless');
 
-const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
-const MESO_MT = ['Centro-Sul Mato-grossense', 'Norte Mato-grossense', 'Nordeste Mato-grossense', 'Sudeste Mato-grossense', 'Centro-Oeste de Mato Grosso', 'Sudoeste Mato-grossense'];
-
-// Avisos do INMET costumam listar dezenas de mesorregiões de vários estados
-// no mesmo aviso; mantém apenas as que pertencem a Mato Grosso.
-function filtrarAreasMT(areaStr) {
-  const limpo = String(areaStr || '').replace(/^Aviso para as Áreas:\s*/i, '');
-  const partes = limpo.split(/\s*,\s*/).map((s) => s.trim()).filter(Boolean);
-  const soMt = partes.filter((p) => MESO_MT.some((m) => m.toLowerCase() === p.toLowerCase()));
-  return soMt.length ? soMt.join(', ') : limpo;
+// O feed do INMET é nacional e pode listar áreas de vários estados no mesmo
+// aviso; preserva o texto integral das áreas afetadas.
+function limparAreas(areaStr) {
+  return String(areaStr || '').replace(/^Aviso para as Áreas:\s*/i, '').trim();
 }
 
 function campoTabela(html, rotulo) {
@@ -53,7 +48,6 @@ async function fetchInmetAvisos() {
       if (!dm) continue;
       const html = dm[1];
       const area = campoTabela(html, 'Área');
-      if (!REGIOES_MT.test(area)) continue;
       const fim = campoTabela(html, 'Fim');
       const fimD = new Date(String(fim).replace(' ', 'T'));
       if (isNaN(fimD) || fimD.getTime() < Date.now()) continue;
@@ -65,7 +59,7 @@ async function fetchInmetAvisos() {
         descricao: campoTabela(html, 'Descrição'),
         inicio: String(campoTabela(html, 'Início')).replace(' ', 'T'),
         fim: String(fim).replace(' ', 'T'),
-        areas: filtrarAreasMT(area),
+        areas: limparAreas(area),
         link: (item.match(/<link>([^<]+)<\/link>/) || [])[1] || '',
       });
     }
@@ -103,8 +97,8 @@ module.exports = serve(async function handler(req) {
     munFilter = ru ? (ru.searchParams.get('municipio') || '') : '';
   } catch {}
 
-  // Filtro por município (gestor municipal): apenas alertas curados do próprio
-  // município. Avisos INMET (seção inmet) permanecem estaduais por decisão.
+  // Filtro por município (gestor municipal): aplica-se apenas aos alertas
+  // curados. Os avisos INMET (seção inmet) são nacionais e não são filtrados.
   if (munFilter) {
     const nm = String(munFilter).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
     alertas = alertas.filter(a =>

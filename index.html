@@ -1194,7 +1194,7 @@
             if (label) label.textContent = 'Municípios na malha IBGE' + (organizacao.uf ? ' · ' + organizacao.uf : '');
             const alertasLabel = document.querySelector('#hsAlertas + span');
             const estacoesLabel = document.querySelector('#hsEstacoes + span');
-            if (alertasLabel) alertasLabel.textContent = 'Alertas oficiais · ' + (organizacao.uf || 'Brasil');
+            if (alertasLabel) alertasLabel.textContent = 'Alertas oficiais · Brasil';
             if (estacoesLabel) estacoesLabel.textContent = 'Estações integradas · ' + (organizacao.uf || 'Brasil');
 
             const total = codigo
@@ -1217,11 +1217,9 @@
         (function renderHomeAlerts() {
             const list = document.getElementById('homeAlertsList');
             if (!list) return;
-            const scopeUf = DC_ORGANIZACAO.obterUfInicial();
             let inmetIndisponivel = false;
 
-            // Avisos INMET em tempo real (fonte oficial)
-            const REGIOES_MT = /(^|,\s*)(Centro-Sul Mato-grossense|Norte Mato-grossense|Nordeste Mato-grossense|Sudeste Mato-grossense|Centro-Oeste de Mato Grosso|Sudoeste Mato-grossense)(,\s*|$)/i;
+            // Avisos INMET em tempo real (fonte oficial, cobertura nacional)
             function campoTabela(html, rotulo) {
                 const re = new RegExp('<th[^>]*>' + rotulo + '</th>[\\s\\S]*?<td>([\\s\\S]*?)</td>', 'i');
                 const m = html.match(re);
@@ -1229,12 +1227,8 @@
             }
 
             async function obterAvisosInmet() {
-                // Prioriza o backend (mesma fonte usada em alertas.html — já filtrada e ordenada).
-                if (scopeUf && scopeUf !== '51') {
-                    inmetIndisponivel = true;
-                    return [];
-                }
-                if (scopeUf === '51' && window.dcApi && window.dcApi.alertas) {
+                // Prioriza o backend (mesma fonte usada em alertas.html — cobertura nacional).
+                if (window.dcApi && window.dcApi.alertas) {
                     try {
                         const r = await dcApi.alertas();
                         if (r.ok && r.data && Array.isArray(r.data.inmet)) {
@@ -1260,8 +1254,6 @@
                         const dm = item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/);
                         if (!dm) continue;
                         const html = dm[1];
-                        const area = campoTabela(html, 'Área');
-                        if (scopeUf === '51' && !REGIOES_MT.test(area)) continue;
                         const fim = campoTabela(html, 'Fim');
                         const fimD = new Date(String(fim).replace(' ', 'T'));
                         if (isNaN(fimD) || fimD.getTime() < Date.now()) continue;
@@ -1291,8 +1283,8 @@
                     const top = avisos.slice(0, 3);
                     if (!top.length) {
                         list.innerHTML = `<div class="alert-empty">${inmetIndisponivel
-                            ? 'Avisos do INMET indisponíveis para este escopo no momento.'
-                            : (scopeUf ? 'Não há integração de alertas confirmada para esta UF.' : 'Nenhum aviso vigente foi retornado pelo INMET.')}</div>`;
+                            ? 'Avisos do INMET indisponíveis no momento.'
+                            : 'Nenhum aviso vigente foi retornado pelo INMET para o Brasil.'}</div>`;
                         return;
                     }
 
