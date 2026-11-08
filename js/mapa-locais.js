@@ -1,57 +1,15 @@
 /* SGI PROTEGE - Mapa Integrado (6/14): mapa-locais. Script classico (sem modulos ES): depende da ordem dos <script> em mapa.html; compartilha o escopo global. Extraido do inline original. */
-/* ================= Abrigos temporários (SGI PROTEGE) ================= */
-const ABRIGO_TIPO_LBL = { ginasio: 'Ginásio Poliesportivo', escola: 'Escola', centro: 'Centro comunitário' };
+/* ================= Abrigos temporários =================
+   Sem cadastro oficial publicado em API, não exibimos lista fixa
+   no front (dados estáticos sem fonte verificável). A camada
+   permanece desativada até existir fonte oficial.        */
 async function loadAbrigos() {
-    if (abrigosLoading) return;
-    abrigosLoading = true;
     const meta = document.getElementById('metaAbrigos');
-    if (meta && !abrigosLoaded) meta.innerHTML = 'Abrigos temporários · <b>carregando...</b>';
-    try {
-        const res = await fetch('js/abrigos_mt.json');
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error('formato inválido');
-        const abrigos = data.filter(a => registroNoEscopo(a.municipio, a.lat, a.lng));
-        if (abrigosLayer) { try { map.removeLayer(abrigosLayer); } catch (e) {} }
-        abrigosLayer = L.layerGroup();
-        abrigos.forEach(a => {
-            const lat = Number(a.lat), lng = Number(a.lng);
-            if (!isFinite(lat) || !isFinite(lng)) return;
-            const statusCor = a.status === 'operacional' ? '#34d399' : '#f59e0b';
-            const statusLbl = a.status === 'operacional' ? 'Operacional' : 'Preparado';
-            L.marker([lat, lng], {
-                icon: iconDivMarker('home', '#34d399', 30),
-                title: a.nome,
-                riseOnHover: true
-            }).bindPopup(`
-                <div style="min-width:220px;">
-                    <div style="font-weight:700;font-size:12.5px;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
-                        <i data-lucide="home" style="color:#34d399;"></i>${a.nome}
-                    </div>
-                    <div style="color:#94a3b8;font-size:10.5px;margin-bottom:6px;">${a.municipio} · MT</div>
-                    <div style="font-size:11px;line-height:1.75;">
-                        <div><b>Tipo:</b> ${ABRIGO_TIPO_LBL[a.tipo] || a.tipo}</div>
-                        <div><b>Endereço:</b> ${a.endereco || '—'}${a.bairro ? ' — Bairro ' + a.bairro : ''}</div>
-                        <div><b>Capacidade:</b> ${a.capacidade || '—'}</div>
-                        <div><b>Vagas atuais:</b> ${a.vagasAtuais || '—'}</div>
-                        <div><b>Coordenador:</b> ${a.coordenador || '—'}</div>
-                        <div><b>Contato:</b> ${a.contato || '—'}</div>
-                        <div><b>Status:</b> <span style="color:${statusCor};">${statusLbl}</span></div>
-                        ${a.observacoes ? '<div style="margin-top:4px;color:#cbd5e1;"><b>Obs.:</b> ' + a.observacoes + '</div>' : ''}
-                        <div style="margin-top:4px;color:#94a3b8;font-size:9.5px;">Fonte: ${a.fonte || 'SGI PROTEGE'}</div>
-                    </div>
-                    ${reportMarkerBtn(lat, lng)}
-                </div>`).addTo(abrigosLayer);
-        });
-        if (checkState.abrigos) abrigosLayer.addTo(map);
-        abrigosLoaded = true;
-        abrigosLoading = false;
-        if (meta) meta.innerHTML = `Abrigos temporários · <b>${abrigos.length.toLocaleString('pt-BR')}</b> cadastrados em ${selectedMunCod ? selectedMunNome : 'MT'}`;
-        if (window.lucide) lucide.createIcons();
-        refreshLegend();
-    } catch (e) {
-        abrigosLoading = false;
-        if (meta) meta.textContent = 'Abrigos temporários · erro ao carregar';
-    }
+    if (abrigosLayer) { try { map.removeLayer(abrigosLayer); } catch (e) {} abrigosLayer = null; }
+    abrigosLoaded = true;
+    abrigosLoading = false;
+    if (meta) meta.textContent = 'Abrigos · sem cadastro oficial em API — camada indisponível';
+    if (typeof refreshLegend === 'function') refreshLegend();
 }
 
 /* ================= Monitoramento por câmera — SINFRA Obras ao Vivo =================

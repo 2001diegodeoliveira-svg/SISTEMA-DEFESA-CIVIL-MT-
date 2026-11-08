@@ -58,7 +58,7 @@ function loadUCsIcmbio() {
 /* ================= Toggles de camadas (checkbox) ================= */
 const checks = { mtOutline: () => mtLayer, municipios: () => munLayer, ucs: () => ucWms, biomas: () => biomasWms, terrasIndigenas: () => tiWms, ucsIcmbio: () => ucIcmbioWms, focos: () => focosLayer, barragens: () => barragensLayer, anaHydrology: () => anaHydrologyLayer, inmetStations: () => inmetLayer, sipam: () => sipamLayer, deter: () => deterLayer, qualidadeAr: () => qualidadeArLayer, wmsFocos48h: () => wmsFocos48hLayer, reports: () => reportsLayer, vigiaMais: () => vigiaMaisLayer, abrigos: () => abrigosLayer, camsSinfra: () => camSinfraLayer, chuvaInmet: () => chuvaInmetLayer, tempestadePotencial: () => avisosLayer };
 const checkState = { mtOutline: true, municipios: true, ucs: false, biomas: false, terrasIndigenas: false, ucsIcmbio: false, deter: false, qualidadeAr: false, focos: false, barragens: false,
-anaHydrology: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: true,
+anaHydrology: false, inmetStations: false, sipam: false, wmsFocos48h: false, reports: true, vigiaMais: false, abrigos: false,
 camsSinfra: true, chuvaInmet: false, tempestadePotencial: true };
 let barragensLayer = null, barragensLoaded = false, barragensLoading = false;
 let anaHydrologyLayer = null, anaHydrologyLoaded = false, anaHydrologyLoading = false;
@@ -221,8 +221,8 @@ function refreshLegend() {
     box.classList.toggle('show', anyVisible);
 }
 
-/* ================= Estações DC (para contagem em áreas) ================= */
-const dcStations = ESTACOES_DC;
+/* Contagem de estações em áreas usa apenas estações reais das APIs
+   oficiais (INMET + ANA) — ver mapa-areas.js. */
 
 // Ícones inline (paths do Lucide) para marcadores do mapa — evita depender do
 // timing de lucide.createIcons() em markers que só entram no DOM quando a

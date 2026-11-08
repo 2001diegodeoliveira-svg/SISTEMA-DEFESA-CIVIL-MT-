@@ -84,9 +84,10 @@ que sempre envia o parâmetro).
   nacionais. Boot sem `?uf=` mostra o Brasil (antes: MT fixo).
 - Exceções honestas (fontes intrinsecamente regionais): CENSIPAM
   (Amazônia Legal; pede UF), SESP-MT/VigiaMais e SINFRA/câmeras
-  (só MT), abrigos (`js/abrigos_mt.json`, sem fonte nacional
-  verificada), monitor climático por cidade (lista base MT +
-  município selecionado).
+  (só MT), monitor climático por cidade (lista base MT +
+  município selecionado). Abrigos: sem cadastro oficial em API —
+  a camada estática `js/abrigos_mt.json` foi removida; o mapa
+  informa a indisponibilidade em vez de exibir lista sem fonte.
 
 - `GET /api/ana-hidrologia?uf=` — mesmo XML nacional
   (`telemetriaws1.ana.gov.br`), filtro por UF no servidor

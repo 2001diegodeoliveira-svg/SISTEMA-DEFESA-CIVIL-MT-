@@ -2,6 +2,7 @@
 
 const INTERNAL_PAGES = new Map([
   ['painel.html', new Set(['admin', 'avancado', 'municipal', 'coordenador', 'analista', 'operador_campo', 'leitura'])],
+  ['central-ocorrencias.html', new Set(['admin', 'avancado', 'municipal', 'administrador_orgao', 'coordenador', 'analista', 'operador_campo', 'leitura'])],
   ['gestaodefrota.html', new Set(['admin', 'avancado', 'municipal', 'administrador_orgao', 'coordenador', 'operador_campo', 'leitura'])],
   ['vistoria.html', new Set(['admin', 'avancado', 'municipal', 'coordenador', 'operador_campo'])],
   ['meus-chamados.html', new Set(['admin', 'avancado', 'municipal', 'coordenador', 'analista', 'operador_campo', 'voluntario', 'leitura'])],
@@ -18,6 +19,11 @@ const WRITE_ROLES = new Set([
 
 const ADMIN_ROLES = new Set(['admin', 'administrador_orgao']);
 const COORDINATION_ROLES = new Set(['admin', 'avancado', 'administrador_orgao', 'coordenador']);
+/* Perfis que podem consultar a Central de Ocorrências (dados internos). */
+const READ_ROLES = [
+  'admin', 'avancado', 'municipal', 'administrador_orgao',
+  'coordenador', 'analista', 'operador_campo', 'leitura',
+];
 
 function pageRoles(page) {
   return INTERNAL_PAGES.get(String(page || '').toLowerCase()) || null;
@@ -51,6 +57,10 @@ function canManageOrganization(access, organizationId, parentOrganizationId) {
 
 function apiPolicy(route, method) {
   const verb = String(method || 'GET').toUpperCase();
+  /* Central de Ocorrências: pública (decisão do supervisor — sem autenticação). */
+  if (route === 'central' || String(route || '').startsWith('central/')) {
+    return { public: true, write: false };
+  }
   /* Gestão: leitura pública (docs/APIs.md), escrita restrita a gestores.
      Sem isto, apiPolicy() cairia no default público e liberaria POST/DELETE. */
   if (route === 'gestao') {

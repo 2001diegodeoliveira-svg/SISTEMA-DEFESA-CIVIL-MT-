@@ -31,6 +31,11 @@ const handlers = {
   'alertas': require('./_routes/alertas'),
   'areas': require('./_routes/areas'),
   'occurrences': require('./_routes/occurrences'),
+  'central/ocorrencias': require('./_routes/central/ocorrencias'),
+  'central/tipos': require('./_routes/central/tipos'),
+  'central/dashboard': require('./_routes/central/dashboard'),
+  'central/equipes': require('./_routes/central/equipes'),
+  'central/mobilizacoes': require('./_routes/central/mobilizacoes'),
   'reports': require('./_routes/reports'),
   'proxy': require('./_routes/proxy'),
   'fontes': require('./_routes/fontes'),
@@ -62,8 +67,8 @@ const handlers = {
   'elnino-mapa': require('./_routes/elnino-mapa'),
   'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'ambiental-pantanal': require('./_routes/ambiental-pantanal'),
-  'firms': require('./_routes/firms'),
   'pantanal-mt': require('./_routes/pantanal-mt'),
+  'firms': require('./_routes/firms'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
   'pluv-alerta/avaliar': require('./_routes/pluv-alerta-avaliar'),
   'enso': require('./_routes/enso'),
@@ -73,6 +78,9 @@ const handlers = {
 
 const areasIdHandler = require('./_routes/areas/[id]');
 const occurrencesIdHandler = require('./_routes/occurrences/[id]');
+const centralOcorrenciaIdHandler = require('./_routes/central/ocorrencias/[id]');
+const centralAnexosHandler = require('./_routes/central/ocorrencias/[id]/anexos');
+const centralMobilizacaoIdHandler = require('./_routes/central/mobilizacoes/[id]');
 
 /* Extrai { route, query } a partir do req.url.
    A Vercel preserva o URL original E adiciona "?path=" com a rota;
@@ -337,6 +345,9 @@ module.exports = serve(async function handler(req) {
   else {
     const m = route.match(/^areas\/([^/]+)$/);
     if (m) target = areasIdHandler;
+    else if (/^central\/ocorrencias\/[^/]+\/anexos$/.test(route)) target = centralAnexosHandler;
+    else if (/^central\/ocorrencias\/[^/]+$/.test(route)) target = centralOcorrenciaIdHandler;
+    else if (/^central\/mobilizacoes\/[^/]+$/.test(route)) target = centralMobilizacaoIdHandler;
     else if (/^occurrences\/[^/]+$/.test(route)) target = occurrencesIdHandler;
   }
 
@@ -356,7 +367,9 @@ module.exports = serve(async function handler(req) {
         ? 'registration_approval'
         : route.startsWith('auth/mfa/')
           ? 'mfa'
-        : routeContextOperation(route, req.method, requestContext.operation);
+          : route.startsWith('central/')
+            ? 'service'
+            : routeContextOperation(route, req.method, requestContext.operation);
     requestContext.operation = operation;
     return runWithDbContext(requestContext, () => target(clone));
   }

@@ -1066,6 +1066,9 @@ module.exports = {
   writeCollection,
   push,
   removeById,
+  /* Central de Ocorrências: acesso SQL transacional com escopo (RLS) aplicado. */
+  getPool,
+  inTx,
   createUserRegistration,
   updateUserRegistration,
   editUserRegistration,

@@ -152,8 +152,10 @@ function alertasVigentes() {
 }
 
 /* ============================================================
-   Rede de monitoramento DC (ilustrativa) — compartilhada entre
-   home, mapa e alertas. Formato pronto p/ API do backend.
+   Rede de monitoramento DC — estações são consultadas em tempo
+   real nas APIs oficiais (INMET: /api/inmet-chuva · ANA:
+   /api/ana-hidrologia). Não há lista fixa de estações no front:
+   contagens usam apenas o cadastro retornado pela API.
    ============================================================ */
 const TIPO_ESTACAO = {
     rain:    { cor: '#f9631c', icone: 'cloud-rain',    rotulo: 'Pluviômetro' },
@@ -161,17 +163,6 @@ const TIPO_ESTACAO = {
     fire:    { cor: '#ef4444', icone: 'flame',         rotulo: 'Foco de calor' },
     shelter: { cor: '#34d399', icone: 'home',          rotulo: 'Abrigo' },
 };
-
-const ESTACOES_DC = [
-    { name: 'Pluviômetro Cuiabá — Centro', city: 'Cuiabá', lat: -15.601, lng: -56.097, type: 'rain', val: '52 mm/24h', status: 'Atenção' },
-    { name: 'Pluviômetro Sinop', city: 'Sinop', lat: -11.860, lng: -55.502, type: 'rain', val: '68 mm/24h', status: 'Alerta' },
-    { name: 'Pluviômetro Rondonópolis', city: 'Rondonópolis', lat: -16.470, lng: -54.635, type: 'rain', val: '18 mm/24h', status: 'Normal' },
-    { name: 'Régua Rio Cuiabá — Porto', city: 'Cuiabá', lat: -15.591, lng: -56.086, type: 'river', val: '4,8 m', status: 'Atenção' },
-    { name: 'Régua Rio Araguaia', city: 'Barra do Garças', lat: -15.884, lng: -52.259, type: 'river', val: '6,2 m', status: 'Alerta' },
-    { name: 'Régua Rio Cuiabá — Barão de Melgaço', city: 'Barão de Melgaço', lat: -16.194, lng: -55.968, type: 'river', val: '5,9 m', status: 'Emergência' },
-    { name: 'Foco de calor — zona rural', city: 'Poconé', lat: -16.257, lng: -56.622, type: 'fire', val: 'detecção por satélite', status: 'Alerta' },
-    { name: 'Abrigo temporário', city: 'Cuiabá', lat: -15.610, lng: -56.070, type: 'shelter', val: '120 vagas', status: 'Operacional' },
-];
 
 /* Perfis de acesso (item 9 da proposta) */
 const PERFIS = {

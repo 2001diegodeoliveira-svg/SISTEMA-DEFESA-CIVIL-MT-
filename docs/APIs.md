@@ -61,7 +61,26 @@ portão global em `api/_lib/access-control.js` + checagem no handler.
 | `POST|DELETE /api/pluv-alerta` | admin/avancado | fonte da verdade do limiar |
 | `POST /api/waze|tomtom?action=sync` | token | exige feed/key (405 sem ação válida) |
 
-## Notas operacionais
+## Central de Ocorrências (pública — sem autenticação)
+
+<|channel|> Rota | Observação |
+|---|---|
+| `GET /api/central/tipos[?incluirInativos=1]` | catálogo editável (17 tipos iniciais) |
+| `POST /api/central/tipos` | cria tipo sem alterar código |
+| `GET /api/central/ocorrencias?...` | filtros: protocolo, tipo, prioridade, status, verificacao, municipioId, responsavelId, de, ate, q |
+| `POST /api/central/ocorrencias` | protocolo automático `OC-AAAA-NNNNNN`, prioridade sugerida por heurística |
+| `GET /api/central/ocorrencias/:id` | detalhe + danos + histórico + mobilizações + anexos |
+| `PATCH /api/central/ocorrencias/:id` | status (justificativa obrigatória para concluir/arquivar), prioridade, danos, etc. |
+| `GET /api/central/dashboard` | indicadores operacionais + distribuição + evolução |
+| `GET /api/central/equipes` | |
+| `POST /api/central/equipes` | |
+| `GET /api/central/mobilizacoes?ocorrenciaId=&equipeId=&status=` | |
+| `POST /api/central/mobilizacoes` | |
+| `PATCH /api/central/mobilizacoes/:id` | |
+| `GET /api/central/ocorrencias/:id/anexos` | metadados (binário em armazenamento externo) |
+| `POST /api/central/ocorrencias/:id/anexos` | |
+
+**Atenção:** a autenticação foi removida da Central a pedido do supervisor. Dados restritos (LGPD) permanecem ocultos nas respostas públicas, mas as demais informações operacionais e de danos são acessíveis publicamente. Escopo por organização/município não é mais aplicado.
 
 - Produção sem config completa → **503** com `detalhes` (ver `validateProductionConfig`).
 - Persistência: coleções do store (`system_config` id-chaveado funciona em file/memory/kv/**pg**); `audit_logs` para trilhas.

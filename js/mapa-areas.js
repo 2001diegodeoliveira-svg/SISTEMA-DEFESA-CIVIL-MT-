@@ -69,11 +69,37 @@ function redrawPreview() {
     }
 }
 
-function finishDrawing() {
+/* Estações reais para contagem dentro das áreas desenhadas: INMET
+   (/api/inmet-chuva) + ANA (/api/ana-hidrologia). Sem lista fixa no
+   front — se as fontes falharem, a contagem fica indisponível. */
+let estacoesReaisCache = null;
+async function listarEstacoesReais() {
+    if (estacoesReaisCache) return estacoesReaisCache;
+    const uf = (typeof ufSiglaCorrente === 'function' && ufSiglaCorrente()) || 'MT';
+    const [chuva, ana] = await Promise.all([
+        fetch(apiUrl('/api/inmet-chuva?uf=' + encodeURIComponent(uf))).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+        fetch(apiUrl('/api/ana-hidrologia?uf=' + encodeURIComponent(uf))).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+    ]);
+    const pontos = [];
+    (chuva.estacoes || []).forEach(s => { if (isFinite(Number(s.lat)) && isFinite(Number(s.lon))) pontos.push([Number(s.lat), Number(s.lon)]); });
+    (ana.estacoes || []).forEach(s => { if (isFinite(Number(s.latitude)) && isFinite(Number(s.longitude))) pontos.push([Number(s.latitude), Number(s.longitude)]); });
+    estacoesReaisCache = pontos;
+    return pontos;
+}
+async function contarEstacoesNaArea(pts) {
+    try {
+        const pontos = await listarEstacoesReais();
+        return pontos.filter(([la, ln]) => pointInAnyPolygon(la, ln, pts)).length;
+    } catch (e) {
+        return null;
+    }
+}
+
+async function finishDrawing() {
     if (drawPts.length < 3) { toast('Adicione pelo menos 3 vértices para formar uma área.'); return; }
     const ringGeo = [...drawPts.map(p => [p[1], p[0]]), [drawPts[0][1], drawPts[0][0]]];
     const areaKm2 = geomAreaKm2({ type: 'Polygon', coordinates: [ringGeo] });
-    const estacoes = dcStations.filter(s => pointInAnyPolygon(s.lat, s.lng, drawPts)).length;
+    const estacoes = await contarEstacoesNaArea(drawPts);
     areas.push({
         id: Date.now(),
         nome: 'Área de interesse ' + (areas.length + 1),
@@ -84,7 +110,7 @@ function finishDrawing() {
     localStorage.setItem('dcmt_areas', JSON.stringify(areas));
     endDrawingState();
     renderAreas();
-    toast(`<b>${areas.at(-1).nome}</b> criada — ${estacoes} estação(ões) monitorada(s) dentro dela.`, true);
+    toast(`<b>${areas.at(-1).nome}</b> criada — ${estacoes === null ? 'contagem de estações indisponível (fontes fora do ar)' : estacoes + ' estação(ões) monitorada(s) dentro dela.'}`, true);
 }
 function cancelDrawing() { endDrawingState(); }
 function endDrawingState() {
@@ -122,7 +148,7 @@ function renderAreas() {
             <i data-lucide="pentagon"></i>
             <div class="ai-info">
                 <b>${a.nome}</b>
-                <span>${a.areaKm2.toLocaleString('pt-BR')} km² · ${a.estacoes} estação(ões)</span>
+                <span>${a.areaKm2.toLocaleString('pt-BR')} km² · ${a.estacoes === null || a.estacoes === undefined ? 'estações: sem contagem' : a.estacoes + ' estação(ões)'}</span>
             </div>
             <button title="Centralizar" aria-label="Centralizar"><i data-lucide="crosshair"></i></button>
             <button title="Excluir" aria-label="Excluir"><i data-lucide="trash-2"></i></button>

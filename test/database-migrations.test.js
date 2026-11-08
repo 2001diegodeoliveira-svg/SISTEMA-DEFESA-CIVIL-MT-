@@ -106,14 +106,18 @@ test('migrações são versionadas por checksum e aplicadas dentro de transaçã
   await applyMigrations(client);
 
   const files = fs.readdirSync(MIGRATIONS_DIR).filter(file => file.endsWith('.sql'));
-  assert.equal(files.length, 2);
+  assert.deepEqual(files, [
+    '000000000001_multi_organization.sql',
+    '000000000002_rbac_mfa_rls.sql',
+    '000000000003_central_ocorrencias.sql'
+  ]);
   for (const file of files) {
     const version = file.slice(0, -4);
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
     assert.equal(aplicada.get(version), crypto.createHash('sha256').update(sql).digest('hex'));
   }
-  assert.equal(log.filter(line => line === 'BEGIN').length, 2);
-  assert.equal(log.filter(line => line === 'COMMIT').length, 2);
+  assert.equal(log.filter(line => line === 'BEGIN').length, 3);
+  assert.equal(log.filter(line => line === 'COMMIT').length, 3);
   const rbacMigration = fs.readFileSync(
     path.join(MIGRATIONS_DIR, '000000000002_rbac_mfa_rls.sql'),
     'utf8'
@@ -126,7 +130,7 @@ test('migrações são versionadas por checksum e aplicadas dentro de transaçã
 
   const countBeforeRerun = log.length;
   await applyMigrations(client);
-  assert.equal(log.filter(line => line === 'BEGIN').length, 2);
+  assert.equal(log.filter(line => line === 'BEGIN').length, 3);
   assert.ok(log.length > countBeforeRerun);
 });
 
@@ -147,4 +151,33 @@ test('DDL define histórico de ocorrência, escopo organizacional e modelos da F
   }
   assert.match(migration, /USING GIST/);
   assert.match(migration, /AFTER INSERT OR UPDATE OF status ON ocorrencias/);
+});
+
+test('DDL da Central cria catálogo, danos, equipes, anexos e RLS sem duplicar o modelo', () => {
+  const migration = fs.readFileSync(
+    path.join(MIGRATIONS_DIR, '000000000003_central_ocorrencias.sql'),
+    'utf8'
+  );
+  for (const table of [
+    'tipos_ocorrencia', 'ocorrencia_protocolos', 'ocorrencia_danos',
+    'equipes', 'equipe_mobilizacoes', 'ocorrencia_anexos'
+  ]) {
+    assert.match(migration, new RegExp(`CREATE TABLE ${table}\\s*\\(`));
+  }
+  /* Evolui `ocorrencias` em vez de criar tabela paralela. */
+  assert.equal(/CREATE TABLE ocorrencias\s*\(/.test(migration), false);
+  for (const coluna of ['protocolo', 'prioridade', 'verificacao', 'municipio_id', 'responsavel_id']) {
+    assert.match(migration, new RegExp(`ALTER TABLE ocorrencias ADD COLUMN IF NOT EXISTS ${coluna}`));
+  }
+  for (const status of ['registrada', 'em_triagem', 'em_avaliacao', 'aguardando_mobilizacao',
+    'equipe_mobilizada', 'em_atendimento', 'monitoramento', 'concluida', 'arquivada']) {
+    assert.match(migration, new RegExp(`'${status}'`));
+  }
+  assert.match(migration, /FORCE ROW LEVEL SECURITY/);
+  for (const tabela of ['tipos_ocorrencia', 'ocorrencia_danos', 'equipes', 'equipe_mobilizacoes', 'ocorrencia_anexos']) {
+    assert.match(migration, new RegExp(`ALTER TABLE ${tabela}[\\s\\S]*?FORCE ROW LEVEL SECURITY`));
+  }
+  assert.match(migration, /CREATE OR REPLACE FUNCTION proximo_protocolo_ocorrencia/);
+  assert.match(migration, /app\.historico_nota/);
+  assert.match(migration, /CREATE UNIQUE INDEX ocorrencias_protocolo_unique/);
 });

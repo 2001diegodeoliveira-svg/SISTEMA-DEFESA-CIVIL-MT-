@@ -12,6 +12,18 @@
         try { return localStorage.getItem('dcmt_token'); } catch (e) { return null; }
     }
 
+    /* Serializa um objeto em query string, ignorando valores vazios. */
+    function qs(query) {
+        if (!query) return '';
+        var partes = [];
+        Object.keys(query).forEach(function (chave) {
+            var valor = query[chave];
+            if (valor === undefined || valor === null || valor === '') return;
+            partes.push(encodeURIComponent(chave) + '=' + encodeURIComponent(valor));
+        });
+        return partes.length ? '?' + partes.join('&') : '';
+    }
+
     function request(path, opts) {
         opts = opts || {};
         opts.method = opts.method || 'GET';
@@ -97,6 +109,28 @@
         reports: function () { return request('reports'); },
         createReport: function (data) { return request('reports', { method: 'POST', body: data }); },
         occurrencesMap: function () { return request('occurrences?view=map'); },
+
+        // Central de Ocorrências (dados internos; exige sessão)
+        centralListar: function (query) { return request('central/ocorrencias' + qs(query)); },
+        centralDetalhe: function (id) { return request('central/ocorrencias/' + encodeURIComponent(id)); },
+        centralCriar: function (data) { return request('central/ocorrencias', { method: 'POST', body: data }); },
+        centralAtualizar: function (id, data) {
+            return request('central/ocorrencias/' + encodeURIComponent(id), { method: 'PATCH', body: data });
+        },
+        centralDashboard: function (query) { return request('central/dashboard' + qs(query)); },
+        centralTipos: function (query) { return request('central/tipos' + qs(query)); },
+        centralCriarTipo: function (data) { return request('central/tipos', { method: 'POST', body: data }); },
+        centralEquipes: function (query) { return request('central/equipes' + qs(query)); },
+        centralCriarEquipe: function (data) { return request('central/equipes', { method: 'POST', body: data }); },
+        centralMobilizacoes: function (query) { return request('central/mobilizacoes' + qs(query)); },
+        centralMobilizar: function (data) { return request('central/mobilizacoes', { method: 'POST', body: data }); },
+        centralAtualizarMobilizacao: function (id, data) {
+            return request('central/mobilizacoes/' + encodeURIComponent(id), { method: 'PATCH', body: data });
+        },
+        centralAnexos: function (id) { return request('central/ocorrencias/' + encodeURIComponent(id) + '/anexos'); },
+        centralCriarAnexo: function (id, data) {
+            return request('central/ocorrencias/' + encodeURIComponent(id) + '/anexos', { method: 'POST', body: data });
+        },
 
         // Áreas de interesse
         areas: function () { return request('areas'); },

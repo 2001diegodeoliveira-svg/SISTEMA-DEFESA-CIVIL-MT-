@@ -80,7 +80,72 @@
         .tab em { margin-left: auto; background: rgba(148,163,184,.15); color: var(--text-main); font-style: normal; font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
         .tab.active em { background: rgba(249,115,22,.25); }
 
-        main { padding: 22px 26px 60px; max-width: 1100px; }
+        main { padding: 24px clamp(16px, 2vw, 32px) 60px; width: 100%; max-width: none; min-width: 0; }
+        .page-wrap > * { min-width: 0; }
+        .mobile-menu-btn {
+            display: none; align-items: center; justify-content: center; gap: 8px;
+            background: rgba(255,255,255,.05); color: var(--text-main);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 9px 11px; cursor: pointer; font-size: 12px; font-weight: 700;
+        }
+        .mobile-menu-btn i { width: 17px; height: 17px; }
+        .skip-link {
+            position: absolute; left: 12px; top: -60px; z-index: 6000;
+            background: var(--accent-orange); color: #fff; padding: 10px 14px;
+            border-radius: 8px; text-decoration: none; font-weight: 700;
+        }
+        .skip-link:focus { top: 12px; }
+        :focus-visible { outline: 2px solid var(--blue-glow); outline-offset: 3px; }
+        .overview-wrap { padding: 26px clamp(16px, 3vw, 42px) 48px; max-width: 1600px; margin: 0 auto; }
+        .overview-hero {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 18px;
+            padding: 24px; border: 1px solid var(--border-color); border-radius: 16px;
+            background: radial-gradient(circle at 90% 10%, rgba(249,115,22,.16), transparent 34%),
+                        linear-gradient(135deg, rgba(30,41,59,.98), rgba(15,23,42,.98));
+            margin-bottom: 20px;
+        }
+        .overview-kicker { color: var(--accent-orange); font-size: 10px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
+        .overview-hero h2 { font-size: clamp(21px, 3vw, 29px); font-weight: 800; margin: 7px 0; }
+        .overview-hero p { max-width: 720px; color: var(--text-muted); font-size: 13px; line-height: 1.65; }
+        .overview-live { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 11px; color: var(--text-muted); }
+        .overview-live:before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px rgba(34,197,94,.55); }
+        .overview-section-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .9px; font-weight: 800; margin: 24px 0 12px; }
+        .overview-modules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .overview-module {
+            display: flex; flex-direction: column; gap: 12px; min-height: 170px;
+            padding: 18px; border-radius: 13px; background: var(--bg-card);
+            border: 1px solid var(--border-color); color: var(--text-main);
+            text-decoration: none; transition: transform .18s, border-color .18s, background .18s;
+        }
+        .overview-module:hover { transform: translateY(-2px); border-color: rgba(249,115,22,.5); background: var(--bg-card-hover); }
+        .overview-module-top { display: flex; align-items: center; justify-content: space-between; }
+        .overview-module-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; background: rgba(249,115,22,.13); color: var(--accent-orange); }
+        .overview-module-icon i { width: 20px; height: 20px; }
+        .overview-module h3 { font-size: 14px; font-weight: 800; }
+        .overview-module p { color: var(--text-muted); font-size: 11.5px; line-height: 1.5; }
+        .overview-module-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; color: var(--accent-orange); font-size: 11px; font-weight: 700; }
+        .overview-note {
+            margin-top: 18px; padding: 13px 15px; border: 1px solid rgba(0,210,255,.2);
+            border-radius: 10px; background: rgba(0,210,255,.05); color: var(--text-muted);
+            font-size: 11.5px; line-height: 1.55;
+        }
+        @media (max-width: 960px) {
+            .overview-modules { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 900px) {
+            .mobile-menu-btn { display: inline-flex; }
+            header { flex-wrap: wrap; gap: 10px; }
+            header nav { display: none; order: 4; width: 100%; }
+            header nav.mobile-open { display: block; }
+            header nav ul { display: flex; flex-direction: column; gap: 0; padding: 8px 0; }
+            header nav ul li a { display: block; padding: 11px 8px; }
+            header nav ul li a.active::after { bottom: 4px; left: 8px; width: 24px; }
+        }
+        @media (max-width: 640px) {
+            .overview-wrap { padding: 16px 12px 32px; }
+            .overview-hero { padding: 18px; flex-direction: column; }
+            .overview-modules { grid-template-columns: 1fr; }
+        }
         .p-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
         .p-head h2 { font-size: 21px; font-weight: 800; }
         .p-head p { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; max-width: 720px; line-height: 1.5; }
@@ -252,6 +317,7 @@
     <script src="js/demo.js"></script>
 </head>
 <body>
+    <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
 
     <header>
         <div class="logo-area">
@@ -261,14 +327,17 @@
                 <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
             </div>
         </div>
-        <nav>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-expanded="false" aria-controls="mainNav">
+            <i data-lucide="menu"></i> Menu
+        </button>
+        <nav id="mainNav">
             <ul>
                 <li><a href="index.html">Início</a></li>
                 <li><a href="mapa.html">Mapa</a></li>
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="painel.html">Painel</a></li>
-                <li><a href="gestao.html" class="active">Gestão</a></li>
-                <li><a href="gestao.html#frota">Frota</a></li>
+                <li><a href="gestao_atualizado.html" class="active">Gestão</a></li>
+                <li><a href="gestao_atualizado.html#frota">Frota</a></li>
                 <li><a href="el-nino.html">El Niño</a></li>
                 <li><a href="amazonia.html">Amazônia</a></li>
             </ul>
@@ -277,13 +346,16 @@
     </header>
 
     <div class="gestao-tabs" role="tablist" aria-label="Áreas da Gestão">
-        <button type="button" class="gestao-tab active" data-aba="gestao" role="tab" aria-selected="true" aria-controls="pane-gestao">
+        <button type="button" class="gestao-tab active" id="tab-overview" data-aba="overview" role="tab" aria-selected="true" aria-controls="pane-overview">
+            <i data-lucide="layout-dashboard"></i> Visão Geral
+        </button>
+        <button type="button" class="gestao-tab" id="tab-gestao" data-aba="gestao" role="tab" aria-selected="false" aria-controls="pane-gestao">
             <i data-lucide="layout-dashboard"></i> Gestão por Município
         </button>
-        <button type="button" class="gestao-tab" data-aba="frota" role="tab" aria-selected="false" aria-controls="pane-frota">
+        <button type="button" class="gestao-tab" id="tab-frota" data-aba="frota" role="tab" aria-selected="false" aria-controls="pane-frota">
             <i data-lucide="car"></i> Frota
         </button>
-        <button type="button" class="gestao-tab" data-aba="contratos" role="tab" aria-selected="false" aria-controls="pane-contratos">
+        <button type="button" class="gestao-tab" id="tab-contratos" data-aba="contratos" role="tab" aria-selected="false" aria-controls="pane-contratos">
             <i data-lucide="file-signature"></i> Contratos
         </button>
         <a class="gestao-tab ext" id="abaAbrir" href="gestaodefrota.html" target="_blank" rel="noopener" title="Abrir a aba atual em nova janela">
@@ -291,7 +363,60 @@
         </a>
     </div>
 
-    <div id="pane-gestao" class="tab-pane active" role="tabpanel">
+
+    <div id="pane-overview" class="tab-pane active" role="tabpanel" aria-labelledby="tab-overview">
+        <section class="overview-wrap">
+            <div class="overview-hero">
+                <div>
+                    <div class="overview-kicker">Plataforma estadual de gestão integrada</div>
+                    <h2>Central de Gestão — SGI PROTEGE</h2>
+                    <p>Acesse os módulos de gestão municipal, frota e contratos em um único ambiente.
+                    As informações operacionais continuam sendo carregadas pelos módulos e serviços já existentes.</p>
+                </div>
+                <span class="overview-live">Ambiente de gestão</span>
+            </div>
+
+            <div class="overview-section-title">Módulos da plataforma</div>
+            <div class="overview-modules">
+                <a class="overview-module" href="#gestao" onclick="abrirAbaGestao('gestao'); return false;">
+                    <div class="overview-module-top">
+                        <span class="overview-module-icon"><i data-lucide="building-2"></i></span>
+                        <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                    </div>
+                    <h3>Gestão por Município</h3>
+                    <p>Consulte e mantenha os cadastros, informações administrativas e indicadores municipais.</p>
+                    <div class="overview-module-foot"><span>Acessar gestão municipal</span><i data-lucide="chevron-right"></i></div>
+                </a>
+                <a class="overview-module" href="#frota" onclick="abrirAbaGestao('frota'); return false;">
+                    <div class="overview-module-top">
+                        <span class="overview-module-icon"><i data-lucide="car-front"></i></span>
+                        <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                    </div>
+                    <h3>Gestão de Frota</h3>
+                    <p>Acesse o módulo de veículos, viagens, checklists, disponibilidade e manutenção.</p>
+                    <div class="overview-module-foot"><span>Acessar frota</span><i data-lucide="chevron-right"></i></div>
+                </a>
+                <a class="overview-module" href="#contratos" onclick="abrirAbaGestao('contratos'); return false;">
+                    <div class="overview-module-top">
+                        <span class="overview-module-icon"><i data-lucide="file-signature"></i></span>
+                        <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                    </div>
+                    <h3>Gestão de Contratos</h3>
+                    <p>Acesse o sistema contratual para consultar contratos, fornecedores e vigências.</p>
+                    <div class="overview-module-foot"><span>Acessar contratos</span><i data-lucide="chevron-right"></i></div>
+                </a>
+            </div>
+
+            <div class="overview-section-title">Orientação de uso</div>
+            <div class="overview-note">
+                <strong>Integridade dos dados:</strong> este painel não apresenta contagens ou indicadores simulados.
+                Os indicadores estaduais poderão ser adicionados após a validação das fontes de dados e dos serviços
+                utilizados pelos módulos de Gestão, Frota e Contratos.
+            </div>
+        </section>
+    </div>
+
+    <div id="pane-gestao" class="tab-pane" role="tabpanel">
     <div class="page-wrap">
         <aside class="side">
             <div class="mun-box">
@@ -307,7 +432,7 @@
             <div class="tabs-title" id="tabsTitle">Seções de Gestão</div>
             <nav id="tabsNav"></nav>
         </aside>
-        <main>
+        <main id="mainContent">
             <div id="veBar" class="ve-bar" style="display:none;">
                 <button class="btn-mini ghost" onclick="GESTAO.voltarVisao()"><i data-lucide="arrow-left"></i> Voltar à visão estadual</button>
             </div>
@@ -354,7 +479,7 @@
     <script>
     (function () {
         var abas = Array.prototype.slice.call(document.querySelectorAll('.gestao-tab[data-aba]'));
-        var paineis = { gestao: 'pane-gestao', frota: 'pane-frota', contratos: 'pane-contratos' };
+        var paineis = { overview: 'pane-overview', gestao: 'pane-gestao', frota: 'pane-frota', contratos: 'pane-contratos' };
         var externos = { frota: 'gestaodefrota.html', contratos: 'contratos.html' };
         var link = document.getElementById('abaAbrir');
 
@@ -373,7 +498,7 @@
             var frame = pane && pane.querySelector('iframe[data-src]');
             if (frame && !frame.getAttribute('src')) frame.setAttribute('src', frame.getAttribute('data-src'));
             if (link) {
-                link.style.display = nome === 'gestao' ? 'none' : '';
+                link.style.display = (nome === 'gestao' || nome === 'overview') ? 'none' : '';
                 if (externos[nome]) link.setAttribute('href', externos[nome]);
             }
             if (!silencioso) {
@@ -389,10 +514,29 @@
             b.addEventListener('click', function () { ativar(b.getAttribute('data-aba')); });
         });
         window.abrirAbaGestao = ativar;
-        ativar((location.hash || '').replace('#', '') || 'gestao', true);
+        ativar((location.hash || '').replace('#', '') || 'overview', true);
         window.addEventListener('hashchange', function () {
-            ativar((location.hash || '').replace('#', '') || 'gestao', true);
+            ativar((location.hash || '').replace('#', '') || 'overview', true);
         });
+
+        var menuBtn = document.getElementById('mobileMenuBtn');
+        var mainNav = document.getElementById('mainNav');
+        if (menuBtn && mainNav) {
+            menuBtn.addEventListener('click', function () {
+                var aberto = mainNav.classList.toggle('mobile-open');
+                menuBtn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+                menuBtn.innerHTML = (aberto ? '<i data-lucide="x"></i> Fechar' : '<i data-lucide="menu"></i> Menu');
+                if (window.lucide) lucide.createIcons();
+            });
+            mainNav.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', function () {
+                    mainNav.classList.remove('mobile-open');
+                    menuBtn.setAttribute('aria-expanded', 'false');
+                    menuBtn.innerHTML = '<i data-lucide="menu"></i> Menu';
+                    if (window.lucide) lucide.createIcons();
+                });
+            });
+        }
     })();
     </script>
     <script>if (window.lucide) lucide.createIcons();</script>
