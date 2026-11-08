@@ -1903,5 +1903,24 @@
             }
         })();
     </script>
+    <script>
+    // Força atualização do Service Worker e limpa caches antigos (sgi-v2 → sgi-v3).
+    (function () {
+        if (!('serviceWorker' in navigator)) return;
+        if (sessionStorage.getItem('sw_cache_cleared')) return;
+        sessionStorage.setItem('sw_cache_cleared', '1');
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+        }).then(function () {
+            if (window.caches) {
+                return caches.keys().then(function (names) {
+                    return Promise.all(names.map(function (n) { return caches.delete(n); }));
+                });
+            }
+        }).then(function () {
+            window.location.reload();
+        }).catch(function () {});
+    })();
+    </script>
 </body>
 </html>
