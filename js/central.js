@@ -27,6 +27,14 @@
         retornando: 'Retornando', encerrada: 'Encerrada'
     };
 
+    var UF_NOMES = {
+        '11':'Rondônia','12':'Acre','13':'Amazonas','14':'Roraima','15':'Pará','16':'Amapá','17':'Tocantins',
+        '21':'Maranhão','22':'Piauí','23':'Ceará','24':'Rio Grande do Norte','25':'Paraíba','26':'Pernambuco',
+        '27':'Alagoas','28':'Sergipe','29':'Bahia','31':'Minas Gerais','32':'Espírito Santo','33':'Rio de Janeiro',
+        '35':'São Paulo','41':'Paraná','42':'Santa Catarina','43':'Rio Grande do Sul','50':'Mato Grosso do Sul',
+        '51':'Mato Grosso','52':'Goiás','53':'Distrito Federal'
+    };
+
     var estado = {
         tipos: [],
         ocorrencias: [],
@@ -34,8 +42,13 @@
         equipes: [],
         mapa: null,
         camada: null,
-        malhaIbge: null,
+        malha: null,
+        malhaUf: null,
         nomesMunicipios: {},
+        municipioParaUf: {},
+        contagemMunicipios: {},
+        contagemUf: {},
+        ufAtual: null,
         temporizador: null,
         mfa: null
     };
@@ -114,7 +127,6 @@
         }
         return false;
     }
-
     function abrirModal(id) {
         var el = $(id);
         if (!el) return;
@@ -125,11 +137,135 @@
         }
         el.classList.add('show');
         if (id === 'loginModal' && !$('lUsuario').value) $('lUsuario').focus();
+        if (id === 'formModal') $('cTitulo').focus();
     }
 
     function fecharModal(id) {
         var el = $(id);
         if (el) el.classList.remove('show');
+    }
+
+    async function entrar() {
+        var usuario = $('lUsuario').value.trim();
+        var senha = $('lSenha').value;
+        var erroEl = $('loginErro');
+        erroEl.classList.remove('show');
+        if (!usuario || !senha) {
+            erroEl.textContent = 'Informe usuário e senha.';
+            erroEl.classList.add('show');
+            return;
+        }
+        $('btnLogin').disabled = true;
+        try {
+            var r = await dcApi.login(usuario, senha);
+            if (!r.ok) {
+                erroEl.textContent = (r.data && r.data.erro) || 'Não foi possível entrar.';
+                erroEl.classList.add('show');
+                return;
+            }
+            if (r.data && r.data.mfaSetupRequired) {
+                await iniciarMfa('setup', r.data.challengeToken);
+                return;
+            }
+            if (r.data && r.data.mfaRequired) {
+                await iniciarMfa('login', r.data.challengeToken);
+                return;
+            }
+            concluirLogin(r.data && r.data.token);
+        } catch (e) {
+            erroEl.textContent = 'Falha de conexão com o servidor.';
+            erroEl.classList.add('show');
+        } finally {
+            $('btnLogin').disabled = false;
+        }
+    }
+
+    async function iniciarMfa(tipo, challengeToken) {
+        estado.mfa = { tipo: tipo, challengeToken: challengeToken };
+        $('mfaBloco').style.display = 'block';
+        $('mfaCodigo').value = '';
+        $('loginErro').classList.remove('show');
+        if (tipo === 'login') {
+            $('mfaInstrucoes').textContent = 'Informe o código temporário do aplicativo autenticador.';
+            $('mfaSegredo').style.display = 'none';
+            $('mfaCodigo').focus();
+            return;
+        }
+        $('mfaInstrucoes').textContent = 'Configure o autenticador antes de entrar.';
+        $('btnMfaConfirmar').disabled = true;
+        try {
+            var r = await dcApi.mfaEnroll(challengeToken);
+            if (!r.ok) {
+                $('loginErro').textContent = (r.data && r.data.erro) || 'Não foi possível iniciar o cadastro do MFA.';
+                $('loginErro').classList.add('show');
+                return;
+            }
+            var segredo = r.data.secret || '';
+            $('mfaSegredo').style.display = 'block';
+            $('mfaSegredo').innerHTML = 'Chave: <b>' + escapeHtml(segredo) + '</b><br>' +
+                (r.data.otpauthUri ? 'URI: ' + escapeHtml(r.data.otpauthUri) : '');
+            $('mfaInstrucoes').textContent = 'Adicione a chave ao aplicativo autenticador e informe o código de 6 dígitos.';
+            $('mfaCodigo').focus();
+        } catch (e) {
+            $('loginErro').textContent = 'Falha de conexão ao iniciar o MFA.';
+            $('loginErro').classList.add('show');
+        } finally {
+            $('btnMfaConfirmar').disabled = false;
+        }
+    }
+
+    async function confirmarMfa() {
+        if (!estado.mfa) return;
+        var codigo = $('mfaCodigo').value.trim();
+        var erroEl = $('loginErro');
+        erroEl.classList.remove('show');
+        if (!/^\d{6}$/.test(codigo)) {
+            erroEl.textContent = 'Informe o código de 6 dígitos.';
+            erroEl.classList.add('show');
+            return;
+        }
+        $('btnMfaConfirmar').disabled = true;
+        try {
+            var r = estado.mfa.tipo === 'setup'
+                ? await dcApi.mfaConfirm(estado.mfa.challengeToken, codigo)
+                : await dcApi.mfaVerify(estado.mfa.challengeToken, codigo);
+            if (!r.ok) {
+                erroEl.textContent = (r.data && r.data.erro) || 'Código inválido.';
+                erroEl.classList.add('show');
+                return;
+            }
+            estado.mfa = null;
+            concluirLogin(r.data && r.data.token);
+        } catch (e) {
+            erroEl.textContent = 'Falha de conexão ao validar o código.';
+            erroEl.classList.add('show');
+        } finally {
+            $('btnMfaConfirmar').disabled = false;
+        }
+    }
+
+    async function concluirLogin(novoToken) {
+        guardarToken(novoToken);
+        fecharModal('loginModal');
+        $('lSenha').value = '';
+        $('mfaBloco').style.display = 'none';
+        $('mfaSegredo').style.display = 'none';
+        estado.mfa = null;
+        esconderAuth();
+        await carregarTudo();
+    }
+
+    function sair() {
+        guardarToken(null);
+        estado.ocorrencias = [];
+        estado.selecionada = null;
+        renderTabela();
+        renderDetalhe(null);
+        mostrarAuth('Sessão encerrada. Entre novamente para acessar a Central.');
+        $('kpiGrid').innerHTML = '';
+        $('chartTipo').innerHTML = '<p class="muted">Sem dados.</p>';
+        $('chartEvolucao').innerHTML = '<p class="muted">Sem dados.</p>';
+        if (estado.camada) estado.camada.clearLayers();
     }
 
     async function entrar() {
@@ -434,7 +570,7 @@
 
     function iniciarMapa() {
         if (!window.L || estado.mapa) return;
-        estado.mapa = L.map('mapaCentral', { zoomControl: true }).setView([-12.64, -55.42], 6);
+        estado.mapa = L.map('mapaCentral', { zoomControl: true }).setView([-14.235, -51.925], 4);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 18,
             subdomains: 'abcd'
@@ -450,6 +586,7 @@
     }
 
     function renderMapa() {
+        atualizarContagens();
         if (!estado.mapa || !estado.camada) return;
         estado.camada.clearLayers();
         var pontos = estado.ocorrencias.filter(function (o) {
@@ -747,49 +884,180 @@
         } catch (e) { /* datalist é conveniência */ }
     }
 
-    async function carregarMalhaIbge() {
-        if (estado.malhaIbge) return estado.malhaIbge;
-        $('malhaStatus').textContent = 'Carregando malha IBGE...';
+    function corChoropleth(n, escala) {
+        if (!n) return 'rgba(56,189,248,.06)';
+        if (escala === 'uf') {
+            if (n >= 20) return 'rgba(239,68,68,.5)';
+            if (n >= 10) return 'rgba(249,115,22,.45)';
+            if (n >= 3) return 'rgba(251,191,36,.4)';
+            return 'rgba(34,197,94,.35)';
+        }
+        if (n >= 10) return 'rgba(239,68,68,.45)';
+        if (n >= 5) return 'rgba(249,115,22,.4)';
+        if (n >= 2) return 'rgba(251,191,36,.35)';
+        return 'rgba(34,197,94,.3)';
+    }
+
+    function estiloUf(feature) {
+        var uf = feature && feature.properties ? String(feature.properties.codarea) : '';
+        var n = estado.contagemUf[uf] || 0;
+        return { color: 'rgba(56,189,248,.6)', weight: 1, fillColor: corChoropleth(n, 'uf'), fillOpacity: 1 };
+    }
+
+    function estiloMunicipio(feature) {
+        var codigo = feature && feature.properties ? feature.properties.codarea : '';
+        var nome = estado.nomesMunicipios[String(codigo)] || '';
+        var n = estado.contagemMunicipios[nome] || 0;
+        return { color: 'rgba(56,189,248,.55)', weight: 1, fillColor: corChoropleth(n), fillOpacity: 1 };
+    }
+
+    function atualizarContagens() {
+        var porMunicipio = {};
+        var porUf = {};
+        (estado.ocorrencias || []).forEach(function (o) {
+            if (o.municipio) {
+                porMunicipio[o.municipio] = (porMunicipio[o.municipio] || 0) + 1;
+                var uf = estado.municipioParaUf[o.municipio];
+                if (uf) porUf[uf] = (porUf[uf] || 0) + 1;
+            }
+        });
+        estado.contagemMunicipios = porMunicipio;
+        estado.contagemUf = porUf;
+        if (estado.malha) estado.malha.setStyle(estado.ufAtual ? estiloMunicipio : estiloUf);
+    }
+
+    async function carregarMapaMunicipioUf() {
+        if (Object.keys(estado.municipioParaUf).length) return;
         try {
-            var r = await fetch('/api/ibge/malhas/estados/51');
+            var ufs = Object.keys(UF_NOMES);
+            var respostas = await Promise.all(ufs.map(function (uf) {
+                return fetch('/api/ibge/municipios?uf=' + uf).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+            }));
+            respostas.forEach(function (lista, idx) {
+                var uf = ufs[idx];
+                if (!Array.isArray(lista)) return;
+                lista.forEach(function (m) {
+                    if (m && m.nome) estado.municipioParaUf[m.nome] = uf;
+                });
+            });
+        } catch (e) { /* mapa de municípios é conveniência */ }
+    }
+
+    async function carregarMalhaEstados() {
+        if (estado.malhaUf) return estado.malhaUf;
+        $('malhaStatus').textContent = 'Carregando estados (IBGE)...';
+        try {
+            var r = await fetch('/api/ibge/malhas/estados');
             if (!r.ok) throw new Error('IBGE indisponível');
             var geojson = await r.json();
             if (!geojson || !Array.isArray(geojson.features)) throw new Error('Malha inválida');
-            estado.malhaIbge = L.geoJSON(geojson, {
-                style: function () {
-                    return { color: 'rgba(56,189,248,.55)', weight: 1, fillColor: 'rgba(56,189,248,.06)', fillOpacity: 0.35 };
-                },
+            estado.malhaUf = L.geoJSON(geojson, {
+                style: estiloUf,
                 onEachFeature: function (feature, layer) {
-                    var codigo = feature && feature.properties ? feature.properties.codarea : '';
-                    var nome = estado.nomesMunicipios[String(codigo)] || ('Município ' + codigo);
-                    layer.bindTooltip(nome, { sticky: true, className: 'ibge-tooltip' });
-                    layer.on('mouseover', function () { layer.setStyle({ fillColor: 'rgba(249,115,22,.25)', color: '#f9731c' }); });
-                    layer.on('mouseout', function () { layer.setStyle({ color: 'rgba(56,189,248,.55)', fillColor: 'rgba(56,189,248,.06)' }); });
+                    var uf = feature && feature.properties ? String(feature.properties.codarea) : '';
+                    var nome = UF_NOMES[uf] || ('UF ' + uf);
+                    layer.bindTooltip(function () {
+                        var n = estado.contagemUf[uf] || 0;
+                        return '<b>' + escapeHtml(nome) + '</b><br>' + n + ' ocorrência(s)<br><span style="color:#94a3b8;font-size:9px">Clique para ver municípios</span>';
+                    }, { sticky: true, className: 'ibge-tooltip' });
+                    layer.on('mouseover', function () { layer.setStyle({ weight: 2, color: '#f9731c' }); });
+                    layer.on('mouseout', function () { layer.setStyle({ weight: 1, color: 'rgba(56,189,248,.6)' }); });
+                    layer.on('click', function () { drillDown(uf, layer); });
                 }
             });
-            $('malhaStatus').textContent = geojson.features.length + ' municípios (IBGE)';
-            return estado.malhaIbge;
+            $('malhaStatus').textContent = geojson.features.length + ' estados (IBGE)';
+            return estado.malhaUf;
         } catch (e) {
             $('malhaStatus').textContent = 'Malha IBGE indisponível.';
             return null;
         }
     }
 
+    async function carregarMalhaMunicipios(uf) {
+        $('malhaStatus').textContent = 'Carregando municípios de ' + (UF_NOMES[uf] || uf) + '...';
+        try {
+            /* nomes do UF */
+            var lista = [];
+            try {
+                var rm = await fetch('/api/ibge/municipios?uf=' + uf);
+                if (rm.ok) lista = await rm.json();
+            } catch (e) { lista = []; }
+            if (Array.isArray(lista)) {
+                lista.forEach(function (m) {
+                    if (m && m.id != null) estado.nomesMunicipios[String(m.id)] = m.nome;
+                });
+            }
+            var r = await fetch('/api/ibge/malhas/estados/' + uf);
+            if (!r.ok) throw new Error('IBGE indisponível');
+            var geojson = await r.json();
+            if (!geojson || !Array.isArray(geojson.features)) throw new Error('Malha inválida');
+            var camada = L.geoJSON(geojson, {
+                style: estiloMunicipio,
+                onEachFeature: function (feature, layer) {
+                    var codigo = feature && feature.properties ? feature.properties.codarea : '';
+                    var nome = estado.nomesMunicipios[String(codigo)] || ('Município ' + codigo);
+                    layer.bindTooltip(function () {
+                        var n = estado.contagemMunicipios[nome] || 0;
+                        return '<b>' + escapeHtml(nome) + '</b><br>' + n + ' ocorrência(s)';
+                    }, { sticky: true, className: 'ibge-tooltip' });
+                    layer.on('mouseover', function () { layer.setStyle({ weight: 2, color: '#f9731c' }); });
+                    layer.on('mouseout', function () { layer.setStyle({ weight: 1, color: 'rgba(56,189,248,.55)' }); });
+                }
+            });
+            $('malhaStatus').textContent = geojson.features.length + ' municípios · ' + (UF_NOMES[uf] || uf);
+            return camada;
+        } catch (e) {
+            $('malhaStatus').textContent = 'Malha municipal indisponível.';
+            return null;
+        }
+    }
+
+    async function drillDown(uf, layer) {
+        if (!estado.mapa) return;
+        estado.ufAtual = uf;
+        if (estado.malha) estado.mapa.removeLayer(estado.malha);
+        estado.malha = null;
+        var camada = await carregarMalhaMunicipios(uf);
+        if (!camada) { estado.ufAtual = null; return; }
+        estado.malha = camada;
+        camada.addTo(estado.mapa);
+        try {
+            if (layer && layer.getBounds) estado.mapa.fitBounds(layer.getBounds(), { padding: [20, 20], maxZoom: 9 });
+        } catch (e) {}
+        var botao = $('btnMalhaIbge');
+        if (botao) { botao.textContent = 'Voltar ao Brasil'; botao.classList.remove('ghost'); botao.classList.add('primary'); }
+    }
+
+    async function voltarBrasil() {
+        if (!estado.mapa) return;
+        if (estado.malha) estado.mapa.removeLayer(estado.malha);
+        estado.malha = null;
+        estado.ufAtual = null;
+        var camada = await carregarMalhaEstados();
+        if (camada) { estado.malha = camada; camada.addTo(estado.mapa); }
+        estado.mapa.setView([-14.235, -51.925], 4);
+        var botao = $('btnMalhaIbge');
+        if (botao) { botao.innerHTML = '<i data-lucide="layers"></i> Estados (IBGE)'; botao.classList.remove('primary'); botao.classList.add('ghost'); }
+        if (window.lucide) lucide.createIcons();
+        if ($('malhaStatus')) $('malhaStatus').textContent = '27 estados (IBGE)';
+    }
+
     async function toggleMalhaIbge() {
         if (!estado.mapa) return;
+        if (estado.ufAtual) { await voltarBrasil(); return; }
         var botao = $('btnMalhaIbge');
-        if (estado.mapa._malhaAtiva) {
-            if (estado.malhaIbge) estado.mapa.removeLayer(estado.malhaIbge);
-            estado.mapa._malhaAtiva = false;
+        if (estado.malha) {
+            estado.mapa.removeLayer(estado.malha);
+            estado.malha = null;
             botao.classList.remove('primary');
             botao.classList.add('ghost');
             $('malhaStatus').textContent = '';
             return;
         }
-        var camada = await carregarMalhaIbge();
+        var camada = await carregarMalhaEstados();
         if (!camada) return;
+        estado.malha = camada;
         camada.addTo(estado.mapa);
-        estado.mapa._malhaAtiva = true;
         botao.classList.remove('ghost');
         botao.classList.add('primary');
     }
@@ -881,10 +1149,20 @@
 
     async function iniciar() {
         ligarEventos();
+        await carregarMunicipios();
+        await carregarMapaMunicipioUf();
         iniciarMapa();
+        await carregarMalhaEstados().then(function (camada) {
+            if (camada && estado.mapa) {
+                estado.malha = camada;
+                camada.addTo(estado.mapa);
+                var botao = $('btnMalhaIbge');
+                if (botao) { botao.classList.remove('ghost'); botao.classList.add('primary'); }
+                if ($('malhaStatus')) $('malhaStatus').textContent = '27 estados (IBGE)';
+            }
+        }).catch(function () {});
         relogio();
         setInterval(relogio, 1000);
-        carregarMunicipios();
 
         await carregarTudo();
         estado.temporizador = setInterval(function () {
