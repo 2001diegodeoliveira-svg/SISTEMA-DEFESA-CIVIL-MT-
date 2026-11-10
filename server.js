@@ -122,7 +122,7 @@ const ARQUIVOS_RAIZ_BLOQUEADOS = new Set([
 
 /* Extensões publicáveis dentro de pastas de conteúdo (css/, js/, imagens/...). */
 const EXTENSOES_PUBLICAS = new Set([
-  '.html', '.css', '.js', '.mjs', '.json', '.map', '.webmanifest',
+  '.html', '.css', '.js', '.mjs', '.json', '.geojson', '.map', '.webmanifest',
   '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico', '.bmp',
   '.woff', '.woff2', '.ttf', '.eot', '.otf',
   '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.pdf', '.txt',

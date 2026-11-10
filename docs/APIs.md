@@ -35,6 +35,7 @@ portão global em `api/_lib/access-control.js` + checagem no handler.
 | `GET /api/ibge/indicadores?cod=` | população, área, densidade, urbanização, PIB total/per capita | SIDRA/Censo 2022 + PIB 2023; `s-maxage=7d` |
 | `GET /api/ibge/malhas/estados[/XX]` | GeoJSON de UFs/municípios (fallback do upstream) | front usa `geo/malhas/*.geojson` estático |
 | `GET /api/noticias[?q=][?n=][?fresco=1]` | RSS Google Notícias filtrado (defesa civil, clima extremo, desastres e queimadas em MT); `fresco=1` ignora cache | Google (sem chave); `s-maxage=300` |
+| `POST /api/chat` | Assistente de meteorologia (OpenCode Go) com contexto do painel; máx. 12 mensagens / 20 pedidos por IP a cada 10 min | OpenCode Go; chave apenas no servidor (`OPENCODE_API_KEY`) |
 | `GET /api/inmet-chuva?ano=&uf=` | chuva 24h/7d por estação (zip BDMEP via Range) | INMET; `s-maxage=6h` |
 | `GET /api/ana-hidrologia?uf=` | estações telemétricas ativas | ANA XML; cache 6h em memória |
 | `GET /api/pluv-alerta[?estacoes=]` | limiar servidor + avaliação | store/env |

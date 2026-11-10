@@ -95,6 +95,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            row-gap: 10px;
             padding: 15px 5%;
             background: linear-gradient(180deg, rgba(11, 19, 41, 0.95) 0%, rgba(11, 19, 41, 0.8) 100%);
             position: sticky;
@@ -127,8 +129,10 @@
 
         nav ul {
             display: flex;
+            flex-wrap: wrap;
             list-style: none;
             gap: 30px;
+            row-gap: 6px;
         }
 
         nav ul li a {
@@ -136,6 +140,7 @@
             color: var(--text-muted);
             font-size: 14px;
             font-weight: 500;
+            white-space: nowrap;
             transition: color 0.2s;
             position: relative;
             padding-bottom: 5px;
@@ -797,6 +802,11 @@
         }
 
         /* Responsividade básica */
+        @media (max-width: 1480px) {
+            nav ul { gap: 18px; }
+            nav ul li a { font-size: 13px; }
+        }
+
         @media (max-width: 1024px) {
             .hero {
                 text-align: center;
@@ -857,11 +867,11 @@
                 <li><a href="mapa.html">Mapa</a></li>
                 <li><a href="alertas.html">Alertas</a></li>
                 <li><a href="gestao_atualizado.html">Gestão</a></li>
-                <li><a href="gestao_atualizado.html#frota">Frota</a></li>
                 <li><a href="el-nino.html">El Niño</a></li>
                 <li><a href="amazonia.html">Amazônia</a></li>
                 <li><a href="pantanal-fogo.html">Pantanal</a></li>
                 <li><a href="#" onclick="document.getElementById('orientModal').classList.add('open'); return false;">Orientações</a></li>
+                <li><a href="meteorologia-ia.html" style="font-size:12px;font-weight:700;letter-spacing:.5px;">METEOROLOGIA <span style="color:#fbbf24;">(IA)</span></a></li>
             </ul>
         </nav>
 
@@ -941,13 +951,6 @@
             <div class="quick-content">
                 <h3>Seja Voluntário</h3>
                 <p>Faça parte da rede de voluntários da SGI PROTEGE</p>
-            </div>
-        </a>
-        <a href="gestao_atualizado.html#frota" class="quick-card">
-            <div class="quick-icon"><i data-lucide="truck"></i></div>
-            <div class="quick-content">
-                <h3>Frota</h3>
-                <p>Gestão de viaturas, viagens e manutenção</p>
             </div>
         </a>
     </div>

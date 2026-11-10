@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="imagens/logo.png">
+    <title>Meteorologia IA · SGI PROTEGE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #293548;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f9731c;
+            --accent-ai: #fbbf24;
+            --ok: #34d399;
+            --warn: #eab308;
+            --high: #f9731c;
+            --extreme: #ef4444;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        [data-lucide] { width: 1em; height: 1em; vertical-align: -0.125em; stroke-width: 2; }
+        body { background: var(--bg-dark); color: var(--text-main); overflow-x: hidden; }
+        html { background: var(--bg-dark); }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%; background: linear-gradient(180deg, rgba(11, 19, 41, 0.97) 0%, rgba(11, 19, 41, 0.85) 100%);
+            position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color); gap: 18px;
+        }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { height: 50px; }
+        .logo-text h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-text span { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+
+        nav ul { display: flex; list-style: none; gap: 22px; flex-wrap: wrap; }
+        nav ul li a {
+            text-decoration: none; color: var(--text-muted); font-size: 14px; font-weight: 500;
+            transition: color 0.2s; position: relative; padding-bottom: 5px; white-space: nowrap;
+        }
+        nav ul li a:hover, nav ul li a.active { color: var(--text-main); }
+        nav ul li a.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, var(--accent-ai), var(--accent-orange));
+        }
+
+        .emergency-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--accent-orange); color: #fff; font-weight: 700; font-size: 13px;
+            padding: 10px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .emergency-btn:hover { background: #ea580c; transform: translateY(-1px); }
+
+        .hero {
+            padding: 46px 5% 26px;
+            background:
+                radial-gradient(1100px 400px at 18% -10%, rgba(251, 191, 36, 0.16) 0%, transparent 60%),
+                radial-gradient(900px 380px at 85% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 55%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .hero .eyebrow {
+            display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 2px;
+            font-weight: 700; color: var(--accent-ai); text-transform: uppercase; margin-bottom: 12px;
+        }
+        .hero h2 { font-size: clamp(26px, 4vw, 44px); font-weight: 800; letter-spacing: -0.5px; }
+        .hero h2 span {
+            background: linear-gradient(90deg, var(--accent-ai), var(--accent-orange));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .hero p { color: var(--text-muted); margin-top: 12px; max-width: 780px; font-size: 15px; line-height: 1.6; }
+        .hero .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+        .chip {
+            font-size: 12px; font-weight: 600; color: var(--text-muted);
+            border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 999px;
+            display: inline-flex; align-items: center; gap: 6px; background: rgba(30, 41, 59, 0.6);
+        }
+
+        main { padding: 26px 5% 46px; }
+
+        .controls {
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;
+        }
+        .controls label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .controls select {
+            background: var(--bg-dark); color: var(--text-main); border: 1px solid var(--border-color);
+            border-radius: 9px; padding: 9px 12px; font-size: 13.5px; font-weight: 600; min-width: 220px;
+        }
+        .controls button {
+            display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-ai), #f59e0b); color: #1f2937;
+            border: 0; border-radius: 9px; padding: 9px 16px; font-size: 13px; font-weight: 800;
+        }
+        .controls button:disabled { opacity: .6; cursor: wait; }
+        #status { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+        #status.erro { color: #fca5a5; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 20px; transition: all 0.2s;
+        }
+        .card h4 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+        .card h4 i { color: var(--accent-ai); }
+        .card p { color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
+
+        .section-title { font-size: 20px; font-weight: 700; margin: 28px 0 16px; display: flex; align-items: center; gap: 10px; }
+        .section-title i { color: var(--accent-ai); }
+
+        .now-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .now-temp { font-size: 52px; font-weight: 800; line-height: 1; letter-spacing: -2px; }
+        .now-temp small { font-size: 22px; font-weight: 700; color: var(--text-muted); vertical-align: super; }
+        .now-cond { display: flex; align-items: center; gap: 10px; margin-top: 6px; color: var(--text-muted); font-size: 14px; }
+        .now-emoji { font-size: 42px; line-height: 1; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 18px; }
+        .metric {
+            background: rgba(15, 23, 42, 0.55); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 10px 12px;
+        }
+        .metric span { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 3px; }
+        .metric b { font-size: 16px; font-weight: 800; }
+
+        .ia-badge {
+            display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800;
+            letter-spacing: 1px; text-transform: uppercase; padding: 6px 12px; border-radius: 999px;
+            border: 1px solid currentColor; margin-bottom: 12px;
+        }
+        .ia-badge.ia { color: var(--accent-ai); }
+        .risk-pill {
+            display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800;
+            padding: 6px 12px; border-radius: 999px; color: #0f172a;
+        }
+        .ia-text { font-size: 13.8px; color: var(--text-main); line-height: 1.75; }
+        .ia-text b { color: var(--accent-ai); }
+        .ia-factors { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .ia-factors span {
+            font-size: 11.5px; color: var(--text-muted); border: 1px solid var(--border-color);
+            border-radius: 999px; padding: 4px 10px; background: rgba(15, 23, 42, 0.5);
+        }
+        .ia-foot { margin-top: 14px; font-size: 11.5px; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 10px; }
+
+        .forecast { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+        .day {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 14px 12px; text-align: center; position: relative; overflow: hidden;
+        }
+        .day::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--day-risk, transparent); }
+        .day .d-name { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+        .day .d-emoji { font-size: 30px; line-height: 1.4; }
+        .day .d-temp { font-size: 15px; font-weight: 800; }
+        .day .d-temp span { color: var(--text-muted); font-weight: 600; }
+        .day .d-rain { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+        .day .d-risk { font-size: 10.5px; font-weight: 800; margin-top: 6px; text-transform: uppercase; letter-spacing: .6px; }
+
+        .note {
+            margin-top: 18px; border-left: 3px solid var(--accent-ai);
+            background: rgba(251, 191, 36, 0.07);
+        }
+        .note h4 i { color: var(--accent-ai); }
+        .note p { margin-top: 6px; }
+
+        .chat { margin-top: 4px; display: grid; gap: 12px; }
+        .chat-log { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+        .chat-log:empty::before { content: 'Faça uma pergunta sobre a previsão e o risco do município selecionado.'; color: var(--text-muted); font-size: 13px; }
+        .msg { max-width: 88%; padding: 10px 13px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+        .msg.user { align-self: flex-end; background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.35); }
+        .msg.assistant { align-self: flex-start; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.28); }
+        .msg.erro { align-self: flex-start; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.5); color: #fecaca; }
+        .msg.pensando { color: var(--text-muted); font-style: italic; }
+        .chat-sug { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chat-sug button {
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-muted);
+            border-radius: 999px; padding: 6px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+        }
+        .chat-sug button:hover { border-color: var(--accent-ai); color: var(--text-main); }
+        .chat-form { display: flex; gap: 10px; align-items: flex-end; }
+        .chat-form textarea {
+            flex: 1; resize: vertical; min-height: 44px; max-height: 130px;
+            background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main);
+            border-radius: 10px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5;
+        }
+        .chat-form textarea:focus { outline: none; border-color: var(--accent-ai); }
+        .chat-form button {
+            display: inline-flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap;
+            background: linear-gradient(135deg, var(--accent-ai), #f59e0b); color: #1f2937;
+            border: 0; border-radius: 10px; padding: 11px 18px; font-size: 13px; font-weight: 800;
+        }
+        .chat-form button:disabled { opacity: .6; cursor: wait; }
+        .chat-foot { font-size: 11.5px; color: var(--text-muted); }
+
+        footer {
+            border-top: 1px solid var(--border-color); padding: 22px 5%; color: var(--text-muted);
+            font-size: 12.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+        }
+        footer a { color: var(--text-muted); text-decoration: none; }
+        footer a:hover { color: var(--text-main); }
+
+        @media (max-width: 980px) {
+            nav ul { display: none; }
+            header { flex-wrap: wrap; }
+            #status { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <img src="imagens/logo.png" alt="SGI PROTEGE">
+            <div class="logo-text">
+                <h1>SGI PROTEGE</h1>
+                <span>SISTEMA DE GESTÃO INTEGRADA E PROTEÇÃO</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li><a href="mapa.html">Mapa</a></li>
+                <li><a href="alertas.html">Alertas</a></li>
+                <li><a href="gestao_atualizado.html">Gestão</a></li>
+                <li><a href="el-nino.html">El Niño</a></li>
+                <li><a href="amazonia.html">Amazônia</a></li>
+                <li><a href="pantanal-fogo.html">Pantanal</a></li>
+                <li><a href="meteorologia-ia.html" class="active">METEOROLOGIA <span style="color:#fbbf24;">(IA)</span></a></li>
+                <li><a href="index.html">Orientações</a></li>
+            </ul>
+        </nav>
+
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div id="userArea"></div>
+            <a href="ocorrencia.html" class="emergency-btn">
+                <i data-lucide="triangle-alert"></i>
+                Registre sua ocorrência
+            </a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="eyebrow"><i data-lucide="sparkles"></i> Previsão assistida por IA — SGI PROTEGE</div>
+        <h2>METEOROLOGIA <span>(IA)</span></h2>
+        <p>Painel que combina dados meteorológicos atualizados com uma síntese automática de risco para apoio à decisão da Defesa Civil. Selecione o estado e o município: a análise destaca chuva, rajadas, calor extremo e condições de tempestade em qualquer ponto do país.</p>
+        <div class="chips">
+            <span class="chip"><i data-lucide="cloud-sun"></i> Previsão 7 dias</span>
+            <span class="chip"><i data-lucide="gauge"></i> Índice de risco</span>
+            <span class="chip"><i data-lucide="brain-circuit"></i> Síntese automática</span>
+            <span class="chip"><i data-lucide="clock"></i> Atualização a cada 10 min</span>
+        </div>
+    </section>
+
+    <main>
+        <div class="controls">
+            <label for="estado">Estado</label>
+            <select id="estado" aria-label="Selecionar estado"></select>
+            <label for="cidade">Município</label>
+            <select id="cidade" aria-label="Selecionar município" disabled></select>
+            <button id="btnAtualizar" type="button"><i data-lucide="refresh-cw"></i> Atualizar agora</button>
+            <span id="status">Carregando dados meteorológicos…</span>
+        </div>
+
+        <div class="grid">
+            <div class="card" id="cardAgora">
+                <h4><i data-lucide="thermometer"></i> Condições agora</h4>
+                <div class="now-head">
+                    <div>
+                        <div class="now-temp" id="agoraTemp">—<small>°C</small></div>
+                        <div class="now-cond"><span class="now-emoji" id="agoraEmoji">⏳</span><span id="agoraCond">Aguardando dados…</span></div>
+                    </div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><span>Sensação</span><b id="mSensacao">—</b></div>
+                    <div class="metric"><span>Umidade</span><b id="mUmidade">—</b></div>
+                    <div class="metric"><span>Vento</span><b id="mVento">—</b></div>
+                    <div class="metric"><span>Rajadas</span><b id="mRajada">—</b></div>
+                    <div class="metric"><span>Chuva agora</span><b id="mChuva">—</b></div>
+                    <div class="metric"><span>Atualizado</span><b id="mHora">—</b></div>
+                </div>
+            </div>
+
+            <div class="card" id="cardIA">
+                <h4><i data-lucide="brain-circuit"></i> Análise IA do dia</h4>
+                <span class="ia-badge ia"><i data-lucide="sparkles"></i> Síntese automática</span>
+                <div id="riscoPillWrap" style="margin-bottom:12px;"></div>
+                <div class="ia-text" id="iaTexto">Aguardando os dados para gerar a análise…</div>
+                <div class="ia-factors" id="iaFatores"></div>
+                <div class="ia-foot">Síntese gerada automaticamente por um modelo de regras local a partir dos dados do Open-Meteo. Não substitui os avisos oficiais do INMET, CEMADEN ou da Defesa Civil.</div>
+            </div>
+        </div>
+
+        <h3 class="section-title"><i data-lucide="calendar-days"></i> Previsão para os próximos 7 dias</h3>
+        <div class="forecast" id="forecast"></div>
+
+        <h3 class="section-title"><i data-lucide="message-circle"></i> Pergunte à IA</h3>
+        <div class="card chat">
+            <div id="chatLog" class="chat-log" aria-live="polite"></div>
+            <div class="chat-sug" id="chatSugestoes">
+                <button type="button" data-pergunta="Vai chover forte hoje neste município?">Vai chover forte hoje?</button>
+                <button type="button" data-pergunta="Qual é o principal risco para as próximas 48 horas?">Risco das próximas 48h</button>
+                <button type="button" data-pergunta="O que a Defesa Civil deve priorizar hoje?">Prioridades da Defesa Civil</button>
+            </div>
+            <form id="chatForm" class="chat-form">
+                <textarea id="chatInput" rows="1" maxlength="800" aria-label="Sua pergunta para a IA" placeholder="Ex.: há risco de alagamento amanhã em Cuiabá?"></textarea>
+                <button type="submit" id="chatEnviar"><i data-lucide="send"></i> Enviar</button>
+            </form>
+            <p class="chat-foot">Respostas geradas por IA podem conter erros. Confirme sempre nos avisos oficiais do INMET, do CEMADEN e da Defesa Civil (199).</p>
+        </div>
+
+        <div class="card note">
+            <h4><i data-lucide="info"></i> Como a análise é calculada</h4>
+            <p>O índice de risco (0 a 100) combina volume de chuva, probabilidade de precipitação, rajadas de vento e temperatura máxima prevista. Cada fator recebe um peso; o resultado é classificado em <b style="color:#34d399">Baixo</b>, <b style="color:#eab308">Moderado</b>, <b style="color:#f9731c">Alto</b> ou <b style="color:#ef4444">Extremo</b>. O texto é montado automaticamente a partir desses indicadores — é um apoio à leitura, não uma previsão oficial.</p>
+            <p>Fonte dos dados: <b>Open-Meteo</b> (modelos ECMWF/GFS), atualizada em tempo quase real. Em caso de divergência, prevalecem os avisos oficiais do INMET e da Defesa Civil.</p>
+        </div>
+    </main>
+
+    <footer>
+        <span>&copy; 2026 SGI PROTEGE — Meteorologia IA</span>
+        <span><a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a> · <a href="meteorologia-ia.html">Meteorologia (IA)</a></span>
+    </footer>
+
+    <script src="js/demo.js"></script>
+    <script src="js/proxy.js"></script>
+    <script src="js/session.js"></script>
+    <script>
+        /* Lista de reserva (IBGE). A página tenta /api/ibge/estados primeiro. */
+        const ESTADOS_FALLBACK = [
+            { id: 12, sigla: 'AC', nome: 'Acre' }, { id: 27, sigla: 'AL', nome: 'Alagoas' },
+            { id: 16, sigla: 'AP', nome: 'Amapá' }, { id: 13, sigla: 'AM', nome: 'Amazonas' },
+            { id: 29, sigla: 'BA', nome: 'Bahia' }, { id: 23, sigla: 'CE', nome: 'Ceará' },
+            { id: 53, sigla: 'DF', nome: 'Distrito Federal' }, { id: 32, sigla: 'ES', nome: 'Espírito Santo' },
+            { id: 52, sigla: 'GO', nome: 'Goiás' }, { id: 21, sigla: 'MA', nome: 'Maranhão' },
+            { id: 51, sigla: 'MT', nome: 'Mato Grosso' }, { id: 50, sigla: 'MS', nome: 'Mato Grosso do Sul' },
+            { id: 31, sigla: 'MG', nome: 'Minas Gerais' }, { id: 15, sigla: 'PA', nome: 'Pará' },
+            { id: 25, sigla: 'PB', nome: 'Paraíba' }, { id: 41, sigla: 'PR', nome: 'Paraná' },
+            { id: 26, sigla: 'PE', nome: 'Pernambuco' }, { id: 22, sigla: 'PI', nome: 'Piauí' },
+            { id: 33, sigla: 'RJ', nome: 'Rio de Janeiro' }, { id: 24, sigla: 'RN', nome: 'Rio Grande do Norte' },
+            { id: 43, sigla: 'RS', nome: 'Rio Grande do Sul' }, { id: 11, sigla: 'RO', nome: 'Rondônia' },
+            { id: 14, sigla: 'RR', nome: 'Roraima' }, { id: 42, sigla: 'SC', nome: 'Santa Catarina' },
+            { id: 35, sigla: 'SP', nome: 'São Paulo' }, { id: 28, sigla: 'SE', nome: 'Sergipe' },
+            { id: 17, sigla: 'TO', nome: 'Tocantins' }
+        ];
+
+        let estados = [];
+        let municipios = [];
+        const cacheCentros = new Map(); // ufId -> Map(código IBGE -> [lat, lon])
+
+        const TEMPO = {
+            0: ['Céu limpo', '☀️'], 1: ['Predomínio de sol', '🌤️'], 2: ['Parcialmente nublado', '⛅'], 3: ['Nublado', '☁️'],
+            45: ['Nevoeiro', '🌫️'], 48: ['Nevoeiro com geada', '🌫️'],
+            51: ['Garoa leve', '🌦️'], 53: ['Garoa', '🌦️'], 55: ['Garoa intensa', '🌦️'],
+            56: ['Garoa congelante', '🌧️'], 57: ['Garoa congelante', '🌧️'],
+            61: ['Chuva fraca', '🌧️'], 63: ['Chuva moderada', '🌧️'], 65: ['Chuva forte', '🌧️'],
+            66: ['Chuva congelante', '🌧️'], 67: ['Chuva congelante', '🌧️'],
+            71: ['Neve fraca', '🌨️'], 73: ['Neve', '🌨️'], 75: ['Neve forte', '🌨️'], 77: ['Grãos de neve', '🌨️'],
+            80: ['Pancadas de chuva', '🌦️'], 81: ['Pancadas moderadas', '🌧️'], 82: ['Pancadas fortes', '⛈️'],
+            85: ['Pancadas de neve', '🌨️'], 86: ['Pancadas de neve', '🌨️'],
+            95: ['Tempestade', '⛈️'], 96: ['Tempestade com granizo', '⛈️'], 99: ['Tempestade com granizo', '⛈️']
+        };
+
+        const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+        const INTERVALO_MS = 10 * 60 * 1000;
+        let timer = null;
+        let carregando = false;
+        let ultimoContexto = '';
+
+        const $ = (id) => document.getElementById(id);
+
+        function tempo(code) {
+            return TEMPO[code] || ['Condição não informada', '🌡️'];
+        }
+
+        function nivel(s) {
+            if (s < 25) return { nome: 'BAIXO', cor: '#34d399' };
+            if (s < 45) return { nome: 'MODERADO', cor: '#eab308' };
+            if (s < 65) return { nome: 'ALTO', cor: '#f9731c' };
+            return { nome: 'EXTREMO', cor: '#ef4444' };
+        }
+
+        function riscoDia(d) {
+            let s = 0;
+            const fatores = [];
+            const chuva = d.chuva || 0;
+            const prob = d.prob || 0;
+            const rajada = d.rajada || 0;
+            const tmax = d.tmax || 0;
+
+            if (chuva >= 60) { s += 40; fatores.push('chuva muito intensa (' + chuva.toFixed(0) + ' mm)'); }
+            else if (chuva >= 30) { s += 28; fatores.push('chuva intensa (' + chuva.toFixed(0) + ' mm)'); }
+            else if (chuva >= 15) { s += 16; fatores.push('chuva moderada (' + chuva.toFixed(0) + ' mm)'); }
+            else if (chuva >= 5) { s += 7; fatores.push('chuva fraca (' + chuva.toFixed(0) + ' mm)'); }
+
+            if (prob >= 80) { s += 12; fatores.push('alta probabilidade de chuva (' + prob + '%)'); }
+            else if (prob >= 60) { s += 6; fatores.push('probabilidade de chuva (' + prob + '%)'); }
+
+            if (rajada >= 80) { s += 22; fatores.push('rajadas muito fortes (' + rajada.toFixed(0) + ' km/h)'); }
+            else if (rajada >= 60) { s += 12; fatores.push('rajadas fortes (' + rajada.toFixed(0) + ' km/h)'); }
+            else if (rajada >= 45) { s += 5; fatores.push('rajadas moderadas (' + rajada.toFixed(0) + ' km/h)'); }
+
+            if (tmax >= 41) { s += 20; fatores.push('calor extremo (' + tmax.toFixed(0) + ' °C)'); }
+            else if (tmax >= 38) { s += 12; fatores.push('calor intenso (' + tmax.toFixed(0) + ' °C)'); }
+            else if (tmax >= 35) { s += 5; fatores.push('temperatura elevada (' + tmax.toFixed(0) + ' °C)'); }
+
+            s = Math.max(0, Math.min(100, Math.round(s)));
+            return { score: s, fatores: fatores };
+        }
+
+        function recomendacao(nome) {
+            if (nome === 'BAIXO') return 'Sem indicativo de evento severo nas próximas 24 h. Mantenha o monitoramento de rotina e acompanhe atualizações.';
+            if (nome === 'MODERADO') return 'Atenção a mudanças rápidas do tempo. Verifique drenagens e áreas ribeirinhas e acompanhe os avisos do INMET.';
+            if (nome === 'ALTO') return 'Reforce o plantão, alerte as equipes municipais e verifique áreas de risco, travessias e pontos de alagamento.';
+            return 'Acione os protocolos de emergência, comunique os municípios afetados e prepare abrigos e equipes de resposta.';
+        }
+
+        async function carregarEstados() {
+            let lista = ESTADOS_FALLBACK;
+            try {
+                const r = await fetch('/api/ibge/estados', { headers: { 'Accept': 'application/json' } });
+                if (r.ok) {
+                    const j = await r.json();
+                    if (Array.isArray(j) && j.length) lista = j;
+                }
+            } catch (e) { /* usa a lista de reserva */ }
+
+            estados = lista.slice().sort(function (a, b) {
+                return String(a.nome).localeCompare(String(b.nome), 'pt-BR');
+            });
+
+            const sel = $('estado');
+            sel.innerHTML = estados.map(function (e) {
+                return '<option value="' + e.sigla + '">' + e.nome + ' (' + e.sigla + ')</option>';
+            }).join('');
+
+            const pedida = new URLSearchParams(location.search).get('uf');
+            const inicial = estados.find(function (e) { return String(e.id) === String(pedida); })
+                || estados.find(function (e) { return e.sigla === 'MT'; })
+                || estados[0];
+            sel.value = inicial.sigla;
+            return inicial;
+        }
+
+        async function carregarMunicipios(sigla) {
+            const estado = estados.find(function (e) { return e.sigla === sigla; }) || estados[0];
+            const sel = $('cidade');
+            sel.disabled = true;
+            sel.innerHTML = '<option>Carregando municípios…</option>';
+            municipios = [];
+
+            try {
+                const r = await fetch('/api/ibge/municipios?uf=' + encodeURIComponent(estado.id), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (r.ok) {
+                    const j = await r.json();
+                    if (Array.isArray(j)) municipios = j;
+                }
+            } catch (e) { /* tratado abaixo */ }
+
+            if (!municipios.length) {
+                sel.innerHTML = '<option value="">Sem municípios disponíveis</option>';
+                return;
+            }
+
+            sel.innerHTML = municipios.map(function (m, i) {
+                return '<option value="' + i + '">' + m.nome + '</option>';
+            }).join('');
+
+            const capital = municipios.findIndex(function (m) {
+                return ['Cuiabá', 'São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Belo Horizonte', 'Manaus', 'Curitiba', 'Recife', 'Porto Alegre', 'Belém', 'Goiânia', 'Macapá', 'Vitória', 'Florianópolis', 'Campo Grande', 'Natal', 'João Pessoa', 'Maceió', 'Aracaju', 'Teresina', 'São Luís', 'Porto Velho', 'Rio Branco', 'Boa Vista', 'Palmas'].includes(m.nome);
+            });
+            sel.value = String(capital >= 0 ? capital : 0);
+            sel.disabled = false;
+
+            // Pré-carrega os centros dos municípios da UF (para troca instantânea).
+            await carregarCentros(estado.id);
+        }
+
+        function centroideCaixa(geometria) {
+            if (!geometria || !geometria.coordinates) return null;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            (function andar(c) {
+                if (typeof c[0] === 'number') {
+                    const x = c[0], y = c[1];
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                } else if (Array.isArray(c)) {
+                    c.forEach(andar);
+                }
+            })(geometria.coordinates);
+            if (!isFinite(minX) || !isFinite(minY)) return null;
+            return [(minY + maxY) / 2, (minX + maxX) / 2]; // [lat, lon]
+        }
+
+        async function carregarCentros(ufId) {
+            const chave = String(ufId);
+            if (cacheCentros.has(chave)) return cacheCentros.get(chave);
+            const mapa = new Map();
+            try {
+                const r = await fetch('/geo/malhas/uf-' + chave + '.geojson');
+                if (r.ok) {
+                    const g = await r.json();
+                    (g.features || []).forEach(function (f) {
+                        const cod = f.properties && (f.properties.codarea || f.properties.CD_MUN || f.properties.id);
+                        const centro = centroideCaixa(f.geometry);
+                        if (cod && centro) mapa.set(String(cod), centro);
+                    });
+                }
+            } catch (e) { /* sem malha: cai no geocoding */ }
+            cacheCentros.set(chave, mapa);
+            return mapa;
+        }
+
+        function normalizarNome(s) {
+            return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        }
+
+        async function geocodificar(nome, ufNome) {
+            try {
+                const u = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(nome) +
+                    '&count=10&language=pt&format=json&countryCode=BR';
+                const r = await fetch(u);
+                if (!r.ok) return null;
+                const j = await r.json();
+                const lista = j.results || [];
+                const alvo = lista.find(function (x) { return normalizarNome(x.admin1) === normalizarNome(ufNome); }) || lista[0];
+                return alvo ? [alvo.latitude, alvo.longitude] : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function resolverCidade() {
+            const estado = estados.find(function (e) { return e.sigla === $('estado').value; }) || estados[0];
+            const m = municipios[parseInt($('cidade').value, 10)];
+            if (!estado || !m) return null;
+
+            const mapa = await carregarCentros(estado.id);
+            let centro = mapa.get(String(m.id));
+            if (!centro) centro = await geocodificar(m.nome, estado.nome);
+            if (!centro) return null;
+
+            return { nome: m.nome, uf: estado.sigla, ufNome: estado.nome, lat: centro[0], lon: centro[1] };
+        }
+
+        function urlPrevisao(cidade) {
+            return 'https://api.open-meteo.com/v1/forecast?latitude=' + cidade.lat +
+                '&longitude=' + cidade.lon +
+                '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m' +
+                '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max' +
+                '&timezone=auto&forecast_days=7';
+        }
+
+        async function buscar(url) {
+            try {
+                const r = await fetch(url, { cache: 'no-store' });
+                if (r.ok) return r.json();
+            } catch (e) { /* tenta pelo proxy */ }
+            if (typeof dcProxyFetch === 'function') {
+                const r2 = await dcProxyFetch(url);
+                if (r2.ok) return r2.json();
+            }
+            throw new Error('serviço meteorológico indisponível');
+        }
+
+        function renderAgora(cidade, j) {
+            const c = j.current;
+            const [cond, emoji] = tempo(c.weather_code);
+            $('agoraTemp').innerHTML = Math.round(c.temperature_2m) + '<small>°C</small>';
+            $('agoraEmoji').textContent = emoji;
+            $('agoraCond').textContent = cidade.nome + ' · ' + cond;
+            $('mSensacao').textContent = Math.round(c.apparent_temperature) + ' °C';
+            $('mUmidade').textContent = Math.round(c.relative_humidity_2m) + '%';
+            $('mVento').textContent = Math.round(c.wind_speed_10m) + ' km/h';
+            $('mRajada').textContent = Math.round(c.wind_gusts_10m) + ' km/h';
+            $('mChuva').textContent = (c.precipitation || 0).toFixed(1) + ' mm';
+            $('mHora').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderIA(cidade, j) {
+            const d = j.daily;
+            const hoje = {
+                chuva: d.precipitation_sum[0],
+                prob: d.precipitation_probability_max[0],
+                rajada: d.wind_gusts_10m_max[0],
+                tmax: d.temperature_2m_max[0]
+            };
+            const r = riscoDia(hoje);
+            const n = nivel(r.score);
+
+            $('riscoPillWrap').innerHTML =
+                '<span class="risk-pill" style="background:' + n.cor + ';">' +
+                '<i data-lucide="gauge"></i> Risco ' + n.nome + ' · ' + r.score + '/100</span>';
+
+            const [cond] = tempo(d.weather_code[0]);
+            const texto =
+                'Em <b>' + cidade.nome + '</b>, a previsão para hoje indica <b>' + cond.toLowerCase() + '</b>, ' +
+                'com máxima de <b>' + Math.round(d.temperature_2m_max[0]) + ' °C</b> e mínima de ' +
+                Math.round(d.temperature_2m_min[0]) + ' °C. ' +
+                'São esperados <b>' + (hoje.chuva || 0).toFixed(1) + ' mm</b> de chuva ' +
+                '(' + (hoje.prob || 0) + '% de chance) e rajadas de até <b>' +
+                Math.round(hoje.rajada || 0) + ' km/h</b>. ' +
+                'Com base nesses indicadores, o risco do dia é classificado como <b style="color:' + n.cor + '">' + n.nome + '</b>. ' +
+                recomendacao(n.nome);
+
+            $('iaTexto').innerHTML = texto;
+            $('iaFatores').innerHTML = (r.fatores.length ? r.fatores : ['sem fatores de risco relevantes'])
+                .map(function (f) { return '<span>' + f + '</span>'; }).join('');
+
+            ultimoContexto = montarContexto(cidade, j, n, r);
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        /* Resumo enviado à IA: mantém a resposta ancorada nos dados da tela. */
+        function montarContexto(cidade, j, nivelRisco, r) {
+            const c = j.current;
+            const d = j.daily;
+            const [cond] = tempo(c.weather_code);
+            const linhas = [
+                'Município: ' + cidade.nome + ' (' + cidade.ufNome + ')',
+                'Agora: ' + Math.round(c.temperature_2m) + ' °C, ' + cond +
+                    ', sensação ' + Math.round(c.apparent_temperature) + ' °C, umidade ' +
+                    Math.round(c.relative_humidity_2m) + '%, vento ' + Math.round(c.wind_speed_10m) +
+                    ' km/h, rajadas ' + Math.round(c.wind_gusts_10m) + ' km/h.',
+                'Hoje: máxima ' + Math.round(d.temperature_2m_max[0]) + ' °C, mínima ' +
+                    Math.round(d.temperature_2m_min[0]) + ' °C, chuva ' + (d.precipitation_sum[0] || 0).toFixed(1) +
+                    ' mm (' + (d.precipitation_probability_max[0] || 0) + '% de chance), rajadas até ' +
+                    Math.round(d.wind_gusts_10m_max[0] || 0) + ' km/h.',
+                'Risco calculado hoje: ' + nivelRisco.nome + ' (' + r.score + '/100). Fatores: ' +
+                    (r.fatores.length ? r.fatores.join('; ') : 'nenhum fator relevante') + '.',
+            ];
+            for (let i = 1; i < 3 && i < d.time.length; i++) {
+                linhas.push('Dia ' + (i === 1 ? 'amanhã' : d.time[i]) + ': máx ' +
+                    Math.round(d.temperature_2m_max[i]) + ' °C, mín ' + Math.round(d.temperature_2m_min[i]) +
+                    ' °C, chuva ' + (d.precipitation_sum[i] || 0).toFixed(1) + ' mm (' +
+                    (d.precipitation_probability_max[i] || 0) + '%).');
+            }
+            return linhas.join('\n');
+        }
+
+        function renderForecast(j) {
+            const d = j.daily;
+            const hoje = new Date();
+            $('forecast').innerHTML = d.time.map(function (iso, i) {
+                const data = new Date(iso + 'T12:00:00');
+                const nome = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DIAS[data.getDay()];
+                const [, emoji] = tempo(d.weather_code[i]);
+                const r = riscoDia({
+                    chuva: d.precipitation_sum[i],
+                    prob: d.precipitation_probability_max[i],
+                    rajada: d.wind_gusts_10m_max[i],
+                    tmax: d.temperature_2m_max[i]
+                });
+                const n = nivel(r.score);
+                return '<div class="day" style="--day-risk:' + n.cor + ';">' +
+                    '<div class="d-name">' + nome + '</div>' +
+                    '<div class="d-emoji">' + emoji + '</div>' +
+                    '<div class="d-temp">' + Math.round(d.temperature_2m_max[i]) + '° <span>/ ' + Math.round(d.temperature_2m_min[i]) + '°</span></div>' +
+                    '<div class="d-rain">' + (d.precipitation_sum[i] || 0).toFixed(1) + ' mm · ' + (d.precipitation_probability_max[i] || 0) + '%</div>' +
+                    '<div class="d-risk" style="color:' + n.cor + '">' + n.nome + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        async function carregar(manual) {
+            if (carregando) return;
+            carregando = true;
+            const btn = $('btnAtualizar');
+            btn.disabled = true;
+            $('status').classList.remove('erro');
+
+            try {
+                const cidade = await resolverCidade();
+                if (!cidade) throw new Error('selecione um estado e um município');
+
+                if (!manual) $('status').textContent = 'Atualizando dados de ' + cidade.nome + '/' + cidade.uf + '…';
+
+                const j = await buscar(urlPrevisao(cidade));
+                renderAgora(cidade, j);
+                renderIA(cidade, j);
+                renderForecast(j);
+                definirChatDisponivel(true);
+                $('status').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' · ' + cidade.nome + '/' + cidade.uf;
+            } catch (e) {
+                $('status').textContent = 'Não foi possível atualizar agora: ' + e.message + '. Tentaremos novamente em 10 minutos.';
+                $('status').classList.add('erro');
+                definirChatDisponivel(false);
+                if (!manual) {
+                    $('agoraCond').textContent = 'Sem conexão com o serviço meteorológico';
+                    $('iaTexto').textContent = 'A análise será gerada assim que os dados forem carregados.';
+                }
+            } finally {
+                btn.disabled = false;
+                carregando = false;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function agendar() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(function () {
+                if (!document.hidden) carregar(true);
+            }, INTERVALO_MS);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) carregar(true);
+            });
+        }
+
+        /* ---------- Chat IA (OpenCode Go via /api/chat) ---------- */
+        const CHAT_MAX_HISTORICO = 12;
+        let chatMsgs = [];
+        let chatPendente = false;
+
+        function chatSessao() {
+            try {
+                const chave = 'sgi-chat-sessao';
+                let v = sessionStorage.getItem(chave);
+                if (!v) {
+                    v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : '00000000-0000-4000-8000-' + Date.now();
+                    sessionStorage.setItem(chave, v);
+                }
+                return v;
+            } catch (e) {
+                return '00000000-0000-4000-8000-' + Date.now();
+            }
+        }
+
+        function addBolha(papel, texto, extra) {
+            const log = document.getElementById('chatLog');
+            const div = document.createElement('div');
+            div.className = 'msg ' + papel + (extra ? ' ' + extra : '');
+            div.textContent = texto;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+            return div;
+        }
+
+        function definirChatDisponivel(ok) {
+            const input = $('chatInput');
+            const btn = $('chatEnviar');
+            if (btn) btn.disabled = !ok;
+            if (input) {
+                input.disabled = !ok;
+                input.placeholder = ok
+                    ? 'Ex.: há risco de alagamento amanhã em Cuiabá?'
+                    : 'Aguardando os dados meteorológicos…';
+            }
+        }
+
+        function limparResposta(texto) {
+            return String(texto || '')
+                .replace(/\*\*(.+?)\*\*/g, '$1')
+                .replace(/^#{1,6}\s*/gm, '')
+                .replace(/`([^`]+)`/g, '$1')
+                .trim();
+        }
+
+        async function enviarPergunta(texto) {
+            const pergunta = String(texto || '').trim().slice(0, 800);
+            if (!pergunta || chatPendente) return;
+            if (!ultimoContexto) {
+                addBolha('erro', 'Aguarde o carregamento dos dados meteorológicos para perguntar à IA.');
+                return;
+            }
+
+            chatPendente = true;
+            const btn = document.getElementById('chatEnviar');
+            const input = document.getElementById('chatInput');
+            btn.disabled = true;
+            input.disabled = true;
+
+            addBolha('user', pergunta);
+            chatMsgs.push({ role: 'user', content: pergunta });
+            if (chatMsgs.length > CHAT_MAX_HISTORICO) chatMsgs = chatMsgs.slice(-CHAT_MAX_HISTORICO);
+
+            const bolha = addBolha('assistant', 'Pensando…', 'pensando');
+
+            try {
+                const r = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ mensagens: chatMsgs, contexto: ultimoContexto, sessao: chatSessao() })
+                });
+                const j = await r.json().catch(function () { return {}; });
+                if (!r.ok || !j.ok || !j.resposta) {
+                    throw new Error(j.erro || 'A IA não conseguiu responder agora.');
+                }
+                bolha.classList.remove('pensando');
+                bolha.textContent = limparResposta(j.resposta);
+                chatMsgs.push({ role: 'assistant', content: j.resposta });
+                if (chatMsgs.length > CHAT_MAX_HISTORICO) chatMsgs = chatMsgs.slice(-CHAT_MAX_HISTORICO);
+            } catch (e) {
+                bolha.classList.remove('pensando');
+                bolha.classList.add('erro');
+                bolha.textContent = e.message || 'Falha ao falar com a IA.';
+            } finally {
+                chatPendente = false;
+                btn.disabled = false;
+                input.disabled = !ultimoContexto;
+                input.value = '';
+                input.focus();
+                bolha.scrollIntoView({ block: 'nearest' });
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        $('estado').addEventListener('change', function () {
+            carregarMunicipios($('estado').value).then(function () { carregar(true); });
+        });
+        $('cidade').addEventListener('change', function () { carregar(true); });
+        $('btnAtualizar').addEventListener('click', function () { carregar(true); });
+
+        $('chatForm').addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            enviarPergunta($('chatInput').value);
+        });
+        $('chatSugestoes').addEventListener('click', function (ev) {
+            const alvo = ev.target.closest ? ev.target.closest('button[data-pergunta]') : null;
+            if (alvo) enviarPergunta(alvo.getAttribute('data-pergunta'));
+        });
+        $('chatInput').addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter' && !ev.shiftKey) {
+                ev.preventDefault();
+                enviarPergunta($('chatInput').value);
+            }
+        });
+        definirChatDisponivel(false);
+
+        (async function iniciar() {
+            const estado = await carregarEstados();
+            await carregarMunicipios(estado.sigla);
+            await carregar(false);
+        })();
+        agendar();
+        if (window.lucide) lucide.createIcons();
+        if (typeof dcRenderUserArea === 'function') dcRenderUserArea();
+    </script>
+</body>
+</html>

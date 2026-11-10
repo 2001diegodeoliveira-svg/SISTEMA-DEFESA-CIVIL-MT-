@@ -6,6 +6,7 @@
 <title>Pantanal · Monitor de fogo</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/proxy.js"></script>
 <style>
 :root{--bg:#f3f5f1;--panel:#fbfcfa;--ink:#16241f;--mute:#5d6c65;--line:#d5dcd6;--ember:#c8420f;--water:#1d5c63;--ok:#5f8f5a}
 @media (prefers-color-scheme:dark){:root{--bg:#10191a;--panel:#162224;--ink:#e6efe9;--mute:#98aaa2;--line:#2b3b3d;--ember:#ff7a45;--water:#6cc3c9;--ok:#8cc084}}
@@ -32,6 +33,36 @@ button.sec{background:transparent;color:var(--ink);border-color:var(--line)}
 label.chk{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;margin:3px 0;cursor:pointer}
 label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
 .legend b{font-weight:600;color:var(--ink)}
+
+/* ---------- Toggle switch (fumaça) ---------- */
+.smoke-toggle{display:flex;align-items:center;gap:10px;margin:8px 0;cursor:pointer;user-select:none}
+.smoke-toggle input{display:none}
+.smoke-toggle .track{position:relative;width:44px;height:24px;border-radius:12px;background:var(--line);transition:background .25s ease;flex-shrink:0}
+.smoke-toggle .track::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .25s ease}
+.smoke-toggle input:checked + .track{background:linear-gradient(135deg,#f97316,#ef4444)}
+.smoke-toggle input:checked + .track::after{transform:translateX(20px)}
+.smoke-toggle .lbl{font-size:13px;font-weight:600;color:var(--ink)}
+.smoke-toggle .lbl small{display:block;font-size:11px;color:var(--mute);font-weight:400;margin-top:2px}
+
+/* ---------- Animações ---------- */
+@keyframes amzPulse{0%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:.5}100%{transform:scale(1);opacity:.9}}
+@keyframes smokeFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.smoke-panel{animation:smokeFadeIn .35s ease}
+.smoke-status-ok{color:#5f8f5a}
+.smoke-status-err{color:#a3141b}
+.smoke-status-loading{color:var(--water)}
+@keyframes smokePulse{0%,100%{opacity:.45}50%{opacity:.9}}
+.smoke-critical{animation:smokePulse 1.2s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes firePulse{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+.fire-scar{animation:firePulse 1.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.manha-legend span{display:flex;align-items:center;gap:7px;margin:2px 0}
+.manha-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;flex-shrink:0}
+#lyMancha:checked + .track{background:linear-gradient(135deg,#f97316,#dc2626)}
+
+/* ---------- Legenda fumaça ---------- */
+.smoke-legend{display:grid;gap:3px;font-size:12px;margin-top:8px}
+.smoke-legend span{display:flex;align-items:center;gap:7px}
+.smoke-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;flex-shrink:0}
 #info{font-size:13px;border-top:1px solid var(--line);padding-top:12px}
 #status{font-size:12px;color:var(--mute)}
 #map{flex:1;min-height:100%}
@@ -86,8 +117,72 @@ label.chk input{width:auto;padding:0;margin:0;accent-color:var(--water)}
       <span><i style="background:#16241f;border-radius:50%"></i>Foco de calor (maior = mais intenso)</span>
     </div>
     <p style="margin-top:6px">Índice heurístico: dias sem chuva, umidade, temperatura e vento (Open-Meteo). Serve como ponto de partida até o modelo de ML estar treinado.</p>
+  <div class="smoke-panel">
+    <h2><i data-lucide="cloud-fog" style="vertical-align:-3px;margin-right:6px;color:#f97316"></i>Fumaça (qualidade do ar)</h2>
+    <label class="smoke-toggle">
+      <input type="checkbox" id="lySmoke">
+      <span class="track"></span>
+      <span class="lbl">Camada de fumaça (PM2.5)
+        <small>Ative para carregar a qualidade do ar no Pantanal</small>
+      </span>
+    </label>
+    <div class="smoke-legend">
+      <span><i style="background:#94a3b8"></i>Baixo (&lt; 15 µg/m³)</span>
+      <span><i style="background:#facc15"></i>Moderado (15–35)</span>
+      <span><i style="background:#f97316"></i>Alto (35–55)</span>
+      <span><i style="background:#ef4444"></i>Crítico (&gt; 55)</span>
+    </div>
+    <p style="margin-top:8px" id="smokeStatus" class="smoke-status-loading">Desativado. Ative para carregar.</p>
   </div>
+
   <div id="info">Clique em qualquer ponto do mapa para ver o clima e o risco local.</div>
+
+  <div class="manha-panel">
+    <h2><i data-lucide="flame" style="vertical-align:-3px;margin-right:6px;color:#ef4444"></i>Mancha de fogo (queimadas confirmadas)</h2>
+    <label class="smoke-toggle">
+      <input type="checkbox" id="lyMancha">
+      <span class="track" style="background:var(--line)"></span>
+      <span class="lbl">Manchas de queimadas
+        <small>Marca pontos onde houve queimada confirmada (focos de alta intensidade)</small>
+      </span>
+    </label>
+    <div class="manha-legend">
+      <span><i style="background:#ef4444"></i>Queimada confirmada (FRP ≥ 50 MW)</span>
+      <span><i style="background:#f97316"></i>Foco intenso (FRP 20–50)</span>
+      <span><i style="background:#eab308"></i>Foco moderado (FRP &lt; 20)</span>
+    </div>
+    <p style="margin-top:8px" id="manchaStatus" class="smoke-status-loading">Desativado. Ative para carregar.</p>
+  </div>
+
+  <div>
+    <h2>Fontes oficiais de monitoramento</h2>
+    <div style="display:grid;gap:6px;">
+      <a href="https://pamgia.ibama.gov.br/portal/apps/experiencebuilder/experience/?id=9cb2776f58c74eeba8442d4e2e25bbbd" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-decoration:none;color:var(--ink);font-size:13px;">
+        <span><b>IBAMA · PAMGIA</b><br><span style="color:var(--mute);font-size:11.5px;">Painel de monitoramento e gestão de áreas (Pantanal)</span></span>
+        <span style="color:var(--water);">↗</span>
+      </a>
+      <a href="https://data.inpe.br/queimadas/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-decoration:none;color:var(--ink);font-size:13px;">
+        <span><b>INPE · Queimadas</b><br><span style="color:var(--mute);font-size:11.5px;">Focos de calor e risco de fogo</span></span>
+        <span style="color:var(--water);">↗</span>
+      </a>
+      <a href="https://data.inpe.br/biomasbr/deter-monitoramento-diario-da-supressao-e-degradacao-de-vegetacao-nativa/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-decoration:none;color:var(--ink);font-size:13px;">
+        <span><b>INPE · DETER</b><br><span style="color:var(--mute);font-size:11.5px;">Monitoramento diário de supressão/degradação</span></span>
+        <span style="color:var(--water);">↗</span>
+      </a>
+      <a href="https://sospantanal.org.br/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-decoration:none;color:var(--ink);font-size:13px;">
+        <span><b>SOS Pantanal</b><br><span style="color:var(--mute);font-size:11.5px;">Monitoramento e conservação do Pantanal</span></span>
+        <span style="color:var(--water);">↗</span>
+      </a>
+      <a href="https://brasil.mapbiomas.org/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-decoration:none;color:var(--ink);font-size:13px;">
+        <span><b>MapBiomas</b><br><span style="color:var(--mute);font-size:11.5px;">Cobertura e uso do solo</span></span>
+        <span style="color:var(--water);">↗</span>
+      </a>
+      <a href="https://www.snirh.gov.br/hidroweb/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-decoration:none;color:var(--ink);font-size:13px;">
+        <span><b>SNIRH · HidroWeb (ANA)</b><br><span style="color:var(--mute);font-size:11.5px;">Níveis e vazões dos rios</span></span>
+        <span style="color:var(--water);">↗</span>
+      </a>
+    </div>
+  </div>
 </aside>
 <div id="map"></div>
 
@@ -97,8 +192,16 @@ const map=L.map('map',{zoomControl:true}).fitBounds([[BBOX.s,BBOX.w],[BBOX.n,BBO
 const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'});
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:17,attribution:'Esri'});
 let useSat=true;sat.addTo(map);
-L.rectangle([[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]],{color:'#4aa3ad',weight:1,fill:false,dashArray:'6 6'}).addTo(map);
-const riskLayer=L.layerGroup().addTo(map), fireLayer=L.layerGroup().addTo(map), ambientalLayer=L.layerGroup().addTo(map);
+const pantanalLayer=L.layerGroup().addTo(map);
+fetch('/api/pantanal-mt').then(r=>r.json()).then(j=>{
+  const g=j&&j.regiao&&j.regiao.geojson&&j.regiao.geojson.geometry;
+  if(!g) throw new Error('sem geojson');
+  smokePolygon=g;
+  const poly=L.geoJSON(g,{style:{color:'#4aa3ad',weight:2,fill:true,fillColor:'#4aa3ad',fillOpacity:0.10,dashArray:'6 4'}}).addTo(pantanalLayer);
+  try{map.fitBounds(poly.getBounds(),{padding:[24,24]});}catch(e){}
+  poly.bindTooltip('Delimitação exata: Pantanal (bioma IBGE 1:250.000) em Mato Grosso',{sticky:true});
+}).catch(()=>{ L.rectangle([[BBOX.s,BBOX.w],[BBOX.n,BBOX.e]],{color:'#4aa3ad',weight:1,fill:false,dashArray:'6 6'}).addTo(pantanalLayer); });
+const riskLayer=L.layerGroup().addTo(map), fireLayer=L.layerGroup().addTo(map), ambientalLayer=L.layerGroup().addTo(map), smokeLayer=L.layerGroup().addTo(map), manchaLayer=L.layerGroup().addTo(map);
 const $=id=>document.getElementById(id);
 const clamp=(x)=>Math.max(0,Math.min(1,x));
 
@@ -268,6 +371,158 @@ async function loadPantanalMT(){
   return d;
 }
 
+/* ---------- fumaça (qualidade do ar / PM2.5) ---------- */
+let smokePolygon = null;
+fetch('/api/pantanal-mt').then(r=>r.json()).then(j=>{ smokePolygon = j&&j.regiao&&j.regiao.geojson&&j.regiao.geojson.geometry; }).catch(()=>{});
+
+function pontoNoPoligono(lon,lat,geom){
+  if(!geom) return false;
+  const polys = geom.type==='Polygon' ? [geom.coordinates] :
+    geom.type==='MultiPolygon' ? geom.coordinates : [];
+  for(const poly of polys){
+    const outer = poly[0];
+    if(pointInRing(lon,lat,outer)){
+      let inHole=false;
+      for(let h=1;h<poly.length;h++){ if(pointInRing(lon,lat,poly[h])){inHole=true;break;} }
+      if(!inHole) return true;
+    }
+  }
+  return false;
+}
+function pointInRing(x,y,ring){
+  let inside=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+    const intersect = ((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi);
+    if(intersect) inside=!inside;
+  }
+  return inside;
+}
+function csvParseLine(line){
+  var out=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(inQ){ if(c==='"' && line[i+1]==='"'){cur+='"';i++;} else if(c==='"') inQ=false; else cur+=c; }
+    else { if(c==='"') inQ=true; else if(c===','){out.push(cur);cur='';} else cur+=c; }
+  }
+  out.push(cur); return out;
+}
+function corFumaca(pm){
+  if(pm==null) return '#94a3b8';
+  if(pm<15) return '#94a3b8';
+  if(pm<35) return '#facc15';
+  if(pm<55) return '#f97316';
+  return '#ef4444';
+}
+async function loadSmoke(){
+  const status=$('smokeStatus');
+  smokeLayer.clearLayers();
+  if(!document.getElementById('lySmoke').checked){ status.textContent='Desativado. Marque para carregar.'; return; }
+  status.textContent='Consultando qualidade do ar (Open-Meteo)...';
+  const pts=[];
+  for(let la=-21.6;la<=-15.8;la+=0.6) for(let lo=-58.8;lo<=-55.0;lo+=0.6){
+    if(pontoNoPoligono(lo,la,smokePolygon)) pts.push([la,lo]);
+  }
+  if(!pts.length){ status.textContent='Sem pontos dentro da delimitação.'; return; }
+  try{
+    const u=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${pts.map(p=>p[0]).join(',')}&longitude=${pts.map(p=>p[1]).join(',')}&current=pm10,pm2_5,us_aqi&timezone=auto`;
+    const r=await fetch(u); if(!r.ok) throw new Error('Open-Meteo '+r.status);
+    const j=await r.json(); const arr=Array.isArray(j)?j:[j];
+    let maxPm=0;
+    arr.forEach((d,i)=>{
+      const c=d.current||{}, pm=c.pm2_5;
+      if(pm!=null && pm>maxPm) maxPm=pm;
+      const col=corFumaca(pm);
+      var cls = pm>=55 ? 'smoke-critical' : '';
+      L.circleMarker([pts[i][0],pts[i][1]],{radius:14,color:'transparent',fillColor:col,fillOpacity:0.45,interactive:true,className:cls})
+        .bindPopup(`<b>Fumaça / Qualidade do ar</b><br>PM2.5: ${pm!=null?pm.toFixed(1)+' µg/m³':'—'}<br>PM10: ${c.pm10!=null?c.pm10.toFixed(1)+' µg/m³':'—'}<br>US AQI: ${c.us_aqi!=null?c.us_aqi:'—'}`)
+        .addTo(smokeLayer);
+    });
+    status.textContent=`Fumaça: ${pts.length} ponto(s) monitorado(s). PM2.5 máx: ${maxPm.toFixed(1)} µg/m³.`;
+  }catch(e){ status.textContent='Não foi possível obter a qualidade do ar: '+e.message; }
+}
+document.getElementById('lySmoke').addEventListener('change', loadSmoke);
+
+/* ---------- mancha de fogo (queimadas confirmadas) ---------- */
+async function loadMancha(){
+  const status=$('manchaStatus');
+  manchaLayer.clearLayers();
+  if(!document.getElementById('lyMancha').checked){ status.textContent='Desativado. Ative para carregar.'; status.className='smoke-status-loading'; return; }
+  status.textContent='Consultando focos de calor do INPE (BDQueimadas)...';
+  status.className='smoke-status-loading';
+  if(!smokePolygon){ try{ const r=await fetch('/api/pantanal-mt'); const j=await r.json(); smokePolygon=j&&j.regiao&&j.regiao.geojson&&j.regiao.geojson.geometry; }catch(e){} }
+  var todosTxt=[];
+  for(var i=0;i<1;i++){
+    var d=new Date(Date.now()-i*86400000);
+    var iso=d.toISOString().slice(0,10).replaceAll('-','');
+    try{
+      var proxyUrl='/api/proxy?url='+encodeURIComponent('https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_'+iso+'.csv');
+      var r=await fetch(proxyUrl);
+      if(!r.ok) continue;
+      var t=await r.text();
+      if(t && t.length>200) todosTxt.push(t);
+    }catch(e){}
+  }
+  if(!todosTxt.length){ status.textContent='Não foi possível obter os dados.'; status.className='smoke-status-err'; return; }
+  // agrega linhas de todos os dias (cabeçalho apenas do primeiro)
+  var headerLine=todosTxt[0].split(/\r?\n/).filter(function(l){return l.trim();})[0];
+  var todasLinhas=[headerLine];
+  todosTxt.forEach(function(t){
+    var ls=t.split(/\r?\n/).filter(function(l){return l.trim();});
+    for(var k=1;k<ls.length;k++) todasLinhas.push(ls[k]);
+  });
+  var txt=todosTxt[0];
+  var lines=todasLinhas;
+  if(!lines.length){ status.textContent='Sem dados.'; status.className='smoke-status-err'; return; }
+  var header=csvParseLine(lines[0]).map(function(h){return h.trim().toLowerCase();});
+  var iLat=header.indexOf('lat'), iLon=header.indexOf('lon');
+  var iEstado=header.indexOf('estado'), iBioma=header.indexOf('bioma');
+  var iFrp=header.indexOf('frp'), iData=header.indexOf('data_pas'), iHora=header.indexOf('hora');
+  var iSat=header.indexOf('satelite'), iMun=header.indexOf('municipio'), iRisco=header.indexOf('risco_fogo');
+  if(iLat<0||iLon<0){ status.textContent='Formato inesperado.'; status.className='smoke-status-err'; return; }
+  var corte=Date.now()-3*86400000;
+  var focos=[];
+  var mtCount=0, polyCount=0;
+  for(var j=1;j<lines.length;j++){
+    var cols=csvParseLine(lines[j]);
+    if(cols.length<header.length) continue;
+    var lat=parseFloat(cols[iLat]), lon=parseFloat(cols[iLon]);
+    if(isNaN(lat)||isNaN(lon)) continue;
+    var estado=(cols[iEstado]||'').trim().toUpperCase();
+    if(estado!=='MATO GROSSO') continue;
+    mtCount++;
+    var bioma=iBioma>=0?(cols[iBioma]||'').trim():'';
+    if(smokePolygon && pontoNoPoligono(lon,lat,smokePolygon)) polyCount++;
+    if(smokePolygon && !pontoNoPoligono(lon,lat,smokePolygon)) continue;
+    var dataPas=iData>=0?cols[iData].trim():'';
+    var ts=dataPas?new Date(dataPas+'T00:00:00').getTime():NaN;
+    if(!isNaN(ts) && ts<corte) continue;
+    var frp=iFrp>=0?parseFloat(cols[iFrp]):NaN;
+    if(isNaN(frp)) frp=1;
+    var risco=iRisco>=0?cols[iRisco]:'';
+    var sat=iSat>=0?cols[iSat]:'';
+    var hora=iHora>=0?cols[iHora]:'';
+    var mun=iMun>=0?cols[iMun]:'';
+    focos.push({lat:lat,lon:lon,frp:frp,risco:risco,sat:sat,data:dataPas,hora:hora,mun:mun,bioma:bioma});
+  }
+  var confirmados=0;
+  focos.forEach(function(f){
+    var cor = f.frp>=50 ? '#ef4444' : (f.frp>=20 ? '#f97316' : '#eab308');
+    var r = Math.max(6, Math.min(16, 5 + f.frp/12));
+    var cls = f.frp>=50 ? 'fire-scar' : '';
+    var mk = L.circleMarker([f.lat,f.lon],{radius:r,color:'#1f1306',weight:1.5,fillColor:cor,fillOpacity:0.85,className:cls});
+    mk.bindPopup('<b>Queimada confirmada</b><br>'+(f.mun?'Município: '+f.mun+'<br>':'')+'Satélite: '+(f.sat||'—')+'<br>Data/hora: '+(f.data||'—')+' '+(f.hora||'')+'<br>FRP: '+f.frp.toFixed(1)+' MW<br>Risco: '+(f.risco||'—')+'<br>Bioma: '+(f.bioma||'—'));
+    mk.addTo(manchaLayer);
+    if(f.frp>=50) confirmados++;
+  });
+  var total=focos.length;
+  document.getElementById('manchaStatus').textContent = total
+    ? total+' foco(s) de queimada no Pantanal (confirmados: '+confirmados+').'
+    : 'Nenhuma queimada detectada no período.';
+  document.getElementById('manchaStatus').className = total ? 'smoke-status-ok' : 'smoke-status-loading';
+}
+document.getElementById('lyMancha').addEventListener('change', loadMancha);
+
 async function refresh(){
   $('status').textContent='Atualizando…';
   const msgs=[];
@@ -275,6 +530,8 @@ async function refresh(){
   try{await loadPantanalMT()}catch(e){msgs.push('Pantanal MT: '+e.message)}
   try{const a=await loadAmbiental();if(a.avisos&&a.avisos.length)msgs.push('ICMBio/IBAMA: '+a.avisos.join(' · '))}catch(e){msgs.push('ICMBio/IBAMA: '+e.message)}
   try{await loadRisk()}catch(e){msgs.push('Risco: '+e.message)}
+  if(document.getElementById('lySmoke').checked){try{await loadSmoke()}catch(e){msgs.push('Fumaça: '+e.message)}}
+  if(document.getElementById('lyMancha').checked){try{await loadMancha()}catch(e){msgs.push('Mancha: '+e.message)}}
   $('status').textContent=(msgs.length?msgs.join(' · ')+' · ':'')+'Atualizado às '+new Date().toLocaleTimeString('pt-BR');
 }
 $('go').onclick=refresh;

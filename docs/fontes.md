@@ -126,9 +126,12 @@ que sempre envia o parâmetro).
 
 ## Amazônia-MT — monitoramento 24 h (`GET /api/monitoramento-amazonia`)
 
-- **Delimitação (IBGE)**: bioma `Amazônia` ∩ MT (malha 2022), MultiPolygon com
-  93 municípios (≥ 1% no bioma). Gerada com
-  `scripts/pantanal-mt/gerar-regiao.py --bioma-contem amaz --saida api/_lib/amazonia-mt.json ...`
+- **Delimitação (IBGE)**: bioma `Amazônia` ∩ MT (malha municipal 2022), MultiPolygon com
+  93 municípios (≥ 1% da área no bioma). Fonte: IBGE Biomas 1:250.000
+  (versão 2025, `2025_Biomas-e-Sistema-Costeiro-Marinho-do-Brasil-1-250000_shp.zip`,
+  publicada em out/2025) — comparada com a versão 2019: geometria idêntica
+  (mesma área 42,45 graus² e mesmo bbox). Gerada por
+  `scripts/pantanal-mt/gerar-regiao.py --bioma-contem amaz ...`
   (comando completo no cabeçalho do script).
 - **INPE — Programa Queimadas (CSV diário)**:
   `dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_AAAAMMDD.csv`
