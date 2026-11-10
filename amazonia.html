@@ -169,88 +169,67 @@
             header { flex-wrap: wrap; gap: 12px; }
         }
 
-        /* ===== Mapa de Monitoramento (Amazônia) ===== */
-        .amz-map-wrap {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-            background: var(--bg-card);
+        /* ===== Monitoramento 24 h · Amazônia (MT) ===== */
+        .amz-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+        .amz-head .section-title { margin: 0; }
+        .amz-sub { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+        .amz-toolbar { display: flex; gap: 8px; align-items: center; }
+        .amz-toolbar select, .amz-toolbar button {
+            font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 9px;
+            border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); cursor: pointer;
         }
-        .amz-map-wrap #amzMap {
-            height: 560px;
-            border: 0;
-            border-radius: 16px;
+        .amz-toolbar button { background: linear-gradient(135deg, var(--accent-green), var(--accent-green-deep)); color: #052e16; border: none; }
+        .amz-toolbar button:hover { box-shadow: 0 4px 12px rgba(52, 211, 153, 0.35); }
+        .amz-toolbar button:focus-visible, .amz-toolbar select:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+
+        .amz-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--border-color); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+        .amz-kpi { background: var(--bg-card); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+        .amz-kpi span { font-size: 11px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: var(--text-muted); }
+        .amz-kpi b { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; color: var(--text-main); }
+        .amz-kpi small { font-size: 12px; color: var(--text-muted); }
+
+        .amz-sources { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .amz-src {
+            display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-muted);
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 999px; padding: 6px 12px;
         }
-        .amz-map-controls {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 14px;
-            padding: 12px 14px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-        }
-        .amz-map-controls .stat { padding: 6px 10px; margin: 0; }
-        .amz-map-controls select,
-        .amz-map-controls button {
-            width: auto;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-        }
-        .amz-map-controls button {
-            background: linear-gradient(135deg, var(--accent-green), var(--accent-green-deep));
-            color: #052e16;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .amz-map-controls button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(52, 211, 153, 0.35);
-        }
+        .amz-src b { color: var(--text-main); font-weight: 700; }
+        .amz-src i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+        .amz-src.ok i { background: var(--accent-green); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18); }
+        .amz-src.pendente i { background: var(--accent-amber); }
+        .amz-src.sem_chave i, .amz-src.sem_token i { background: #64748b; }
+        .amz-src.erro i { background: var(--accent-red); }
+
+        .amz-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+        .amz-map-wrap { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 8px 30px rgba(0,0,0,0.35); background: var(--bg-card); }
+        .amz-map-wrap #amzMap { height: 600px; }
         .amz-map-legend {
-            position: absolute;
-            bottom: 14px;
-            left: 14px;
-            z-index: 500;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 12px;
-            color: var(--text-main);
-            line-height: 1.6;
+            position: absolute; bottom: 14px; left: 14px; z-index: 500; font-size: 12px; line-height: 1.6;
+            background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px;
         }
-        .amz-map-legend b { display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent-green); }
-        .amz-map-legend span { display: flex; align-items: center; gap: 7px; margin: 2px 0; }
-        .amz-map-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-        .amz-map-status {
-            margin-top: 10px;
-            padding: 10px 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-        .amz-map-delimit {
-            background: rgba(52, 211, 153, 0.12);
-            border: 1px dashed rgba(52, 211, 153, 0.5);
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .amz-map-delimit b { color: var(--accent-green); }
-        @media (max-width: 720px) {
-            .amz-map-wrap #amzMap { height: 420px; }
+        .amz-map-legend b { display: block; margin-bottom: 4px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent-green); }
+        .amz-map-legend span { display: flex; align-items: center; gap: 8px; margin: 2px 0; color: var(--text-main); }
+        .amz-map-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+        .amz-map-legend i.area { border-radius: 2px; height: 9px; width: 16px; border: 1.5px dashed #a78bfa; background: transparent; }
+        .amz-map-legend i.lim { border-radius: 2px; height: 9px; width: 16px; border: 1.5px solid var(--accent-green); background: rgba(52, 211, 153, 0.08); }
+
+        .amz-side { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; max-height: 600px; overflow: auto; }
+        .amz-side h4 { font-size: 11px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: var(--text-muted); margin: 4px 0 10px; }
+        .amz-side h4 + ol, .amz-side h4 + ul { margin-bottom: 18px; }
+        .amz-top, .amz-ult { list-style: none; font-size: 13px; }
+        .amz-top li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border-color); }
+        .amz-top li b { font-variant-numeric: tabular-nums; color: var(--accent-blue); }
+        .amz-ult li { padding: 7px 0; border-bottom: 1px solid var(--border-color); color: var(--text-muted); }
+        .amz-ult li strong { color: var(--text-main); font-weight: 600; display: block; }
+        .amz-empty { color: var(--text-muted); font-size: 12.5px; padding: 6px 0; }
+
+        .amz-map-status { margin-top: 12px; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-muted); font-size: 13px; }
+        .amz-map-status.erro { border-color: rgba(239, 68, 68, 0.45); color: #fca5a5; }
+
+        @media (max-width: 920px) {
+            .amz-body { grid-template-columns: 1fr; }
+            .amz-side { max-height: none; }
+            .amz-map-wrap #amzMap { height: 440px; }
         }
     </style>
 </head>
@@ -449,44 +428,57 @@
     </section>
 
     <section id="view-mapa" class="tab-view">
-        <h3 class="section-title"><i data-lucide="map"></i> Mapa de Monitoramento — Focos de Calor na Amazônia (Mato Grosso)</h3>
-        <div class="amz-map-controls">
-            <div class="stat">
-                <div class="s-ico"><i data-lucide="flame"></i></div>
-                <div class="s-txt"><b id="amzCount">—</b><span>Focos detectados</span></div>
+        <div class="amz-head">
+            <div>
+                <h3 class="section-title"><i data-lucide="map"></i> Monitoramento 24 h · Amazônia em Mato Grosso</h3>
+                <p class="amz-sub" id="amzSub">Consultando as fontes oficiais…</p>
             </div>
-            <div class="stat">
-                <div class="s-ico"><i data-lucide="calendar"></i></div>
-                <div class="s-txt"><b id="amzPeriodo">3 dias</b><span>Período</span></div>
-            </div>
-            <div class="amz-map-delimit"><b>Delimitação:</b> bioma Amazônia em MT (norte do estado)</div>
-            <div style="display:flex;gap:8px;flex:1;min-width:220px;justify-content:flex-end;align-items:center;">
-                <select id="amzDias">
-                    <option value="1">Últimas 24 h</option>
-                    <option value="2">2 dias</option>
-                    <option value="3" selected>3 dias</option>
-                    <option value="5">5 dias</option>
+            <div class="amz-toolbar">
+                <select id="amzHoras" aria-label="Janela de tempo">
+                    <option value="24" selected>Últimas 24 h</option>
+                    <option value="48">Últimas 48 h</option>
+                    <option value="72">Últimos 3 dias</option>
+                    <option value="120">Últimos 5 dias</option>
                 </select>
-                <button id="amzAtualizar">Atualizar</button>
+                <button id="amzAtualizar" type="button">Atualizar</button>
             </div>
         </div>
-        <div class="amz-map-wrap">
-            <div id="amzMap"></div>
-            <div class="amz-map-legend">
-                <b>Focos de calor (INPE)</b>
-                <span><i style="background:#ef4444;"></i>Alto (risco alto)</span>
-                <span><i style="background:#f9731c;"></i>Médio</span>
-                <span><i style="background:#eab308;"></i>Potencial</span>
-                <span style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,0.2);"><i style="background:transparent;border:1px dashed #34d399;border-radius:2px;width:14px;height:10px;"></i>Delimitação Amazônia/MT</span>
-            </div>
+
+        <div class="amz-kpis">
+            <div class="amz-kpi"><span>Focos de calor (INPE)</span><b id="amzKFocos">—</b></div>
+            <div class="amz-kpi"><span>Potência somada (FRP)</span><b id="amzKFrp">—</b><small>MW</small></div>
+            <div class="amz-kpi"><span>Eventos de fogo (CENSIPAM)</span><b id="amzKEventos">—</b></div>
+            <div class="amz-kpi"><span>Municípios na região</span><b id="amzKMun">—</b></div>
         </div>
-        <p id="amzStatus" class="amz-map-status">Aguardando dados do INPE BDQueimadas...</p>
+
+        <div class="amz-sources" id="amzSources" aria-label="Estado de cada fonte"></div>
+
+        <div class="amz-body">
+            <div class="amz-map-wrap">
+                <div id="amzMap" role="region" aria-label="Mapa de monitoramento da Amazônia em Mato Grosso"></div>
+                <div class="amz-map-legend">
+                    <b>Legenda</b>
+                    <span><i style="background:#ef4444;"></i>Focos com FRP ≥ 50 MW</span>
+                    <span><i style="background:#f9731c;"></i>Focos com FRP ≥ 15 MW</span>
+                    <span><i style="background:#eab308;"></i>Demais focos</span>
+                    <span><i class="area"></i>Evento de fogo (CENSIPAM)</span>
+                    <span><i class="lim"></i>Amazônia · MT (IBGE)</span>
+                </div>
+            </div>
+            <aside class="amz-side">
+                <h4>Municípios com mais focos</h4>
+                <ol class="amz-top" id="amzTop"><li class="amz-empty">Sem dados no período.</li></ol>
+                <h4>Últimos focos</h4>
+                <ul class="amz-ult" id="amzUltimos"><li class="amz-empty">Sem dados no período.</li></ul>
+            </aside>
+        </div>
+
+        <p id="amzStatus" class="amz-map-status" role="status" aria-live="polite">Aguardando consulta…</p>
         <div class="alert-note" style="margin-top:14px;">
             <i data-lucide="info"></i>
-            <p>Fonte: <b>INPE BDQueimadas</b> (focos diários, Brasil). Filtrado para o bioma Amazônico em Mato Grosso. Os focos são detecções de satélite e não representam área queimada.</p>
+            <p>Focos de calor são detecções de satélite, não representam área queimada. Fontes: <b>INPE</b> (Programa Queimadas, CSV diário), <b>CENSIPAM</b> (Painel do Fogo), <b>NASA FIRMS</b> (VIIRS) e <b>MapBiomas Alerta</b> (alertas de desmatamento, quando houver token). A delimitação é o bioma Amazônia dentro de Mato Grosso, do IBGE.</p>
         </div>
     </section>
-
     <footer>
         <span>&copy; 2026 SGI PROTEGE — Monitoramento Integrado</span>
         <span><a href="index.html">Início</a> · <a href="mapa.html">Mapa</a> · <a href="alertas.html">Alertas</a> · <a href="amazonia.html">Amazônia</a></span>
@@ -512,118 +504,171 @@
     </script>
     <script>
     (function () {
-        var amzMap = null, amzMarkers = null;
-        var amzBbox = { w: -62.0, s: -16.5, e: -50.0, n: -7.0 };
+        var amzMap = null, camadaRegiao = null, camadaFocos = null, camadaEventos = null;
+        var timerAuto = null;
+        var nf = new Intl.NumberFormat('pt-BR');
+        var nf1 = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
+        var ROTULO = {
+            ok: 'ao vivo', pendente: 'em validação', sem_chave: 'sem chave no servidor',
+            sem_token: 'requer token', erro: 'indisponível'
+        };
+        var FONTES = [
+            { id: 'inpe', nome: 'INPE · Queimadas' },
+            { id: 'censipam', nome: 'CENSIPAM · Painel do Fogo' },
+            { id: 'firms', nome: 'NASA FIRMS' },
+            { id: 'mapbiomas', nome: 'MapBiomas Alerta' }
+        ];
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+        function corFrp(frp) {
+            if (frp >= 50) return '#ef4444';
+            if (frp >= 15) return '#f9731c';
+            return '#eab308';
+        }
+        function dataHora(iso) {
+            var d = new Date(iso);
+            return isNaN(d) ? '—' : d.toLocaleString('pt-BR', { timeZone: 'America/Cuiaba', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
 
         function initAmzMap() {
             window.__amzMapInited = true;
-            if (!window.L) { document.getElementById('amzStatus').textContent = 'Leaflet não carregado.'; return; }
-            amzMap = L.map('amzMap', { zoomControl: true }).fitBounds([[amzBbox.s, amzBbox.w], [amzBbox.n, amzBbox.e]]);
+            if (!window.L) { setStatus('Leaflet não carregado.', 'erro'); return; }
+            amzMap = L.map('amzMap', { zoomControl: true }).setView([-11.5, -55.5], 6);
             var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 17, attribution: 'Esri' });
             var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' });
             sat.addTo(amzMap);
             L.control.layers({ 'Satélite': sat, 'Mapa': osm }, null, { position: 'topright' }).addTo(amzMap);
-            var delimit = L.rectangle([[amzBbox.s, amzBbox.w], [amzBbox.n, amzBbox.e]], { color: '#34d399', weight: 2, fill: true, fillColor: '#34d399', fillOpacity: 0.06, dashArray: '8 6', opacity: 0.9 }).addTo(amzMap);
-            delimit.bindTooltip('Delimitação: bioma Amazônia em Mato Grosso', { permanent: false, direction: 'center', className: 'amz-delimit-tooltip' });
-            amzMarkers = L.layerGroup().addTo(amzMap);
-            document.getElementById('amzAtualizar').addEventListener('click', loadAmzFocos);
-            document.getElementById('amzDias').addEventListener('change', function () {
-                document.getElementById('amzPeriodo').textContent = this.value + ' dia' + (this.value > 1 ? 's' : '');
-            });
-            loadAmzFocos();
+            camadaRegiao = L.layerGroup().addTo(amzMap);
+            camadaEventos = L.layerGroup().addTo(amzMap);
+            camadaFocos = L.layerGroup().addTo(amzMap);
+            document.getElementById('amzAtualizar').addEventListener('click', carregar);
+            document.getElementById('amzHoras').addEventListener('change', carregar);
+            carregar();
+            clearInterval(timerAuto);
+            timerAuto = setInterval(carregar, 10 * 60 * 1000);
         }
 
-        function csvParseLine(line) {
-            var out = [], cur = '', inQ = false;
-            for (var i = 0; i < line.length; i++) {
-                var c = line[i];
-                if (inQ) {
-                    if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-                    else if (c === '"') inQ = false;
-                    else cur += c;
-                } else {
-                    if (c === '"') inQ = true;
-                    else if (c === ',') { out.push(cur); cur = ''; }
-                    else cur += c;
+        function setStatus(texto, classe) {
+            var el = document.getElementById('amzStatus');
+            el.textContent = texto;
+            el.className = 'amz-map-status' + (classe ? ' ' + classe : '');
+        }
+
+        function desenharRegiao(regiao) {
+            camadaRegiao.clearLayers();
+            var geo = L.geoJSON(regiao.geojson, {
+                style: { color: '#34d399', weight: 2, fillColor: '#34d399', fillOpacity: 0.05, dashArray: '8 6' }
+            });
+            geo.bindTooltip('Amazônia · Mato Grosso (IBGE)', { sticky: true });
+            geo.addTo(camadaRegiao);
+            var b = regiao.bbox;
+            amzMap.fitBounds([[b[1], b[0]], [b[3], b[2]]], { padding: [18, 18] });
+        }
+
+        function desenharEventos(censipam) {
+            camadaEventos.clearLayers();
+            if (!censipam) return;
+            censipam.eventos.forEach(function (e) {
+                if (e.retangulo && e.retangulo.type === 'Polygon') {
+                    L.geoJSON(e.retangulo, { style: { color: '#a78bfa', weight: 1.5, dashArray: '4 4', fillOpacity: 0.08, fillColor: '#a78bfa' } })
+                        .addTo(camadaEventos);
                 }
-            }
-            out.push(cur);
-            return out;
+                L.circleMarker([e.lat, e.lon], { radius: 5, color: '#a78bfa', weight: 2, fillColor: '#1e1b4b', fillOpacity: 1 })
+                    .bindPopup('<b>Evento de fogo (CENSIPAM)</b><br>' +
+                        'Município: ' + esc(e.municipio || '—') + '<br>' +
+                        'Última visão: ' + esc(dataHora(e.ultimaVisao)) + '<br>' +
+                        'Persistência: ' + (e.persistenciaDias == null ? '—' : e.persistenciaDias + ' dia(s)') + '<br>' +
+                        'Área reportada: ' + (e.area == null ? '—' : nf1.format(e.area)) + '<br>' +
+                        'Situação: ' + esc(e.status || '—'))
+                    .addTo(camadaEventos);
+            });
         }
 
-        async function loadAmzFocos() {
-            var dias = parseInt(document.getElementById('amzDias').value || '3', 10);
-            var status = document.getElementById('amzStatus');
-            var countEl = document.getElementById('amzCount');
-            status.textContent = 'Consultando focos de calor do INPE (BDQueimadas)...';
-            amzMarkers.clearLayers();
-            var txt = null, iso = null;
-            for (var i = 0; i < 4 && !txt; i++) {
-                var d = new Date(Date.now() - i * 86400000);
-                iso = d.toISOString().slice(0, 10).replaceAll('-', '');
-                try {
-                    var r = await dcProxyFetch('https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_' + iso + '.csv');
-                    if (!r.ok) continue;
-                    var t = await r.text();
-                    if (t && t.length > 200) txt = t;
-                } catch (e) { /* tenta próximo dia */ }
-            }
-            if (!txt) { status.textContent = 'Não foi possível obter os dados de focos de calor.'; return; }
-            var lines = txt.split(/\r?\n/).filter(function (l) { return l.trim(); });
-            if (!lines.length) { status.textContent = 'Sem dados de focos.'; return; }
-            var header = csvParseLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
-            var iLat = header.indexOf('lat'), iLon = header.indexOf('lon');
-            var iEstado = header.indexOf('estado'), iBioma = header.indexOf('bioma');
-            var iSat = header.indexOf('satelite'), iData = header.indexOf('data_pas'), iHora = header.indexOf('hora');
-            var iFrp = header.indexOf('frp'), iRisco = header.indexOf('risco_fogo');
-            var iMun = header.indexOf('municipio');
-            if (iLat < 0 || iLon < 0) { status.textContent = 'Formato de dados inesperado (sem lat/lon).'; return; }
-
-            var focos = [];
-            var corte = Date.now() - dias * 86400000;
-            for (var j = 1; j < lines.length; j++) {
-                var cols = csvParseLine(lines[j]);
-                if (cols.length < header.length) continue;
-                var lat = parseFloat(cols[iLat]), lon = parseFloat(cols[iLon]);
-                if (isNaN(lat) || isNaN(lon)) continue;
-                var estado = (cols[iEstado] || '').trim().toUpperCase();
-                if (estado !== 'MATO GROSSO') continue;
-                var bioma = iBioma >= 0 ? (cols[iBioma] || '').trim() : '';
-                if (bioma && bioma.toLowerCase().indexOf('amaz') < 0) continue;
-                if (lat < amzBbox.s || lat > amzBbox.n || lon < amzBbox.w || lon > amzBbox.e) continue;
-                var dataPas = iData >= 0 ? (cols[iData] || '').trim() : '';
-                var ts = dataPas ? new Date(dataPas + 'T00:00:00').getTime() : NaN;
-                if (!isNaN(ts) && ts < corte) continue;
-                var frp = iFrp >= 0 ? parseFloat(cols[iFrp]) : NaN;
-                var risco = iRisco >= 0 ? cols[iRisco] : '';
-                var sat = iSat >= 0 ? cols[iSat] : '';
-                var hora = iHora >= 0 ? cols[iHora] : '';
-                var mun = iMun >= 0 ? cols[iMun] : '';
-                focos.push({ lat: lat, lon: lon, frp: isNaN(frp) ? 1 : frp, risco: risco, sat: sat, data: dataPas, hora: hora, mun: mun, bioma: bioma });
-            }
-
-            focos.forEach(function (f) {
-                var r = Math.max(4, Math.min(14, 4 + (f.frp || 0) / 15));
-                var cor = (f.risco || '').toLowerCase().indexOf('alto') >= 0 ? '#ef4444' :
-                          (f.risco || '').toLowerCase().indexOf('medio') >= 0 ? '#f9731c' : '#eab308';
-                var mk = L.circleMarker([f.lat, f.lon], { radius: r, color: cor, fillColor: cor, fillOpacity: 0.75, weight: 1 });
-                mk.bindPopup(
-                    '<b>Foco de calor</b><br>' +
-                    (f.mun ? 'Município: ' + f.mun + '<br>' : '') +
-                    'Satélite: ' + (f.sat || '—') + '<br>' +
-                    'Data/hora: ' + (f.data || '—') + ' ' + (f.hora || '') + '<br>' +
-                    'FRP: ' + (isNaN(f.frp) ? '—' : f.frp.toFixed(1)) + '<br>' +
-                    'Risco de fogo: ' + (f.risco || '—') + '<br>' +
-                    'Bioma: ' + (f.bioma || '—')
-                );
-                mk.addTo(amzMarkers);
+        function desenharFocos(inpe) {
+            camadaFocos.clearLayers();
+            if (!inpe) return;
+            inpe.focos.forEach(function (f) {
+                var frp = f.frp || 0;
+                var cor = corFrp(frp);
+                L.circleMarker([f.lat, f.lon], { radius: Math.max(4, Math.min(12, 4 + Math.sqrt(frp))), color: '#0f172a', weight: 1, fillColor: cor, fillOpacity: 0.85 })
+                    .bindPopup('<b>Foco de calor (INPE)</b><br>' +
+                        'Município: ' + esc(f.municipio || '—') + '<br>' +
+                        'Data/hora (UTC): ' + esc(dataHora(f.dataHora)) + '<br>' +
+                        'Satélite: ' + esc(f.satelite || '—') + '<br>' +
+                        'FRP: ' + (f.frp == null ? '—' : nf1.format(f.frp)) + ' MW<br>' +
+                        'Risco de fogo: ' + esc(f.risco || '—') + '<br>' +
+                        'Bioma: ' + esc(f.bioma || '—'))
+                    .addTo(camadaFocos);
             });
+        }
 
-            document.getElementById('amzCount').textContent = focos.length.toLocaleString('pt-BR');
-            document.getElementById('amzStatus').textContent = focos.length
-                ? focos.length + ' foco(s) de calor detectado(s) no período selecionado (bioma Amazônia, Mato Grosso).'
-                : 'Nenhum foco de calor detectado no período/bioma selecionado.';
-            if (window.lucide) lucide.createIcons();
+        function renderKpis(d) {
+            var inpe = d.inpe, cen = d.censipam;
+            document.getElementById('amzKFocos').textContent = inpe ? nf.format(inpe.total) : '—';
+            document.getElementById('amzKFrp').textContent = inpe ? nf.format(inpe.frpTotalMW) : '—';
+            document.getElementById('amzKEventos').textContent = cen ? nf.format(cen.total) : '—';
+            document.getElementById('amzKMun').textContent = nf.format(d.regiao.municipios.length);
+        }
+
+        function renderFontes(d) {
+            var box = document.getElementById('amzSources');
+            box.innerHTML = FONTES.map(function (f) {
+                var st = d.status[f.id] || 'erro';
+                return '<span class="amz-src ' + esc(st) + '"><i></i><b>' + esc(f.nome) + '</b> · ' + esc(ROTULO[st] || st) + '</span>';
+            }).join('');
+        }
+
+        function renderListas(inpe) {
+            var top = document.getElementById('amzTop');
+            var ult = document.getElementById('amzUltimos');
+            if (!inpe || !inpe.total) {
+                top.innerHTML = '<li class="amz-empty">Nenhum foco no período.</li>';
+                ult.innerHTML = '<li class="amz-empty">Nenhum foco no período.</li>';
+                return;
+            }
+            top.innerHTML = inpe.porMunicipio.slice(0, 6).map(function (m) {
+                return '<li><span>' + esc(m.nome || 'Sem município') + '</span><b>' + nf.format(m.focos) + '</b></li>';
+            }).join('');
+            ult.innerHTML = inpe.ultimos.slice(0, 6).map(function (f) {
+                return '<li><strong>' + esc(f.municipio || 'Sem município') + '</strong>' +
+                    esc(dataHora(f.dataHora)) + ' · ' + esc(f.satelite || '—') +
+                    (f.frp == null ? '' : ' · ' + nf1.format(f.frp) + ' MW') + '</li>';
+            }).join('');
+        }
+
+        async function carregar() {
+            var horas = document.getElementById('amzHoras').value || '24';
+            var btn = document.getElementById('amzAtualizar');
+            btn.disabled = true;
+            setStatus('Consultando INPE, CENSIPAM e NASA FIRMS…');
+            try {
+                var res = await fetch('/api/monitoramento-amazonia?horas=' + encodeURIComponent(horas));
+                var d = await res.json().catch(function () { return {}; });
+                if (!res.ok) throw new Error(d.erro || ('HTTP ' + res.status));
+                desenharRegiao(d.regiao);
+                desenharEventos(d.censipam);
+                desenharFocos(d.inpe);
+                renderKpis(d);
+                renderFontes(d);
+                renderListas(d.inpe);
+                var quando = new Date(d.atualizadoEm).toLocaleTimeString('pt-BR', { timeZone: 'America/Cuiaba', hour: '2-digit', minute: '2-digit' });
+                document.getElementById('amzSub').textContent =
+                    'Janela de ' + d.janelaHoras + ' h · atualizado às ' + quando + ' (horário de Cuiabá).';
+                var avisos = (d.avisos || []);
+                var total = d.inpe ? d.inpe.total : 0;
+                setStatus(avisos.length
+                    ? avisos.join(' · ')
+                    : (total ? nf.format(total) + ' foco(s) de calor na região no período.' : 'Nenhum foco de calor na região no período.'),
+                    avisos.length && !d.inpe ? 'erro' : '');
+            } catch (e) {
+                setStatus('Não foi possível consultar o monitoramento: ' + e.message, 'erro');
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         window.initAmzMap = initAmzMap;

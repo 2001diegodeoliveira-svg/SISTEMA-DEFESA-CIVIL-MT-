@@ -124,6 +124,26 @@ que sempre envia o parâmetro).
 - Focos 48h WFS: filtro por UF + `bbox` da viewport (WFS 1.1.0,
   ordem lat,lon em EPSG:4326).
 
+## Amazônia-MT — monitoramento 24 h (`GET /api/monitoramento-amazonia`)
+
+- **Delimitação (IBGE)**: bioma `Amazônia` ∩ MT (malha 2022), MultiPolygon com
+  93 municípios (≥ 1% no bioma). Gerada com
+  `scripts/pantanal-mt/gerar-regiao.py --bioma-contem amaz --saida api/_lib/amazonia-mt.json ...`
+  (comando completo no cabeçalho do script).
+- **INPE — Programa Queimadas (CSV diário)**:
+  `dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_AAAAMMDD.csv`
+  (verificado ao vivo: 1.633 focos no Brasil em 10/11/2026, com bioma e código IBGE).
+  Usado para toda a janela (um arquivo por dia; dia ainda não publicado é ignorado).
+  Observação: `data.inpe.br/queimadas/integrado/` é a página do boletim e não expõe dados por API.
+- **CENSIPAM — Painel do Fogo**: `panorama.sipam.gov.br/painel-do-fogo/api/v1/eventos?sigla_estado=MT`
+  (verificado: lista de eventos com retângulo envolvente, área e persistência).
+- **NASA FIRMS**: via `/api/firms` (ver seção abaixo). Sem `FIRMS_MAP_KEY` → `sem_chave`.
+- **MapBiomas Alerta**: GraphQL em `plataforma.alerta.mapbiomas.org/api/v2/graphql`.
+  Exige token pessoal de conta da plataforma (documentação oficial); sem `MAPBIOMAS_TOKEN`
+  a fonte fica `sem_token`. Com token, a consulta ainda precisa ser validada contra o
+  schema real antes de ser exibida (status `pendente`). Nenhum alerta é inventado.
+- **TerraBrasilis**: não duplicado aqui; o WFS de focos já é usado por `/api/pantanal-mt`.
+
 ## NASA FIRMS (`GET /api/firms`)
 
 - Area API oficial: `/api/area/csv/[MAP_KEY]/[SOURCE]/[west,south,east,north]/[DAY_RANGE]`.

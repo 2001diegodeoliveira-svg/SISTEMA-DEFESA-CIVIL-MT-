@@ -68,6 +68,7 @@ const handlers = {
   'ana-hidrologia': require('./_routes/ana-hidrologia'),
   'ambiental-pantanal': require('./_routes/ambiental-pantanal'),
   'pantanal-mt': require('./_routes/pantanal-mt'),
+  'monitoramento-amazonia': require('./_routes/monitoramento-amazonia'),
   'firms': require('./_routes/firms'),
   'sema': require('./_routes/sema'),
   'pluv-alerta': require('./_routes/pluv-alerta'),
