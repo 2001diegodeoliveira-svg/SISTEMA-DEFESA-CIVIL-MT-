@@ -3352,8 +3352,18 @@ if (content) content.style.display = shouldShow ? '' : 'none';
             }
             const tokenFromStorage = localStorage.getItem('accessToken') || '';
 
+            // Acesso sem login/senha: modo visitante (SGI PROTEGE).
             if (!tokenFromStorage) {
-                redirectToContractsLogin(false);
+                contractsAuthToken = '';
+                contractsCurrentUser = { nome: 'Visitante', role: 'admin', status: 'aprovado', accountStatus: 'ativo' };
+                applyContractsPermissions(contractsCurrentUser);
+                hideContractsLoginOverlay();
+                loadRateioUnits();
+                document.addEventListener('input', (event) => {
+                    enforceUppercaseValue(event.target);
+                });
+                if (typeof atualizarSomaTotalItens === 'function') atualizarSomaTotalItens();
+                openDashboardSelectedContract();
                 return;
             }
 
