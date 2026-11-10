@@ -895,10 +895,19 @@ async function executarColeta({ usarMock = true, timeoutMs = 10000 } = {}) {
 const FONTES_PADRAO = [
   { id: 'inmet', nome: 'INMET', descricao: 'Instituto Nacional de Meteorologia', url: 'https://portal.inmet.gov.br' },
   { id: 'cptec', nome: 'CPTEC / INPE', descricao: 'Previsões e ENOS', url: 'https://www.cptec.inpe.br' },
-  { id: 'cemaden', nome: 'CEMADEN', descricao: 'Centro de Monitoramento de Desastres', url: 'https://www.gov.br/cemaden' },
-  { id: 'ana', nome: 'ANA / SNIRH', descricao: 'Níveis e vazões dos rios', url: 'https://www.snirh.gov.br' },
-  { id: 'queimadas', nome: 'INPE Queimadas', descricao: 'Focos de calor', url: 'https://terrabrasilis.dpi.inpe.br' },
-  { id: 'noaa', nome: 'NOAA / CPC', descricao: 'Classificação do ENOS', url: 'https://www.cpc.ncep.noaa.gov' },
+  { id: 'cemaden', nome: 'CEMADEN', descricao: 'Centro Nacional de Monitoramento e Alertas de Desastres Naturais', url: 'https://www.gov.br/cemaden/pt-br' },
+  { id: 'ana', nome: 'ANA / SNIRH', descricao: 'Níveis e vazões dos rios (HidroWeb)', url: 'https://www.snirh.gov.br/hidroweb/' },
+  { id: 'queimadas', nome: 'INPE Queimadas', descricao: 'Focos de calor (BDQueimadas)', url: 'https://terrabrasilis.dpi.inpe.br' },
+  { id: 'ibge', nome: 'IBGE', descricao: 'Malhas territoriais e dados de municípios', url: 'https://www.ibge.gov.br' },
+  { id: 'ibama', nome: 'IBAMA', descricao: 'Monitoramento ambiental e queimadas', url: 'https://www.ibama.gov.br' },
+  { id: 'sema', nome: 'SEMA-MT', descricao: 'Secretaria de Meio Ambiente de Mato Grosso', url: 'https://www.sema.mt.gov.br' },
+  { id: 'icmbio', nome: 'ICMBio', descricao: 'Unidades de Conservação Federais', url: 'https://www.gov.br/icmbio' },
+  { id: 'noaa', nome: 'NOAA / CPC', descricao: 'Classificação ENOS e advisory', url: 'https://cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml' },
+  { id: 'noaa-understanding', nome: 'NOAA — Understanding El Niño', descricao: 'Explicação do fenômeno', url: 'https://www.noaa.gov/understanding-el-nino' },
+  { id: 'psl', nome: 'NOAA PSL — ENSO Dashboard', descricao: 'Painel oceano-atmosfera', url: 'https://psl.noaa.gov/enso/dashboard.html' },
+  { id: 'iri', nome: 'IRI — Columbia University', descricao: 'Previsões probabilísticas ENOS', url: 'https://iri.columbia.edu/' },
+  { id: 'cptec-enos', nome: 'CPTEC/INPE — ENOS', descricao: 'Boletim ENOS (monitoramento e previsão)', url: 'https://clima.cptec.inpe.br/enos' },
+  { id: 'inmet-enos', nome: 'INMET — Painel El Niño', descricao: 'Boletim El Niño', url: 'https://portal.inmet.gov.br/noticias/painel-el-nino-boletim-de-outubro-e-divulgado' },
 ];
 
 function lerFontes() {

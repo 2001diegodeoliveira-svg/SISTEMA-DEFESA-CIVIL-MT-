@@ -279,7 +279,8 @@
 
     <div class="tabs">
         <button class="active" data-tab="estado"><i data-lucide="eye"></i> Estado atual</button>
-        <button data-tab="mapa"><i data-lucide="map"></i> Mapa</button>
+        <button data-tab="mapa"><i data-lucide="map"></i> Mapa ENOS (Pacífico)</button>
+        <button data-tab="monitoramento"><i data-lucide="map-pin"></i> Mapa de Monitoramento (MT)</button>
         <button data-tab="niveis"><i data-lucide="layers"></i> Classificação e níveis</button>
         <button data-tab="fontes"><i data-lucide="external-link"></i> Boletins e fontes</button>
         <button data-tab="auditoria"><i data-lucide="clipboard-list"></i> Auditoria e confirmações</button>
@@ -330,7 +331,7 @@
         <h3 class="section-title"><i data-lucide="map"></i> Mapa El Niño — Monitoramento Oceano-Atmosfera</h3>
         <div class="alert-note">
             <i data-lucide="info"></i>
-            <p>Camadas: <b>Anomalia SST</b> (NOAA OISST 0.25°, vs climatologia 1991-2020), <b>Região Niño 3.4</b> (5°N–5°S, 170°W–120°W), <b>Focos de calor</b> (INPE/FIRMS). Dados de previsão rotulados. Linha do tempo: últimos 30 dias observados + 7 dias previsão. <b>Fonte SST:</b> NOAA PSL THREDDS (requer worker Python para NetCDF real; Fase 1 usa grade sintética baseada no ONI).</p>
+            <p>Camadas: <b>Anomalia SST</b> (NOAA OISST v2.1, anomalia diária vs climatologia 1971-2020), <b>Região Niño 3.4</b> (5°N–5°S, 170°W–120°W), <b>Focos de calor</b> (INPE/FIRMS). Dados de previsão rotulados. Linha do tempo: últimos 30 dias observados + 7 dias previsão. <b>Fonte SST:</b> NOAA PSL (atualizado via worker Python no GitHub Actions).</p>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;margin-top:16px;">
@@ -366,6 +367,18 @@
                 </div>
             </div>
         </div>
+    </section>
+
+    <section id="view-monitoramento" class="tab-view">
+        <h3 class="section-title"><i data-lucide="map-pin"></i> Mapa de Monitoramento — Mato Grosso</h3>
+        <div class="alert-note">
+            <i data-lucide="info"></i>
+            <p>Reaproveita o Mapa Integrado (camadas reais): <b>Focos de calor (INPE)</b>, <b>INMET</b>, <b>ANA/SNIRH</b>, <b>SIPAM/CENSIPAM</b>, <b>Unidades de Conservação (CNUC)</b>, <b>Terras Indígenas (FUNAI)</b>, <b>Biomas (IBGE)</b>, <b>DETER</b>, <b>Qualidade do ar (CAMS)</b>, <b>Abrigos</b> e <b>câmeras SINFRA</b>. A anomalia de SST do Pacífico (NOAA OISST) é exibida na aba “Mapa ENOS (Pacífico)”. Fontes oficiais: IBGE, IBAMA, SEMA-MT, ICMBio, NOAA, CPC, IRI, CPTEC, INMET, CEMADEN, SNIRH.</p>
+        </div>
+        <div style="margin-top:16px;height:640px;border-radius:12px;overflow:hidden;border:1px solid var(--border-color);">
+            <iframe id="monitoramentoFrame" data-src="mapa.html?uf=51" title="Mapa de Monitoramento — Mato Grosso" style="width:100%;height:100%;border:0;background:#0f172a;" loading="lazy"></iframe>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">A camada é carregada apenas ao abrir esta aba. Use o menu do mapa para alternar entre UFs e municípios.</p>
     </section>
 
     <section id="view-niveis" class="tab-view">
@@ -459,6 +472,13 @@
                 btn.classList.add('active');
                 document.getElementById('view-' + btn.dataset.tab).classList.add('active');
                 if (btn.dataset.tab === 'auditoria') carregarAuditoria();
+                if (btn.dataset.tab === 'monitoramento') {
+                    var frame = document.getElementById('monitoramentoFrame');
+                    if (frame && !frame.getAttribute('src')) {
+                        frame.setAttribute('src', frame.getAttribute('data-src'));
+                    }
+                }
+                if (window.lucide) lucide.createIcons();
             });
         });
 
@@ -556,33 +576,40 @@
         }
 
         function carregarEstado() {
-            api('enso').then(function (r) {
-                if (!r.ok) {
-                    var detalhe = '';
-                    if (r.data && r.data.erro) detalhe = r.data.erro + ' ';
-                    if (r.status === 503 && r.data && Array.isArray(r.data.detalhes) && r.data.detalhes.length) {
-                        detalhe += 'Pendências: ' + r.data.detalhes.join(' | ');
-                    } else if (r.data && r.data.erro) {
-                        detalhe = r.data.erro;
-                    } else {
-                        detalhe = 'HTTP ' + r.status;
-                    }
-                    document.getElementById('statusTitle').textContent = 'Falha ao carregar (' + detalhe + ')';
-                    document.getElementById('statusSub').textContent = 'O módulo segue disponível; verifique a configuração do servidor (.env.producao via iniciar-producao.js) e tente novamente. Conteúdo estático abaixo permanece válido.';
-                    return;
-                }
-                // Sem amostra armazenada: tenta coleta automática da NOAA/CPC (com cooldown de 10 min).
-                if (r.data && r.data.estado === 'SEM_DADOS') {
-                    api('enso', { method: 'POST', body: { acao: 'coletar', usarMock: false } })
-                        .then(function () { carregarEstado(); })
-                        .catch(function () { carregarEstado(); });
-                    return;
-                }
-                renderEstado(r.data);
-            }).catch(function () {
-                document.getElementById('statusTitle').textContent = 'Servidor indisponível';
-                document.getElementById('statusSub').textContent = 'Não foi possível contatar /api/enso. O módulo segue disponível; tente novamente.';
-            });
+            fetch('/geo/enso-estado.json', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (j) {
+                    if (j && j.classificacao) { renderEstado(j); return; }
+                    throw new Error('snapshot sem dados');
+                })
+                .catch(function () {
+                    api('enso').then(function (r) {
+                        if (!r.ok) {
+                            var detalhe = '';
+                            if (r.data && r.data.erro) detalhe = r.data.erro + ' ';
+                            if (r.status === 503 && r.data && Array.isArray(r.data.detalhes) && r.data.detalhes.length) {
+                                detalhe += 'Pend?ncias: ' + r.data.detalhes.join(' | ');
+                            } else if (r.data && r.data.erro) {
+                                detalhe = r.data.erro;
+                            } else {
+                                detalhe = 'HTTP ' + r.status;
+                            }
+                            document.getElementById('statusTitle').textContent = 'Falha ao carregar (' + detalhe + ')';
+                            document.getElementById('statusSub').textContent = 'O m?dulo segue dispon?vel; verifique a configura??o do servidor (.env.producao via iniciar-producao.js) e tente novamente. Conte?do est?tico abaixo permanece v?lido.';
+                            return;
+                        }
+                        if (r.data && r.data.estado === 'SEM_DADOS') {
+                            api('enso', { method: 'POST', body: { acao: 'coletar', usarMock: false } })
+                                .then(function () { carregarEstado(); })
+                                .catch(function () { carregarEstado(); });
+                            return;
+                        }
+                        renderEstado(r.data);
+                    }).catch(function () {
+                        document.getElementById('statusTitle').textContent = 'Servidor indispon?vel';
+                        document.getElementById('statusSub').textContent = 'N?o foi poss?vel contatar /api/enso. O m?dulo segue dispon?vel; tente novamente.';
+                    });
+                });
         }
 
         function carregarAuditoria() {

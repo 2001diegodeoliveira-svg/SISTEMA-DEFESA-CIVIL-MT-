@@ -1,0 +1,211 @@
+{
+  "estado": "EL_NINO",
+  "classificacao": {
+    "fase": "EL_NINO",
+    "intensidade": "MUITO_FORTE",
+    "valor": 2.46,
+    "limiares": {
+      "neutroBanda": 0.5,
+      "fraco": 0.5,
+      "moderado": 1,
+      "forte": 1.5,
+      "muitoForte": 2
+    }
+  },
+  "amostra": {
+    "indice": "ONI",
+    "valor": 2.46,
+    "total": 29.23,
+    "temporada": "ASO",
+    "ano": 2026,
+    "unidade": "°C",
+    "observadoEm": "2026-10-01",
+    "fonte": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
+    "mock": false,
+    "registradoEm": "2026-11-10T06:18:10.339Z"
+  },
+  "limiares": {
+    "valores": {
+      "neutroBanda": 0.5,
+      "fraco": 0.5,
+      "moderado": 1,
+      "forte": 1.5,
+      "muitoForte": 2
+    },
+    "origem": "env"
+  },
+  "regras": {
+    "lista": [
+      {
+        "id": "enso-observacao",
+        "nivel": "OBSERVACAO",
+        "descricao": "Anomalia fora da banda neutra: acompanhar evolução.",
+        "condicao": {
+          "indice": "ONI",
+          "operador": ">=",
+          "limiarAbs": 0.5
+        },
+        "exigeConfirmacao": false,
+        "canais": [
+          "webhook"
+        ]
+      },
+      {
+        "id": "enso-atencao",
+        "nivel": "ATENCAO",
+        "descricao": "Anomalia moderada: atenção das equipes.",
+        "condicao": {
+          "indice": "ONI",
+          "operador": ">=",
+          "limiarAbs": 1
+        },
+        "exigeConfirmacao": false,
+        "canais": [
+          "email",
+          "webhook"
+        ]
+      },
+      {
+        "id": "enso-alerta",
+        "nivel": "ALERTA",
+        "descricao": "Anomalia forte: preparar resposta. Exige confirmação humana.",
+        "condicao": {
+          "indice": "ONI",
+          "operador": ">=",
+          "limiarAbs": 1.5
+        },
+        "exigeConfirmacao": true,
+        "canais": [
+          "email",
+          "webhook"
+        ]
+      },
+      {
+        "id": "enso-emergencia",
+        "nivel": "EMERGENCIA",
+        "descricao": "Anomalia muito forte: resposta imediata. Exige confirmação humana.",
+        "condicao": {
+          "indice": "ONI",
+          "operador": ">=",
+          "limiarAbs": 2
+        },
+        "exigeConfirmacao": true,
+        "canais": [
+          "email",
+          "webhook"
+        ]
+      }
+    ],
+    "origem": "padrao"
+  },
+  "fontes": {
+    "fontes": [
+      {
+        "id": "inmet",
+        "nome": "INMET",
+        "descricao": "Instituto Nacional de Meteorologia",
+        "url": "https://portal.inmet.gov.br"
+      },
+      {
+        "id": "cptec",
+        "nome": "CPTEC / INPE",
+        "descricao": "Previsões e ENOS",
+        "url": "https://www.cptec.inpe.br"
+      },
+      {
+        "id": "cemaden",
+        "nome": "CEMADEN",
+        "descricao": "Centro Nacional de Monitoramento e Alertas de Desastres Naturais",
+        "url": "https://www.gov.br/cemaden/pt-br"
+      },
+      {
+        "id": "ana",
+        "nome": "ANA / SNIRH",
+        "descricao": "Níveis e vazões dos rios (HidroWeb)",
+        "url": "https://www.snirh.gov.br/hidroweb/"
+      },
+      {
+        "id": "queimadas",
+        "nome": "INPE Queimadas",
+        "descricao": "Focos de calor (BDQueimadas)",
+        "url": "https://terrabrasilis.dpi.inpe.br"
+      },
+      {
+        "id": "ibge",
+        "nome": "IBGE",
+        "descricao": "Malhas territoriais e dados de municípios",
+        "url": "https://www.ibge.gov.br"
+      },
+      {
+        "id": "ibama",
+        "nome": "IBAMA",
+        "descricao": "Monitoramento ambiental e queimadas",
+        "url": "https://www.ibama.gov.br"
+      },
+      {
+        "id": "sema",
+        "nome": "SEMA-MT",
+        "descricao": "Secretaria de Meio Ambiente de Mato Grosso",
+        "url": "https://www.sema.mt.gov.br"
+      },
+      {
+        "id": "icmbio",
+        "nome": "ICMBio",
+        "descricao": "Unidades de Conservação Federais",
+        "url": "https://www.gov.br/icmbio"
+      },
+      {
+        "id": "noaa",
+        "nome": "NOAA / CPC",
+        "descricao": "Classificação ENOS e advisory",
+        "url": "https://cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml"
+      },
+      {
+        "id": "noaa-understanding",
+        "nome": "NOAA — Understanding El Niño",
+        "descricao": "Explicação do fenômeno",
+        "url": "https://www.noaa.gov/understanding-el-nino"
+      },
+      {
+        "id": "psl",
+        "nome": "NOAA PSL — ENSO Dashboard",
+        "descricao": "Painel oceano-atmosfera",
+        "url": "https://psl.noaa.gov/enso/dashboard.html"
+      },
+      {
+        "id": "iri",
+        "nome": "IRI — Columbia University",
+        "descricao": "Previsões probabilísticas ENOS",
+        "url": "https://iri.columbia.edu/"
+      },
+      {
+        "id": "cptec-enos",
+        "nome": "CPTEC/INPE — ENOS",
+        "descricao": "Boletim ENOS (monitoramento e previsão)",
+        "url": "https://clima.cptec.inpe.br/enos"
+      },
+      {
+        "id": "inmet-enos",
+        "nome": "INMET — Painel El Niño",
+        "descricao": "Boletim El Niño",
+        "url": "https://portal.inmet.gov.br/noticias/painel-el-nino-boletim-de-outubro-e-divulgado"
+      }
+    ],
+    "origem": "padrao"
+  },
+  "fonteStatus": {
+    "noaa": {
+      "ok": true,
+      "ultimoSucesso": "2026-11-10T06:18:10.365Z",
+      "ultimoErro": null,
+      "mensagem": "OK (ONI=-0.19, ONI=-0.29, ONI=-0.43, ONI=-0.46, ONI=-0.22, ONI=-0.08, ONI=0.02, ONI=-0.04, ONI=-0.02, ONI=-0.11, ONI=-0.26, ONI=-0.43, ONI=-0.57, ONI=-0.61, ONI=-0.6, ONI=-0.39, ONI=-0.21, ONI=0.11, ONI=0.46, ONI=0.95, ONI=1.39, ONI=1.8, ONI=2.16, ONI=2.46, NINO12=5.25, NINO3=4.16, NINO4=1.2, NINO34=3.25°C)",
+      "stale": false,
+      "ultimaTentativa": "2026-11-10T06:18:10.365Z",
+      "status": "ok"
+    }
+  },
+  "alertasPendentes": 0,
+  "disclaimer": "A SGI PROTEGE é apenas uma ferramenta que facilita a visualização dos dados: não produz classificação própria. Em caso de divergência, valem os alertas oficiais do INMET, do CEMADEN e da Defesa Civil.",
+  "dryRun": true,
+  "atualizadoEm": "2026-11-10T06:18:10.339Z"
+}

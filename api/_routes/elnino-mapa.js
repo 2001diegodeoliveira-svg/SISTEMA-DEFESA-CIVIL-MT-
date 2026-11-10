@@ -186,10 +186,7 @@ async function buildFocosGeoJSON(opts) {
     const updated = new Date().toISOString();
 
     const mapKey = (process.env.FIRMS_MAP_KEY || '').trim();
-    if (!mapKey) {
-        fonte = 'NASA FIRMS (MAP_KEY nao configurado)';
-        erro = 'FIRMS_MAP_KEY ausente no servidor.';
-    } else {
+    if (mapKey) {
         const url = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/' + mapKey + '/VIIRS_SNPP_NRT/' + bbox + '/' + dias;
         try {
             const res = await fetchWithTimeout(url);
@@ -235,6 +232,71 @@ async function buildFocosGeoJSON(opts) {
             erro = e.message;
             features = [];
         }
+    } else {
+        // Fallback gratuito (sem FIRMS_MAP_KEY): INPE BDQueimadas (CSV diário).
+        fonte = 'INPE BDQueimadas (fallback sem FIRMS_MAP_KEY)';
+        const [w, s, e, n] = bbox.split(',').map(Number);
+        const isoDates = [];
+        for (let i = 0; i < dias; i++) {
+            const d = new Date(Date.now() - i * 86400000);
+            isoDates.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+        }
+        const vistos = new Set();
+        await Promise.allSettled(isoDates.map(async (iso) => {
+            try {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+                let res;
+                try {
+                    res = await fetch('https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/diario/Brasil/focos_diario_br_' + iso + '.csv', {
+                        signal: ctrl.signal, redirect: 'follow',
+                    });
+                } finally { clearTimeout(timer); }
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const csv = await res.text();
+                if (!csv || csv.length < 100) return;
+                const linhas = csv.trim().split(/\r?\n/);
+                if (linhas.length < 2) return;
+                const header = linhas[0].split(',').map(h => h.trim().toLowerCase());
+                const idx = (name) => header.indexOf(name);
+                const iLat = idx('lat'), iLon = idx('lon'), iDate = idx('data_hora_gmt');
+                const iSat = idx('satelite'), iConf = idx('risco_fogo'), iFrp = idx('frp');
+                const iMun = idx('municipio'), iEst = idx('estado'), iBio = idx('bioma');
+                for (let i = 1; i < linhas.length; i++) {
+                    const cols = linhas[i].split(',');
+                    if (cols.length < header.length - 2) continue;
+                    const lat = parseFloat(cols[iLat]);
+                    const lon = parseFloat(cols[iLon]);
+                    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+                    if (lat < s || lat > n || lon < w || lon > e) continue;
+                    const chaveData = (cols[iDate] || '').trim();
+                    const key = lat.toFixed(4) + ',' + lon.toFixed(4) + ',' + chaveData;
+                    if (vistos.has(key)) continue;
+                    vistos.add(key);
+                    const frp = parseFloat(cols[iFrp]);
+                    const conf = parseFloat(cols[iConf]);
+                    const sat = (iSat >= 0 ? (cols[iSat] || '').trim() : '') || 'INPE BDQueimadas';
+                    features.push({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [lon, lat] },
+                        properties: {
+                            lat, lon,
+                            frp: Number.isFinite(frp) ? frp : null,
+                            satellite: sat,
+                            data_hora: chaveData,
+                            confianca: Number.isFinite(conf) ? conf : null,
+                            municipio: (iMun >= 0 ? (cols[iMun] || '').trim() : ''),
+                            estado: (iEst >= 0 ? (cols[iEst] || '').trim() : ''),
+                            bioma: (iBio >= 0 ? (cols[iBio] || '').trim() : ''),
+                        },
+                    });
+                }
+            } catch (e) {
+                console.warn('[elnino-mapa] falha INPE:', e.message);
+                erro = e.message;
+            }
+        }));
+        if (!features.length && !erro) erro = 'Sem focos no período/região (INPE).';
     }
 
     const data = {
@@ -254,6 +316,31 @@ async function buildFocosGeoJSON(opts) {
 
 /* ---------------------- Série Niño 3.4 (ONI) ---------------------- */
 async function buildNino34Series() {
+    const fs = require('fs');
+    const path = require('path');
+    function readStatic() {
+        // require estático (Vercel bundle) + fs (dev/local)
+        try {
+            const req = require('../../geo/enso-nino34-series.json');
+            if (req && Array.isArray(req.series) && req.series.length) return req;
+        } catch (e) { /* ausente no bundle */ }
+        const candidates = [
+            path.join(process.cwd(), 'geo', 'enso-nino34-series.json'),
+            path.join(__dirname, '..', '..', 'geo', 'enso-nino34-series.json'),
+        ];
+        for (const p of candidates) {
+            try {
+                if (fs.existsSync(p)) {
+                    const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+                    if (parsed && Array.isArray(parsed.series) && parsed.series.length) return parsed;
+                }
+            } catch (e) { /* ignora */ }
+        }
+        return null;
+    }
+    const snap = readStatic();
+    if (snap) return { ...snap, _static: true };
+
     const enso = require('../_lib/enso');
     const col = await enso.readCollection?.('system_config') || [];
     const doc = (Array.isArray(col) ? col : []).find(d => d && d.id === 'enso-indice');
